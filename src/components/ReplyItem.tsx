@@ -52,7 +52,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
   return (
     <div>
       <div 
-        className="w-full bg-slate-100 text-black rounded-lg shadow-md overflow-hidden cursor-pointer border border-border"
+        className="w-full bg-slate-200 text-black rounded-lg shadow-md overflow-hidden cursor-pointer border border-border"
         onClick={handleCardClick}
       >
         <div className="flex items-start justify-between p-2">
@@ -76,7 +76,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
           )}
         </div>
 
-        <div className="flex justify-around items-center p-1 text-gray-500 border-t border-gray-200">
+        <div className="flex justify-around items-center p-1 text-gray-500 border-t border-gray-300">
           <LikeButton
             item={reply}
             project={project}

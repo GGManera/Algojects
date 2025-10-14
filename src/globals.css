@@ -59,9 +59,9 @@
     --comment-gradient-start: 350 80% 25%; /* Deep, slightly purplish red */
     --comment-gradient-end: 10 90% 45%;    /* Vibrant, slightly orange-red */
 
-    /* Notes/Reply gradient colors (light beige/off-white) */
-    --notes-gradient-start: 220 20% 5%; /* Alterado para cinza muito escuro */
-    --notes-gradient-end: 220 20% 3%;   /* Alterado para cinza muito escuro */
+    /* Notes/Reply gradient colors (light slate gray) */
+    --notes-gradient-start: 220 15% 88%; /* Light Slate */
+    --notes-gradient-end: 220 13% 78%;   /* Darker Slate */
 
     /* Existing blue-400 and gray-900, keep for compatibility if used elsewhere */
     --blue-400: 210 92% 70%;

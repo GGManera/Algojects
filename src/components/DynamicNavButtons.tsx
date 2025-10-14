@@ -93,6 +93,19 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
     currentSlideName = "Profile";
   }
 
+  const handleCenterButtonClick = () => {
+    // Scroll the main window to the top smoothly
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+
+    // Also call the passed-in prop, in case it has other functionality
+    if (onCenterButtonClick) {
+      onCenterButtonClick();
+    }
+  };
+
   return (
     <div className={cn(
       "fixed left-0 right-0 z-30 w-full bg-hodl-darker",
@@ -124,7 +137,7 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
               "btn-profile !h-[21.6px] !px-[5.4px] !py-[0.9px] !w-auto !min-w-[72px] !max-w-[108px]", // Default desktop size
               isMobile && "!h-[19.44px] !px-[4.86px] !py-[0.81px] !min-w-[64.8px] !max-w-[97.2px]" // 10% smaller on mobile
             )}
-            onClick={onCenterButtonClick} // NEW: Add onClick handler
+            onClick={handleCenterButtonClick} // Use the new handler
           >
             <strong className={cn(
               "uppercase text-[7.2px]", // Default desktop font size

@@ -131,126 +131,128 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner">
-                <DollarSign className="h-8 w-8 text-green-400 mb-2" />
-                <h3 className="text-xl font-bold text-green-400 font-numeric">{platformRevenue.toFixed(1)} ALGO</h3>
-                <p className="text-sm text-muted-foreground">Platform Revenue</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-6">
+              <div className="space-y-4">
+                <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner">
+                  <DollarSign className="h-8 w-8 text-green-400 mb-2" />
+                  <h3 className="text-xl font-bold text-green-400 font-numeric">{platformRevenue.toFixed(1)} ALGO</h3>
+                  <p className="text-sm text-muted-foreground">Platform Revenue</p>
+                </div>
+                <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner">
+                  <Users className="h-8 w-8 text-hodl-blue mb-2" />
+                  <h3 className="text-xl font-bold text-hodl-blue font-numeric">{totalUserEarnings.toFixed(1)} ALGO</h3>
+                  <p className="text-sm text-muted-foreground">Total User Earnings</p>
+                </div>
               </div>
-              <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner">
-                <Users className="h-8 w-8 text-hodl-blue mb-2" />
-                <h3 className="text-xl font-bold text-hodl-blue font-numeric">{totalUserEarnings.toFixed(1)} ALGO</h3>
-                <p className="text-sm text-muted-foreground">Total User Earnings</p>
-              </div>
-            </div>
 
-            <div className="border-t border-border pt-4 space-y-2 h-[210px] flex flex-col">
-              <h4 className="text-lg font-semibold text-center gradient-text">Posts & Likes</h4>
-              <div className="flex-grow flex items-center justify-center">
-                <AnimatePresence mode="wait">
-                  {activeStat && statDetails[activeStat] ? (
-                    <motion.div
-                      key="details"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                      className="p-4 bg-muted/50 rounded-lg shadow-inner cursor-pointer w-full"
-                      onClick={() => setActiveStat(null)}
-                    >
-                      <h5 className="text-center font-semibold mb-2">{statDetails[activeStat].title}</h5>
-                      <div className="text-sm text-center text-muted-foreground">
-                        {statDetails[activeStat].content}
-                      </div>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="grid"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                      className={cn(
-                        "flex flex-col gap-y-1 pt-2 text-sm w-full",
-                        !isInsideCarousel && "max-w-sm mx-auto"
-                      )}
-                    >
-                      {/* Header */}
-                      <div className="grid grid-cols-[1fr_80px_1fr] items-center">
-                        <div className="flex justify-end pr-4">
-                          <div className="font-semibold w-[4.5rem] p-2 h-10 flex items-center">Writers</div>
+              <div className="border-t md:border-t-0 md:border-l md:pl-6 border-border pt-4 md:pt-0 space-y-2 flex flex-col">
+                <h4 className="text-lg font-semibold text-center gradient-text">Posts & Likes</h4>
+                <div className="flex-grow flex items-center justify-center">
+                  <AnimatePresence mode="wait">
+                    {activeStat && statDetails[activeStat] ? (
+                      <motion.div
+                        key="details"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className="p-4 bg-muted/50 rounded-lg shadow-inner cursor-pointer w-full"
+                        onClick={() => setActiveStat(null)}
+                      >
+                        <h5 className="text-center font-semibold mb-2">{statDetails[activeStat].title}</h5>
+                        <div className="text-sm text-center text-muted-foreground">
+                          {statDetails[activeStat].content}
                         </div>
-                        <div />
-                        <div className="flex justify-start pl-4">
-                          <div className="font-semibold w-[4.5rem] p-2 h-10 flex items-center">Curators</div>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="grid"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className={cn(
+                          "flex flex-col gap-y-1 pt-2 text-sm w-full",
+                          !isInsideCarousel && "max-w-sm mx-auto"
+                        )}
+                      >
+                        {/* Header */}
+                        <div className="grid grid-cols-[1fr_80px_1fr] items-center">
+                          <div className="flex justify-end pr-4">
+                            <div className="font-semibold w-[4.5rem] p-2 h-10 flex items-center">Writers</div>
+                          </div>
+                          <div />
+                          <div className="flex justify-start pl-4">
+                            <div className="font-semibold w-[4.5rem] p-2 h-10 flex items-center">Curators</div>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Reviews Row */}
-                      <div className="grid grid-cols-[1fr_80px_1fr] items-center">
-                        <div className="flex justify-end border-r border-border pr-4">
-                          <ClickableStat
-                            id="reviews"
-                            icon={<FileText className="h-4 w-4" />}
-                            value={totalReviews}
-                            onClick={handleStatClick}
-                          />
+                        {/* Reviews Row */}
+                        <div className="grid grid-cols-[1fr_80px_1fr] items-center">
+                          <div className="flex justify-end border-r border-border pr-4">
+                            <ClickableStat
+                              id="reviews"
+                              icon={<FileText className="h-4 w-4" />}
+                              value={totalReviews}
+                              onClick={handleStatClick}
+                            />
+                          </div>
+                          <div className="text-center text-muted-foreground font-semibold">Reviews</div>
+                          <div className="flex justify-start border-l border-border pl-4">
+                            <ClickableStat
+                              id="reviewLikes"
+                              icon={<Heart className="h-4 w-4 text-pink-400" />}
+                              value={totalReviewLikes}
+                              onClick={handleStatClick}
+                            />
+                          </div>
                         </div>
-                        <div className="text-center text-muted-foreground font-semibold">Reviews</div>
-                        <div className="flex justify-start border-l border-border pl-4">
-                          <ClickableStat
-                            id="reviewLikes"
-                            icon={<Heart className="h-4 w-4 text-pink-400" />}
-                            value={totalReviewLikes}
-                            onClick={handleStatClick}
-                          />
-                        </div>
-                      </div>
 
-                      {/* Comments Row */}
-                      <div className="grid grid-cols-[1fr_80px_1fr] items-center">
-                        <div className="flex justify-end border-r border-border pr-4">
-                          <ClickableStat
-                            id="comments"
-                            icon={<MessageCircle className="h-4 w-4" />}
-                            value={totalComments}
-                            onClick={handleStatClick}
-                          />
+                        {/* Comments Row */}
+                        <div className="grid grid-cols-[1fr_80px_1fr] items-center">
+                          <div className="flex justify-end border-r border-border pr-4">
+                            <ClickableStat
+                              id="comments"
+                              icon={<MessageCircle className="h-4 w-4" />}
+                              value={totalComments}
+                              onClick={handleStatClick}
+                            />
+                          </div>
+                          <div className="text-center text-muted-foreground font-semibold">Comments</div>
+                          <div className="flex justify-start border-l border-border pl-4">
+                            <ClickableStat
+                              id="commentLikes"
+                              icon={<Heart className="h-4 w-4 text-pink-400" />}
+                              value={totalCommentLikes}
+                              onClick={handleStatClick}
+                            />
+                          </div>
                         </div>
-                        <div className="text-center text-muted-foreground font-semibold">Comments</div>
-                        <div className="flex justify-start border-l border-border pl-4">
-                          <ClickableStat
-                            id="commentLikes"
-                            icon={<Heart className="h-4 w-4 text-pink-400" />}
-                            value={totalCommentLikes}
-                            onClick={handleStatClick}
-                          />
-                        </div>
-                      </div>
 
-                      {/* Replies Row */}
-                      <div className="grid grid-cols-[1fr_80px_1fr] items-center">
-                        <div className="flex justify-end border-r border-border pr-4">
-                          <ClickableStat
-                            id="replies"
-                            icon={<MessageSquare className="h-4 w-4" />}
-                            value={totalReplies}
-                            onClick={handleStatClick}
-                          />
+                        {/* Replies Row */}
+                        <div className="grid grid-cols-[1fr_80px_1fr] items-center">
+                          <div className="flex justify-end border-r border-border pr-4">
+                            <ClickableStat
+                              id="replies"
+                              icon={<MessageSquare className="h-4 w-4" />}
+                              value={totalReplies}
+                              onClick={handleStatClick}
+                            />
+                          </div>
+                          <div className="text-center text-muted-foreground font-semibold">Replies</div>
+                          <div className="flex justify-start border-l border-border pl-4">
+                            <ClickableStat
+                              id="replyLikes"
+                              icon={<Heart className="h-4 w-4" />}
+                              value={totalReplyLikes}
+                              onClick={handleStatClick}
+                            />
+                          </div>
                         </div>
-                        <div className="text-center text-muted-foreground font-semibold">Replies</div>
-                        <div className="flex justify-start border-l border-border pl-4">
-                          <ClickableStat
-                            id="replyLikes"
-                            icon={<Heart className="h-4 w-4" />}
-                            value={totalReplyLikes}
-                            onClick={handleStatClick}
-                          />
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
 

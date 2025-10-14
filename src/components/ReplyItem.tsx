@@ -52,7 +52,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
   return (
     <div>
       <div 
-        className="w-full bg-white text-black rounded-lg shadow-md overflow-hidden cursor-pointer border border-border"
+        className="w-full bg-slate-100 text-black rounded-lg shadow-md overflow-hidden cursor-pointer border border-border"
         onClick={handleCardClick}
       >
         <div className="flex items-start justify-between p-2">

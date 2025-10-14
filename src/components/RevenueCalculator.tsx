@@ -288,7 +288,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
                         <UserDisplay address={curator.address} textSizeClass="text-sm" avatarSizeClass="h-7 w-7" />
                       </div>
                       <Link to={`/profile/${curator.address}`} className="font-bold font-numeric text-hodl-blue hover:underline">
-                        {curator.overallCuratorIndex.toFixed(2)} <Star className="h-4 w-4 inline-block ml-1" />
+                        {(Math.floor(curator.overallCuratorIndex * 10) / 10).toFixed(1)} <Star className="h-4 w-4 inline-block ml-1" />
                       </Link>
                     </li>
                   ))}

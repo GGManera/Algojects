@@ -14,6 +14,16 @@ interface ClickableSummaryCardProps {
 }
 
 export function ClickableSummaryCard({ id, icon, title, value, onClick, isActive }: ClickableSummaryCardProps) {
+  let displayValue = value;
+
+  // Specifically for 'Curator Index', parse and round down to one decimal place.
+  if (title === 'Curator Index') {
+    const numericValue = parseFloat(value);
+    if (!isNaN(numericValue)) {
+      displayValue = (Math.floor(numericValue * 10) / 10).toFixed(1);
+    }
+  }
+
   return (
     <motion.div
       onClick={() => onClick(id)}
@@ -30,7 +40,7 @@ export function ClickableSummaryCard({ id, icon, title, value, onClick, isActive
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       {icon}
-      <span className="text-lg font-bold font-numeric text-foreground mt-1">{value}</span>
+      <span className="text-lg font-bold font-numeric text-foreground mt-1">{displayValue}</span>
       <span className="text-xs text-muted-foreground">{title}</span>
     </motion.div>
   );

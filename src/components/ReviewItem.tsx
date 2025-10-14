@@ -4,7 +4,7 @@ import { Review, Project, Comment } from "@/types/social";
 import { CommentItem } from "./CommentItem";
 import { LikeButton } from "./LikeButton";
 import { InteractionForm } from "./InteractionForm";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "./ui/button";
 import { UserDisplay } from "./UserDisplay";
 import { TrendingUp, Share2, MessageCircle, Gem, Star } from "lucide-react";
@@ -13,17 +13,15 @@ import { useNavigate } from "react-router-dom";
 import { showError } from "@/utils/toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { InteractionDetailsPanel } from "./InteractionDetailsPanel";
-import { Skeleton } from "./ui/skeleton";
+import { useWallet } from "@txnlab/use-wallet-react";
 import { AllCuratorCalculationsMap } from '@/hooks/useCuratorIndex';
-import { CollapsibleContent } from "./CollapsibleContent"; // ADDED
+import { CollapsibleContent } from "./CollapsibleContent";
 
 interface ReviewItemProps {
   review: Review;
   project: Project;
   onInteractionSuccess: () => void;
   interactionScore: number;
-  // initialExpanded?: boolean; // Removed
-  // commentIdToExpand?: string; // Removed
   writerTokenHoldings: Map<string, number>;
   writerHoldingsLoading: boolean;
   assetUnitName: string | null;
@@ -33,7 +31,6 @@ interface ReviewItemProps {
 
 const CONTENT_TRUNCATE_LENGTH = 280;
 
-// Helper function to calculate interaction score for a comment
 const getCommentInteractionScore = (comment: Comment): number => {
   let score = comment.likeCount || 0;
   const replies = Object.values(comment.replies || {});
@@ -44,15 +41,14 @@ const getCommentInteractionScore = (comment: Comment): number => {
   return score;
 };
 
-export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData }: ReviewItemProps) { // Removed initialExpanded, commentIdToExpand
-  const [isExpanded, setIsExpanded] = useState(false); // Default to false
+export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData }: ReviewItemProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
-  // const reviewRef = useRef<HTMLDivElement>(null); // Removed
+  const [showCommentForm, setShowCommentForm] = useState(false);
+  const { activeAddress } = useWallet();
   const navigate = useNavigate();
-
-  // Removed useEffect for initialExpanded and scrollIntoView
 
   const sortedComments = useMemo(() => {
     const allComments = Object.values(review.comments || {});
@@ -93,7 +89,6 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
     }
   };
 
-  // NEW: Calculate Curator-Weighted Like Score
   const curatorWeightedLikeScore = useMemo(() => {
     return getCuratorWeightedLikeScore(review, allCuratorData);
   }, [review, allCuratorData]);
@@ -101,21 +96,20 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
   return (
     <div 
       id={`review-${review.id.split('.')[1]}`}
-      className="scroll-mt-header-offset"
+      className="scroll-mt-header-offset mb-4"
     >
       <div 
-        className="w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg shadow-deep-lg overflow-hidden cursor-pointer"
+        className="w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg overflow-hidden cursor-pointer"
         onClick={handleCardClick}
       >
         <div className="flex items-start justify-between p-2">
-          {/* Removido o condicional writerHoldingsLoading aqui */}
           <UserDisplay 
             address={review.sender} 
             textSizeClass="text-base" 
             avatarSizeClass="h-10 w-10" 
             projectTokenHoldings={writerTokenHoldings}
             assetUnitName={assetUnitName}
-            projectSourceContext={projectSourceContext} // NEW: Pass source context
+            projectSourceContext={projectSourceContext}
           />
           <span className="text-xs text-white/70 font-semibold">{formatTimestamp(review.timestamp)}</span>
         </div>
@@ -137,12 +131,18 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
             <TrendingUp className="h-5 w-5" />
             <span className="font-numeric">{interactionScore}</span>
           </button>
-          {/* NEW: Display Curator-Weighted Like Score */}
           <div className="flex items-center space-x-2">
             <Star className="h-5 w-5 text-yellow-400" />
             <span className="font-numeric">{curatorWeightedLikeScore.toFixed(1)}</span>
           </div>
-          <button className="flex items-center space-x-2 hover:text-white transition-colors">
+          <button 
+            className="flex items-center space-x-2 hover:text-white transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isExpanded) setIsExpanded(true);
+              setShowCommentForm(prev => !prev);
+            }}
+          >
             <MessageCircle className="h-5 w-5" />
             <span className="font-numeric">{sortedComments.length}</span>
           </button>
@@ -217,7 +217,17 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
           ) : (
             <p className="text-sm text-muted-foreground text-center">No comments yet. Be the first to comment!</p>
           )}
-          <InteractionForm type="comment" project={project} review={review} onInteractionSuccess={onInteractionSuccess} />
+          {activeAddress && showCommentForm && (
+            <InteractionForm 
+              type="comment" 
+              project={project} 
+              review={review} 
+              onInteractionSuccess={() => {
+                onInteractionSuccess();
+                setShowCommentForm(false);
+              }} 
+            />
+          )}
         </div>
       </CollapsibleContent>
     </div>

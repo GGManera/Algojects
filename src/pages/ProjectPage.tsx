@@ -1,6 +1,6 @@
 "use client";
 
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSocialData } from "@/hooks/useSocialData";
 import { ProjectDetailCard } from "@/components/ProjectDetailCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +22,7 @@ interface ProjectPageProps {
 
 const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger }: ProjectPageProps) => { // Accept scrollToTopTrigger
   const location = useLocation();
+  const navigate = useNavigate();
   const { projects, loading, error, refetch } = useSocialData();
   const { activeAddress } = useWallet();
   const { peekPreviousEntry } = useNavigationHistory();
@@ -60,12 +61,18 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
         console.log(`[ProjectPage] Scrolling to element with ID: ${id}`);
         setTimeout(() => {
           element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          
+          // NEW: Clear the hash from the URL after successful scroll
+          if (location.hash) {
+            // Use replace to avoid adding a new history entry
+            navigate(location.pathname, { replace: true });
+          }
         }, 300); // Increased delay to 300ms
       } else {
         console.warn(`[ProjectPage] Element with ID '${id}' not found for scrolling.`);
       }
     }
-  }, [scrollTrigger, hashToScroll]); // Depend on trigger and hash
+  }, [scrollTrigger, hashToScroll, location.pathname, location.hash, navigate]); // Depend on trigger, hash, and navigate
 
   // NEW: Effect to scroll to top when scrollToTopTrigger changes
   useEffect(() => {

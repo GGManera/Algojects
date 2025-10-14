@@ -75,7 +75,7 @@ export function CommentItem({ comment, review, project, onInteractionSuccess, in
         </div>
 
         <div className="px-3 pb-2">
-          <motion.p layout className="whitespace-pre-wrap font-semibold selectable-text">{displayContent}</motion.p>
+          <p className="whitespace-pre-wrap font-semibold selectable-text">{displayContent}</p>
           {isLongComment && !isExpanded && (
             <span className="text-blue-200 font-bold mt-2 inline-block">
               Continue reading

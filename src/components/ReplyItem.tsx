@@ -69,7 +69,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
         </div>
 
         <div className="px-3 pb-2">
-          <motion.p layout className="whitespace-pre-wrap text-white/90 font-semibold selectable-text">{displayContent}</motion.p>
+          <p className="whitespace-pre-wrap text-white/90 font-semibold selectable-text">{displayContent}</p>
           {isLongReply && !isExpanded && (
             <span className="text-blue-200 font-bold mt-2 inline-block">
               Continue reading

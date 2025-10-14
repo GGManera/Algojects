@@ -165,22 +165,22 @@ const ReplyItemPreview = ({ reply, comment, review, project, projectName, userPr
 
   return (
     <div
-      className="block w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-sm overflow-hidden mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+      className="block w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-white rounded-lg shadow-sm overflow-hidden mb-4 cursor-pointer hover:opacity-90 transition-opacity"
       onClick={() => handleNavigateToProjectComment(project.id, review.id.split('.')[1], comment.id.split('.')[2])}
     >
       <div className="px-3 py-2">
         <div className="flex items-start justify-between mb-2">
           <UserDisplay
             address={reply.sender}
-            textSizeClass="text-sm text-black" {/* Changed to text-black */}
+            textSizeClass="text-sm text-white"
             avatarSizeClass="h-8 w-8"
             onClick={(e) => e.stopPropagation()}
             currentProfileActiveCategory={userProfileActiveCategory}
           />
-          <span className="text-xs text-black/70 font-semibold">{formatTimestamp(reply.timestamp)}</span> {/* Changed to text-black/70 */}
+          <span className="text-xs text-white/70 font-semibold">{formatTimestamp(reply.timestamp)}</span>
         </div>
-        <p className="whitespace-pre-wrap text-black/90 font-semibold max-h-16 overflow-hidden">{reply.content}</p> {/* Changed to text-black/90 */}
-        <p className="text-xs text-black/70 mt-2 font-semibold"> {/* Changed to text-black/70 */}
+        <p className="whitespace-pre-wrap text-white/90 font-semibold max-h-16 overflow-hidden">{reply.content}</p>
+        <p className="text-xs text-white/70 mt-2 font-semibold">
           Replied to <UserDisplay
             address={comment.sender}
             textSizeClass="text-xs"
@@ -191,7 +191,7 @@ const ReplyItemPreview = ({ reply, comment, review, project, projectName, userPr
           />
         </p>
       </div>
-      <div className="flex justify-around items-center p-1 text-black/70 border-t border-black/20"> {/* Changed to text-black/70 and border-black/20 */}
+      <div className="flex justify-around items-center p-1 text-white/70 border-t border-white/20">
         <div className="flex items-center space-x-2">
           <Heart className="h-4 w-4" />
           <span className="font-numeric">{reply.likeCount || 0}</span>

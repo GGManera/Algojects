@@ -179,7 +179,7 @@ const ReplyItemPreview = ({ reply, comment, review, project, projectName, userPr
           />
           <span className="text-xs text-white/70 font-semibold">{formatTimestamp(reply.timestamp)}</span>
         </div>
-        <p className="whitespace-pre-wrap text-white/90 font-semibold max-h-16 overflow-hidden">{reply.content}</p>
+        <p className="whitespace-pre-wrap text-black font-semibold max-h-16 overflow-hidden">{reply.content}</p>
         <p className="text-xs text-white/70 mt-2 font-semibold">
           Replied to <UserDisplay
             address={comment.sender}

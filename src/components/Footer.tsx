@@ -23,7 +23,7 @@ export function Footer({ className, isMobile }: FooterProps) {
 
   return (
     <footer className={cn(
-      "w-full bg-card border-t border-border py-6 px-4", // Removed mt-8
+      "w-full bg-card border-t border-border py-6 px-4 mt-8",
       "flex flex-col items-center justify-center text-muted-foreground text-sm",
       className
     )}>

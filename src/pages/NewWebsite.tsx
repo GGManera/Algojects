@@ -23,26 +23,25 @@ import { Footer } from '@/components/Footer'; // RE-ADDED: Footer is now rendere
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 
 interface NewWebsiteProps {
-  onCenterButtonClick: () => void; // NEW: Prop to receive the scroll function from Layout
+  scrollToTopTrigger?: number; // NEW prop
 }
 
-const NewWebsite = ({ onCenterButtonClick }: NewWebsiteProps) => { // Accept onCenterButtonClick
+const NewWebsite = ({ scrollToTopTrigger }: NewWebsiteProps) => { // Accept scrollToTopTrigger
   const location = useLocation();
   const navigate = useNavigate();
   const { pushEntry, lastProjectPath, lastProfilePath, profile1, profile2, currentProfileSlot } = useNavigationHistory();
   const { activeAddress } = useWallet();
   const { projectDetails } = useProjectDetails();
-  const { isMobile, isDeviceLandscape } = useAppContextDisplayMode();
+  const { isMobile, isDeviceLandscape } = useAppContextDisplayMode(); // NEW: isDeviceLandscape
   
   const scrollRef = useRef<HTMLDivElement>(null);
-  const slideRefs = useRef(new Map<string, HTMLDivElement | null>()); // NEW: Map to hold refs for each slide's scrollable content
   const [api, setApi] = useState<CarouselApi>();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   // New states for managing hash scrolling
   const [hashToScroll, setHashToScroll] = useState<string | null>(null);
   const [scrollTrigger, setScrollTrigger] = useState(0);
-  const [lastScrolledHash, setLastScrolledHash] = useState<string | null>(null);
+  const [lastScrolledHash, setLastScrolledHash] = useState<string | null>(null); // NEW: Track the last hash that was scrolled to
 
   const { projectIdFromUrl, addressFromUrl } = useMemo(() => {
     const pathParts = location.pathname.split('/').filter(Boolean);
@@ -70,17 +69,17 @@ const NewWebsite = ({ onCenterButtonClick }: NewWebsiteProps) => { // Accept onC
   // Dynamically build the slides configuration based on available data
   const slidesConfig = useMemo(() => {
     const config = [];
-    config.push({ type: 'home', pathPrefix: '/', component: <Projects isInsideCarousel={true} />, maxWidth: 'max-w-[788px]' });
+    config.push({ type: 'home', pathPrefix: '/', component: <Projects isInsideCarousel={true} scrollToTopTrigger={scrollToTopTrigger} />, maxWidth: 'max-w-[788px]' }); // Pass scrollToTopTrigger
 
     if (effectiveProjectId) {
-      config.push({ type: 'project', pathPrefix: '/project/', component: <ProjectPage projectId={effectiveProjectId} isInsideCarousel={true} hashToScroll={hashToScroll} scrollTrigger={scrollTrigger} />, maxWidth: 'max-w-[788px]' });
+      config.push({ type: 'project', pathPrefix: '/project/', component: <ProjectPage projectId={effectiveProjectId} isInsideCarousel={true} hashToScroll={hashToScroll} scrollTrigger={scrollTrigger} scrollToTopTrigger={scrollToTopTrigger} />, maxWidth: 'max-w-[788px]' }); // Pass scrollToTopTrigger
     }
 
     if (effectiveProfileAddress) {
-      config.push({ type: 'profile', pathPrefix: '/profile/', component: <UserProfile address={effectiveProfileAddress} isInsideCarousel={true} />, maxWidth: 'max-w-[788px]' });
+      config.push({ type: 'profile', pathPrefix: '/profile/', component: <UserProfile address={effectiveProfileAddress} isInsideCarousel={true} scrollToTopTrigger={scrollToTopTrigger} />, maxWidth: 'max-w-[788px]' }); // Pass scrollToTopTrigger
     }
     return config;
-  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger]);
+  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, scrollToTopTrigger]); // Add scrollToTopTrigger to dependencies
 
   // Determine the target slide index based on the current URL and rendered slides
   const targetSlideIndex = useMemo(() => {
@@ -96,24 +95,6 @@ const NewWebsite = ({ onCenterButtonClick }: NewWebsiteProps) => { // Accept onC
     const index = slidesConfig.findIndex(slide => slide.type === targetType);
     return index !== -1 ? index : 0; // Default to home if the target slide type is not currently rendered
   }, [location.pathname, slidesConfig]);
-
-  // NEW: Function to handle scroll to top when center button is clicked
-  const handleScrollToTop = useCallback(() => {
-    if (!api) return;
-    const activeSlideType = slidesConfig[api.selectedScrollSnap()]?.type;
-    const activeSlideRef = slideRefs.current.get(activeSlideType || 'home');
-
-    if (activeSlideRef) {
-      activeSlideRef.scrollTo({ top: 0, behavior: 'smooth' });
-      console.log(`[NewWebsite] Scrolled active slide (${activeSlideType}) to top.`);
-    }
-  }, [api, slidesConfig]);
-
-  // Pass the scroll function up to Layout
-  useEffect(() => {
-    onCenterButtonClick(handleScrollToTop);
-  }, [onCenterButtonClick, handleScrollToTop]);
-
 
   useEffect(() => {
     if (!api) return;
@@ -230,7 +211,7 @@ const NewWebsite = ({ onCenterButtonClick }: NewWebsiteProps) => { // Accept onC
     activeAddress,
     projectIdFromUrl,
     addressFromUrl,
-    lastScrolledHash
+    lastScrolledHash // <-- ADD TO DEPENDENCY ARRAY
   ]);
 
   // useEffect to push entry to history when location.pathname changes
@@ -299,25 +280,22 @@ const NewWebsite = ({ onCenterButtonClick }: NewWebsiteProps) => { // Accept onC
   }, [isMobile, isDeviceLandscape]);
 
   return (
-    <div ref={scrollRef} className="w-full px-0 py-0 md:p-0 text-foreground h-full scroll-mt-header-offset">
+    <div ref={scrollRef} className="w-full px-0 py-0 md:p-0 text-foreground h-full scroll-mt-header-offset"> {/* Removed overflow-y-auto here */}
       <Carousel setApi={setApi} className="w-full" opts={{ duration: 20 }}>
         <CarouselContent>
           {slidesConfig.map((slide, index) => (
             <CarouselItem key={slide.type} className="h-full">
               <Card className={cn(
                 "p-0 bg-card",
-                "rounded-none border-none"
+                "rounded-none border-none" // Always remove rounded corners and border
               )}>              
-                <CardContent 
-                  ref={el => slideRefs.current.set(slide.type, el)} // NEW: Set ref for the scrollable content
-                  className={cn(
-                    "overflow-y-auto scrollbar-thin",
-                    cardContentMaxHeightClass
-                  )}
-                >
+                <CardContent className={cn(
+                  "overflow-y-auto scrollbar-thin",
+                  cardContentMaxHeightClass // Apply dynamic max-h
+                )}>
                   <div className={cn("w-full mx-auto", slide.maxWidth)}>
                     {slide.component}
-                    <Footer isMobile={isMobile && !isDeviceLandscape} />
+                    <Footer isMobile={isMobile && !isDeviceLandscape} /> {/* RE-ADDED: Footer is now rendered inside each CarouselItem, but only if NOT landscape */}
                   </div>
                 </CardContent>
               </Card>

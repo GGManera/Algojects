@@ -1,64 +1,67 @@
 "use client";
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Repeat2 } from 'lucide-react';
 import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
 import { cn } from '@/lib/utils';
-import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
+import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext'; // Import useAppContextDisplayMode
 
-// A prop onCenterButtonClick foi reintroduzida para delegar a ação de rolagem.
-export function DynamicNavButtons({ onCenterButtonClick }: { onCenterButtonClick: () => void }) {
+interface DynamicNavButtonsProps {
+  onCenterButtonClick: () => void; // NEW prop
+}
+
+export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProps) {
   const location = useLocation();
-  const { isMobile, appDisplayMode, isDeviceLandscape } = useAppContextDisplayMode();
+  const navigate = useNavigate();
+  const { isMobile, appDisplayMode, isDeviceLandscape } = useAppContextDisplayMode(); // Use the hook
   const {
     lastProjectPath,
     lastProfilePath,
     profile1,
     profile2,
     currentProfileSlot,
-    historyStack,
+    historyStack, // NEW: Access historyStack
   } = useNavigationHistory();
 
-  // O handler agora simplesmente chama a função recebida via props.
-  const handleCenterButtonClick = () => {
-    if (onCenterButtonClick) {
-      onCenterButtonClick();
-    }
-  };
-
-  // Determina se a página atual é uma página de perfil
+  // Determine if the current page is a profile page
   const isProfilePage = location.pathname.startsWith('/profile/');
   const isProjectPage = location.pathname.startsWith('/project/');
   const isHomePage = location.pathname === '/';
 
-  // --- Lógica do Botão Esquerdo ---
+  // --- Left Button Logic ---
   let leftButton: { label: string; path: string } | null = null;
 
   if (isProjectPage) {
+    // Project Page: Always "Back to All Projects"
     leftButton = { label: 'All Projects', path: '/' };
   } else if (isProfilePage) {
+    // Profile Page: "Back to Last Project" if available, else "Back to All Projects"
     if (lastProjectPath) {
       leftButton = { label: lastProjectPath.label, path: lastProjectPath.path };
     } else {
       leftButton = { label: 'All Projects', path: '/' };
     }
-  } else if (isHomePage) {
-    leftButton = null;
+  } else if (isHomePage) { // NEW: For home page
+    leftButton = null; // No left button on home page
   }
 
-  // --- Lógica do Botão Direito ---
+  // --- Right Button Logic ---
+  // Update type to include state
   let rightButton: { label: string; path: string; action?: 'switchProfile'; state?: { initialActiveCategory: 'writing' | 'curating' } } | null = null;
 
   if (isProjectPage) {
+    // Project Page: "Back to Last Profile" if available
     if (lastProfilePath) {
       rightButton = { label: 'Profile', path: lastProfilePath.path };
+      // NEW: Add state to the link
       if (lastProfilePath.activeCategory) {
         rightButton.state = { initialActiveCategory: lastProfilePath.activeCategory };
       }
     }
   } else if (isProfilePage) {
+    // Profile Page: "Switch Profile" if two distinct profiles are stored
     const currentProfileAddress = location.pathname.split('/')[2];
     const otherProfile = (currentProfileSlot === 1 && profile2 && profile2.address !== currentProfileAddress)
       ? profile2
@@ -68,20 +71,21 @@ export function DynamicNavButtons({ onCenterButtonClick }: { onCenterButtonClick
 
     if (otherProfile) {
       rightButton = { label: 'Switch Profile', path: `/profile/${otherProfile.address}`, action: 'switchProfile' };
+      // NEW: When switching profile, try to maintain the current category if available
       const currentProfileEntry = historyStack.find(entry => entry.path === location.pathname);
       if (currentProfileEntry?.activeCategory) {
         rightButton.state = { initialActiveCategory: currentProfileEntry.activeCategory };
       }
     }
-  } else if (isHomePage) {
+  } else if (isHomePage) { // NEW: For home page
     if (lastProjectPath) {
-      rightButton = { label: 'Project', path: lastProjectPath.path };
+      rightButton = { label: 'Project', path: lastProjectPath.path }; // Changed label to "Go to Project"
     } else {
-      rightButton = null;
+      rightButton = null; // No right button if no last project
     }
   }
 
-  // --- Lógica de Exibição do Nome do Slide Atual ---
+  // --- Current Slide Name Display Logic ---
   let currentSlideName = "Home";
   if (isProjectPage) {
     currentSlideName = "Project";
@@ -92,9 +96,9 @@ export function DynamicNavButtons({ onCenterButtonClick }: { onCenterButtonClick
   return (
     <div className={cn(
       "fixed left-0 right-0 z-30 w-full bg-hodl-darker",
-      (isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape)
-        ? "bottom-[var(--mobile-bottom-bar-height)] border-t border-border-accent-green top-border-glow"
-        : "top-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-desktop-vertical-gap))] border-b border-border-accent-green bottom-border-glow h-[var(--dynamic-nav-buttons-height)]"
+      (isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape) // Only apply mobile portrait styles if NOT landscape
+        ? "bottom-[var(--mobile-bottom-bar-height)] border-t border-border-accent-green top-border-glow" // Mobile: border-t and top-border-glow
+        : "top-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-desktop-vertical-gap))] border-b border-border-accent-green bottom-border-glow h-[var(--dynamic-nav-buttons-height)]" // Desktop/Landscape: border-b, bottom-border-glow e altura explícita
     )}>
       <div className="relative w-full max-w-3xl mx-auto flex justify-between items-center px-2 h-full">
         {leftButton ? (
@@ -113,17 +117,18 @@ export function DynamicNavButtons({ onCenterButtonClick }: { onCenterButtonClick
           <div className="w-24"></div>
         )}
 
+        {/* Current Slide Name Display with btn-profile styling */}
         <div className="absolute left-1/2 -translate-x-1/2 flex justify-center z-10">
           <div 
             className={cn(
-              "btn-profile !h-[21.6px] !px-[5.4px] !py-[0.9px] !w-auto !min-w-[72px] !max-w-[108px]",
-              isMobile && "!h-[19.44px] !px-[4.86px] !py-[0.81px] !min-w-[64.8px] !max-w-[97.2px]"
+              "btn-profile !h-[21.6px] !px-[5.4px] !py-[0.9px] !w-auto !min-w-[72px] !max-w-[108px]", // Default desktop size
+              isMobile && "!h-[19.44px] !px-[4.86px] !py-[0.81px] !min-w-[64.8px] !max-w-[97.2px]" // 10% smaller on mobile
             )}
-            onClick={handleCenterButtonClick}
+            onClick={onCenterButtonClick} // NEW: Add onClick handler
           >
             <strong className={cn(
-              "uppercase text-[7.2px]",
-              isMobile && "text-[6.48px]"
+              "uppercase text-[7.2px]", // Default desktop font size
+              isMobile && "text-[6.48px]" // 10% smaller on mobile
             )}>{currentSlideName}</strong>
             <div id="container-stars">
               <div id="stars"></div>

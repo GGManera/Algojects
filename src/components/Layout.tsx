@@ -9,18 +9,19 @@ import { ProfileButton } from './ProfileButton';
 import { useWallet } from '@txnlab/use-wallet-react';
 import { MobileBottomBar } from './MobileBottomBar';
 import { useSocialData } from '@/hooks/useSocialData';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react'; // Import useState
 import { StickyHeader } from './StickyHeader';
 import { useHeroLogoVisibility } from '@/contexts/HeroLogoVisibilityContext';
+// import { Footer } from './Footer'; // REMOVED
 import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { useNfd } from '@/hooks/useNfd';
-import { DynamicNavButtons } from './DynamicNavButtons';
+import { DynamicNavButtons } from './DynamicNavButtons'; // RE-ADDED
 import { useAccountData } from '@/hooks/useAccountData';
 
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
-  const { isMobile, appDisplayMode, isDeviceLandscape } = useAppContextDisplayMode();
+  const { isMobile, appDisplayMode, isDeviceLandscape } = useAppContextDisplayMode(); // NEW: isDeviceLandscape
   const { activeAddress } = useWallet();
   const { projects, loading: socialDataLoading, error: socialDataError, refetch: refetchSocialData, isRefreshing: isRefreshingSocialData } = useSocialData();
   const { projectDetails, loading: projectDetailsLoading, error: projectDetailsError, refetch: refetchProjectDetails, isRefreshing: isRefreshingProjectDetails } = useProjectDetails();
@@ -28,8 +29,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const { nfd: activeUserNfd } = useNfd(activeAddress);
   const location = useLocation();
 
-  // NEW: State to hold the scroll function provided by the child (NewWebsite)
-  const [scrollActiveSlideToTop, setScrollActiveSlideToTop] = useState<(() => void) | null>(null);
+  const [scrollToTopTrigger, setScrollToTopTrigger] = useState(0); // NEW state for scroll-to-top
 
   const isOverallRefreshing = isRefreshingSocialData || isRefreshingProjectDetails || accountDataLoading;
 
@@ -43,17 +43,15 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     console.log("Global data refresh initiated.");
   }, [refetchSocialData, refetchProjectDetails, refetchAccountData]);
 
-  // NEW: Function to be passed to DynamicNavButtons
-  const handleCenterButtonClick = useCallback(() => {
-    if (scrollActiveSlideToTop) {
-      scrollActiveSlideToTop();
-    }
-  }, [scrollActiveSlideToTop]);
+  // NEW: Function to trigger scroll to top
+  const triggerScrollToTop = useCallback(() => {
+    setScrollToTopTrigger(prev => prev + 1);
+  }, []);
 
   // Calcula o preenchimento superior para o main
   let mainTopPadding = "pt-[calc(var(--sticky-header-height)+env(safe-area-inset-top))]";
   if (!isMobile || isDeviceLandscape) { // Apply desktop padding if not mobile OR if mobile in landscape
-    // Desktop/Landscape: StickyHeader + DynamicNavButtons + 1*gap
+    // Desktop/Landscape: StickyHeader + DynamicNavButtons + 1*gap (removed one gap)
     mainTopPadding = "pt-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-height)+var(--dynamic-nav-buttons-desktop-vertical-gap)+env(safe-area-inset-top))]";
   }
 
@@ -67,7 +65,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="relative min-h-screen flex flex-col">
       <StickyHeader />
-      <DynamicNavButtons onCenterButtonClick={handleCenterButtonClick} /> {/* Pass the new handler */}
+      <DynamicNavButtons onCenterButtonClick={triggerScrollToTop} /> {/* Pass triggerScrollToTop */}
       <main
         className={cn(
           "flex-grow relative overflow-hidden",
@@ -75,8 +73,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           mainBottomPadding
         )}
       >
-        {/* Pass the setter function to the child (NewWebsite) */}
-        {React.cloneElement(children as React.ReactElement, { onCenterButtonClick: setScrollActiveSlideToTop })}
+        {/* Pass scrollToTopTrigger to children (NewWebsite) */}
+        {React.cloneElement(children as React.ReactElement, { scrollToTopTrigger })}
       </main>
       {isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape && ( // Only render MobileBottomBar if mobile, portrait, and NOT landscape
         <MobileBottomBar
@@ -84,6 +82,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           onInteractionSuccess={handleGlobalRefresh}
         />
       )}
+      {/* <Footer isMobile={isMobile} /> REMOVED */}
     </div>
   );
 };

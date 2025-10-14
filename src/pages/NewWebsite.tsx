@@ -29,6 +29,7 @@ interface NewWebsiteProps {
 // Definindo o tipo para a referência exposta
 export interface NewWebsiteRef {
   scrollToActiveSlideTop: () => void;
+  resetAllScrolls: () => void; // NEW: Função para resetar a rolagem de todos os slides
 }
 
 const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToTopTrigger }, ref) => {
@@ -97,7 +98,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return index !== -1 ? index : 0;
   }, [location.pathname, slidesConfig]);
 
-  // NEW: Função exposta para rolar o slide ativo para o topo
+  // Função para rolar o slide ativo para o topo
   const scrollToActiveSlideTop = useCallback(() => {
     if (!api) return;
     const activeSlideType = slidesConfig[api.selectedScrollSnap()]?.type;
@@ -111,9 +112,20 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     }
   }, [api, slidesConfig]);
 
-  // Expor a função de rolagem para o componente pai (Layout)
+  // NEW: Função para rolar TODOS os slides para o topo
+  const resetAllScrolls = useCallback(() => {
+    console.log("[NewWebsite] Resetting scroll position for all slides.");
+    slideRefs.current.forEach(ref => {
+      if (ref) {
+        ref.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  }, []);
+
+  // Expor as funções de rolagem para o componente pai (Layout)
   useImperativeHandle(ref, () => ({
     scrollToActiveSlideTop,
+    resetAllScrolls, // Expor a nova função
   }));
 
   useEffect(() => {

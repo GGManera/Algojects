@@ -6,24 +6,18 @@ import { cn } from '@/lib/utils';
 import { SettingsDialog } from './SettingsDialog';
 import { WalletButton } from '@txnlab/use-wallet-ui-react';
 import { useHeroLogoVisibility } from '@/contexts/HeroLogoVisibilityContext';
-import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { Link, useNavigate } from 'react-router-dom';
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { ProfileButton } from './ProfileButton';
 
 interface StickyHeaderProps {
-  // mainScrollRef: React.RefObject<HTMLElement>; // Removed mainScrollRef prop
+  onLogoClick: (e: React.MouseEvent) => void; // NEW prop
 }
 
-export function StickyHeader({}: StickyHeaderProps) { // Removed mainScrollRef from destructuring
+export function StickyHeader({ onLogoClick }: StickyHeaderProps) {
   const { isHeroLogoVisible } = useHeroLogoVisibility();
   const { isMobile } = useAppContextDisplayMode();
-  const navigate = useNavigate(); // Initialize useNavigate
-
-  const handleLogoClick = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent default Link navigation
-    navigate('/'); // Explicitly navigate to home
-    // The Projects component will now handle its own scroll to top
-  };
+  // const navigate = useNavigate(); // Removed useNavigate as navigation is handled by onLogoClick
 
   return (
     <AnimatePresence>
@@ -39,8 +33,7 @@ export function StickyHeader({}: StickyHeaderProps) { // Removed mainScrollRef f
         )}
       >
         <div className="flex items-center space-x-2">
-          {/* SettingsDialog removido daqui */}
-          <Link to="/" onClick={handleLogoClick} className="flex items-center flex-grow justify-center">
+          <Link to="/" onClick={onLogoClick} className="flex items-center flex-grow justify-center">
             <img 
               src="/algojects-logo.png" 
               alt="AlgoJects Logo" 

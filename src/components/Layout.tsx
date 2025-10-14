@@ -22,7 +22,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const { refetch: refetchAccountData, loading: accountDataLoading } = useAccountData(activeAddress);
   const location = useLocation();
 
-  const newWebsiteRef = useRef<NewWebsiteRef>(null); // NEW: Ref para o componente NewWebsite
+  const newWebsiteRef = useRef<NewWebsiteRef>(null); // Ref para o componente NewWebsite
 
   const isOverallRefreshing = isRefreshingSocialData || isRefreshingProjectDetails || accountDataLoading;
 
@@ -36,12 +36,26 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     console.log("Global data refresh initiated.");
   }, [refetchSocialData, refetchProjectDetails, refetchAccountData]);
 
-  // NEW: Função para rolar o slide ativo para o topo
+  // Função para rolar o slide ativo para o topo (chamada pelo DynamicNavButtons)
   const handleCenterButtonClick = useCallback(() => {
     if (newWebsiteRef.current) {
       newWebsiteRef.current.scrollToActiveSlideTop();
     }
   }, []);
+
+  // NEW: Função para resetar a rolagem de TODOS os slides (chamada pelo StickyHeader)
+  const handleLogoClickAndReset = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    if (newWebsiteRef.current) {
+      newWebsiteRef.current.resetAllScrolls();
+    }
+    // Navegar para a home (slide 1)
+    if (location.pathname !== '/') {
+      window.history.pushState({}, '', '/');
+      // Forçar o re-render e a navegação do router
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  }, [location.pathname]);
 
   // Calcula o preenchimento superior para o main
   let mainTopPadding = "pt-[calc(var(--sticky-header-height)+env(safe-area-inset-top))]";
@@ -57,7 +71,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="relative min-h-screen flex flex-col">
-      <StickyHeader />
+      <StickyHeader onLogoClick={handleLogoClickAndReset} />
       <DynamicNavButtons onCenterButtonClick={handleCenterButtonClick} />
       <main
         className={cn(

@@ -41,8 +41,14 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
     e.stopPropagation();
     if (isDisabled) return;
 
-    if (!item.sender) {
-        toast.error("Cannot like content with an unknown author.");
+    // NEW: Rigorous address validation using algosdk
+    if (!activeAddress || !algosdk.isValidAddress(activeAddress)) {
+        toast.error("Your wallet address appears to be invalid. Please reconnect.");
+        return;
+    }
+    if (!item.sender || !algosdk.isValidAddress(item.sender)) {
+        toast.error("Cannot like this content, the author's address is invalid.");
+        console.error("Attempted to like content with invalid sender address:", item.sender);
         return;
     }
 
@@ -61,7 +67,7 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
       const noteBytes = new TextEncoder().encode(noteIdentifier);
 
       const paymentToCreatorTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        from: activeAddress!,
+        from: activeAddress,
         to: item.sender,
         amount: LIKE_AMOUNT_TO_CREATOR,
         suggestedParams,
@@ -69,7 +75,7 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
       atc.addTransaction({ txn: paymentToCreatorTxn, signer: transactionSigner });
 
       const paymentToProtocolTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        from: activeAddress!,
+        from: activeAddress,
         to: PROTOCOL_ADDRESS,
         amount: LIKE_AMOUNT_TO_PROTOCOL,
         suggestedParams,

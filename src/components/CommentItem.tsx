@@ -135,7 +135,7 @@ export function CommentItem({
       </CollapsibleContent>
 
       <CollapsibleContent isOpen={areRepliesVisible}>
-        <div className="mt-2 pl-4 border-l-2 border-gray-700 space-y-2">
+        <div className="pl-4 border-l-2 border-gray-700 space-y-2">
           {Object.values(comment.replies)
             .sort((a, b) => a.timestamp - b.timestamp)
             .map((reply) => (

@@ -130,7 +130,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
 
   // Extract "fixed" fields from projectMetadata
   const currentProjectName = projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${projectId}`;
-  const currentProjectDescription = projectMetadata.find(item => item.type === 'project-description')?.value || "No creator notes provided.";
+  const currentProjectDescription = projectMetadata.find(item => item.type === 'project-description')?.value;
   const currentProjectTags = projectMetadata.find(item => item.type === 'tags')?.value; // Changed from category to tags
   const currentWhitelistedAddresses = projectMetadata.find(item => item.type === 'whitelisted-editors')?.value?.split(',').map(addr => addr.trim()).filter(Boolean) || [];
   const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
@@ -348,22 +348,24 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
               <span>Likes</span>
             </div>
           </div>
-          <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-white rounded-md shadow-recessed">
-            <h3 className="text-lg font-semibold mb-2 text-white">
-              {isCommunityNotes ? "Community Notes:" : (isCreatorAdded ? "Creator Notes:" : "Contributor Notes:")}
-            </h3>
-            {isLoadingDetails ? (
-              <Skeleton className="h-20 w-full" />
-            ) : detailsError ? (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{detailsError}</AlertDescription>
-              </Alert>
-            ) : (
-              <p className="text-white/90 whitespace-pre-wrap selectable-text">{currentProjectDescription}</p>
-            )}
-          </div>
+          {(isLoadingDetails || (currentProjectDescription && currentProjectDescription.trim() !== '')) && (
+            <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-white rounded-md shadow-recessed">
+              <h3 className="text-lg font-semibold mb-2 text-white">
+                {isCommunityNotes ? "Community Notes:" : (isCreatorAdded ? "Creator Notes:" : "Contributor Notes:")}
+              </h3>
+              {isLoadingDetails ? (
+                <Skeleton className="h-20 w-full" />
+              ) : detailsError ? (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{detailsError}</AlertDescription>
+                </Alert>
+              ) : (
+                <p className="text-white/90 whitespace-pre-wrap selectable-text">{currentProjectDescription}</p>
+              )}
+            </div>
+          )}
 
           {hasAnyMetadata && (
             <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">

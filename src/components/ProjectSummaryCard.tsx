@@ -99,7 +99,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
 
   // Extract "fixed" fields from projectMetadata
   const displayName = projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${project.id}`;
-  const projectDescription = projectMetadata.find(item => item.type === 'project-description')?.value || "No notes provided.";
+  const projectDescription = projectMetadata.find(item => item.type === 'project-description')?.value;
   const projectTags = projectMetadata.find(item => item.type === 'tags')?.value; // Changed from category to tags
   const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
   const addedByAddress = projectMetadata.find(item => item.type === 'added-by-address')?.value;
@@ -271,14 +271,16 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
           <CollapsibleContent isOpen={isExpanded}>
             <div className="mt-4 space-y-4">
               {/* Project Notes/Description */}
-              <div className="py-3 px-3 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-white rounded-md shadow-recessed">
-                <h3 className="text-md font-semibold mb-2 text-white">Notes:</h3>
-                {isLoadingDetails ? (
-                  <Skeleton className="h-16 w-full" />
-                ) : (
-                  <p className="text-white/90 whitespace-pre-wrap text-sm">{projectDescription}</p>
-                )}
-              </div>
+              {(isLoadingDetails || (projectDescription && projectDescription.trim() !== '')) && (
+                <div className="py-3 px-3 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-white rounded-md shadow-recessed">
+                  <h3 className="text-md font-semibold mb-2 text-white">Notes:</h3>
+                  {isLoadingDetails ? (
+                    <Skeleton className="h-16 w-full" />
+                  ) : (
+                    <p className="text-white/90 whitespace-pre-wrap text-sm">{projectDescription}</p>
+                  )}
+                </div>
+              )}
 
               {/* Project Tags */}
               {projectTags && (

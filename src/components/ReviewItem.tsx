@@ -4,12 +4,12 @@ import { Review, Project, Comment } from "@/types/social";
 import { CommentItem } from "./CommentItem";
 import { LikeButton } from "./LikeButton";
 import { InteractionForm } from "./InteractionForm";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "./ui/button";
 import { UserDisplay } from "./UserDisplay";
 import { TrendingUp, Share2, MessageCircle, Gem, Star } from "lucide-react";
 import { formatTimestamp, getCuratorWeightedLikeScore } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { showError } from "@/utils/toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { InteractionDetailsPanel } from "./InteractionDetailsPanel";
@@ -42,13 +42,27 @@ const getCommentInteractionScore = (comment: Comment): number => {
 };
 
 export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData }: ReviewItemProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const location = useLocation();
+  const { expandCommentId, highlightReplyId } = (location.state as { expandCommentId?: string; highlightReplyId?: string; }) || {};
+
+  const containsTargetComment = useMemo(() => {
+    if (!expandCommentId || !review.comments) return false;
+    return expandCommentId.startsWith(review.id + '.');
+  }, [expandCommentId, review.id]);
+
+  const [isExpanded, setIsExpanded] = useState(containsTargetComment);
   const [showAllComments, setShowAllComments] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const { activeAddress } = useWallet();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (containsTargetComment) {
+      setIsExpanded(true);
+    }
+  }, [containsTargetComment]);
 
   const sortedComments = useMemo(() => {
     const allComments = Object.values(review.comments || {});
@@ -207,6 +221,8 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
                   assetUnitName={assetUnitName}
                   projectSourceContext={projectSourceContext}
                   allCuratorData={allCuratorData}
+                  expandCommentId={expandCommentId}
+                  highlightReplyId={highlightReplyId}
                 />
               ))}
               {sortedComments.length > 3 && (

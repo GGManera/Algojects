@@ -134,12 +134,12 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner">
                 <DollarSign className="h-8 w-8 text-green-400 mb-2" />
-                <h3 className="text-xl font-bold text-green-400 font-numeric">{platformRevenue.toFixed(2)} ALGO</h3>
+                <h3 className="text-xl font-bold text-green-400 font-numeric">{platformRevenue.toFixed(1)} ALGO</h3>
                 <p className="text-sm text-muted-foreground">Platform Revenue</p>
               </div>
               <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner">
                 <Users className="h-8 w-8 text-hodl-blue mb-2" />
-                <h3 className="text-xl font-bold text-hodl-blue font-numeric">{totalUserEarnings.toFixed(2)} ALGO</h3>
+                <h3 className="text-xl font-bold text-hodl-blue font-numeric">{totalUserEarnings.toFixed(1)} ALGO</h3>
                 <p className="text-sm text-muted-foreground">Total User Earnings</p>
               </div>
             </div>

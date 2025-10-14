@@ -73,6 +73,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
       return;
     }
     setIsExpanded(prev => !prev);
+    setShowInteractionDetails(false);
   };
 
   const handleShare = async () => {

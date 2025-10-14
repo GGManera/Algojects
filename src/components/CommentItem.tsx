@@ -49,6 +49,7 @@ export function CommentItem({ comment, review, project, onInteractionSuccess, in
       return;
     }
     setIsExpanded(prev => !prev);
+    setShowInteractionDetails(false);
   };
 
   const curatorWeightedLikeScore = useMemo(() => {

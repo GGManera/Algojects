@@ -42,6 +42,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
       return;
     }
     setIsExpanded(prev => !prev);
+    setShowInteractionDetails(false);
   };
 
   // NEW: Calculate Curator-Weighted Like Score

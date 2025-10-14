@@ -285,7 +285,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
                     cardContentMaxHeightClass
                   )}
                 >
-                  <div className={cn("w-full mx-auto", slide.maxWidth, "pb-8")}>
+                  <div className={cn("w-full mx-auto", slide.maxWidth)}>
                     {slide.component}
                     <Footer isMobile={isMobile && !isDeviceLandscape} />
                   </div>

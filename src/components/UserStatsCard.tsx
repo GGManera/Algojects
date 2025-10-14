@@ -63,27 +63,26 @@ export function UserStatsCard({
   if (isLoading) {
     return (
       <Card className={cn(
-        "w-full max-w-md mx-auto mb-8",
+        "w-full max-w-md mx-auto mb-8 h-fit",
         isInsideCarousel && isMobile && "rounded-none border-none max-w-none mx-0 mb-0"
       )}>
         <CardHeader>
           <Skeleton className="h-6 w-32" />
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <div className="grid grid-cols-2 gap-4">
             <Skeleton className="h-24 w-full" />
             <Skeleton className="h-24 w-full" />
             <Skeleton className="h-24 w-full" />
             <Skeleton className="h-24 w-full" />
           </div>
-          <Skeleton className="h-20 w-full" />
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto mb-8">
+    <Card className="w-full max-w-md mx-auto mb-8 h-fit">
       <CardHeader>
         <CardTitle className="text-lg font-semibold">User Stats</CardTitle>
       </CardHeader>

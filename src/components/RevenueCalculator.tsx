@@ -254,48 +254,50 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
               </div>
             </div>
 
-            {/* Top Writers Section */}
-            <div className="border-t border-border pt-4 space-y-2">
-              <h4 className="text-lg font-semibold text-center gradient-text">Top Writers</h4>
-              {topWriters.length > 0 ? (
-                <ul className="space-y-2">
-                  {topWriters.map((writer, index) => (
-                    <li key={writer.address} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                      <div className="flex items-center gap-2">
-                        <span className="font-numeric text-muted-foreground font-semibold w-4">{index + 1}.</span>
-                        <UserDisplay address={writer.address} textSizeClass="text-sm" avatarSizeClass="h-7 w-7" />
-                      </div>
-                      <Link to={`/profile/${writer.address}`} className="font-bold font-numeric text-green-400 hover:underline">
-                        {writer.totalEarnings.toFixed(2)} ALGO
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center">No top writers yet.</p>
-              )}
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-6">
+              {/* Top Writers Section */}
+              <div className="border-t border-border pt-4 space-y-2">
+                <h4 className="text-lg font-semibold text-center gradient-text">Top Writers</h4>
+                {topWriters.length > 0 ? (
+                  <ul className="space-y-2">
+                    {topWriters.map((writer, index) => (
+                      <li key={writer.address} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                        <div className="flex items-center gap-2">
+                          <span className="font-numeric text-muted-foreground font-semibold w-4">{index + 1}.</span>
+                          <UserDisplay address={writer.address} textSizeClass="text-sm" avatarSizeClass="h-7 w-7" />
+                        </div>
+                        <Link to={`/profile/${writer.address}`} className="font-bold font-numeric text-green-400 hover:underline">
+                          {writer.totalEarnings.toFixed(2)} ALGO
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center">No top writers yet.</p>
+                )}
+              </div>
 
-            {/* Top Curators Section */}
-            <div className="border-t border-border pt-4 space-y-2">
-              <h4 className="text-lg font-semibold text-center gradient-text">Top Curators</h4>
-              {topCurators.length > 0 ? (
-                <ul className="space-y-2">
-                  {topCurators.map((curator, index) => (
-                    <li key={curator.address} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                      <div className="flex items-center gap-2">
-                        <span className="font-numeric text-muted-foreground font-semibold w-4">{index + 1}.</span>
-                        <UserDisplay address={curator.address} textSizeClass="text-sm" avatarSizeClass="h-7 w-7" />
-                      </div>
-                      <Link to={`/profile/${curator.address}`} className="font-bold font-numeric text-hodl-blue hover:underline">
-                        {(Math.floor(curator.overallCuratorIndex * 10) / 10).toFixed(1)} <Star className="h-4 w-4 inline-block ml-1" />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center">No top curators yet.</p>
-              )}
+              {/* Top Curators Section */}
+              <div className="mt-6 border-t border-border pt-4 space-y-2 md:mt-0 md:border-t-0 md:border-l md:border-border md:pl-6">
+                <h4 className="text-lg font-semibold text-center gradient-text">Top Curators</h4>
+                {topCurators.length > 0 ? (
+                  <ul className="space-y-2">
+                    {topCurators.map((curator, index) => (
+                      <li key={curator.address} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                        <div className="flex items-center gap-2">
+                          <span className="font-numeric text-muted-foreground font-semibold w-4">{index + 1}.</span>
+                          <UserDisplay address={curator.address} textSizeClass="text-sm" avatarSizeClass="h-7 w-7" />
+                        </div>
+                        <Link to={`/profile/${curator.address}`} className="font-bold font-numeric text-hodl-blue hover:underline">
+                          {(Math.floor(curator.overallCuratorIndex * 10) / 10).toFixed(1)} <Star className="h-4 w-4 inline-block ml-1" />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center">No top curators yet.</p>
+                )}
+              </div>
             </div>
           </CardContent>
         </CollapsibleContent>

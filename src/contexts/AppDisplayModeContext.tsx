@@ -1,57 +1,30 @@
 "use client";
 
-import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
-
-type AppDisplayMode = 'portrait' | 'landscape';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface AppDisplayModeContextType {
-  appDisplayMode: AppDisplayMode;
-  isDeviceLandscape: boolean;
   isMobile: boolean;
 }
 
-const AppDisplayModeContext = createContext<AppDisplayModeContextType | undefined>(undefined);
+const AppDisplayModeContext = createContext<AppDisplayModeContextType>({ isMobile: false });
 
-export function AppDisplayModeProvider({ children }: { children: React.ReactNode }) {
-  const [isDeviceLandscape, setIsDeviceLandscape] = useState(false);
-  const isMobile = useIsMobile();
+export const AppDisplayModeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // Detect actual device orientation
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(orientation: landscape)');
-    const handleOrientationChange = (event: MediaQueryListEvent) => {
-      setIsDeviceLandscape(event.matches);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
     };
 
-    setIsDeviceLandscape(mediaQuery.matches);
-    mediaQuery.addEventListener('change', handleOrientationChange);
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleOrientationChange);
-    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Derive appDisplayMode directly from the device's orientation
-  const appDisplayMode: AppDisplayMode = isDeviceLandscape ? 'landscape' : 'portrait';
-
-  const contextValue = useMemo(() => ({
-    appDisplayMode,
-    isDeviceLandscape,
-    isMobile,
-  }), [appDisplayMode, isDeviceLandscape, isMobile]);
-
   return (
-    <AppDisplayModeContext.Provider value={contextValue}>
+    <AppDisplayModeContext.Provider value={{ isMobile }}>
       {children}
     </AppDisplayModeContext.Provider>
   );
-}
+};
 
-export function useAppContextDisplayMode() {
-  const context = useContext(AppDisplayModeContext);
-  if (context === undefined) {
-    throw new Error('useAppContextDisplayMode must be used within an AppDisplayModeProvider');
-  }
-  return context;
-}
+export const useAppContextDisplayMode = () => useContext(AppDisplayModeContext);

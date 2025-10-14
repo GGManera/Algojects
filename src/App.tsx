@@ -1,76 +1,51 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import NotFound from "./pages/NotFound";
-import {
-  NetworkId,
-  WalletManager,
-  WalletProvider,
-  WalletId,
-} from '@txnlab/use-wallet-react';
-import { WalletUIProvider } from '@txnlab/use-wallet-ui-react';
-import algosdk from "algosdk";
-import React from "react";
-import Layout from "./components/Layout";
-import { AppDisplayModeProvider } from "./contexts/AppDisplayModeContext";
-import { HeroLogoVisibilityProvider } from "./contexts/HeroLogoVisibilityContext";
-import { NavigationHistoryProvider } from "./contexts/NavigationHistoryContext";
-import NewWebsite from "./pages/NewWebsite"; // Import the new page
+"use client";
 
-const queryClient = new QueryClient();
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { Index } from './pages/Index';
+import { UserProfile } from './pages/UserProfile';
+import { ProjectPage } from './pages/ProjectPage';
+import { StickyHeader } from './components/StickyHeader';
+import { MobileBottomBar } from './components/MobileBottomBar';
+import { useSocialData } from './hooks/useSocialData';
+import { AppDisplayModeProvider, useAppContextDisplayMode } from './contexts/AppDisplayModeContext';
+import { Toaster } from 'sonner';
 
-// Explicitly create an algodClient instance using a public node
-const algodClient = new algosdk.Algodv2(
-  "", // No token needed for this public node
-  "https://mainnet-api.algonode.cloud",
-  "" // Port is included in the URL
-);
+const AppContent = () => {
+  const { projects, refetch } = useSocialData();
+  const { isMobile } = useAppContextDisplayMode();
+  const navigate = useNavigate();
 
-// Configure the wallets you want to use
-const walletManager = new WalletManager({
-  wallets: [
-    WalletId.PERA,
-    WalletId.DEFLY,
-    WalletId.LUTE,
-  ],
-  algodClient, // Provide the explicit client to the manager
-  defaultNetwork: NetworkId.MAINNET,
-});
-
-const App = () => {
-  // Enforce dark mode globally
-  React.useEffect(() => {
-    document.documentElement.classList.add("dark");
-  }, []);
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate('/');
+    window.scrollTo(0, 0);
+  };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <WalletProvider manager={walletManager}>
-          <WalletUIProvider>
-            <AppDisplayModeProvider>
-              <HeroLogoVisibilityProvider>
-                <BrowserRouter>
-                  <NavigationHistoryProvider>
-                    <Routes>
-                      {/* A rota raiz agora renderiza o Layout com NewWebsite como seu filho */}
-                      <Route path="/*" element={<Layout><NewWebsite /></Layout>} />
-                      {/* A rota NotFound ainda é mantida para URLs inválidas */}
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </NavigationHistoryProvider>
-                </BrowserRouter>
-              </HeroLogoVisibilityProvider>
-            </AppDisplayModeProvider>
-          </WalletUIProvider>
-        </WalletProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <>
+      <StickyHeader onLogoClick={handleLogoClick} />
+      <main className="pt-16 container mx-auto px-4 pb-20 md:pb-4">
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/profile/:userAddress" element={<UserProfile />} />
+          <Route path="/project/:projectId" element={<ProjectPage />} />
+        </Routes>
+      </main>
+      {isMobile && <MobileBottomBar projects={projects} onInteractionSuccess={refetch} />}
+      <Toaster richColors position="bottom-right" />
+    </>
   );
 };
+
+function App() {
+  return (
+    <AppDisplayModeProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AppDisplayModeProvider>
+  );
+}
 
 export default App;

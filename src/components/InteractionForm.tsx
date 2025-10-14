@@ -117,10 +117,12 @@ export function InteractionForm({ type, project, review, comment, onInteractionS
       const displayItems: TransactionDisplayItem[] = [];
 
       if (type === 'comment') {
+        // 0.25 ALGO to Review Writer
         const paymentToReviewCreatorTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: review.sender, amount: 250_000, suggestedParams });
         atc.addTransaction({ txn: paymentToReviewCreatorTxn, signer: transactionSigner });
         displayItems.push({ type: 'pay', from: activeAddress, to: review.sender, amount: 250_000, note: `Payment for comment on review ${reviewId}`, role: 'Review Writer' });
 
+        // 0.25 ALGO to Protocol (on first chunk)
         chunks.forEach((chunk, index) => {
           const noteIdentifier = `${noteIdentifierBase}.${index}`;
           const noteText = `${noteIdentifier} ${new TextDecoder().decode(chunk)}`;
@@ -128,37 +130,33 @@ export function InteractionForm({ type, project, review, comment, onInteractionS
           const amount = index === 0 ? 250_000 : 0;
           const paymentToProtocolTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: PROTOCOL_ADDRESS, amount, suggestedParams, note: noteBytes });
           atc.addTransaction({ txn: paymentToProtocolTxn, signer: transactionSigner });
-          displayItems.push({ type: 'pay', from: activeAddress, to: PROTOCOL_ADDRESS, amount: amount, note: noteText, role: 'Protocol' });
+          if (amount > 0) {
+            displayItems.push({ type: 'pay', from: activeAddress, to: PROTOCOL_ADDRESS, amount: amount, note: noteText, role: 'Protocol' });
+          }
         });
       } else if (type === 'reply' && comment) {
-        if (activeAddress === review.sender) {
-          chunks.forEach((chunk, index) => {
-            const noteIdentifier = `${noteIdentifierBase}.${index}`;
-            const noteText = `${noteIdentifier} ${new TextDecoder().decode(chunk)}`;
-            const noteBytes = new TextEncoder().encode(noteText);
-            const paymentToProtocolTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: PROTOCOL_ADDRESS, amount: 0, suggestedParams, note: noteBytes });
-            atc.addTransaction({ txn: paymentToProtocolTxn, signer: transactionSigner });
-            displayItems.push({ type: 'pay', from: activeAddress, to: PROTOCOL_ADDRESS, amount: 0, note: noteText, role: 'Protocol' });
-          });
-        } else {
-          const paymentToReviewCreatorTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: review.sender, amount: 100_000, suggestedParams });
-          atc.addTransaction({ txn: paymentToReviewCreatorTxn, signer: transactionSigner });
-          displayItems.push({ type: 'pay', from: activeAddress, to: review.sender, amount: 100_000, note: `Payment for reply on review ${reviewId}`, role: 'Review Writer' });
+        // 0.1 ALGO to Review Writer
+        const paymentToReviewCreatorTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: review.sender, amount: 100_000, suggestedParams });
+        atc.addTransaction({ txn: paymentToReviewCreatorTxn, signer: transactionSigner });
+        displayItems.push({ type: 'pay', from: activeAddress, to: review.sender, amount: 100_000, note: `Payment for reply on review ${reviewId}`, role: 'Review Writer' });
 
-          const paymentToCommentCreatorTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: comment.sender, amount: 100_000, suggestedParams });
-          atc.addTransaction({ txn: paymentToCommentCreatorTxn, signer: transactionSigner });
-          displayItems.push({ type: 'pay', from: activeAddress, to: comment.sender, amount: 100_000, note: `Payment for reply on comment ${comment.id.split('.')[2]}`, role: 'Comment Writer' });
+        // 0.1 ALGO to Comment Writer
+        const paymentToCommentCreatorTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: comment.sender, amount: 100_000, suggestedParams });
+        atc.addTransaction({ txn: paymentToCommentCreatorTxn, signer: transactionSigner });
+        displayItems.push({ type: 'pay', from: activeAddress, to: comment.sender, amount: 100_000, note: `Payment for reply on comment ${comment.id.split('.')[2]}`, role: 'Comment Writer' });
 
-          chunks.forEach((chunk, index) => {
-            const noteIdentifier = `${noteIdentifierBase}.${index}`;
-            const noteText = `${noteIdentifier} ${new TextDecoder().decode(chunk)}`;
-            const noteBytes = new TextEncoder().encode(noteText);
-            const amount = index === 0 ? 100_000 : 0;
-            const paymentToProtocolTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: PROTOCOL_ADDRESS, amount, suggestedParams, note: noteBytes });
-            atc.addTransaction({ txn: paymentToProtocolTxn, signer: transactionSigner });
+        // 0.1 ALGO to Protocol (on first chunk)
+        chunks.forEach((chunk, index) => {
+          const noteIdentifier = `${noteIdentifierBase}.${index}`;
+          const noteText = `${noteIdentifier} ${new TextDecoder().decode(chunk)}`;
+          const noteBytes = new TextEncoder().encode(noteText);
+          const amount = index === 0 ? 100_000 : 0;
+          const paymentToProtocolTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: PROTOCOL_ADDRESS, amount, suggestedParams, note: noteBytes });
+          atc.addTransaction({ txn: paymentToProtocolTxn, signer: transactionSigner });
+          if (amount > 0) {
             displayItems.push({ type: 'pay', from: activeAddress, to: PROTOCOL_ADDRESS, amount: amount, note: noteText, role: 'Protocol' });
-          });
-        }
+          }
+        });
       }
 
       dismissToast(toastId);

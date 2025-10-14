@@ -11,9 +11,6 @@ import { cn } from "@/lib/utils";
 import { PaymentConfirmationDialog } from "./PaymentConfirmationDialog";
 import { useSettings } from "@/hooks/useSettings";
 
-// Constants for like transaction
-const LIKE_AMOUNT_TO_CREATOR = 100_000; // 0.1 ALGO
-const LIKE_AMOUNT_TO_PROTOCOL = 10_000; // 0.01 ALGO
 const TRANSACTION_TIMEOUT_MS = 60000; // 60 seconds
 
 // Define TransactionDisplayItem type locally for the dialog
@@ -25,7 +22,7 @@ interface TransactionDisplayItem {
   assetId?: number;
   note?: string;
   isOptIn?: boolean;
-  role?: 'Review Writer' | 'Comment Writer' | 'Reply Writer' | 'Protocol' | 'Content Creator';
+  role?: 'Review Writer' | 'Comment Writer' | 'Reply Writer' | 'Protocol';
 }
 
 interface LikeButtonProps {
@@ -96,11 +93,6 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
         toast.error("Your wallet address appears to be invalid. Please reconnect.");
         return;
     }
-    if (!item.sender || !algosdk.isValidAddress(item.sender)) {
-        toast.error("Cannot like this content, the author's address is invalid.");
-        console.error("Attempted to like content with invalid sender address:", item.sender);
-        return;
-    }
 
     setIsLoading(true);
     const toastId = toast.loading("Preparing transaction...");
@@ -109,41 +101,47 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
       const atc = new algosdk.AtomicTransactionComposer();
       const suggestedParams = await algodClient.getTransactionParams().do();
       const displayItems: TransactionDisplayItem[] = [];
+      const idParts = item.id.split('.');
 
+      // Like a Review
+      if (idParts.length === 2) {
+        const paymentToReviewer = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: item.sender, amount: 1_000_000, suggestedParams });
+        atc.addTransaction({ txn: paymentToReviewer, signer: transactionSigner });
+        displayItems.push({ type: 'pay', from: activeAddress, to: item.sender, amount: 1_000_000, role: 'Review Writer' });
+      } 
+      // Like a Comment
+      else if (idParts.length === 3) {
+        if (!review) throw new Error("Review context is required to like a comment.");
+        const paymentToCommenter = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: item.sender, amount: 250_000, suggestedParams });
+        atc.addTransaction({ txn: paymentToCommenter, signer: transactionSigner });
+        displayItems.push({ type: 'pay', from: activeAddress, to: item.sender, amount: 250_000, role: 'Comment Writer' });
+
+        const paymentToReviewer = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: review.sender, amount: 250_000, suggestedParams });
+        atc.addTransaction({ txn: paymentToReviewer, signer: transactionSigner });
+        displayItems.push({ type: 'pay', from: activeAddress, to: review.sender, amount: 250_000, role: 'Review Writer' });
+      }
+      // Like a Reply
+      else if (idParts.length === 4) {
+        if (!review || !comment) throw new Error("Review and Comment context are required to like a reply.");
+        const paymentToReplier = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: item.sender, amount: 100_000, suggestedParams });
+        atc.addTransaction({ txn: paymentToReplier, signer: transactionSigner });
+        displayItems.push({ type: 'pay', from: activeAddress, to: item.sender, amount: 100_000, role: 'Reply Writer' });
+
+        const paymentToCommenter = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: comment.sender, amount: 100_000, suggestedParams });
+        atc.addTransaction({ txn: paymentToCommenter, signer: transactionSigner });
+        displayItems.push({ type: 'pay', from: activeAddress, to: comment.sender, amount: 100_000, role: 'Comment Writer' });
+
+        const paymentToReviewer = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: review.sender, amount: 100_000, suggestedParams });
+        atc.addTransaction({ txn: paymentToReviewer, signer: transactionSigner });
+        displayItems.push({ type: 'pay', from: activeAddress, to: review.sender, amount: 100_000, role: 'Review Writer' });
+      }
+
+      // Add a 0-ALGO transaction to the protocol to record the like note on-chain
       const noteIdentifier = `like.${item.id}`;
       const noteBytes = new TextEncoder().encode(noteIdentifier);
-
-      const paymentToCreatorTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        sender: activeAddress,
-        receiver: item.sender,
-        amount: LIKE_AMOUNT_TO_CREATOR,
-        suggestedParams,
-      });
-      atc.addTransaction({ txn: paymentToCreatorTxn, signer: transactionSigner });
-      displayItems.push({
-        type: 'pay',
-        from: activeAddress,
-        to: item.sender,
-        amount: LIKE_AMOUNT_TO_CREATOR,
-        role: 'Content Creator'
-      });
-
-      const paymentToProtocolTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        sender: activeAddress,
-        receiver: PROTOCOL_ADDRESS,
-        amount: LIKE_AMOUNT_TO_PROTOCOL,
-        suggestedParams,
-        note: noteBytes,
-      });
-      atc.addTransaction({ txn: paymentToProtocolTxn, signer: transactionSigner });
-      displayItems.push({
-        type: 'pay',
-        from: activeAddress,
-        to: PROTOCOL_ADDRESS,
-        amount: LIKE_AMOUNT_TO_PROTOCOL,
-        note: noteIdentifier,
-        role: 'Protocol'
-      });
+      const noteTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: PROTOCOL_ADDRESS, amount: 0, suggestedParams, note: noteBytes });
+      atc.addTransaction({ txn: noteTxn, signer: transactionSigner });
+      // No display item for this as it's a 0-ALGO transaction for data purposes
 
       toast.dismiss(toastId);
       setPreparedAtc(atc);

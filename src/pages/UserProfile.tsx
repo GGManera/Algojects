@@ -105,14 +105,19 @@ const CommentItemPreview = ({ comment, review, project, projectName, userProfile
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
 
-  const handleNavigateToProjectComment = (projectId: string, reviewId: string, commentId: string) => {
-    navigate(`/project/${projectId}#review-${reviewId}#comment-${commentId}`);
+  const handleNavigateToProjectComment = (projectId: string, commentId: string) => {
+    navigate(`/project/${projectId}#${commentId}`, {
+      state: {
+        expandCommentId: commentId,
+        highlightCommentId: commentId,
+      },
+    });
   };
 
   return (
     <div
       className="block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden mb-4 cursor-pointer hover:opacity-90 transition-opacity"
-      onClick={() => handleNavigateToProjectComment(project.id, review.id.split('.')[1], comment.id.split('.')[2])}
+      onClick={() => handleNavigateToProjectComment(project.id, comment.id)}
     >
       <div className="px-3 py-2">
         <div className="flex items-start justify-between mb-2">

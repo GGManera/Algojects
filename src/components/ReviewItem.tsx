@@ -43,7 +43,7 @@ const getCommentInteractionScore = (comment: Comment): number => {
 
 export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData }: ReviewItemProps) {
   const location = useLocation();
-  const { expandCommentId, highlightReplyId } = (location.state as { expandCommentId?: string; highlightReplyId?: string; }) || {};
+  const { expandCommentId, highlightReplyId, highlightCommentId } = (location.state as { expandCommentId?: string; highlightReplyId?: string; highlightCommentId?: string; }) || {};
 
   const containsTargetComment = useMemo(() => {
     if (!expandCommentId || !review.comments) return false;
@@ -209,20 +209,21 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
         <div className="pt-4 space-y-4">
           {hasComments ? (
             <div className="space-y-4">
-              {commentsToShow.map(({ comment, score }) => (
+              {commentsToShow.map(({ comment }) => (
                 <CommentItem 
                   key={comment.id} 
                   comment={comment} 
                   review={review} 
                   project={project} 
                   onInteractionSuccess={onInteractionSuccess} 
-                  interactionScore={score} 
                   writerTokenHoldings={writerTokenHoldings}
+                  writerHoldingsLoading={writerHoldingsLoading}
                   assetUnitName={assetUnitName}
                   projectSourceContext={projectSourceContext}
                   allCuratorData={allCuratorData}
                   expandCommentId={expandCommentId}
                   highlightReplyId={highlightReplyId}
+                  highlightCommentId={highlightCommentId}
                 />
               ))}
               {sortedComments.length > 3 && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { Comment, Project, Review, Reply } from "@/types/social";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { UserDisplay } from "./UserDisplay";
 import { LikeButton } from "./LikeButton";
 import { ReplyItem } from "./ReplyItem";
@@ -11,6 +11,7 @@ import { Button } from "./ui/button";
 import { AllCuratorCalculationsMap } from "@/hooks/useCuratorIndex";
 import { InteractionDetailsPanel } from "./InteractionDetailsPanel";
 import { CollapsibleContent } from "./CollapsibleContent";
+import { cn } from "@/lib/utils";
 
 interface CommentItemProps {
   comment: Comment;
@@ -24,6 +25,7 @@ interface CommentItemProps {
   allCuratorData: AllCuratorCalculationsMap;
   expandCommentId?: string;
   highlightReplyId?: string;
+  highlightCommentId?: string;
 }
 
 export function CommentItem({
@@ -38,15 +40,27 @@ export function CommentItem({
   allCuratorData,
   expandCommentId,
   highlightReplyId,
+  highlightCommentId,
 }: CommentItemProps) {
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const isHighlighted = useMemo(() => highlightCommentId === comment.id, [highlightCommentId, comment.id]);
 
   useEffect(() => {
     if (expandCommentId && expandCommentId === comment.id) {
       setAreRepliesVisible(true);
     }
   }, [expandCommentId, comment.id]);
+
+  useEffect(() => {
+    if (isHighlighted && ref.current) {
+      setTimeout(() => {
+        ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, [isHighlighted]);
 
   const repliesCount = Object.keys(comment.replies || {}).length;
 
@@ -60,8 +74,11 @@ export function CommentItem({
   }, [comment, allCuratorData]);
 
   return (
-    <div className="ml-4 mt-2" id={comment.id}>
-      <div className="block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden mb-2">
+    <div ref={ref} className="ml-4 mt-2" id={comment.id}>
+      <div className={cn(
+        "block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden mb-2 transition-all duration-300",
+        isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+      )}>
         <div className="p-3">
           <div className="flex items-start justify-between mb-2">
             <UserDisplay

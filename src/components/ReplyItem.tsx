@@ -52,7 +52,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
   return (
     <div>
       <div 
-        className="w-full bg-slate-300 text-black rounded-lg shadow-md overflow-hidden cursor-pointer border border-border"
+        className="w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-md overflow-hidden cursor-pointer"
         onClick={handleCardClick}
       >
         <div className="flex items-start justify-between p-2">
@@ -64,11 +64,11 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             assetUnitName={assetUnitName}
             sourceContext={projectSourceContext}
           />
-          <span className="text-xs text-black font-semibold">{formatTimestamp(reply.timestamp)}</span>
+          <span className="text-xs text-black/70 font-semibold">{formatTimestamp(reply.timestamp)}</span>
         </div>
 
         <div className="px-3 pb-2">
-          <p className="whitespace-pre-wrap text-black/90 font-semibold selectable-text">{displayContent}</p>
+          <p className="whitespace-pre-wrap text-black font-semibold selectable-text">{displayContent}</p>
           {isLongReply && !isExpanded && (
             <span className="text-blue-700 font-bold mt-2 inline-block">
               Continue reading
@@ -76,7 +76,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
           )}
         </div>
 
-        <div className="flex justify-around items-center p-1 text-black border-t border-black/20">
+        <div className="flex justify-around items-center p-1 text-black/70 border-t border-black/20">
           <LikeButton
             item={reply}
             project={project}
@@ -87,7 +87,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
           />
           <div className="flex items-center space-x-2">
             <Star className="h-4 w-4 text-yellow-500" />
-            <span className="font-numeric text-black">{curatorWeightedLikeScore.toFixed(1)}</span>
+            <span className="font-numeric">{curatorWeightedLikeScore.toFixed(1)}</span>
           </div>
           <Button
             variant="ghost"

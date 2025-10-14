@@ -29,9 +29,10 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
   const { getCurrentEntry } = useNavigationHistory();
 
   const handleHomeClick = () => {
-    // This forces a navigation to the home page and a full page reload,
-    // which is a common behavior for a main logo/brand icon click.
-    window.location.href = '/';
+    // Navigate to the home page without a full refresh
+    navigate('/');
+    // Scroll the main window to the top.
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleProfileClick = () => {

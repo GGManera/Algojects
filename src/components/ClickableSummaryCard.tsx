@@ -1,7 +1,8 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface ClickableSummaryCardProps {
   id: string;
@@ -13,20 +14,34 @@ interface ClickableSummaryCardProps {
 }
 
 export function ClickableSummaryCard({ id, icon, title, value, onClick, isActive }: ClickableSummaryCardProps) {
+  let displayValue = value;
+
+  // Specifically for 'Curator Index', parse and round down to one decimal place.
+  if (title === 'Curator Index') {
+    const numericValue = parseFloat(value);
+    if (!isNaN(numericValue)) {
+      displayValue = (Math.floor(numericValue * 10) / 10).toFixed(1);
+    }
+  }
+
   return (
-    <Card
+    <motion.div
       onClick={() => onClick(id)}
       className={cn(
-        "cursor-pointer transition-all duration-300 ease-in-out",
-        "flex flex-col items-center justify-center text-center p-4 h-full",
-        isActive 
-          ? "ring-2 ring-primary bg-primary/10 scale-105" 
-          : "hover:bg-muted/50 hover:scale-105"
+        "flex flex-col items-center justify-center p-3 rounded-lg cursor-pointer transition-colors",
+        "hover:bg-muted/70",
+        isActive ? "bg-primary/20 border border-primary" : "bg-muted/50"
       )}
+      initial={false} // Disable initial animation for layout
+      animate={{
+        scale: isActive ? 1.02 : 1,
+        boxShadow: isActive ? "0 0 10px rgba(var(--primary), 0.3)" : "none",
+      }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
-      <div className="mb-2">{icon}</div>
-      <h3 className="text-xs font-semibold text-muted-foreground leading-tight">{title}</h3>
-      <p className="text-md font-bold font-numeric">{value}</p>
-    </Card>
+      {icon}
+      <span className="text-lg font-bold font-numeric text-foreground mt-1">{displayValue}</span>
+      <span className="text-xs text-muted-foreground">{title}</span>
+    </motion.div>
   );
 }

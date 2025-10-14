@@ -1,26 +1,36 @@
 "use client";
 
-import { useWallet } from '@txnlab/use-wallet-react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { User } from 'lucide-react';
+import { useWallet } from "@txnlab/use-wallet-react";
+import { Link, useParams, useLocation } from "react-router-dom"; // Import useParams and useLocation
 
 export function ProfileButton() {
   const { activeAddress } = useWallet();
-  const navigate = useNavigate();
+  const { address: profileAddressParam } = useParams<{ address: string }>(); // Get address from URL params
+  const location = useLocation(); // Get current location
 
+  // If no active wallet, don't show the button
   if (!activeAddress) {
     return null;
   }
 
-  const handleProfileClick = () => {
-    navigate(`/profile/${activeAddress}`);
-  };
+  // Check if the current path is a profile page AND if it's the active user's profile
+  const isOnOwnProfilePage = location.pathname.startsWith('/profile/') && profileAddressParam === activeAddress;
+
+  // If the user is on their own profile page, hide the button
+  if (isOnOwnProfilePage) {
+    return null;
+  }
 
   return (
-    <Button variant="ghost" size="icon" onClick={handleProfileClick} className="text-muted-foreground hover:text-foreground">
-      <User className="h-5 w-5" />
-      <span className="sr-only">Go to profile</span>
-    </Button>
+    <Link to={`/profile/${activeAddress}`} className="btn-profile">
+      <strong className="uppercase">Profile</strong>
+      <div id="container-stars">
+        <div id="stars"></div>
+      </div>
+      <div id="glow">
+        <div className="circle"></div>
+        <div className="circle"></div>
+      </div>
+    </Link>
   );
 }

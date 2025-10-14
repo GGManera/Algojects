@@ -25,6 +25,20 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
     historyStack, // NEW: Access historyStack
   } = useNavigationHistory();
 
+  // NEW: Handler for the center button click
+  const handleCenterButtonClick = () => {
+    // Scroll the window to the top with a smooth animation
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+
+    // Call the original prop function if it exists
+    if (onCenterButtonClick) {
+      onCenterButtonClick();
+    }
+  };
+
   // Determine if the current page is a profile page
   const isProfilePage = location.pathname.startsWith('/profile/');
   const isProjectPage = location.pathname.startsWith('/project/');
@@ -124,7 +138,7 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
               "btn-profile !h-[21.6px] !px-[5.4px] !py-[0.9px] !w-auto !min-w-[72px] !max-w-[108px]", // Default desktop size
               isMobile && "!h-[19.44px] !px-[4.86px] !py-[0.81px] !min-w-[64.8px] !max-w-[97.2px]" // 10% smaller on mobile
             )}
-            onClick={onCenterButtonClick} // NEW: Add onClick handler
+            onClick={handleCenterButtonClick} // UPDATED: Use the new handler
           >
             <strong className={cn(
               "uppercase text-[7.2px]", // Default desktop font size

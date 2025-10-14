@@ -63,7 +63,7 @@ export function UserStatsCard({
   if (isLoading) {
     return (
       <Card className={cn(
-        "w-full max-w-md mx-auto mb-8 h-fit",
+        "w-full max-w-md mx-auto mb-8 h-fit self-start",
         isInsideCarousel && isMobile && "rounded-none border-none max-w-none mx-0 mb-0"
       )}>
         <CardHeader>
@@ -82,7 +82,7 @@ export function UserStatsCard({
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto mb-8 h-fit">
+    <Card className="w-full max-w-md mx-auto mb-8 h-fit self-start">
       <CardHeader>
         <CardTitle className="text-lg font-semibold">User Stats</CardTitle>
       </CardHeader>

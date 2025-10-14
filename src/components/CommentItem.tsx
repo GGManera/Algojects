@@ -134,27 +134,25 @@ export function CommentItem({
         />
       </CollapsibleContent>
 
-      <CollapsibleContent isOpen={areRepliesVisible}>
-        <div className="pl-4 border-l-2 border-gray-700 space-y-2">
-          {Object.values(comment.replies)
-            .sort((a, b) => a.timestamp - b.timestamp)
-            .map((reply) => (
-              <ReplyItem
-                key={reply.id}
-                reply={reply}
-                project={project}
-                review={review}
-                comment={comment}
-                onInteractionSuccess={onInteractionSuccess}
-                writerTokenHoldings={writerTokenHoldings}
-                writerHoldingsLoading={writerHoldingsLoading}
-                assetUnitName={assetUnitName}
-                projectSourceContext={projectSourceContext}
-                allCuratorData={allCuratorData}
-                isHighlighted={highlightReplyId === reply.id}
-              />
-            ))}
-        </div>
+      <CollapsibleContent isOpen={areRepliesVisible} className="pt-2 pl-4 border-l-2 border-gray-700 space-y-2">
+        {Object.values(comment.replies)
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .map((reply) => (
+            <ReplyItem
+              key={reply.id}
+              reply={reply}
+              project={project}
+              review={review}
+              comment={comment}
+              onInteractionSuccess={onInteractionSuccess}
+              writerTokenHoldings={writerTokenHoldings}
+              writerHoldingsLoading={writerHoldingsLoading}
+              assetUnitName={assetUnitName}
+              projectSourceContext={projectSourceContext}
+              allCuratorData={allCuratorData}
+              isHighlighted={highlightReplyId === reply.id}
+            />
+          ))}
       </CollapsibleContent>
     </div>
   );

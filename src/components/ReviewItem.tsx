@@ -205,7 +205,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
         />
       </CollapsibleContent>
 
-      <CollapsibleContent isOpen={isExpanded} className="px-4 pt-2">
+      <CollapsibleContent isOpen={isExpanded} className="px-4">
         {hasComments ? (
           <div className="space-y-2">
             {commentsToShow.map(({ comment }) => (

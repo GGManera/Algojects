@@ -1,16 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Home, Plus, User } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { WalletButton } from '@txnlab/use-wallet-ui-react';
 import { AddActionSheet } from './AddActionSheet';
@@ -24,7 +17,6 @@ interface MobileBottomBarProps {
 
 export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottomBarProps) {
   const navigate = useNavigate();
-  const location = useLocation();
   const { activeAddress } = useWallet();
   const { getCurrentEntry } = useNavigationHistory();
 
@@ -53,14 +45,14 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
     <div className="fixed bottom-0 left-0 right-0 bg-hodl-darker border-t border-border-accent-green z-50 h-16 flex items-center justify-around md:hidden">
       <Button variant="ghost" size="icon" onClick={handleHomeClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
         <Home className="h-5 w-5" />
-        <span className="text-xs -mt-[7px] -ml-[1px]">Home</span>
+        <span className="text-xs">Home</span>
       </Button>
 
       {activeAddress && ( // Conditionally render the AddActionSheet
         <AddActionSheet projects={projects} onInteractionSuccess={onInteractionSuccess}>
           <Button variant="ghost" size="icon" className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
             <Plus className="h-5 w-5" />
-            <span className="text-xs -mt-[7px] -ml-[1px]">Add</span>
+            <span className="text-xs">Add</span>
           </Button>
         </AddActionSheet>
       )}
@@ -68,12 +60,12 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
       {activeAddress ? (
         <Button variant="ghost" size="icon" onClick={handleProfileClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
           <User className="h-5 w-5" />
-          <span className="text-xs -mt-[7px] -ml-[1px]">Profile</span>
+          <span className="text-xs">Profile</span>
         </Button>
       ) : (
         <WalletButton className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none !bg-transparent !p-0 !shadow-none">
           <User className="h-5 w-5" />
-          <span className="text-xs -mt-[7px] -ml-[1px] whitespace-nowrap">Connect</span>
+          <span className="text-xs whitespace-nowrap">Connect</span>
         </WalletButton>
       )}
     </div>

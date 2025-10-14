@@ -7,14 +7,15 @@ import { InteractionForm } from "./InteractionForm";
 import { useState, useMemo, useRef } from "react";
 import { Button } from "./ui/button";
 import { UserDisplay } from "./UserDisplay";
-import { TrendingUp, Share2, MessageCircle, Gem, Star } from "lucide-react"; // NEW: Import Star icon
-import { formatTimestamp, getCuratorWeightedLikeScore } from "@/lib/utils"; // NEW: Import getCuratorWeightedLikeScore
+import { TrendingUp, Share2, MessageCircle, Gem, Star } from "lucide-react";
+import { formatTimestamp, getCuratorWeightedLikeScore } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { showError } from "@/utils/toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { InteractionDetailsPanel } from "./InteractionDetailsPanel";
 import { Skeleton } from "./ui/skeleton";
-import { AllCuratorCalculationsMap } from '@/hooks/useCuratorIndex'; // NEW: Import AllCuratorCalculationsMap
+import { AllCuratorCalculationsMap } from '@/hooks/useCuratorIndex';
+import { CollapsibleContent } from "./CollapsibleContent"; // ADDED
 
 interface ReviewItemProps {
   review: Review;
@@ -26,8 +27,8 @@ interface ReviewItemProps {
   writerTokenHoldings: Map<string, number>;
   writerHoldingsLoading: boolean;
   assetUnitName: string | null;
-  projectSourceContext: { path: string; label: string }; // NEW: Prop for project source context
-  allCuratorData: AllCuratorCalculationsMap; // NEW: Prop for all curator data
+  projectSourceContext: { path: string; label: string };
+  allCuratorData: AllCuratorCalculationsMap;
 }
 
 const CONTENT_TRUNCATE_LENGTH = 280;
@@ -114,7 +115,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
             avatarSizeClass="h-10 w-10" 
             projectTokenHoldings={writerTokenHoldings}
             assetUnitName={assetUnitName}
-            sourceContext={projectSourceContext} // NEW: Pass source context
+            projectSourceContext={projectSourceContext} // NEW: Pass source context
           />
           <span className="text-xs text-white/70 font-semibold">{formatTimestamp(review.timestamp)}</span>
         </div>
@@ -181,56 +182,44 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
         </div>
       </div>
 
-      <AnimatePresence>
-        {showInteractionDetails && (
-          <InteractionDetailsPanel
-            item={review}
-            project={project}
-            onInteractionSuccess={onInteractionSuccess}
-          />
-        )}
-      </AnimatePresence>
+      <CollapsibleContent isOpen={showInteractionDetails}>
+        <InteractionDetailsPanel
+          item={review}
+          project={project}
+          onInteractionSuccess={onInteractionSuccess}
+        />
+      </CollapsibleContent>
 
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden px-4 py-4 space-y-4"
-          >
-            {hasComments ? (
-              <div className="space-y-4">
-                {commentsToShow.map(({ comment, score }) => (
-                  <CommentItem 
-                    key={comment.id} 
-                    comment={comment} 
-                    review={review} 
-                    project={project} 
-                    onInteractionSuccess={onInteractionSuccess} 
-                    interactionScore={score} 
-                    // initialExpanded={comment.id.split('.')[2] === commentIdToExpand} // Removed
-                    writerTokenHoldings={writerTokenHoldings}
-                    assetUnitName={assetUnitName}
-                    projectSourceContext={projectSourceContext} // NEW: Pass source context
-                    allCuratorData={allCuratorData} // NEW: Pass allCuratorData
-                  />
-                ))}
-                {sortedComments.length > 3 && (
-                  <Button variant="link" onClick={() => setShowAllComments(prev => !prev)} className="p-0 h-auto text-sm text-muted-foreground">
-                    {showAllComments ? "Show less" : `View all ${sortedComments.length} comments`}
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center pt-4">No comments yet. Be the first to comment!</p>
+      <CollapsibleContent isOpen={isExpanded} className="px-4 py-4 space-y-4">
+        {hasComments ? (
+          <div className="space-y-4">
+            {commentsToShow.map(({ comment, score }) => (
+              <CommentItem 
+                key={comment.id} 
+                comment={comment} 
+                review={review} 
+                project={project} 
+                onInteractionSuccess={onInteractionSuccess} 
+                interactionScore={score} 
+                // initialExpanded={comment.id.split('.')[2] === commentIdToExpand} // Removed
+                writerTokenHoldings={writerTokenHoldings}
+                assetUnitName={assetUnitName}
+                projectSourceContext={projectSourceContext} // NEW: Pass source context
+                allCuratorData={allCuratorData} // NEW: Pass allCuratorData
+              />
+            ))}
+            {sortedComments.length > 3 && (
+              <Button variant="link" onClick={() => setShowAllComments(prev => !prev)} className="p-0 h-auto text-sm text-muted-foreground">
+                {showAllComments ? "Show less" : `View all ${sortedComments.length} comments`}
+              </Button>
             )}
-
-            <InteractionForm type="comment" project={project} review={review} onInteractionSuccess={onInteractionSuccess} />
-          </motion.div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center pt-4">No comments yet. Be the first to comment!</p>
         )}
-      </AnimatePresence>
+
+        <InteractionForm type="comment" project={project} review={review} onInteractionSuccess={onInteractionSuccess} />
+      </CollapsibleContent>
     </div>
   );
 }

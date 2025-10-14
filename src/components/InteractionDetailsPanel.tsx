@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { UserDisplay } from './UserDisplay';
 import { BaseInteraction, Review, Comment, Project } from '@/types/social';
 import { formatTimestamp } from '@/lib/utils';
@@ -9,6 +8,7 @@ import { Heart, MessageCircle, MessageSquare, ChevronDown, ChevronUp } from 'luc
 import { useNfdResolver } from '@/hooks/useNfdResolver';
 import { Skeleton } from './ui/skeleton';
 import { Button } from './ui/button';
+import { CollapsibleContent } from './CollapsibleContent'; // ADDED for nested replies
 
 interface InteractionDetailsPanelProps {
   item: BaseInteraction; // The current item (Review, Comment, or Reply)
@@ -131,12 +131,8 @@ export function InteractionDetailsPanel({ item, project, review, comment, onInte
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="overflow-hidden bg-card p-4 rounded-lg mt-4 border border-muted"
+    <div
+      className="bg-card p-4 rounded-lg mt-4 border border-muted"
     >
       <h4 className="text-lg font-bold gradient-text mb-4">Interaction Details</h4>
 
@@ -186,15 +182,7 @@ export function InteractionDetailsPanel({ item, project, review, comment, onInte
                         {Object.keys(c.replies).length} Replies {showRepliesForComment[c.id] ? <ChevronUp className="h-3 w-3 ml-1" /> : <ChevronDown className="h-3 w-3 ml-1" />}
                       </Button>
                     </div>
-                    <AnimatePresence>
-                      {showRepliesForComment[c.id] && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.2, ease: "easeInOut" }}
-                          className="overflow-hidden pl-4 pt-2 mt-2 border-t border-muted"
-                        >
+                    <CollapsibleContent isOpen={showRepliesForComment[c.id]} className="pl-4 pt-2 mt-2 border-t border-muted">
                           <h6 className="text-sm font-semibold text-muted-foreground mb-1">Replies:</h6>
                           {Object.values(c.replies).length > 0 ? (
                             <ul className="space-y-1">
@@ -211,9 +199,7 @@ export function InteractionDetailsPanel({ item, project, review, comment, onInte
                           ) : (
                             <p className="text-xs text-muted-foreground">No replies.</p>
                           )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    </CollapsibleContent>
                   </li>
                 ))}
               </ul>
@@ -286,6 +272,6 @@ export function InteractionDetailsPanel({ item, project, review, comment, onInte
           )}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

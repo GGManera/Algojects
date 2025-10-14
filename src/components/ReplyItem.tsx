@@ -3,14 +3,15 @@
 import { Reply, Project, Review, Comment } from "@/types/social";
 import { LikeButton } from "./LikeButton";
 import { UserDisplay } from "./UserDisplay";
-import { formatTimestamp, getCuratorWeightedLikeScore } from "@/lib/utils"; // NEW: Import getCuratorWeightedLikeScore
+import { formatTimestamp, getCuratorWeightedLikeScore } from "@/lib/utils";
 import { useState, useMemo } from "react";
-import { Info, Gem, Star } from "lucide-react"; // NEW: Import Star icon
+import { Info, Gem, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { InteractionDetailsPanel } from "./InteractionDetailsPanel";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
-import { AllCuratorCalculationsMap } from '@/hooks/useCuratorIndex'; // NEW: Import AllCuratorCalculationsMap
+import { AllCuratorCalculationsMap } from '@/hooks/useCuratorIndex';
+import { CollapsibleContent } from "./CollapsibleContent"; // ADDED
 
 interface ReplyItemProps {
   reply: Reply;
@@ -21,8 +22,8 @@ interface ReplyItemProps {
   writerTokenHoldings: Map<string, number>;
   writerHoldingsLoading: boolean;
   assetUnitName: string | null;
-  projectSourceContext: { path: string; label: string }; // NEW: Prop for project source context
-  allCuratorData: AllCuratorCalculationsMap; // NEW: Prop for all curator data
+  projectSourceContext: { path: string; label: string };
+  allCuratorData: AllCuratorCalculationsMap;
 }
 
 const CONTENT_TRUNCATE_LENGTH = 150;
@@ -101,17 +102,15 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
         </div>
       </div>
 
-      <AnimatePresence>
-        {showInteractionDetails && (
-          <InteractionDetailsPanel
-            item={reply}
-            project={project}
-            review={review}
-            comment={comment}
-            onInteractionSuccess={onInteractionSuccess}
-          />
-        )}
-      </AnimatePresence>
+      <CollapsibleContent isOpen={showInteractionDetails}>
+        <InteractionDetailsPanel
+          item={reply}
+          project={project}
+          review={review}
+          comment={comment}
+          onInteractionSuccess={onInteractionSuccess}
+        />
+      </CollapsibleContent>
     </div>
   );
 }

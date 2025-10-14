@@ -119,8 +119,8 @@ export function CommentItem({ comment, review, project, onInteractionSuccess, in
         />
       </CollapsibleContent>
 
-      <CollapsibleContent isOpen={isExpanded} className="p-3 space-y-3 pt-4">
-        <div className="space-y-3 pt-2">
+      <CollapsibleContent isOpen={isExpanded} className="p-3">
+        <div className="space-y-3">
           {sortedReplies.map(reply => (
             <ReplyItem 
               key={reply.id} 
@@ -135,8 +135,8 @@ export function CommentItem({ comment, review, project, onInteractionSuccess, in
               allCuratorData={allCuratorData} // NEW: Pass allCuratorData
             />
           ))}
+          <InteractionForm type="reply" project={project} review={review} comment={comment} onInteractionSuccess={onInteractionSuccess} />
         </div>
-        <InteractionForm type="reply" project={project} review={review} comment={comment} onInteractionSuccess={onInteractionSuccess} />
       </CollapsibleContent>
     </div>
   );

@@ -190,35 +190,35 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
         />
       </CollapsibleContent>
 
-      <CollapsibleContent isOpen={isExpanded} className="px-4 py-4 space-y-4">
-        {hasComments ? (
-          <div className="space-y-4">
-            {commentsToShow.map(({ comment, score }) => (
-              <CommentItem 
-                key={comment.id} 
-                comment={comment} 
-                review={review} 
-                project={project} 
-                onInteractionSuccess={onInteractionSuccess} 
-                interactionScore={score} 
-                // initialExpanded={comment.id.split('.')[2] === commentIdToExpand} // Removed
-                writerTokenHoldings={writerTokenHoldings}
-                assetUnitName={assetUnitName}
-                projectSourceContext={projectSourceContext} // NEW: Pass source context
-                allCuratorData={allCuratorData} // NEW: Pass allCuratorData
-              />
-            ))}
-            {sortedComments.length > 3 && (
-              <Button variant="link" onClick={() => setShowAllComments(prev => !prev)} className="p-0 h-auto text-sm text-muted-foreground">
-                {showAllComments ? "Show less" : `View all ${sortedComments.length} comments`}
-              </Button>
-            )}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground text-center pt-4">No comments yet. Be the first to comment!</p>
-        )}
-
-        <InteractionForm type="comment" project={project} review={review} onInteractionSuccess={onInteractionSuccess} />
+      <CollapsibleContent isOpen={isExpanded} className="px-4 py-4">
+        <div className="space-y-4">
+          {hasComments ? (
+            <div className="space-y-4">
+              {commentsToShow.map(({ comment, score }) => (
+                <CommentItem 
+                  key={comment.id} 
+                  comment={comment} 
+                  review={review} 
+                  project={project} 
+                  onInteractionSuccess={onInteractionSuccess} 
+                  interactionScore={score} 
+                  writerTokenHoldings={writerTokenHoldings}
+                  assetUnitName={assetUnitName}
+                  projectSourceContext={projectSourceContext}
+                  allCuratorData={allCuratorData}
+                />
+              ))}
+              {sortedComments.length > 3 && (
+                <Button variant="link" onClick={() => setShowAllComments(prev => !prev)} className="p-0 h-auto text-sm text-muted-foreground">
+                  {showAllComments ? "Show less" : `View all ${sortedComments.length} comments`}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center">No comments yet. Be the first to comment!</p>
+          )}
+          <InteractionForm type="comment" project={project} review={review} onInteractionSuccess={onInteractionSuccess} />
+        </div>
       </CollapsibleContent>
     </div>
   );

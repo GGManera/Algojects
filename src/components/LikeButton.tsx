@@ -4,13 +4,15 @@ import { useState, useMemo, useRef } from "react";
 import { useWallet } from "@txnlab/use-wallet-react";
 import algosdk from "algosdk";
 import { toast } from "sonner";
-import { PROTOCOL_ADDRESS } from "@/lib/social";
+import { PROTOCOL_ADDRESS, generateHash } from "@/lib/social";
 import { Project, Review, Comment, BaseInteraction } from "@/types/social";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PaymentConfirmationDialog } from "./PaymentConfirmationDialog";
 import { useSettings } from "@/hooks/useSettings";
+import { retryFetch } from "@/utils/api";
 
+const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const TRANSACTION_TIMEOUT_MS = 60000; // 60 seconds
 
 // Define TransactionDisplayItem type locally for the dialog
@@ -98,6 +100,12 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
     const toastId = toast.loading("Preparing transaction...");
 
     try {
+      const indexerStatusResponse = await retryFetch(`${INDEXER_URL}/v2/transactions?limit=1`);
+      if (!indexerStatusResponse.ok) throw new Error("Could not fetch network status from Indexer.");
+      const indexerStatusData = await indexerStatusResponse.json();
+      const lastRound = indexerStatusData['current-round'];
+      if (typeof lastRound !== 'number') throw new Error("Could not get last round from the network.");
+
       const atc = new algosdk.AtomicTransactionComposer();
       const suggestedParams = await algodClient.getTransactionParams().do();
       const displayItems: TransactionDisplayItem[] = [];
@@ -136,9 +144,12 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
         displayItems.push({ type: 'pay', from: activeAddress, to: review.sender, amount: 100_000, role: 'Review Writer' });
       }
 
-      // Add a 0-ALGO transaction to the protocol to record the like note on-chain
-      const noteIdentifier = `like.${item.id}`;
-      const noteBytes = new TextEncoder().encode(noteIdentifier);
+      // Add a 0-ALGO transaction to the protocol to record the like note on-chain in the correct format
+      const hash = generateHash(lastRound, activeAddress);
+      const noteIdentifier = `${hash}.${item.id}.${item.latestVersion}`;
+      const noteText = `${noteIdentifier} LIKE`;
+      const noteBytes = new TextEncoder().encode(noteText);
+      
       const noteTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: activeAddress, receiver: PROTOCOL_ADDRESS, amount: 0, suggestedParams, note: noteBytes });
       atc.addTransaction({ txn: noteTxn, signer: transactionSigner });
       // No display item for this as it's a 0-ALGO transaction for data purposes

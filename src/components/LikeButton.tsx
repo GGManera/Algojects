@@ -32,21 +32,19 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
     return item.likeHistory.some(like => like.sender === activeAddress && like.action === 'LIKE');
   }, [item.likeHistory, activeAddress]);
 
-  // Condition for being unable to like (not logged in, or own post).
   const cannotLike = !activeAddress || activeAddress === item.sender;
-
-  // The button is disabled if user cannot like, has already liked, or it's loading.
   const isDisabled = cannotLike || hasLiked || isLoading;
-
-  // The heart icon should be filled if the user has liked it.
   const isFilled = hasLiked;
-
-  // The heart icon should be pink if the user has liked it OR cannot like it.
   const isPink = hasLiked || cannotLike;
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isDisabled) return;
+
+    if (!item.sender) {
+        toast.error("Cannot like content with an unknown author.");
+        return;
+    }
 
     setIsLoading(true);
     const toastId = toast.loading("Processing your like... Please check your wallet.");
@@ -62,7 +60,6 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
       const noteIdentifier = `like.${item.id}`;
       const noteBytes = new TextEncoder().encode(noteIdentifier);
 
-      // Payment to the content creator
       const paymentToCreatorTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
         from: activeAddress!,
         to: item.sender,
@@ -71,7 +68,6 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
       });
       atc.addTransaction({ txn: paymentToCreatorTxn, signer: transactionSigner });
 
-      // Payment to the protocol with the note
       const paymentToProtocolTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
         from: activeAddress!,
         to: PROTOCOL_ADDRESS,

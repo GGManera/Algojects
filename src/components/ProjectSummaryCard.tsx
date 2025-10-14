@@ -121,7 +121,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
       }))
       .sort((a, b) => b.score - a.score)[0].review;
 
-    const recent = reviews.sort((a, b) => b.timestamp - b.timestamp)[0];
+    const recent = reviews.sort((a, b) => b.timestamp - a.timestamp)[0];
 
     return { topReview: top, mostRecentReview: recent };
   }, [project.reviews]);
@@ -399,7 +399,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                         }}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <UserDisplay address={r.sender} textSizeClass="text-sm" avatarSizeClass="h-7 w-7" sourceContext={projectSourceContext} />
+                          <UserDisplay address={r.sender} textSizeClass="text-sm" avatarSizeClass="h-7 w-7" sourceContext={projectSourceContext} linkTo={null} />
                           <span className="text-xs text-white/70">{formatTimestamp(r.timestamp)}</span>
                         </div>
                         <p className="whitespace-pre-wrap line-clamp-2">{r.content}</p>

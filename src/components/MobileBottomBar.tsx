@@ -29,12 +29,9 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
   const { getCurrentEntry } = useNavigationHistory();
 
   const handleHomeClick = () => {
-    if (location.pathname === '/') {
-      // If already on home, Projects component will handle its own scroll to top
-    } else {
-      navigate('/');
-      // Projects component will handle its own scroll to top after navigation
-    }
+    // This forces a navigation to the home page and a full page reload,
+    // which is a common behavior for a main logo/brand icon click.
+    window.location.href = '/';
   };
 
   const handleProfileClick = () => {

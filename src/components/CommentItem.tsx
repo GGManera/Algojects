@@ -69,16 +69,27 @@ export function CommentItem({
     setAreRepliesVisible((prev) => !prev);
   };
 
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button, a')) {
+      return;
+    }
+    setAreRepliesVisible(prev => !prev);
+    setShowInteractionDetails(false);
+  };
+
   const curatorWeightedLikeScore = useMemo(() => {
     return getCuratorWeightedLikeScore(comment, allCuratorData);
   }, [comment, allCuratorData]);
 
   return (
     <div ref={ref} className="ml-4" id={comment.id}>
-      <div className={cn(
-        "block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden transition-all duration-300",
-        isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-      )}>
+      <div 
+        className={cn(
+          "block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden transition-all duration-300 cursor-pointer",
+          isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+        )}
+        onClick={handleCardClick}
+      >
         <div className="p-3">
           <div className="flex items-start justify-between mb-2">
             <UserDisplay

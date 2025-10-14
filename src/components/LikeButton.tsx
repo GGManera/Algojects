@@ -41,7 +41,6 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
     e.stopPropagation();
     if (isDisabled) return;
 
-    // NEW: Rigorous address validation using algosdk
     if (!activeAddress || !algosdk.isValidAddress(activeAddress)) {
         toast.error("Your wallet address appears to be invalid. Please reconnect.");
         return;
@@ -67,16 +66,16 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
       const noteBytes = new TextEncoder().encode(noteIdentifier);
 
       const paymentToCreatorTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        from: activeAddress,
-        to: item.sender,
+        sender: activeAddress,
+        receiver: item.sender,
         amount: LIKE_AMOUNT_TO_CREATOR,
         suggestedParams,
       });
       atc.addTransaction({ txn: paymentToCreatorTxn, signer: transactionSigner });
 
       const paymentToProtocolTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        from: activeAddress,
-        to: PROTOCOL_ADDRESS,
+        sender: activeAddress,
+        receiver: PROTOCOL_ADDRESS,
         amount: LIKE_AMOUNT_TO_PROTOCOL,
         suggestedParams,
         note: noteBytes,

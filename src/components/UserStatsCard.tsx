@@ -122,7 +122,7 @@ export function UserStatsCard({
           />
         </div>
 
-        <CollapsibleContent isOpen={expandedDetail === 'earnings'} className="p-4 bg-muted/30 rounded-lg mt-4">
+        <CollapsibleContent isOpen={expandedDetail === 'earnings'} className="p-4 bg-muted/30 rounded-lg">
           <h4 className="text-md font-semibold mb-2">Total Earnings Breakdown</h4>
           <p className="text-sm text-muted-foreground">
             This section would show a detailed breakdown of how the {earnings.toFixed(2)} ALGO were earned (e.g., from reviews, comments, replies, and likes on your content).
@@ -130,7 +130,7 @@ export function UserStatsCard({
           </p>
         </CollapsibleContent>
         
-        <CollapsibleContent isOpen={expandedDetail === 'likesGiven'} className="p-4 bg-muted/30 rounded-lg mt-4">
+        <CollapsibleContent isOpen={expandedDetail === 'likesGiven'} className="p-4 bg-muted/30 rounded-lg">
           <h4 className="text-md font-semibold mb-2">Likes Given Breakdown</h4>
           {totalLikesGiven > 0 ? (
             <p className="text-sm text-muted-foreground text-center">
@@ -142,7 +142,7 @@ export function UserStatsCard({
           )}
         </CollapsibleContent>
 
-        <CollapsibleContent isOpen={expandedDetail === 'curatorIndex'} className="p-4 bg-muted/30 rounded-lg mt-4">
+        <CollapsibleContent isOpen={expandedDetail === 'curatorIndex'} className="p-4 bg-muted/30 rounded-lg">
           <h4 className="text-md font-semibold mb-2">Curator Index Details</h4>
           <p className="text-2xl font-bold font-numeric text-hodl-blue mb-2">
             {overallCuratorIndex.toFixed(2)}
@@ -198,7 +198,7 @@ export function UserStatsCard({
           </div>
         </CollapsibleContent>
 
-        <CollapsibleContent isOpen={expandedDetail === 'writerCurator'} className="p-4 bg-muted/30 rounded-lg mt-4">
+        <CollapsibleContent isOpen={expandedDetail === 'writerCurator'} className="p-4 bg-muted/30 rounded-lg">
           <h4 className="text-md font-semibold mb-2">Writer / Curator Balance Details</h4>
           <div className="flex items-center justify-between text-sm mb-2">
             <span className="font-semibold text-hodl-blue">Writer</span>

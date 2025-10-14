@@ -20,7 +20,8 @@ export function CollapsibleContent({ isOpen, children, className }: CollapsibleC
       className={cn(
         "grid transition-all duration-300 ease-in-out",
         // Animate the grid row height. 0fr collapses it, 1fr expands to content size.
-        isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        // Apply margin top only when the component is open to prevent layout shifts from collapsed siblings.
+        isOpen ? "grid-rows-[1fr] mt-4" : "grid-rows-[0fr] mt-0"
       )}
     >
       <div 

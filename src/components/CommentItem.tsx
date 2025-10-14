@@ -74,7 +74,7 @@ export function CommentItem({
   }, [comment, allCuratorData]);
 
   return (
-    <div ref={ref} className="ml-4 mt-2" id={comment.id}>
+    <div ref={ref} className="ml-4" id={comment.id}>
       <div className={cn(
         "block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden mb-2 transition-all duration-300",
         isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background"

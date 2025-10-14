@@ -26,7 +26,7 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
   const navigate = useNavigate();
   const location = useLocation();
   const { activeAddress } = useWallet();
-  const { getCurrentEntry } of useNavigationHistory();
+  const { getCurrentEntry } = useNavigationHistory();
 
   const handleHomeClick = () => {
     // This forces a navigation to the home page and a full page reload,
@@ -53,14 +53,14 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
     <div className="fixed bottom-0 left-0 right-0 bg-hodl-darker border-t border-border-accent-green z-50 h-16 flex items-center justify-around md:hidden">
       <Button variant="ghost" size="icon" onClick={handleHomeClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
         <Home className="h-5 w-5" />
-        <span className="text-xs">Home</span>
+        <span className="text-xs -mt-[7px] -ml-[1px]">Home</span>
       </Button>
 
       {activeAddress && ( // Conditionally render the AddActionSheet
         <AddActionSheet projects={projects} onInteractionSuccess={onInteractionSuccess}>
           <Button variant="ghost" size="icon" className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
             <Plus className="h-5 w-5" />
-            <span className="text-xs">Add</span>
+            <span className="text-xs -mt-[7px] -ml-[1px]">Add</span>
           </Button>
         </AddActionSheet>
       )}
@@ -68,12 +68,12 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
       {activeAddress ? (
         <Button variant="ghost" size="icon" onClick={handleProfileClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
           <User className="h-5 w-5" />
-          <span className="text-xs">Profile</span>
+          <span className="text-xs -mt-[7px] -ml-[1px]">Profile</span>
         </Button>
       ) : (
         <WalletButton className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none !bg-transparent !p-0 !shadow-none">
           <User className="h-5 w-5" />
-          <span className="text-xs whitespace-nowrap">Connect</span>
+          <span className="text-xs -mt-[7px] -ml-[1px] whitespace-nowrap">Connect</span>
         </WalletButton>
       )}
     </div>

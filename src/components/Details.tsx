@@ -26,8 +26,7 @@ export function Details({ isInsideCarousel = false }: DetailsProps) {
   const displayableWalletState = {
     activeAddress: wallet.activeAddress,
     activeAccount: wallet.activeAccount,
-    status: wallet.status,
-    connected: wallet.connected,
+    // Removed status and connected as they are deprecated or not directly available on the main hook return
     activeWallet: wallet.activeWallet ? {
       id: wallet.activeWallet.id,
       metadata: wallet.activeWallet.metadata,

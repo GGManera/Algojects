@@ -46,7 +46,6 @@ const getReviewInteractionScore = (review: Review): number => {
 const getCommentInteractionScore = (comment: Comment): number => {
   let score = comment.likeCount || 0;
   const replies = Object.values(comment.replies || {});
-  score += replies.length;
   replies.forEach(reply => {
       score += reply.likeCount || 0;
   });

@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { fetchCreatedAssets } from "./api/getCreatedAssets";
 import projectDetailsHandler from "./api/project-details"; // Import the new handler
-import type { VercelRequest, VercelResponse } from '@vercel/node'; // Import Vercel types for emulation
+import type { VercelRequest, VercelResponse } from './api/vercel'; // Updated import path for Vercel types emulation
 
 // Regex for the new asset snapshot endpoint
 const assetSnapshotRegex = /^\/api\/v1\/asset\/([^\/]+)\/snapshot\/([^\/]+)$/;

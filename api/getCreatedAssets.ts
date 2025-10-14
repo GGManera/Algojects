@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './vercel'; // Updated import path
 
 const CREATOR_ADDRESS = "PTPAK7NH3KA3D23WBR5GWVS57SO3FCJFBGK2IPDQQFFEXDHO4ENVH65PPM";
 const INDEXER_URL = `https://mainnet-idx.algonode.cloud/v2/accounts/${CREATOR_ADDRESS}/created-assets`;

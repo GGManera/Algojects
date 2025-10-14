@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './vercel'; // Updated import path
 import { ProjectMetadata, MetadataItem } from '../src/types/project'; // Import ProjectMetadata and MetadataItem
 
 // Mapeamento dos IDs internos do Coda para as colunas

@@ -42,7 +42,7 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [transactionsToConfirm, setTransactionsToConfirm] = useState<TransactionDisplayItem[]>([]);
   const [preparedAtc, setPreparedAtc] = useState<algosdk.AtomicTransactionComposer | null>(null);
-  const loadingToastIdRef = useRef<string | number | null>(null);
+  const loadingToastIdRef = useRef<string | number | null>(null); // Updated type
 
   const { activeAddress, transactionSigner, algodClient } = useWallet();
   const { settings } = useSettings();

@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '../../../vercel'; // Updated import path
 
 const INDEXER_URL = `https://mainnet-idx.algonode.cloud`;
 

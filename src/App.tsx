@@ -15,8 +15,8 @@ import algosdk from "algosdk";
 import React from "react";
 import Layout from "./components/Layout";
 import { AppDisplayModeProvider } from "./contexts/AppDisplayModeContext";
-import { HeroLogoVisibilityProvider } from "./contexts/HeroLogoVisibilityContext";
-import { NavigationHistoryProvider } from "./contexts/NavigationHistoryContext";
+import { HeroLogoVisibilityProvider } from "./contexts/HeroLogoVisibilityProvider";
+import { NavigationHistoryProvider } from "./contexts/NavigationHistoryProvider";
 import NewWebsite from "./pages/NewWebsite"; // Import the new page
 
 const queryClient = new QueryClient();
@@ -35,7 +35,7 @@ const walletManager = new WalletManager({
     WalletId.DEFLY,
     WalletId.LUTE,
   ],
-  algodClient, // Provide the explicit client to the manager
+  // Removed algodClient from WalletManager config as it's deprecated/not required here
   defaultNetwork: NetworkId.MAINNET,
 });
 
@@ -50,7 +50,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <WalletProvider manager={walletManager}>
+        <WalletProvider manager={walletManager} algodClient={algodClient}> {/* Pass algodClient to WalletProvider */}
           <WalletUIProvider>
             <AppDisplayModeProvider>
               <HeroLogoVisibilityProvider>

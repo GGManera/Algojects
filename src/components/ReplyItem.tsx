@@ -4,7 +4,7 @@ import { Reply, Project, Review, Comment } from "@/types/social";
 import { LikeButton } from "./LikeButton";
 import { UserDisplay } from "./UserDisplay";
 import { formatTimestamp, getCuratorWeightedLikeScore } from "@/lib/utils";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Info, Gem, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { InteractionDetailsPanel } from "./InteractionDetailsPanel";
@@ -12,6 +12,7 @@ import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { AllCuratorCalculationsMap } from '@/hooks/useCuratorIndex';
 import { CollapsibleContent } from "./CollapsibleContent";
+import { cn } from "@/lib/utils";
 
 interface ReplyItemProps {
   reply: Reply;
@@ -24,13 +25,23 @@ interface ReplyItemProps {
   assetUnitName: string | null;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
+  isHighlighted?: boolean;
 }
 
 const CONTENT_TRUNCATE_LENGTH = 150;
 
-export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData }: ReplyItemProps) {
+export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, isHighlighted = false }: ReplyItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isHighlighted && ref.current) {
+      setTimeout(() => {
+        ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300); // Delay to allow for expansion animation
+    }
+  }, [isHighlighted]);
 
   const isLongReply = reply.content.length > CONTENT_TRUNCATE_LENGTH;
   const displayContent = isLongReply && !isExpanded
@@ -50,9 +61,12 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
   }, [reply, allCuratorData]);
 
   return (
-    <div>
+    <div ref={ref} id={reply.id}>
       <div 
-        className="w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-md overflow-hidden cursor-pointer"
+        className={cn(
+          "w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-md overflow-hidden cursor-pointer transition-all duration-300",
+          isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+        )}
         onClick={handleCardClick}
       >
         <div className="flex items-start justify-between p-2">

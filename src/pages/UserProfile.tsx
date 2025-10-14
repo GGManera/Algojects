@@ -159,14 +159,19 @@ const ReplyItemPreview = ({ reply, comment, review, project, projectName, userPr
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
 
-  const handleNavigateToProjectComment = (projectId: string, reviewId: string, commentId: string) => {
-    navigate(`/project/${projectId}#review-${reviewId}#comment-${commentId}`);
+  const handleNavigateToProjectReply = (projectId: string, commentId: string, replyId: string) => {
+    navigate(`/project/${projectId}#${replyId}`, {
+      state: {
+        expandCommentId: commentId,
+        highlightReplyId: replyId,
+      },
+    });
   };
 
   return (
     <div
       className="block w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-sm overflow-hidden mb-4 cursor-pointer hover:opacity-90 transition-opacity"
-      onClick={() => handleNavigateToProjectComment(project.id, review.id.split('.')[1], comment.id.split('.')[2])}
+      onClick={() => handleNavigateToProjectReply(project.id, comment.id, reply.id)}
     >
       <div className="px-3 py-2">
         <div className="flex items-start justify-between mb-2">

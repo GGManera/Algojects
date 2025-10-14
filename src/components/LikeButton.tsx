@@ -103,7 +103,7 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
         className
       )}
     >
-      <Heart className={cn("h-5 w-5", { "fill-current": isPink })} />
+      <Heart className="h-5 w-5" />
       <span className="font-numeric">{item.likeCount}</span>
     </button>
   );

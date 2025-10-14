@@ -29,9 +29,14 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
   const { getCurrentEntry } = useNavigationHistory();
 
   const handleHomeClick = () => {
-    // This forces a navigation to the home page and a full page reload,
-    // which is a common behavior for a main logo/brand icon click.
-    window.location.href = '/';
+    if (location.pathname === '/') {
+      // If already on the home page, dispatch a custom event to signal a reset.
+      // The parent component should listen for this to reset slides and scroll.
+      window.dispatchEvent(new CustomEvent('resetHomePage'));
+    } else {
+      // Otherwise, navigate to the home page.
+      navigate('/');
+    }
   };
 
   const handleProfileClick = () => {

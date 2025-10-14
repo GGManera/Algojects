@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Creator: CorelDRAW 2019 (64 Bit) -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="91.44mm" height="91.44mm" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 9144000 9144000"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    .fil0 {fill:#2B2B30}
+    .fil2 {fill:url(#id0)}
+    .fil1 {fill:url(#id1)}
+   ]]>
+  </style>
+  <radialGradient id="id0" gradientUnits="userSpaceOnUse" gradientTransform="matrix(-0.00731877 -3.08523 3.08524 -0.00731879 -2.57965E+07 2.7656E+07)" cx="5633530" cy="10200590" r="2770200" fx="5633530" fy="10200590">
+   <stop offset="0" style="stop-opacity:1; stop-color:#0B677C"/>
+   <stop offset="0.788235" style="stop-opacity:1; stop-color:#1DA3A7"/>
+   <stop offset="1" style="stop-opacity:1; stop-color:#2FDED2"/>
+  </radialGradient>
+  <radialGradient id="id1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(-0.00895386 -3.08524 3.08524 -0.00895386 -2.758E+07 2.29084E+07)" xlink:href="#id0" cx="4066830" cy="10269290" r="2792760" fx="4066830" fy="10269290">
+  </radialGradient>
+ </defs>
+ <g id="Camada_x0020_1">
+  <metadata id="CorelCorpID_0Corel-Layer"/>
+  <rect class="fil0" width="9144000" height="9144000"/>
+  <g id="_1467354070048">
+   <polygon class="fil1" points="2086850,7364820 2900470,5621480 4207980,4754150 5155300,4749690 4677170,3748720 4453730,4213460 3139330,5109660 4693610,1779310 5822680,4239880 5822620,5597300 3818460,5595260 2989490,7360360 "/>
+   <path class="fil2" d="M5645780 2905410l1369370 -1126220 41970 3968390c6490,1553010 -2041570,2207600 -3028940,786260l679210 -509420c0,0 105390,191260 290200,328710 532500,396070 1249090,-4080 1243800,-634030l-23650 -2804760 -571960 -8930z"/>
+  </g>
+ </g>
+</svg>

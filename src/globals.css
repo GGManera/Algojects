@@ -1,0 +1,550 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* New HODL Gradient Theme Variables */
+    --background: 220 20% 8%;   /* Dark blue-gray background */
+    --foreground: 210 40% 98%; /* Light text */
+
+    --card: 220 15% 12%;        /* Slightly lighter dark card background */
+    --card-foreground: 210 40% 98%;
+
+    --popover: 220 15% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217 91% 60%;    /* HODL Blue */
+    --primary-foreground: 210 40% 98%; /* White text on primary */
+
+    --secondary: 260 80% 70%;  /* HODL Purple */
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 220 10% 20%;      /* Darker muted elements */
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 220 15% 15%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 10% 25%;     /* Changed to subtle dark gray */
+    --input: 220 10% 20%;      /* Dark input background */
+    --ring: 173 76% 53%;       /* Updated to light green gradient end */
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 220 15% 12%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 220 15% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 220 10% 25%;
+    --sidebar-ring: 217 91% 60%;
+
+    /* HODL custom colors - define them as HSL values */
+    --hodl-dark: 218 37% 11%;
+    --hodl-darker: 220 20% 8%; /* Matches new background */
+    --hodl-blue: 217 91% 60%;
+    --hodl-purple: 260 80% 70%;
+    --hodl-accent: 217 91% 60%; /* Using hodl-blue for accent */
+
+    /* Main gradient colors (for Posts/Reviews) */
+    --gradient-start: 192 72% 29%;
+    --gradient-end: 173 76% 53%;
+
+    /* New comment gradient colors (metallic red) */
+    --comment-gradient-start: 350 80% 25%; /* Deep, slightly purplish red */
+    --comment-gradient-end: 10 90% 45%;    /* Vibrant, slightly orange-red */
+
+    /* Notes/Reply gradient colors (light beige/off-white) */
+    --notes-gradient-start: 220 20% 5%; /* Alterado para cinza muito escuro */
+    --notes-gradient-end: 220 20% 3%;   /* Alterado para cinza muito escuro */
+
+    /* Existing blue-400 and gray-900, keep for compatibility if used elsewhere */
+    --blue-400: 210 92% 70%;
+    --gray-900: 218 37% 11%;
+    --pink-400: 330 80% 60%; /* Defined pink-400 for consistency */
+
+    /* NEW: Bright green accent border */
+    --border-accent-green: 173 76% 53%;
+
+    /* CSS Variables for Header Heights */
+    --sticky-header-height: 48px; /* h-12 */
+    --dynamic-nav-buttons-height: 32px; /* h-6 + py-0.5 = 24px + 4px = 28px */
+    --dynamic-nav-buttons-desktop-vertical-gap: 12px; /* Adjusted from 11px to 12px */
+    --mobile-bottom-bar-height: 64px; /* h-16 */
+
+    /* NEW: CardContent default padding (p-6) */
+    --card-content-padding-y: 48px; /* 24px top + 24px bottom */
+
+    /* NEW: Total fixed height of elements *outside* the scrollable CardContent */
+    --total-fixed-offset-desktop: calc(
+      var(--sticky-header-height) + 
+      var(--dynamic-nav-buttons-height) +
+      (2 * var(--dynamic-nav-buttons-desktop-vertical-gap))
+    ); /* 48 + 32 + 20 = 100px */
+
+    --total-fixed-offset-mobile: calc(
+      var(--sticky-header-height) +
+      var(--mobile-bottom-bar-height) +
+      var(--dynamic-nav-buttons-height)
+    ); /* 48 + 64 + 32 = 144px */
+  }
+}
+
+@layer base {
+  html, body, #root {
+    overflow-x: hidden;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    overscroll-behavior-y: auto;
+    user-select: none; /* Disable text selection by default */
+  }
+
+  button {
+    @apply font-sans;
+  }
+
+  /* Ensure wallet popovers/dialogs have a background and high z-index */
+  [data-floating-ui-focusable] {
+    @apply !bg-card z-[9999] rounded-xl shadow-xl border border-border !important;
+    @apply p-6 text-foreground shadow-glow !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: auto !important;
+  }
+
+  /* Hide the title in the wallet pop-up */
+  [data-floating-ui-focusable] h2 {
+    display: none !important;
+  }
+
+  /* Add style for the dialog overlay to ensure it's not transparent */
+  [data-radix-dialog-overlay] {
+    @apply fixed inset-0 bg-black/80 z-[9998] transition-opacity duration-300 ease-out;
+    opacity: 0;
+  }
+
+  [data-radix-dialog-overlay][data-state="open"] {
+    opacity: 1;
+  }
+
+  [data-radix-dialog-overlay][data-state="closed"] {
+    opacity: 0;
+  }
+
+  /* Custom style for the "Copy" button in the wallet pop-up */
+  [data-floating-ui-focusable] button[title="Copy address"] {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 !important;
+  }
+
+  /* Custom style for the close button (X) in the wallet pop-up */
+  [data-floating-ui-focusable] button[aria-label="Close dialog"] {
+    @apply absolute top-0 right-0 !bg-transparent !p-0 !rounded-none text-muted-foreground hover:text-foreground !important;
+  }
+
+  /* Custom style for the footer content to center it */
+  [data-floating-ui-focusable] > div:last-child {
+    @apply flex flex-col items-center justify-center w-full mt-4 pt-4 !important;
+  }
+
+  /* Ensure text within the footer is centered */
+  [data-floating-ui-focusable] > div:last-child p {
+    @apply text-center !important;
+  }
+}
+
+@layer components {
+  /* From Uiverse.io by chase2k25 - Adapted for Tailwind */
+  .glass-radio-group {
+    @apply flex relative bg-white/5 rounded-xl overflow-hidden w-full;
+    backdrop-filter: blur(12px);
+    box-shadow:
+      inset 1px 1px 4px rgba(255, 255, 255, 0.2),
+      inset -1px -1px 6px rgba(0, 0, 0, 0.3),
+      0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .glass-radio-group input {
+    display: none;
+  }
+
+  .glass-radio-group label {
+    @apply flex-1 flex items-center justify-center min-w-[80px] text-sm px-6 py-3 cursor-pointer;
+    @apply font-semibold tracking-wide relative z-20 transition-colors duration-300 ease-in-out;
+    color: var(--foreground);
+  }
+
+  .glass-radio-group label:hover {
+    @apply text-white;
+  }
+
+  .glass-radio-group input:checked + label {
+    @apply text-white;
+  }
+
+  .glass-glider {
+    @apply absolute top-0 bottom-0 rounded-xl z-10;
+    width: calc(100% / 3);
+    transition:
+      transform 0.5s cubic-bezier(0.37, 1.95, 0.66, 0.56),
+      background 0.4s ease-in-out,
+      box-shadow 0.4s ease-in-out;
+  }
+
+  /* Update glider colors to use the new gradient */
+  #glass-silver:checked ~ .glass-glider {
+    transform: translateX(0%);
+    background: linear-gradient(135deg, hsl(var(--gradient-start) / 0.55), hsl(var(--gradient-end) / 0.8));
+    box-shadow:
+      0 0 18px hsl(var(--gradient-start) / 0.5),
+      0 0 10px hsl(var(--gradient-end) / 0.4) inset;
+  }
+
+  #glass-gold:checked ~ .glass-glider {
+    transform: translateX(100%);
+    background: linear-gradient(135deg, hsl(var(--comment-gradient-start) / 0.8), hsl(var(--comment-gradient-end) / 0.9));
+    box-shadow:
+      0 0 18px hsl(var(--comment-gradient-start) / 0.7),
+      0 0 10px hsl(var(--comment-gradient-end) / 0.6) inset;
+  }
+
+  #glass-platinum:checked ~ .glass-glider {
+    transform: translateX(200%);
+    background: linear-gradient(135deg, hsl(var(--notes-gradient-start)), hsl(var(--notes-gradient-end)));
+    box-shadow:
+      0 0 18px hsl(var(--notes-gradient-start) / 0.9),
+      0 0 10px hsl(var(--notes-gradient-end) / 0.8) inset;
+  }
+
+  /* NEW: Styles for the two-item GlassRadioGroup */
+  .glass-radio-group-two-items {
+    @apply flex relative bg-white/5 rounded-xl overflow-hidden w-full;
+    backdrop-filter: blur(12px);
+    box-shadow:
+      inset 1px 1px 4px rgba(255, 255, 255, 0.2),
+      inset -1px -1px 6px rgba(0, 0, 0, 0.3),
+      0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .glass-radio-group-two-items input {
+    display: none;
+  }
+
+  .glass-radio-group-two-items label {
+    @apply flex-1 flex items-center justify-center min-w-[80px] text-sm px-6 py-3 cursor-pointer;
+    @apply font-semibold tracking-wide relative z-20 transition-colors duration-300 ease-in-out;
+    color: var(--foreground);
+  }
+
+  .glass-radio-group-two-items label:hover {
+    @apply text-white;
+  }
+
+  .glass-radio-group-two-items input:checked + label {
+    @apply text-white;
+  }
+
+  .glass-glider-two-items {
+    @apply absolute top-0 bottom-0 rounded-xl z-10;
+    width: calc(100% / 2);
+    transition:
+      transform 0.5s cubic-bezier(0.37, 1.95, 0.66, 0.56),
+      background 0.4s ease-in-out,
+      box-shadow 0.4s ease-in-out;
+  }
+
+  #glass-category-writing:checked ~ .glass-glider-two-items {
+    transform: translateX(0%);
+    background: linear-gradient(135deg, hsl(var(--gradient-start) / 0.55), hsl(var(--gradient-end) / 0.8));
+    box-shadow:
+      0 0 18px hsl(var(--gradient-start) / 0.5),
+      0 0 10px hsl(var(--gradient-end) / 0.4) inset;
+  }
+
+  #glass-category-curating:checked ~ .glass-glider-two-items {
+    transform: translateX(100%);
+    background: linear-gradient(135deg, hsl(var(--pink-400) / 0.8), hsl(var(--pink-400) / 0.9));
+    box-shadow:
+      0 0 18px hsl(var(--pink-400) / 0.7),
+      0 0 10px hsl(var(--pink-400) / 0.6) inset;
+  }
+
+  /* From Uiverse.io by StealthWorm - Profile Button */
+  .btn-profile {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Removed fixed width */
+    padding: 0 1rem; /* Added horizontal padding */
+    height: 2rem; /* Adjusted height */
+    background-size: 300% 300%;
+    cursor: pointer;
+    backdrop-filter: blur(1rem);
+    border-radius: 5rem;
+    transition: 0.5s;
+    animation: gradient_301 5s ease infinite;
+    border: double 2px transparent; /* Changed from 4px to 2px */
+    background-image: linear-gradient(hsl(var(--card)), hsl(var(--card))),
+      linear-gradient(
+        137.48deg,
+        #ffdb3b 10%,
+        #fe53bb 45%,
+        #8f51ea 67%,
+        #0044ff 87%
+      );
+    background-origin: border-box;
+    background-clip: content-box, border-box;
+    overflow: hidden; /* ADDED: Ensure content is clipped to the button's border-radius */
+  }
+
+  .btn-profile #container-stars {
+    position: absolute;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    transition: 0.5s;
+    backdrop-filter: blur(1rem);
+    border-radius: 5rem;
+  }
+
+  .btn-profile strong {
+    z-index: 2;
+    @apply font-sans;
+    font-size: 8px; /* Adjusted font size */
+    letter-spacing: 2px; /* Adjusted letter spacing */
+    color: #ffffff;
+    text-shadow: 0 0 4px white;
+  }
+
+  .btn-profile #glow {
+    position: absolute;
+    display: flex;
+    width: 100%; /* Dynamic width */
+  }
+
+  .btn-profile .circle {
+    width: 100%;
+    height: 28px; /* Adjusted height */
+    filter: blur(2rem);
+    animation: pulse_3011 4s infinite;
+    z-index: -1;
+  }
+
+  .btn-profile .circle:nth-of-type(1) {
+    background: rgba(254, 83, 186, 0.636);
+  }
+
+  .btn-profile .circle:nth-of-type(2) {
+    background: rgba(142, 81, 234, 0.704);
+  }
+
+  .btn-profile:hover #container-stars {
+    z-index: 1;
+    background-color: hsl(var(--card));
+  }
+
+  .btn-profile:hover {
+    transform: scale(1.1);
+  }
+
+  .btn-profile:active {
+    border: double 2px #fe53bb; /* Changed from 4px to 2px */
+    background-origin: border-box;
+    background-clip: content-box, border-box;
+    animation: none;
+  }
+
+  .btn-profile:active .circle {
+    background: #fe53bb;
+  }
+
+  .btn-profile #stars {
+    position: relative;
+    background: transparent;
+    width: 200rem;
+    height: 200rem;
+  }
+
+  .btn-profile #stars::after {
+    content: "";
+    position: absolute;
+    top: -10rem;
+    left: -100rem;
+    width: 100%;
+    height: 100%;
+    animation: animStarRotate 90s linear infinite;
+  }
+
+  .btn-profile #stars::after {
+    background-image: radial-gradient(#ffffff 1px, transparent 1%);
+    background-size: 50px 50px;
+  }
+
+  .btn-profile #stars::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 170%;
+    height: 500%;
+    animation: animStar 60s linear infinite;
+  }
+
+  .btn-profile #stars::before {
+    background-image: radial-gradient(#ffffff 1px, transparent 1%);
+    background-size: 50px 50px;
+    opacity: 0.5;
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-gradient-start to-gradient-end;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px; /* Reduced width */
+    height: 6px; /* Reduced height */
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent; /* Transparent track */
+    border-radius: 10px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.4); /* Softer, semi-transparent thumb */
+    border-radius: 10px;
+    /* Removed border */
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.6); /* Slightly more visible on hover */
+  }
+  /* For Firefox */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent; /* Softer thumb, transparent track */
+  }
+
+  .shadow-glow {
+    box-shadow: 0 0 8px 2px hsl(var(--primary) / 0.3);
+  }
+
+  /* NEW: Scroll margin top to account for all possible fixed headers */
+  .scroll-mt-header-offset {
+    scroll-margin-top: calc(
+      var(--sticky-header-height) + 
+      (2 * var(--dynamic-nav-buttons-desktop-vertical-gap)) + /* Use the new vertical gap for total spacing */
+      var(--dynamic-nav-buttons-height) + 
+      env(safe-area-inset-top)
+    );
+  }
+
+  /* New utility class for word breaking */
+  .overflow-wrap-anywhere {
+    overflow-wrap: anywhere;
+  }
+
+  /* New class for scaling content in simulated landscape mode */
+  .scaled-landscape-content {
+    transform: scale(0.6);
+    transform-origin: top center;
+    width: 166.66%;
+    height: 166.66%;
+    position: absolute;
+    top: 0;
+    left: -33.33%;
+    overflow-x: hidden;
+  }
+
+  /* Utility to enable text selection */
+  .selectable-text {
+    user-select: text;
+  }
+
+  /* NEW: Bottom-only glow for dynamic nav buttons on desktop */
+  .bottom-border-glow {
+    box-shadow: 0 4px 10px -2px hsl(var(--border-accent-green) / 0.7); /* Adjust values as needed */
+  }
+
+  /* NEW: Top-only glow for elements at the bottom */
+  .top-border-glow {
+    box-shadow: 0 -4px 10px -2px hsl(var(--border-accent-green) / 0.7);
+  }
+}
+
+@keyframes animStar {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-135rem);
+  }
+}
+
+@keyframes animStarRotate {
+  from {
+    transform: rotate(360deg);
+  }
+
+  to {
+    transform: rotate(0);
+  }
+}
+
+@keyframes gradient_301 {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes pulse_3011 {
+  0% {
+    transform: scale(0.75);
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
+  }
+
+  100% {
+    transform: scale(0.75);
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
+
+/* From Uiverse.io by guilhermeyohan */ 
+@keyframes btn-anim1 {
+  0% {
+    left: -100%;
+  }
+
+  50%,100% {
+    left: 100%;
+  }
+}

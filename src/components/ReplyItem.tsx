@@ -64,7 +64,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             assetUnitName={assetUnitName}
             sourceContext={projectSourceContext}
           />
-          <span className="text-xs text-gray-600 font-semibold">{formatTimestamp(reply.timestamp)}</span>
+          <span className="text-xs text-black font-semibold">{formatTimestamp(reply.timestamp)}</span>
         </div>
 
         <div className="px-3 pb-2">
@@ -76,14 +76,14 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
           )}
         </div>
 
-        <div className="flex justify-around items-center p-1 text-gray-600 border-t border-gray-400">
+        <div className="flex justify-around items-center p-1 text-black border-t border-black/20">
           <LikeButton
             item={reply}
             project={project}
             onInteractionSuccess={onInteractionSuccess}
             review={review}
             comment={comment}
-            className="hover:text-pink-600"
+            className="hover:text-pink-400"
           />
           <div className="flex items-center space-x-2">
             <Star className="h-4 w-4 text-yellow-500" />
@@ -93,7 +93,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             variant="ghost"
             size="sm"
             onClick={(e) => { e.stopPropagation(); setShowInteractionDetails(prev => !prev); }}
-            className="flex items-center space-x-2 hover:text-black transition-colors"
+            className="flex items-center space-x-2 hover:text-foreground transition-colors"
           >
             <Info className="h-4 w-4" />
           </Button>

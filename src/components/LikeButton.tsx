@@ -1,26 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useWallet } from "@txnlab/use-wallet-react";
 import algosdk from "algosdk";
-import { PROTOCOL_ADDRESS, generateHash } from "@/lib/social";
-import { Project, Review, Comment, Reply, BaseInteraction } from "@/types/social";
-import { Heart } from "lucide-react";
-import { Button } from "./ui/button";
-import { cn } from "@/lib/utils";
-import { useNfd } from "@/hooks/useNfd";
 import { toast } from "sonner";
-import { showError } from "@/utils/toast";
+import { PROTOCOL_ADDRESS } from "@/lib/social";
+import { Project, Review, Comment, BaseInteraction } from "@/types/social";
+import { Heart } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const getItemType = (item: BaseInteraction): 'review' | 'comment' | 'reply' => {
-  const parts = item.id.split('.').length;
-  if (parts === 2) return 'review';
-  if (parts === 3) return 'comment';
-  return 'reply';
-};
+// Constants for like transaction
+const LIKE_AMOUNT_TO_CREATOR = 100_000; // 0.1 ALGO
+const LIKE_AMOUNT_TO_PROTOCOL = 10_000; // 0.01 ALGO
+const TRANSACTION_TIMEOUT_MS = 60000; // 60 seconds
 
 interface LikeButtonProps {
-  item: Review | Comment | Reply;
+  item: BaseInteraction;
   project: Project;
   review?: Review;
   comment?: Comment;
@@ -31,80 +26,64 @@ interface LikeButtonProps {
 export function LikeButton({ item, project, review, comment, onInteractionSuccess, className }: LikeButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { activeAddress, transactionSigner, algodClient } = useWallet();
-  const { nfd } = useNfd(activeAddress);
+
+  const hasLiked = useMemo(() => {
+    if (!activeAddress) return false;
+    return item.likeHistory.some(like => like.sender === activeAddress && like.action === 'LIKE');
+  }, [item.likeHistory, activeAddress]);
+
+  // Condition for being unable to like (not logged in, or own post).
+  const cannotLike = !activeAddress || activeAddress === item.sender;
+
+  // The button is disabled if user cannot like, has already liked, or it's loading.
+  const isDisabled = cannotLike || hasLiked || isLoading;
+
+  // The heart icon should be filled if the user has liked it.
+  const isFilled = hasLiked;
+
+  // The heart icon should be pink if the user has liked it OR cannot like it.
+  const isPink = hasLiked || cannotLike;
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!activeAddress) {
-      showError("Please connect your wallet to like content.");
-      return;
-    }
-    if (!nfd?.name) {
-      showError("You must have an NFD to like content.");
-      return;
-    }
+    if (isDisabled) return;
 
     setIsLoading(true);
-    const toastId = toast.loading("Processing your like...");
+    const toastId = toast.loading("Processing your like... Please check your wallet.");
+
+    const timeoutPromise = new Promise((_resolve, reject) =>
+      setTimeout(() => reject(new Error("Wallet did not respond in time.")), TRANSACTION_TIMEOUT_MS)
+    );
 
     try {
       const atc = new algosdk.AtomicTransactionComposer();
       const suggestedParams = await algodClient.getTransactionParams().do();
-      const lastRound = (await algodClient.status().do())['last-round'];
-      const hash = generateHash(lastRound, activeAddress);
-      const itemType = getItemType(item);
 
-      const noteIdentifier = `${hash}.${item.id}.LIKE`;
+      const noteIdentifier = `like.${item.id}`;
       const noteBytes = new TextEncoder().encode(noteIdentifier);
 
-      // Common payment to protocol for the like action itself
+      // Payment to the content creator
+      const paymentToCreatorTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+        from: activeAddress!,
+        to: item.sender,
+        amount: LIKE_AMOUNT_TO_CREATOR,
+        suggestedParams,
+      });
+      atc.addTransaction({ txn: paymentToCreatorTxn, signer: transactionSigner });
+
+      // Payment to the protocol with the note
       const paymentToProtocolTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        sender: activeAddress,
-        receiver: PROTOCOL_ADDRESS,
-        amount: 100_000, // Like cost
+        from: activeAddress!,
+        to: PROTOCOL_ADDRESS,
+        amount: LIKE_AMOUNT_TO_PROTOCOL,
         suggestedParams,
         note: noteBytes,
       });
       atc.addTransaction({ txn: paymentToProtocolTxn, signer: transactionSigner });
 
-      // Payments to creators up the chain
-      if (itemType === 'comment') {
-        if (!review || !review.sender) {
-          throw new Error("Review context is missing for liking a comment.");
-        }
-        const paymentToReviewerTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-          sender: activeAddress,
-          receiver: review.sender,
-          amount: 25_000,
-          suggestedParams,
-        });
-        atc.addTransaction({ txn: paymentToReviewerTxn, signer: transactionSigner });
-      } else if (itemType === 'reply') {
-        if (!review || !review.sender) {
-          throw new Error("Review context is missing for liking a reply.");
-        }
-        if (!comment || !comment.sender) {
-          throw new Error("Comment context is missing for liking a reply.");
-        }
-        const paymentToReviewerTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-          sender: activeAddress,
-          receiver: review.sender,
-          amount: 10_000,
-          suggestedParams,
-        });
-        atc.addTransaction({ txn: paymentToReviewerTxn, signer: transactionSigner });
+      await Promise.race([atc.execute(algodClient, 4), timeoutPromise]);
 
-        const paymentToCommenterTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-          sender: activeAddress,
-          receiver: comment.sender,
-          amount: 10_000,
-          suggestedParams,
-        });
-        atc.addTransaction({ txn: paymentToCommenterTxn, signer: transactionSigner });
-      }
-
-      await atc.execute(algodClient, 4);
-      toast.success("Successfully liked!", { id: toastId });
+      toast.success("Liked!", { id: toastId });
       onInteractionSuccess();
     } catch (error) {
       console.error(error);
@@ -114,18 +93,25 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
     }
   };
 
-  const isLiked = item.likeHistory.some(l => l.sender === activeAddress && l.action === 'LIKE');
-
   return (
-    <Button
-      variant="ghost"
-      size="icon"
+    <button
       onClick={handleLike}
-      disabled={isLoading || !activeAddress}
-      className={cn("flex items-center space-x-2", className)}
+      disabled={isDisabled}
+      className={cn(
+        "flex items-center space-x-2 transition-colors",
+        {
+          "cursor-not-allowed": isDisabled,
+        },
+        className
+      )}
     >
-      <Heart className={cn("h-5 w-5", isLiked ? "text-pink-400 fill-current" : "")} />
+      <Heart
+        className={cn("h-5 w-5", {
+          "text-pink-400": isPink,
+          "fill-current": isFilled,
+        })}
+      />
       <span className="font-numeric">{item.likeCount}</span>
-    </Button>
+    </button>
   );
 }

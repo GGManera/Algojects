@@ -32,14 +32,17 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
     return item.likeHistory.some(like => like.sender === activeAddress && like.action === 'LIKE');
   }, [item.likeHistory, activeAddress]);
 
-  // Conditions where user cannot perform the like action.
-  const cannotLikeReason = !activeAddress || activeAddress === item.sender;
+  // Condition for being unable to like (not logged in, or own post).
+  const cannotLike = !activeAddress || activeAddress === item.sender;
 
   // The button is disabled if user cannot like, has already liked, or it's loading.
-  const isDisabled = cannotLikeReason || hasLiked || isLoading;
+  const isDisabled = cannotLike || hasLiked || isLoading;
 
-  // The button is pink if user cannot like OR has already liked.
-  const isPink = cannotLikeReason || hasLiked;
+  // The heart icon should be filled if the user has liked it.
+  const isFilled = hasLiked;
+
+  // The heart icon should be pink if the user has liked it OR cannot like it.
+  const isPink = hasLiked || cannotLike;
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -97,13 +100,17 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
       className={cn(
         "flex items-center space-x-2 transition-colors",
         {
-          "text-pink-400": isPink,
           "cursor-not-allowed": isDisabled,
         },
         className
       )}
     >
-      <Heart className="h-5 w-5" />
+      <Heart
+        className={cn("h-5 w-5", {
+          "text-pink-400": isPink,
+          "fill-current": isFilled,
+        })}
+      />
       <span className="font-numeric">{item.likeCount}</span>
     </button>
   );

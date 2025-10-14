@@ -197,6 +197,11 @@
     @apply text-white;
   }
 
+  /* Specific override for the 'platinum' (Replies) item when checked */
+  #glass-platinum:checked + label {
+    @apply text-black; /* Make text black for readability on light background */
+  }
+
   .glass-glider {
     @apply absolute top-0 bottom-0 rounded-xl z-10;
     width: calc(100% / 3);

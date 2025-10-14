@@ -124,8 +124,8 @@ export function CommentItem({ comment, review, project, onInteractionSuccess, in
         />
       </CollapsibleContent>
 
-      <CollapsibleContent isOpen={isExpanded} className="p-3">
-        <div className="space-y-3">
+      <CollapsibleContent isOpen={isExpanded} className="px-3">
+        <div className="pt-3 space-y-3">
           {sortedReplies.map(reply => (
             <ReplyItem 
               key={reply.id} 

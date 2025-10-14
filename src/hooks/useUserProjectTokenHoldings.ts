@@ -6,7 +6,7 @@ import { ProjectDetailsEntry } from '../../api/project-details';
 import { fetchAccountAssetHoldings } from '@/utils/algorand';
 import { ProjectMetadata } from '@/types/project'; // Import ProjectMetadata
 
-export interface UserProjectTokenHolding {
+interface UserProjectTokenHolding {
   projectId: string;
   projectName: string;
   assetId: number;

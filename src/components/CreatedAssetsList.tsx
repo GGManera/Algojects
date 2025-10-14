@@ -237,11 +237,11 @@ export function CreatedAssetsList({ isInsideCarousel = false }: CreatedAssetsLis
     return parseInt(a, 10) - parseInt(b, 10);
   }), [groupedAssetsByYear]);
 
-  const listIsLoading = accountDataLoading || metadataLoading;
+  const isLoading = accountDataLoading || metadataLoading;
   const displayError = accountDataError || metadataError;
 
   const renderStatusIcon = (asset: Asset) => {
-    if (!activeAddress || listIsLoading) return null;
+    if (!activeAddress || isLoading) return null;
 
     const isOwned = ownedAssetIds.has(asset.index);
     const isReceived = receivedAssetIds.has(asset.index);
@@ -286,7 +286,7 @@ export function CreatedAssetsList({ isInsideCarousel = false }: CreatedAssetsLis
     const totalMissing = missingAssetsList.length;
     const numBatches = Math.ceil(totalMissing / BATCH_SIZE);
 
-    let overallToastId: string | number | undefined;
+    let overallToastId: string | undefined;
 
     try {
       overallToastId = showLoading(`Preparing ${totalMissing} opt-in transactions in ${numBatches} batch(es)...`);
@@ -336,12 +336,31 @@ export function CreatedAssetsList({ isInsideCarousel = false }: CreatedAssetsLis
     }
   };
 
+  const isLoading = accountDataLoading || metadataLoading;
+  const displayError = accountDataError || metadataError;
+
+  const renderMiniCard = (category: string, icon: React.ReactNode, label: string, count: number, textColorClass: string, isAllCard: boolean = false) => (
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center p-2 rounded-md cursor-pointer transition-colors",
+        "hover:bg-muted/70",
+        !isAllCard && filterCategory === category ? "bg-primary/20 border border-primary" : "bg-muted/50"
+      )}
+      onClick={() => setFilterCategory(category)}
+    >
+      <span className={cn("text-lg font-bold font-numeric", textColorClass)}>{count}</span>
+      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+        {icon} {label}
+      </span>
+    </div>
+  );
+
   return (
     <Card className="w-full max-w-md mt-8">
       <CardHeader>
       </CardHeader>
       <CardContent>
-        {listIsLoading && <Skeleton className="h-24 w-full" />}
+        {isLoading && <Skeleton className="h-24 w-full" />}
         {displayError && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
@@ -349,7 +368,7 @@ export function CreatedAssetsList({ isInsideCarousel = false }: CreatedAssetsLis
             <AlertDescription>{displayError}</AlertDescription>
           </Alert>
         )}
-        {!listIsLoading && !displayError && (
+        {!isLoading && !displayError && (
           <>
             {activeAddress && (
               <>
@@ -367,7 +386,7 @@ export function CreatedAssetsList({ isInsideCarousel = false }: CreatedAssetsLis
             {activeAddress && counts.missing > 0 && (
               <Button
                 onClick={handleOptInMissingAssets}
-                disabled={listIsLoading}
+                disabled={isLoading}
                 className="w-full mt-4"
               >
                 Opt-in to All Missing Assets (<span className="font-numeric">{counts.missing}</span>)
@@ -426,7 +445,7 @@ export function CreatedAssetsList({ isInsideCarousel = false }: CreatedAssetsLis
             </div>
           </>
         )}
-        {!listIsLoading && !displayError && years.length === 0 && <p className="text-sm text-muted-foreground">No "HERO" assets found.</p>}
+        {!isLoading && !displayError && years.length === 0 && <p className="text-sm text-muted-foreground">No "HERO" assets found.</p>}
       </CardContent>
     </Card>
   );

@@ -216,7 +216,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
                 project={project} 
                 onInteractionSuccess={onInteractionSuccess} 
                 writerTokenHoldings={writerTokenHoldings}
-                writerHoldingsLoading={writerHoldingsLoading} // Added missing prop
+                writerHoldingsLoading={writerHoldingsLoading}
                 assetUnitName={assetUnitName}
                 projectSourceContext={projectSourceContext}
                 allCuratorData={allCuratorData}

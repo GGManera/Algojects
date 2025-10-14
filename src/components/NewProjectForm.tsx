@@ -61,7 +61,7 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [transactionsToConfirm, setTransactionsToConfirm] = useState<TransactionDisplayItem[]>([]);
   const [preparedAtc, setPreparedAtc] = useState<algosdk.AtomicTransactionComposer | null>(null);
-  const loadingToastIdRef = useRef<string | number | null>(null); // Updated type
+  const loadingToastIdRef = useRef<string | null>(null);
 
   const { activeAddress, transactionSigner, algodClient } = useWallet();
   const { nfd, loading: nfdLoading } = useNfd(activeAddress);

@@ -1,5 +1,4 @@
-import { ProjectDetailsEntry } from '../../api/project-details';
-import { ProjectMetadata } from '@/types/project'; // Import ProjectMetadata from types/project
+import { ProjectDetailsEntry, ProjectMetadata } from '../../api/project-details'; // Import ProjectMetadata
 import algosdk from 'algosdk'; // Import algosdk
 
 export async function fetchProjectDetailsClient(): Promise<ProjectDetailsEntry[]> {

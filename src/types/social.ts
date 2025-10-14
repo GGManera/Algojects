@@ -1,5 +1,3 @@
-import { ProjectMetadata } from './project'; // Import ProjectMetadata
-
 export interface BaseInteraction {
   id: string; // e.g., a.b.c
   sender: string;
@@ -17,7 +15,7 @@ export interface Reply extends BaseInteraction {
 }
 
 export interface Comment extends BaseInteraction {
-  comments: { [commentId: string]: Comment };
+  replies: { [replyId: string]: Reply };
 }
 
 export interface Review extends BaseInteraction {

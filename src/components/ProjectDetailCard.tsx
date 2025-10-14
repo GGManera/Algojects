@@ -14,7 +14,7 @@ import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { ProjectDetailsForm } from "./ProjectDetailsForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit } from "lucide-react";
+import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp } from "lucide-react";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { UserDisplay } from "./UserDisplay";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,14 @@ interface ProjectDetailCardProps {
   onInteractionSuccess: () => void;
   currentProjectName: string;
   isInsideCarousel?: boolean;
+}
+
+interface ProjectStats {
+  interactionScore: number;
+  reviewsCount: number;
+  commentsCount: number;
+  repliesCount: number;
+  likesCount: number;
 }
 
 // Helper function to calculate interaction score for a review
@@ -76,6 +84,36 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
 
   const { tokenHoldings, loading: tokenHoldingsLoading } = useUserProjectTokenHoldings(activeAddress, projectsData, projectDetails);
   const { allCuratorData, loading: curatorIndexLoading } = useCuratorIndex(undefined, projectsData);
+
+  const stats: ProjectStats = useMemo(() => {
+    let reviewsCount = 0;
+    let commentsCount = 0;
+    let repliesCount = 0;
+    let likesCount = 0;
+
+    const reviews = Object.values(project.reviews || {});
+    reviewsCount = reviews.length;
+
+    reviews.forEach(review => {
+      likesCount += review.likeCount || 0;
+      const comments = Object.values(review.comments || {});
+      commentsCount += comments.length;
+
+      comments.forEach(comment => {
+        likesCount += comment.likeCount || 0;
+        const replies = Object.values(comment.replies || {});
+        repliesCount += replies.length;
+
+        replies.forEach(reply => {
+          likesCount += reply.likeCount || 0;
+        });
+      });
+    });
+
+    const interactionScore = reviewsCount + commentsCount + repliesCount + likesCount;
+
+    return { interactionScore, reviewsCount, commentsCount, repliesCount, likesCount };
+  }, [project]);
 
   const sortedReviews = useMemo(() => {
     const reviews = Object.values(project.reviews || {});
@@ -283,6 +321,33 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
         </CardHeader>
         <CardContent className="space-y-4 p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm text-muted-foreground border-b border-border pb-4">
+            <div className="flex flex-col items-center space-y-1">
+              <TrendingUp className="h-5 w-5 text-hodl-blue" />
+              <span className="font-bold font-numeric text-foreground">{stats.interactionScore}</span>
+              <span>Interactions</span>
+            </div>
+            <div className="flex flex-col items-center space-y-1">
+              <FileText className="h-5 w-5 text-hodl-purple" />
+              <span className="font-bold font-numeric text-foreground">{stats.reviewsCount}</span>
+              <span>Reviews</span>
+            </div>
+            <div className="flex flex-col items-center space-y-1">
+              <MessageCircle className="h-5 w-5 text-hodl-purple" />
+              <span className="font-bold font-numeric text-foreground">{stats.commentsCount}</span>
+              <span>Comments</span>
+            </div>
+            <div className="flex flex-col items-center space-y-1">
+              <MessageSquare className="h-5 w-5 text-hodl-purple" />
+              <span className="font-bold font-numeric text-foreground">{stats.repliesCount}</span>
+              <span>Replies</span>
+            </div>
+            <div className="flex flex-col items-center space-y-1">
+              <Heart className="h-5 w-5 text-pink-400" />
+              <span className="font-bold font-numeric text-foreground">{stats.likesCount}</span>
+              <span>Likes</span>
+            </div>
+          </div>
           <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-white rounded-md shadow-recessed">
             <h3 className="text-lg font-semibold mb-2 text-white">
               {isCommunityNotes ? "Community Notes:" : (isCreatorAdded ? "Creator Notes:" : "Contributor Notes:")}

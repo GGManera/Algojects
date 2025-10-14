@@ -11,7 +11,7 @@ import { InteractionDetailsPanel } from "./InteractionDetailsPanel";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { AllCuratorCalculationsMap } from '@/hooks/useCuratorIndex';
-import { CollapsibleContent } from "./CollapsibleContent"; // ADDED
+import { CollapsibleContent } from "./CollapsibleContent";
 
 interface ReplyItemProps {
   reply: Reply;
@@ -45,7 +45,6 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
     setShowInteractionDetails(false);
   };
 
-  // NEW: Calculate Curator-Weighted Like Score
   const curatorWeightedLikeScore = useMemo(() => {
     return getCuratorWeightedLikeScore(reply, allCuratorData);
   }, [reply, allCuratorData]);
@@ -53,50 +52,48 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
   return (
     <div>
       <div 
-        className="w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-white rounded-lg shadow-deep-sm overflow-hidden cursor-pointer"
+        className="w-full bg-white text-black rounded-lg shadow-md overflow-hidden cursor-pointer border border-border"
         onClick={handleCardClick}
       >
         <div className="flex items-start justify-between p-2">
-          {/* Removido o condicional writerHoldingsLoading aqui */}
           <UserDisplay 
             address={reply.sender} 
-            textSizeClass="text-sm text-white"
+            textSizeClass="text-sm text-black"
             avatarSizeClass="h-8 w-8" 
             projectTokenHoldings={writerTokenHoldings}
             assetUnitName={assetUnitName}
-            sourceContext={projectSourceContext} // NEW: Pass source context
+            sourceContext={projectSourceContext}
           />
-          <span className="text-xs text-white/70 font-semibold">{formatTimestamp(reply.timestamp)}</span>
+          <span className="text-xs text-gray-500 font-semibold">{formatTimestamp(reply.timestamp)}</span>
         </div>
 
         <div className="px-3 pb-2">
-          <p className="whitespace-pre-wrap text-white/90 font-semibold selectable-text">{displayContent}</p>
+          <p className="whitespace-pre-wrap text-black/90 font-semibold selectable-text">{displayContent}</p>
           {isLongReply && !isExpanded && (
-            <span className="text-blue-200 font-bold mt-2 inline-block">
+            <span className="text-blue-600 font-bold mt-2 inline-block">
               Continue reading
             </span>
           )}
         </div>
 
-        <div className="flex justify-around items-center p-1 text-white/70 border-t border-white/20">
+        <div className="flex justify-around items-center p-1 text-gray-500 border-t border-gray-200">
           <LikeButton
             item={reply}
             project={project}
             onInteractionSuccess={onInteractionSuccess}
             review={review}
             comment={comment}
-            className="hover:text-pink-400"
+            className="hover:text-pink-500"
           />
-          {/* NEW: Display Curator-Weighted Like Score */}
           <div className="flex items-center space-x-2">
             <Star className="h-4 w-4 text-yellow-400" />
-            <span className="font-numeric">{curatorWeightedLikeScore.toFixed(1)}</span>
+            <span className="font-numeric text-black">{curatorWeightedLikeScore.toFixed(1)}</span>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={(e) => { e.stopPropagation(); setShowInteractionDetails(prev => !prev); }}
-            className="flex items-center space-x-2 hover:text-white transition-colors"
+            className="flex items-center space-x-2 hover:text-black transition-colors"
           >
             <Info className="h-4 w-4" />
           </Button>

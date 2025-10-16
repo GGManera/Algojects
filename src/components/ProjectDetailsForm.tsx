@@ -12,7 +12,7 @@ import { useNfdResolver } from "@/hooks/useNfdResolver";
 import { StyledTextarea } from "@/components/ui/StyledTextarea";
 import { InteractionCardInput } from "./InteractionCardInput";
 import { ProjectMetadata, MetadataItem } from '@/types/project';
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, AlertTriangle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UserDisplay } from "./UserDisplay"; // Import UserDisplay
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"; // Import Alert components
 
 const DESCRIPTION_MAX_LENGTH = 2048;
 
@@ -203,8 +204,42 @@ export function ProjectDetailsForm({
   const canSubmit = !activeAddress || isLoading || !isAuthorized() || resolvingAuthNfds || isProjectDetailsFetching;
   const inputDisabled = !activeAddress || isLoading || resolvingAuthNfds || isProjectDetailsFetching; // Separate disabled state for inputs
 
-  if (!activeAddress || (!resolvingAuthNfds && !isAuthorized())) {
-    return null;
+  if (!activeAddress) {
+    return (
+      <Card className="w-full mt-6">
+        <CardContent className="pt-6">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Unauthorized</AlertTitle>
+            <AlertDescription>Please connect your wallet to view or edit project details.</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (resolvingAuthNfds || isProjectDetailsFetching) {
+    return (
+      <Card className="w-full mt-6">
+        <CardContent className="pt-6">
+          <p className="text-muted-foreground text-center">Resolving authorization details...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!isAuthorized()) {
+    return (
+      <Card className="w-full mt-6">
+        <CardContent className="pt-6">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Unauthorized</AlertTitle>
+            <AlertDescription>You are not authorized to edit these project details.</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
   }
 
   let notesLabel = "Notes";
@@ -358,12 +393,6 @@ export function ProjectDetailsForm({
             onSubmit={() => {}}
             isSubmitDisabled={true}
           />
-          {!isAuthorized() && activeAddress && !resolvingAuthNfds && (
-            <p className="text-red-400 text-sm mt-2">You are not authorized to edit these details.</p>
-          )}
-          {(resolvingAuthNfds || isProjectDetailsFetching) && (
-            <p className="text-muted-foreground text-sm mt-2">Resolving NFDs for authorization...</p>
-          )}
         </div>
         <Button onClick={handleSubmit} disabled={canSubmit} className="w-full">
           {isLoading ? "Updating..." : "Save Project Details"}

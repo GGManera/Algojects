@@ -381,7 +381,8 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             </div>
           )}
           {/* END NEW */}
-          {!isCreatorAdded && addedByAddress && (
+          {/* Display Added By Address */}
+          {addedByAddress && (
             <div className="mt-2 text-sm text-muted-foreground flex items-center justify-center gap-1">
               Added by <UserDisplay
                 address={addedByAddress}
@@ -394,6 +395,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
         </CardHeader>
         <CardContent className="space-y-4 p-4">
+          {/* Project Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm text-muted-foreground border-b border-border pb-4">
             <div className="flex flex-col items-center space-y-1">
               <TrendingUp className="h-5 w-5 text-hodl-blue" />
@@ -421,6 +423,8 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
               <span>Likes</span>
             </div>
           </div>
+          
+          {/* Project Description/Notes */}
           {(isLoadingDetails || (currentProjectDescription && currentProjectDescription.trim() !== '')) && (
             <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-white rounded-md shadow-recessed">
               <h3 className="text-lg font-semibold mb-2 text-white">
@@ -440,6 +444,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             </div>
           )}
 
+          {/* Project Metadata */}
           {hasAnyMetadata && (
             <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -545,6 +550,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             </div>
           )}
 
+          {/* Project Details Form is now conditionally rendered here */}
           {activeAddress && showProjectDetailsForm && (
             <ProjectDetailsForm
               projectId={projectId}

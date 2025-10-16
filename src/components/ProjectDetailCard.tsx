@@ -14,11 +14,11 @@ import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { ProjectDetailsForm } from "./ProjectDetailsForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp } from "lucide-react";
+import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp, DollarSign } from "lucide-react";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { UserDisplay } from "./UserDisplay";
 import { Button } from "@/components/ui/button";
-import { showError, showSuccess } from "@/utils/toast";
+import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { parseProjectMetadata, extractDomainFromUrl, extractXHandleFromUrl } from '@/lib/utils';
 import { useUserProjectTokenHoldings } from '@/hooks/useUserProjectTokenHoldings';
 import { useAssetHoldingsForUsers } from '@/hooks/useAssetHoldingsForUsers';
@@ -26,6 +26,9 @@ import { cn } from '@/lib/utils';
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { useCuratorIndex } from '@/hooks/useCuratorIndex';
 import { MetadataItem } from '@/types/project';
+import { ThankContributorDialog } from "./ThankContributorDialog"; // NEW Import
+import { thankContributorAndClaimProject } from "@/lib/coda"; // NEW Import
+import { useWallet } from "@txnlab/use-wallet-react"; // NEW Import
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 
@@ -67,6 +70,7 @@ const getReviewInteractionScore = (review: Review): number => {
 export function ProjectDetailCard({ project, projectsData, activeAddress, onInteractionSuccess, isInsideCarousel = false }: ProjectDetailCardProps) {
   const projectId = project.id;
   const { isMobile } = useAppContextDisplayMode();
+  const { transactionSigner, algodClient } = useWallet(); // Get wallet context
 
   const { projectDetails, loading, isRefreshing, error: detailsError, refetch: refetchProjectDetails } = useProjectDetails();
   const isLoadingDetails = loading || isRefreshing;
@@ -81,6 +85,8 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const [isAssetIdHovered, setIsAssetIdHovered] = useState(false);
 
   const [showProjectDetailsForm, setShowProjectDetailsForm] = useState(false);
+  const [showThankContributorDialog, setShowThankContributorDialog] = useState(false); // NEW State
+  const [isClaiming, setIsClaiming] = useState(false); // NEW State
 
   const { tokenHoldings, loading: tokenHoldingsLoading } = useUserProjectTokenHoldings(activeAddress, projectsData, projectDetails);
   const { allCuratorData, loading: curatorIndexLoading } = useCuratorIndex(undefined, projectsData);
@@ -136,12 +142,58 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
   const addedByAddress = projectMetadata.find(item => item.type === 'added-by-address')?.value;
   const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true';
-
+  const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true'; // NEW: Check if claimed
 
   const handleProjectDetailsUpdated = () => {
     refetchProjectDetails();
     onInteractionSuccess();
   };
+
+  // --- NEW: Thank Contributor Logic ---
+  const isProjectCreator = activeAddress === project.creatorWallet;
+  const isAuthorizedToClaim = activeAddress && project.creatorWallet && activeAddress === project.creatorWallet && !isClaimed && addedByAddress && activeAddress !== addedByAddress;
+
+  const handleClaimProject = useCallback(async (
+    totalRewardAlgos: number,
+    contributorShare: number,
+    newWhitelistedEditors: string
+  ) => {
+    if (!activeAddress || !transactionSigner || !algodClient || !addedByAddress || !project.creatorWallet) {
+      showError("Wallet not connected or missing project data.");
+      return;
+    }
+
+    setIsClaiming(true);
+    const toastId = showLoading("Preparing claim transaction...");
+
+    try {
+      await thankContributorAndClaimProject(
+        projectId,
+        currentProjectName,
+        addedByAddress,
+        totalRewardAlgos,
+        contributorShare,
+        newWhitelistedEditors,
+        projectMetadata,
+        activeAddress,
+        transactionSigner,
+        algodClient
+      );
+      dismissToast(toastId);
+      showSuccess("Project claimed and contributor rewarded successfully!");
+      setShowThankContributorDialog(false);
+      refetchProjectDetails(); // Force refresh Coda data
+      onInteractionSuccess(); // Force refresh social data
+    } catch (err) {
+      dismissToast(toastId);
+      console.error("Claim failed:", err);
+      showError(err instanceof Error ? err.message : "Failed to claim project and reward contributor.");
+    } finally {
+      setIsClaiming(false);
+    }
+  }, [activeAddress, transactionSigner, algodClient, addedByAddress, projectId, currentProjectName, projectMetadata, refetchProjectDetails, onInteractionSuccess, project.creatorWallet]);
+  // --- END NEW: Thank Contributor Logic ---
+
 
   const handleCopyAllMetadata = async () => {
     if (projectMetadata.length > 0) {
@@ -308,6 +360,19 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
               ))}
             </div>
           )}
+          {/* NEW: Thank Contributor Button */}
+          {isAuthorizedToClaim && (
+            <div className="mt-4">
+              <Button
+                onClick={() => setShowThankContributorDialog(true)}
+                disabled={isClaiming}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <DollarSign className="h-4 w-4 mr-2" /> Thank Contributor & Claim
+              </Button>
+            </div>
+          )}
+          {/* END NEW */}
           {!isCreatorAdded && addedByAddress && (
             <div className="mt-2 text-sm text-muted-foreground flex items-center justify-center gap-1">
               Added by <UserDisplay
@@ -369,17 +434,10 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
 
           {hasAnyMetadata && (
             <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
-              {/* Removed: <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                Project Metadata
-                <Button variant="ghost" size="icon" onClick={handleCopyAllMetadata} className="h-6 w-6">
-                  <Copy className="h-4 w-4" />
-                  <span className="sr-only">Copy all metadata</span>
-                </Button>
-              </h3> */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 {projectMetadata.map((item, index) => {
                   // Skip rendering of "fixed" metadata items here, as they are handled above or in forms
-                  if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags'].includes(item.type || '')) { // Changed 'category' to 'tags'
+                  if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed'].includes(item.type || '')) {
                     return null;
                   }
 
@@ -517,6 +575,21 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           />
         )}
       </div>
+
+      {/* NEW: Thank Contributor Dialog */}
+      {isAuthorizedToClaim && addedByAddress && project.creatorWallet && (
+        <ThankContributorDialog
+          isOpen={showThankContributorDialog}
+          onOpenChange={setShowThankContributorDialog}
+          projectId={projectId}
+          projectName={currentProjectName}
+          contributorAddress={addedByAddress}
+          projectCreatorAddress={project.creatorWallet}
+          initialMetadata={projectMetadata}
+          onConfirm={handleClaimProject}
+          isConfirming={isClaiming}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
-import { ProjectDetailsEntry, ProjectMetadata } from '../../api/project-details'; // Import ProjectMetadata
-import algosdk from 'algosdk'; // Import algosdk
+import { ProjectDetailsEntry, ProjectMetadata } from '../../api/project-details';
+import algosdk from 'algosdk';
+import { PROTOCOL_ADDRESS } from './social'; // Import PROTOCOL_ADDRESS
 
 export async function fetchProjectDetailsClient(): Promise<ProjectDetailsEntry[]> {
   const response = await fetch('/api/project-details', {
@@ -56,4 +57,106 @@ export async function updateProjectDetailsClient(
     const errorData = await response.json();
     throw new Error(errorData.error || `Failed to update project details: ${response.status}`);
   }
+}
+
+const MICRO_ALGOS_PER_ALGO = 1_000_000;
+
+/**
+ * Handles the group transaction for thanking the contributor and claiming the project.
+ * This function executes the transactions and then updates Coda.
+ */
+export async function thankContributorAndClaimProject(
+  projectId: string,
+  projectName: string,
+  contributorAddress: string,
+  totalRewardAlgos: number,
+  contributorShare: number, // percentage 0-100
+  newWhitelistedEditors: string,
+  initialMetadata: ProjectMetadata,
+  activeAddress: string,
+  transactionSigner: algosdk.TransactionSigner,
+  algodClient: algosdk.Algodv2
+): Promise<void> {
+  const atc = new algosdk.AtomicTransactionComposer();
+  const suggestedParams = await algodClient.getTransactionParams().do();
+
+  const totalRewardMicroAlgos = Math.round(totalRewardAlgos * MICRO_ALGOS_PER_ALGO);
+  const contributorAmountMicroAlgos = Math.round(totalRewardMicroAlgos * (contributorShare / 100));
+  const algojectsAmountMicroAlgos = totalRewardMicroAlgos - contributorAmountMicroAlgos;
+
+  const txnsToSign: TransactionDisplayItem[] = [];
+
+  // 1. Payment to Contributor
+  if (contributorAmountMicroAlgos > 0) {
+    const paymentToContributorTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+      sender: activeAddress,
+      receiver: contributorAddress,
+      amount: contributorAmountMicroAlgos,
+      suggestedParams,
+      note: new TextEncoder().encode(`Thanks for adding ${projectName} to AlgoJects! Here's your reward.`),
+    });
+    atc.addTransaction({ txn: paymentToContributorTxn, signer: transactionSigner });
+    txnsToSign.push({ type: 'pay', from: activeAddress, to: contributorAddress, amount: contributorAmountMicroAlgos, role: 'Contributor Reward' });
+  }
+
+  // 2. Payment to AlgoJects (Protocol) for the remaining share
+  if (algojectsAmountMicroAlgos > 0) {
+    const paymentToProtocolTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+      sender: activeAddress,
+      receiver: PROTOCOL_ADDRESS,
+      amount: algojectsAmountMicroAlgos,
+      suggestedParams,
+      note: new TextEncoder().encode(`Claim fee for Project ${projectId}`),
+    });
+    atc.addTransaction({ txn: paymentToProtocolTxn, signer: transactionSigner });
+    txnsToSign.push({ type: 'pay', from: activeAddress, to: PROTOCOL_ADDRESS, amount: algojectsAmountMicroAlgos, role: 'Protocol Fee' });
+  }
+
+  // 3. Data Transaction to Protocol (0 ALGO) to record the claim
+  // Tag format: CLAIM.[Project ID].[Contributor Address]
+  const claimTag = `CLAIM.${projectId}.${contributorAddress}`;
+  const dataTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    sender: activeAddress,
+    receiver: PROTOCOL_ADDRESS,
+    amount: 0,
+    suggestedParams,
+    note: new TextEncoder().encode(claimTag),
+  });
+  atc.addTransaction({ txn: dataTxn, signer: transactionSigner });
+  txnsToSign.push({ type: 'pay', from: activeAddress, to: PROTOCOL_ADDRESS, amount: 0, note: claimTag, role: 'Claim Data' });
+
+
+  // Execute the group transaction
+  console.log(`[Coda Client] Sending group transaction for claiming Project ${projectId}...`);
+  await atc.execute(algodClient, 4);
+  console.log(`[Coda Client] Group transaction confirmed. Updating Coda metadata.`);
+
+  // 4. Update Coda Metadata
+  const updatedMetadata = initialMetadata.filter(item => item.type !== 'whitelisted-editors' && item.type !== 'is-claimed');
+  
+  // Add updated/new metadata items
+  updatedMetadata.push({ title: 'Whitelisted Editors', value: newWhitelistedEditors, type: 'whitelisted-editors' });
+  updatedMetadata.push({ title: 'Is Claimed', value: 'true', type: 'is-claimed' });
+  
+  // Ensure is-creator-added is set to true since the creator is claiming
+  const isCreatorAddedIndex = updatedMetadata.findIndex(item => item.type === 'is-creator-added');
+  if (isCreatorAddedIndex !== -1) {
+    updatedMetadata[isCreatorAddedIndex] = { ...updatedMetadata[isCreatorAddedIndex], value: 'true' };
+  } else {
+    updatedMetadata.push({ title: 'Is Creator Added', value: 'true', type: 'is-creator-added' });
+  }
+
+  // Ensure added-by-address is set to the contributor's address (it should already be, but confirm)
+  const addedByAddressIndex = updatedMetadata.findIndex(item => item.type === 'added-by-address');
+  if (addedByAddressIndex === -1) {
+    updatedMetadata.push({ title: 'Added By Address', value: contributorAddress, type: 'added-by-address' });
+  }
+
+  await updateProjectDetailsClient(
+    projectId,
+    updatedMetadata,
+    activeAddress,
+    transactionSigner,
+    algodClient
+  );
 }

@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserDisplay } from "./UserDisplay"; // Import UserDisplay
 
 const DESCRIPTION_MAX_LENGTH = 2048;
 
@@ -37,8 +38,7 @@ export function ProjectDetailsForm({
   onProjectDetailsUpdated
 }: ProjectDetailsFormProps) {
   const [metadataItems, setMetadataItems] = useState<MetadataItem[]>(initialProjectMetadata);
-  const [projectTags, setProjectTags] = useState(""); // Changed from projectCategory to projectTags
-
+  const [projectTags, setProjectTags] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { activeAddress } = useWallet();
   const { updateProjectDetails, loading: detailsLoadingState, isRefreshing: detailsRefreshingState } = useProjectDetails();
@@ -68,11 +68,12 @@ export function ProjectDetailsForm({
   const isCreatorAdded = findMetadataItem('is-creator-added')?.value === 'true';
   const addedByAddress = findMetadataItem('added-by-address')?.value;
   const isCommunityNotes = findMetadataItem('is-community-notes')?.value === 'true';
+  const creatorWalletContent = findMetadataItem('Creator Wallet')?.value || ''; // NEW: Creator Wallet
 
   // Filter out the "fixed" metadata items from the dynamic list for rendering
   const dynamicMetadataItems = useMemo(() => {
     return metadataItems.filter(item =>
-      !['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags'].includes(item.type || '') // Changed 'category' to 'tags'
+      !['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'Creator Wallet'].includes(item.type || '')
     );
   }, [metadataItems]);
 
@@ -130,7 +131,7 @@ export function ProjectDetailsForm({
     setMetadataItems(initialProjectMetadata.map(item => ({ ...item, type: item.type || 'text' })));
 
     // Initialize projectTags from initialProjectMetadata
-    const initialTagsItem = initialProjectMetadata.find(item => item.type === 'tags'); // Changed to 'tags'
+    const initialTagsItem = initialProjectMetadata.find(item => item.type === 'tags');
     if (initialTagsItem?.value) {
       setProjectTags(initialTagsItem.value);
     } else {
@@ -171,11 +172,12 @@ export function ProjectDetailsForm({
       // Update the "fixed" metadata items in the full metadataItems array
       updateOrCreateMetadataItem('project-name', 'Project Name', projectNameContent);
       updateOrCreateMetadataItem('project-description', 'Description', projectDescriptionContent);
-      updateOrCreateMetadataItem('tags', 'Tags', projectTags); // Changed to 'tags'
+      updateOrCreateMetadataItem('tags', 'Tags', projectTags);
       updateOrCreateMetadataItem('whitelisted-editors', 'Whitelisted Editors', whitelistedAddressesContent);
       updateOrCreateMetadataItem('is-creator-added', 'Is Creator Added', isCreatorAdded ? 'true' : 'false');
       updateOrCreateMetadataItem('added-by-address', 'Added By Address', addedByAddress || '');
       updateOrCreateMetadataItem('is-community-notes', 'Is Community Notes', isCommunityNotes ? 'true' : 'false');
+      updateOrCreateMetadataItem('Creator Wallet', 'Creator Wallet', creatorWalletContent); // NEW: Update Creator Wallet
 
       // Filter out empty dynamic metadata items before sending
       const finalMetadata: ProjectMetadata = metadataItems.filter(item => item.title.trim() && item.value.trim()).map(item => {
@@ -257,6 +259,25 @@ export function ProjectDetailsForm({
             maxLength={DESCRIPTION_MAX_LENGTH}
             onSubmit={() => {}}
             isSubmitDisabled={true}
+          />
+        </div>
+
+        {/* Fixed Fields: Added By Address & Creator Wallet */}
+        {addedByAddress && (
+          <div className="flex flex-col p-2 rounded-md bg-muted/50 border border-border">
+            <span className="font-semibold text-muted-foreground text-xs">Added By Address:</span>
+            <UserDisplay address={addedByAddress} textSizeClass="text-sm" avatarSizeClass="h-5 w-5" linkTo={`/profile/${addedByAddress}`} />
+          </div>
+        )}
+        <div>
+          <Label htmlFor="creatorWallet" className="text-white text-xs absolute top-[-20px] left-0 bg-hodl-darker px-1">Creator Wallet (Address/NFD)</Label>
+          <Input
+            id="creatorWallet"
+            placeholder="Enter creator wallet address or NFD..."
+            value={creatorWalletContent}
+            onChange={(e) => updateOrCreateMetadataItem('Creator Wallet', 'Creator Wallet', e.target.value)}
+            disabled={inputDisabled}
+            className="bg-muted/50"
           />
         </div>
 

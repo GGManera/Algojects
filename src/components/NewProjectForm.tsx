@@ -51,8 +51,9 @@ interface NewProjectFormProps {
 export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFormProps) {
   const [projectName, setProjectName] = useState("");
   const [projectNotes, setProjectNotes] = useState("");
+  const [creatorWalletAddress, setCreatorWalletAddress] = useState(""); // NEW: Creator Wallet Address
   const [whitelistedEditors, setWhitelistedEditors] = useState("");
-  const [projectTags, setProjectTags] = useState(""); // Changed from projectCategory to projectTags
+  const [projectTags, setProjectTags] = useState("");
   const [metadataItems, setMetadataItems] = useState<MetadataItem[]>([]);
 
   const [isCreator, setIsCreator] = useState(false);
@@ -189,6 +190,9 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
         { title: 'Is Creator Added', value: isCreator ? 'true' : 'false', type: 'is-creator-added' },
         { title: 'Added By Address', value: activeAddress!, type: 'added-by-address' },
         { title: 'Is Community Notes', value: 'false', type: 'is-community-notes' },
+        { title: 'Is Claimed', value: 'false', type: 'is-claimed' }, // NEW: Default to unclaimed
+        // NEW: Add Creator Wallet Address if provided
+        ...(creatorWalletAddress.trim() ? [{ title: 'Creator Wallet', value: creatorWalletAddress.trim(), type: 'address' as const }] : []),
         ...metadataItems.filter(item => item.title.trim() && item.value.trim()).map(item => ({
           ...item,
           type: item.type || 'text'
@@ -199,6 +203,7 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
       toast.success("Your new project has been added!", { id: loadingToastIdRef.current });
       setProjectName("");
       setProjectNotes("");
+      setCreatorWalletAddress(""); // Clear new field
       setWhitelistedEditors("");
       setProjectTags(""); // Clear projectTags
       setMetadataItems([]);
@@ -252,6 +257,25 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
           />
           <Label htmlFor="isCreator" className="text-white text-sm">I'm this Project's Creator</Label>
         </div>
+
+        {!isCreator && (
+          <div className="relative user-box">
+            <Input
+              id="creatorWalletAddress"
+              placeholder=""
+              value={creatorWalletAddress}
+              onChange={(e) => setCreatorWalletAddress(e.target.value)}
+              disabled={inputDisabled}
+              className="peer w-full py-2 text-base text-white mb-[30px] border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
+            />
+            <Label
+              htmlFor="creatorWalletAddress"
+              className="absolute top-0 left-0 py-2 text-base text-white pointer-events-none transition-all duration-500 peer-focus:top-[-20px] peer-focus:left-0 peer-focus:text-[#bdb8b8] peer-focus:text-xs peer-valid:top-[-20px] peer-valid:left-0 peer-valid:text-[#bdb8b8] peer-valid:text-xs peer-focus:bg-hodl-darker peer-focus:px-1 peer-valid:bg-hodl-darker peer-valid:px-1"
+            >
+              Creator Wallet Address/NFD (Optional)
+            </Label>
+          </div>
+        )}
 
         <div className="relative user-box mb-[30px]">
           <Input

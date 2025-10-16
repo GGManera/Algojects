@@ -143,6 +143,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const addedByAddress = projectMetadata.find(item => item.type === 'added-by-address')?.value;
   const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true';
   const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true'; // NEW: Check if claimed
+  const creatorWalletMetadata = projectMetadata.find(item => item.title === 'Creator Wallet')?.value; // NEW: Get Creator Wallet from metadata
 
   const handleProjectDetailsUpdated = () => {
     refetchProjectDetails();
@@ -150,15 +151,22 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   };
 
   // --- NEW: Thank Contributor Logic ---
-  const isProjectCreator = activeAddress === project.creatorWallet;
-  const isAuthorizedToClaim = activeAddress && project.creatorWallet && activeAddress === project.creatorWallet && !isClaimed && addedByAddress && activeAddress !== addedByAddress;
+  // Determine the address that should claim the project (either the first review sender or the explicit Creator Wallet metadata)
+  const effectiveCreatorAddress = creatorWalletMetadata || project.creatorWallet;
+  
+  // The button should appear if:
+  // 1. Wallet is connected (activeAddress)
+  // 2. The project is not yet claimed (isClaimed === false)
+  // 3. The connected user is the effective creator (activeAddress === effectiveCreatorAddress)
+  // 4. The project was added by a different address (addedByAddress exists and addedByAddress !== effectiveCreatorAddress)
+  const isAuthorizedToClaim = activeAddress && effectiveCreatorAddress && activeAddress === effectiveCreatorAddress && !isClaimed && addedByAddress && activeAddress !== addedByAddress;
 
   const handleClaimProject = useCallback(async (
     totalRewardAlgos: number,
     contributorShare: number,
     newWhitelistedEditors: string
   ) => {
-    if (!activeAddress || !transactionSigner || !algodClient || !addedByAddress || !project.creatorWallet) {
+    if (!activeAddress || !transactionSigner || !algodClient || !addedByAddress || !effectiveCreatorAddress) {
       showError("Wallet not connected or missing project data.");
       return;
     }
@@ -191,7 +199,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     } finally {
       setIsClaiming(false);
     }
-  }, [activeAddress, transactionSigner, algodClient, addedByAddress, projectId, currentProjectName, projectMetadata, refetchProjectDetails, onInteractionSuccess, project.creatorWallet]);
+  }, [activeAddress, transactionSigner, algodClient, addedByAddress, projectId, currentProjectName, projectMetadata, refetchProjectDetails, onInteractionSuccess, effectiveCreatorAddress]);
   // --- END NEW: Thank Contributor Logic ---
 
 
@@ -361,7 +369,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             </div>
           )}
           {/* NEW: Thank Contributor Button */}
-          {isAuthorizedToClaim && (
+          {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && (
             <div className="mt-4">
               <Button
                 onClick={() => setShowThankContributorDialog(true)}
@@ -379,7 +387,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
                 address={addedByAddress}
                 textSizeClass="text-sm"
                 avatarSizeClass="h-6 w-6"
-                linkTo={null}
+                linkTo={`/profile/${addedByAddress}`}
                 sourceContext={projectSourceContext}
               />
             </div>
@@ -541,7 +549,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             <ProjectDetailsForm
               projectId={projectId}
               initialProjectMetadata={projectMetadata}
-              projectCreatorAddress={project.creatorWallet}
+              projectCreatorAddress={effectiveCreatorAddress}
               onProjectDetailsUpdated={handleProjectDetailsUpdated}
             />
           )}
@@ -577,14 +585,14 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       </div>
 
       {/* NEW: Thank Contributor Dialog */}
-      {isAuthorizedToClaim && addedByAddress && project.creatorWallet && (
+      {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && (
         <ThankContributorDialog
           isOpen={showThankContributorDialog}
           onOpenChange={setShowThankContributorDialog}
           projectId={projectId}
           projectName={currentProjectName}
           contributorAddress={addedByAddress}
-          projectCreatorAddress={project.creatorWallet}
+          projectCreatorAddress={effectiveCreatorAddress}
           initialMetadata={projectMetadata}
           onConfirm={handleClaimProject}
           isConfirming={isClaiming}

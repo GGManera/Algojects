@@ -74,11 +74,13 @@ export function ThankContributorDialog({
   }, [isOpen, initialWhitelistedEditors]);
 
   const contributorAmount = useMemo(() => {
-    return totalRewardAlgos * (contributorShare[0] / 100);
+    // Use toFixed(2) to ensure the calculation is precise to 2 decimal places (0.01 ALGO)
+    return parseFloat((totalRewardAlgos * (contributorShare[0] / 100)).toFixed(2));
   }, [totalRewardAlgos, contributorShare]);
 
   const algojectsAmount = useMemo(() => {
-    return totalRewardAlgos - contributorAmount;
+    // Use toFixed(2) to ensure the calculation is precise to 2 decimal places (0.01 ALGO)
+    return parseFloat((totalRewardAlgos - contributorAmount).toFixed(2));
   }, [totalRewardAlgos, contributorAmount]);
 
   const handleTotalRewardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,15 +150,15 @@ export function ThankContributorDialog({
             <Label className="text-sm font-semibold">Reward Split (Total: {totalRewardAlgos.toFixed(2)} ALGO)</Label>
             
             <div className="flex justify-between text-xs font-semibold">
-                <span className="text-hodl-blue">Contributor ({contributorShare[0]}%)</span>
-                <span className="text-hodl-purple">AlgoJects ({100 - contributorShare[0]}%)</span>
+                <span className="text-hodl-blue">Contributor ({contributorShare[0].toFixed(1)}%)</span>
+                <span className="text-hodl-purple">AlgoJects ({(100 - contributorShare[0]).toFixed(1)}%)</span>
             </div>
 
             <Slider
               value={contributorShare}
               onValueChange={setContributorShare}
               max={100}
-              step={1}
+              step={0.1} // Changed step to 0.1 for finer control
               className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
             />
 

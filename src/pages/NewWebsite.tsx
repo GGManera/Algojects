@@ -33,6 +33,9 @@ export interface NewWebsiteRef {
   resetAllScrolls: () => void; // NEW: Função para resetar a rolagem de todos os slides
 }
 
+// Constante para a chave de cache do último item ativo (importada de useKeyboardNavigation)
+const LAST_ACTIVE_ID_KEY = 'algojects_last_active_id';
+
 const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToTopTrigger }, ref) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -251,8 +254,24 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
       if (!isRightKey && !isLeftKey) return;
 
-      // 1. Check if we are on the Projects (Home) slide (index 0)
-      if (api.selectedScrollSnap() === 0 && isRightKey) {
+      const currentSlideType = slidesConfig[api.selectedScrollSnap()]?.type;
+
+      // 1. Handle navigation from Project Page back to Home (A/ArrowLeft)
+      if (currentSlideType === 'project' && isLeftKey && effectiveProjectId) {
+        e.preventDefault();
+        // 1a. Cache the current project ID as the last active item on the home page
+        try {
+          localStorage.setItem(LAST_ACTIVE_ID_KEY, JSON.stringify({ id: effectiveProjectId, path: '/' }));
+        } catch (error) {
+          console.error("Failed to cache project ID for home page focus:", error);
+        }
+        // 1b. Navigate to home (which will trigger carousel scroll to index 0)
+        navigate('/');
+        return;
+      }
+
+      // 2. Handle navigation from Home to Project Page (D/ArrowRight)
+      if (currentSlideType === 'home' && isRightKey) {
         const focusedElement = document.querySelector('#projects-home [data-nav-id].focus-glow-border');
         if (focusedElement) {
           const focusedProjectId = focusedElement.getAttribute('data-nav-id');
@@ -265,7 +284,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
         }
       }
       
-      // 2. Default Carousel Navigation (A/D)
+      // 3. Default Carousel Navigation (A/D)
       if (isRightKey) {
         api.scrollNext();
       } else if (isLeftKey) {
@@ -278,7 +297,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [api, isMobile, navigate]);
+  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname]); // Added effectiveProjectId and location.pathname
 
   const cardContentMaxHeightClass = useMemo(() => {
     if (isMobile && isDeviceLandscape) {

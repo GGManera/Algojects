@@ -248,8 +248,8 @@ export function useKeyboardNavigation(pageKey: string) {
       const key = e.key.toLowerCase();
       const isMovementKey = ['arrowdown', 'arrowup', 's', 'w'].includes(key);
       const isActionKey = key === ' ';
-      const isRightKey = ['arrowright', 'd'].includes(key);
-      const isNavigationKey = isMovementKey || isActionKey || isRightKey;
+      // Removed isRightKey check here
+      const isNavigationKey = isMovementKey || isActionKey; // Only check movement and action keys
 
       if (!isNavigationKey) return;
 
@@ -313,9 +313,6 @@ export function useKeyboardNavigation(pageKey: string) {
             item?.toggleExpand();
           }
         }
-        return;
-      } else if (isRightKey) {
-        // Let the parent component handle right navigation (NewWebsite.tsx)
         return;
       } else {
         return;

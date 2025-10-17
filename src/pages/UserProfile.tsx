@@ -89,7 +89,7 @@ const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, u
   return (
     <div
       className={cn(
-        "block w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg shadow-lg overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent",
+        "block w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg shadow-none overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent", // ADDED shadow-none
         "rounded-lg", // ADDED rounded-lg here
         isFocused ? "focus-glow-border" : "",
         !isFocused && "hover:focus-glow-border",
@@ -160,7 +160,7 @@ const CommentItemPreview = ({ comment, review, project, projectName, userProfile
   return (
     <div
       className={cn(
-        "block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent",
+        "block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-none overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent", // ADDED shadow-none
         "rounded-lg", // ADDED rounded-lg here
         isFocused ? "focus-glow-border" : "",
         !isFocused && "hover:focus-glow-border"
@@ -238,7 +238,7 @@ const ReplyItemPreview = ({ reply, comment, review, project, projectName, userPr
   return (
     <div
       className={cn(
-        "block w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-sm overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent",
+        "block w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-none overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent", // ADDED shadow-none
         "rounded-lg", // ADDED rounded-lg here
         isFocused ? "focus-glow-border" : "",
         !isFocused && "hover:focus-glow-border"

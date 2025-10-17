@@ -89,8 +89,7 @@ export function ThankContributorDialog({
       // Allow clearing the input
       setTotalRewardAlgos(0);
     } else if (!isNaN(value)) {
-      // If the user is typing a number, update the state immediately.
-      // The `canConfirm` check will prevent submission if it's below MIN_REWARD_ALGO.
+      // Use the parsed float value to strip leading zeros (e.g., "06" becomes 6)
       setTotalRewardAlgos(value);
     }
   };

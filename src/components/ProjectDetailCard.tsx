@@ -593,7 +593,15 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           {hasAnyMetadata && (
             <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                {/* Render Creator Wallet and Project Wallet side-by-side first */}
+                
+                {/* RENDER GROUPED DYNAMIC METADATA FIRST */}
+                {dynamicMetadataGroups.map(group => (
+                  <React.Fragment key={group.type}>
+                    {group.items.map((item, index) => renderMetadataItem(item, index))}
+                  </React.Fragment>
+                ))}
+
+                {/* THEN RENDER FIXED WALLET ADDRESSES */}
                 {creatorWalletMetadata && (
                     <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
                         <span className="font-semibold text-muted-foreground text-xs">Creator Wallet:</span>
@@ -619,13 +627,6 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
                     </div>
                 )}
                 
-                {/* Render grouped dynamic metadata */}
-                {dynamicMetadataGroups.map(group => (
-                  <React.Fragment key={group.type}>
-                    {group.items.map((item, index) => renderMetadataItem(item, index))}
-                  </React.Fragment>
-                ))}
-
                 {/* Display Your Holding if present (this should remain at the end) */}
                 {currentUserProjectHolding && (
                   <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">

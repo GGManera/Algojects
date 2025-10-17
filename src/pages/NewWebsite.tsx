@@ -42,7 +42,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   
   const [api, setApi] = useState<CarouselApi>();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-
+  
   // New states for managing hash scrolling
   const [hashToScroll, setHashToScroll] = useState<string | null>(null);
   const [scrollTrigger, setScrollTrigger] = useState(0);
@@ -273,7 +273,13 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       <Carousel setApi={setApi} className="w-full" opts={{ duration: 20 }}>
         <CarouselContent>
           {slidesConfig.map((slide, index) => (
-            <CarouselItem key={slide.type} className="h-full">
+            <CarouselItem 
+              key={slide.type} 
+              className={cn(
+                "h-full",
+                index === currentSlideIndex && "carousel-item-active" // <-- FIX: Apply active class here
+              )}
+            >
               <Card className={cn(
                 "p-0 bg-card",
                 "rounded-none border-none"

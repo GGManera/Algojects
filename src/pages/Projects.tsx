@@ -216,6 +216,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
                 // NEW: Pass keyboard navigation props
                 focusedId={focusedId}
                 registerItem={registerItem}
+                isActive={isActive} // NEW
               />
             ))}
           </div>

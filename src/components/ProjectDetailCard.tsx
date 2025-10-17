@@ -43,6 +43,7 @@ interface ProjectDetailCardProps {
   // NEW: Keyboard navigation props
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
+  isActive: boolean; // NEW PROP
 }
 
 interface ProjectStats {
@@ -78,7 +79,8 @@ export function ProjectDetailCard({
   onInteractionSuccess, 
   isInsideCarousel = false, 
   focusedId, 
-  registerItem 
+  registerItem,
+  isActive // NEW PROP
 }: ProjectDetailCardProps) {
   const projectId = project.id;
   const { isMobile } = useAppContextDisplayMode();
@@ -697,6 +699,7 @@ export function ProjectDetailCard({
               // NEW: Pass keyboard navigation props
               focusedId={focusedId}
               registerItem={registerItem}
+              isActive={isActive} // NEW
             />
           ))
         ) : (

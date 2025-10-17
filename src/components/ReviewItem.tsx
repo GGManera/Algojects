@@ -33,6 +33,7 @@ interface ReviewItemProps {
   // NEW: Keyboard navigation props
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
+  isActive: boolean; // NEW PROP
 }
 
 const CONTENT_TRUNCATE_LENGTH = 280;
@@ -47,7 +48,7 @@ const getCommentInteractionScore = (comment: Comment): number => {
   return score;
 };
 
-export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, focusedId, registerItem }: ReviewItemProps) {
+export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, focusedId, registerItem, isActive }: ReviewItemProps) {
   const location = useLocation();
   const { expandCommentId, highlightReplyId, highlightCommentId } = (location.state as { expandCommentId?: string; highlightReplyId?: string; highlightCommentId?: string; }) || {};
   const { activeAddress } = useWallet(); // Get active address
@@ -83,9 +84,10 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
 
   // Register item for keyboard navigation
   useEffect(() => {
+    // Use isActive as a dependency to force re-registration when the slide becomes active
     const cleanup = registerItem(review.id, handleToggleExpand, isExpanded, 'review');
     return cleanup;
-  }, [review.id, handleToggleExpand, isExpanded, registerItem]);
+  }, [review.id, handleToggleExpand, isExpanded, registerItem, isActive]); // ADDED isActive
 
   const sortedComments = useMemo(() => {
     const allComments = Object.values(review.comments || {});
@@ -266,6 +268,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
                 // NEW: Pass keyboard navigation props
                 focusedId={focusedId}
                 registerItem={registerItem}
+                isActive={isActive} // NEW
               />
             ))}
             {sortedComments.length > 3 && (

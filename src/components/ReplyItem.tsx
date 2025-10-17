@@ -32,11 +32,12 @@ interface ReplyItemProps {
   // NEW: Keyboard navigation props
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
+  isActive: boolean; // NEW PROP
 }
 
 const CONTENT_TRUNCATE_LENGTH = 150;
 
-export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem }: ReplyItemProps) {
+export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive }: ReplyItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -65,9 +66,10 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
 
   // Register item for keyboard navigation
   useEffect(() => {
+    // Use isActive as a dependency to force re-registration when the slide becomes active
     const cleanup = registerItem(reply.id, handleToggleExpand, isExpanded, 'reply');
     return cleanup;
-  }, [reply.id, handleToggleExpand, isExpanded, registerItem]);
+  }, [reply.id, handleToggleExpand, isExpanded, registerItem, isActive]); // ADDED isActive
 
   const isLongReply = reply.content.length > CONTENT_TRUNCATE_LENGTH;
   const displayContent = isLongReply && !isExpanded
@@ -111,6 +113,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             textSizeClass="text-sm text-black"
             avatarSizeClass="h-8 w-8" 
             projectTokenHoldings={writerTokenHoldings}
+            writerHoldingsLoading={writerHoldingsLoading}
             assetUnitName={assetUnitName}
             projectSourceContext={projectSourceContext}
           />

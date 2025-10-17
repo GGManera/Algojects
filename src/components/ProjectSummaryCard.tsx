@@ -19,6 +19,7 @@ import { CollapsibleContent } from "./CollapsibleContent";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
 
 interface ProjectSummaryCardProps {
+  id: string;
   project: Project;
   isExpanded: boolean;
   onToggleExpand: (projectId: string) => void;
@@ -27,6 +28,7 @@ interface ProjectSummaryCardProps {
   // NEW: Keyboard navigation props
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
+  isActive: boolean; // NEW PROP
 }
 
 interface ProjectStats {
@@ -56,7 +58,7 @@ const getReviewInteractionScore = (review: Review): number => {
   return score;
 };
 
-export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRef, isInsideCarousel = false, focusedId, registerItem }: ProjectSummaryCardProps) {
+export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRef, isInsideCarousel = false, focusedId, registerItem, isActive }: ProjectSummaryCardProps) {
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
   const { isMobile } = useAppContextDisplayMode();
@@ -77,9 +79,10 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
 
   // Register item for keyboard navigation
   useEffect(() => {
+    // Use isActive as a dependency to force re-registration when the slide becomes active
     const cleanup = registerItem(project.id, handleToggleExpand, isExpanded, 'project-summary');
     return cleanup;
-  }, [project.id, handleToggleExpand, isExpanded, registerItem]);
+  }, [project.id, handleToggleExpand, isExpanded, registerItem, isActive]); // ADDED isActive
 
   const stats: ProjectStats = useMemo(() => {
     let reviewsCount = 0;

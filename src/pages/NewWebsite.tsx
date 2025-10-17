@@ -275,7 +275,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           {slidesConfig.map((slide, index) => {
             // Clone the component and inject the isActive prop
             const slideComponent = React.cloneElement(slide.component, {
-              isActive: index === currentSlideIndex,
+              isActive: index === currentSlideIndex, // Pass isActive based on currentSlideIndex
             });
 
             return (

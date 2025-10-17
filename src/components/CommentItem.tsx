@@ -33,6 +33,7 @@ interface CommentItemProps {
   // NEW: Keyboard navigation props
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
+  isActive: boolean; // NEW PROP
 }
 
 export function CommentItem({
@@ -50,6 +51,7 @@ export function CommentItem({
   highlightCommentId,
   focusedId,
   registerItem,
+  isActive,
 }: CommentItemProps) {
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
@@ -79,9 +81,10 @@ export function CommentItem({
 
   // Register item for keyboard navigation
   useEffect(() => {
+    // Use isActive as a dependency to force re-registration when the slide becomes active
     const cleanup = registerItem(comment.id, handleToggleExpand, areRepliesVisible, 'comment');
     return cleanup;
-  }, [comment.id, handleToggleExpand, areRepliesVisible, registerItem]);
+  }, [comment.id, handleToggleExpand, areRepliesVisible, registerItem, isActive]); // ADDED isActive
 
   useEffect(() => {
     if (isHighlighted && ref.current) {
@@ -230,6 +233,7 @@ export function CommentItem({
                   // NEW: Pass keyboard navigation props
                   focusedId={focusedId}
                   registerItem={registerItem}
+                  isActive={isActive} // NEW
                 />
               ))}
             {showReplyForm && (

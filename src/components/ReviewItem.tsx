@@ -150,7 +150,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
           "w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg overflow-hidden cursor-pointer transition-all duration-200 border-2 border-transparent", // Added transparent border base
           "rounded-lg", // ADDED rounded-lg here
           isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
-          !isFocused && "hover:focus-glow-border" // Apply hover focus highlight only if not already focused
+          // REMOVED: !isFocused && "hover:focus-glow-border" // Apply hover focus highlight only if not already focused
         )}
         onClick={handleCardClick}
         onMouseEnter={() => setLastActiveId(review.id)} // NEW: Set active ID on mouse enter

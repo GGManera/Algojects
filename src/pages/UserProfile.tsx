@@ -92,8 +92,7 @@ const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, u
         "block w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg shadow-lg overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent",
         "rounded-lg", // ADDED rounded-lg here
         isFocused ? "focus-glow-border" : "",
-        !isFocused && "hover:focus-glow-border",
-        isExpanded && "shadow-xl"
+        !isFocused && "hover:opacity-90" // Use a simple hover effect instead of focus glow
       )}
       onClick={() => handleNavigateToProjectReview(project.id, review.id.split('.')[1])}
       onMouseEnter={() => setLastActiveId(review.id)} // NEW: Set active ID on mouse enter
@@ -163,7 +162,7 @@ const CommentItemPreview = ({ comment, review, project, projectName, userProfile
         "block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent",
         "rounded-lg", // ADDED rounded-lg here
         isFocused ? "focus-glow-border" : "",
-        !isFocused && "hover:focus-glow-border"
+        !isFocused && "hover:opacity-90" // Use a simple hover effect instead of focus glow
       )}
       onClick={() => handleNavigateToProjectComment(project.id, comment.id)}
       onMouseEnter={() => setLastActiveId(comment.id)} // NEW: Set active ID on mouse enter
@@ -241,7 +240,7 @@ const ReplyItemPreview = ({ reply, comment, review, project, projectName, userPr
         "block w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-sm overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent",
         "rounded-lg", // ADDED rounded-lg here
         isFocused ? "focus-glow-border" : "",
-        !isFocused && "hover:focus-glow-border"
+        !isFocused && "hover:opacity-90" // Use a simple hover effect instead of focus glow
       )}
       onClick={() => handleNavigateToProjectReply(project.id, comment.id, reply.id)}
       onMouseEnter={() => setLastActiveId(reply.id)} // NEW: Set active ID on mouse enter
@@ -389,7 +388,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
 
   const handleTabChange = (newTab: string) => {
     const oldIndex = tabOrder[prevTabRef.current as keyof typeof tabOrder];
-    const newIndex = tabOrder[newTab as keyof typeof tabOrder];
+    const newIndex = tabOrder[newTab as keyof typeof tabOrder]; // Corrected type for categoryOrder
 
     if (newIndex > oldIndex) {
       setTabDirection(1);

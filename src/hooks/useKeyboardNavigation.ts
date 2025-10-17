@@ -100,17 +100,21 @@ export function useKeyboardNavigation(pageKey: string) {
   // Effect to clear keyboard focus when mouse becomes active
   useEffect(() => {
     if (isMouseActive && focusedId !== null) {
-      // When mouse moves, clear keyboard focus, but keep the ID in cache
+      // When mouse moves, clear keyboard focus
       setFocusedId(null);
     }
   }, [isMouseActive, focusedId]);
 
   // Effect to update cache when focusedId changes (only if it's a keyboard-driven change)
+  // NOTE: We rely on setCacheActiveId being called by setLastActiveId (hover) or explicitly in handleKeyDown (movement)
+  // We remove the implicit cache update here to avoid conflicts when isMouseActive flips.
+  /*
   useEffect(() => {
     if (focusedId !== null && !isMouseActive) {
       setCacheActiveId(focusedId);
     }
   }, [focusedId, isMouseActive, setCacheActiveId]);
+  */
 
 
   // --- Registration Management ---
@@ -141,15 +145,15 @@ export function useKeyboardNavigation(pageKey: string) {
     
     const orderedIds = updateOrderedIds(currentKey);
     
-    // If no item is currently focused, try to restore from cache
-    if (focusedId === null && orderedIds.length > 0) {
+    // When rebuilding, if focusedId is invalid or null, try to restore from cache
+    if (focusedId === null || !orderedIds.includes(focusedId)) {
         const cachedId = getCachedActiveId();
         if (cachedId && orderedIds.includes(cachedId)) {
-            // Restore focus ID, but DO NOT scroll into view here.
             setFocusedId(cachedId);
-        } else {
-            // If cache is invalid or empty, set focus to the first item
+        } else if (orderedIds.length > 0) {
             setFocusedId(orderedIds[0]);
+        } else {
+            setFocusedId(null);
         }
     }
     return orderedIds;
@@ -157,9 +161,7 @@ export function useKeyboardNavigation(pageKey: string) {
 
   // --- Mouse Hover Tracking (External API) ---
   const setLastActiveId = useCallback((id: string | null) => {
-    // This function is called by components on mouse enter/leave.
-    // It should always update the cache if an ID is provided, regardless of isMouseActive state.
-    // This ensures the last hovered item is the starting point for keyboard navigation.
+    // Always update the cache when hover occurs (mouse enter/leave)
     setCacheActiveId(id);
   }, [setCacheActiveId]);
 
@@ -197,74 +199,79 @@ export function useKeyboardNavigation(pageKey: string) {
       const orderedIds = globalOrderedIdsMap.get(currentKey) || [];
       const itemsMap = globalNavigableItemsMap.get(currentKey) || new Map();
 
-      const isNavigationKey = ['ArrowDown', 'ArrowUp', 's', 'w', ' '].includes(e.key) || ['ArrowDown', 'ArrowUp', 's', 'w', ' '].includes(e.key.toLowerCase());
+      const isMovementKey = ['ArrowDown', 'ArrowUp', 's', 'w'].includes(e.key) || ['ArrowDown', 'ArrowUp', 's', 'w'].includes(e.key.toLowerCase());
+      const isActionKey = e.key === ' ';
+      const isNavigationKey = isMovementKey || isActionKey;
 
       if (!isNavigationKey) return;
 
       // If mouse is active, ignore keyboard navigation
       if (isMouseActive) {
-        e.preventDefault();
+        // Allow spacebar action if mouse is active, but prevent default scrolling
+        if (isActionKey) {
+            e.preventDefault();
+        }
         return;
       }
 
-      // --- Keyboard Mode Re-activation / Focus Restoration ---
+      // --- Focus Restoration / Initialization ---
       let currentFocus = focusedId;
-      let shouldScroll = false; // Flag to control scrolling
+      let shouldScroll = false;
 
       if (currentFocus === null && orderedIds.length > 0) {
-        // If no item is focused (because mouse was active), try to restore from cache
+        // If no item is focused (e.g., just switched to keyboard mode), restore from cache
         const cachedId = getCachedActiveId();
         if (cachedId && orderedIds.includes(cachedId)) {
             currentFocus = cachedId;
         } else {
-            // Fallback to the first item
             currentFocus = orderedIds[0];
         }
-        // When restoring focus from cache, we only scroll if the user presses a movement key (ArrowUp/Down, s/w)
-        // If they press space, we expand the currently focused item without scrolling.
-        if (e.key !== ' ') {
+        setFocusedId(currentFocus);
+        
+        // If it's a movement key, scroll to the restored item
+        if (isMovementKey) {
             shouldScroll = true;
         }
-        setFocusedId(currentFocus);
-      } else if (currentFocus !== null && (e.key === 'ArrowDown' || e.key.toLowerCase() === 's' || e.key === 'ArrowUp' || e.key.toLowerCase() === 'w')) {
+      } else if (isMovementKey) {
         // If focus is already set and a movement key is pressed, we should scroll.
         shouldScroll = true;
       }
       
-      const currentIndex = currentFocus ? orderedIds.indexOf(currentFocus) : -1;
-      let nextIndex = currentIndex;
+      if (!currentFocus) return; // Should not happen if orderedIds.length > 0
 
-      if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') {
+      const currentIndex = orderedIds.indexOf(currentFocus);
+      let nextId = currentFocus;
+
+      if (isMovementKey) {
         e.preventDefault();
-        nextIndex = Math.min(currentIndex + 1, orderedIds.length - 1);
-      } else if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') {
-        e.preventDefault();
-        nextIndex = Math.max(currentIndex - 1, 0);
-      } else if (e.key === ' ') {
-        if (currentFocus) {
-          e.preventDefault();
-          const item = itemsMap.get(currentFocus);
-          if (item) {
-            item.toggleExpand();
-            itemsMap.set(currentFocus, { ...item, isExpanded: !item.isExpanded });
-            updateOrderedIds(currentKey);
-          }
+        let nextIndex = currentIndex;
+        if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') {
+          nextIndex = Math.min(currentIndex + 1, orderedIds.length - 1);
+        } else if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') {
+          nextIndex = Math.max(currentIndex - 1, 0);
         }
-        return;
-      } else {
+        nextId = orderedIds[nextIndex];
+        
+        // Update cache and focus ID on movement
+        setFocusedId(nextId);
+        setCacheActiveId(nextId);
+
+      } else if (isActionKey) { // Spacebar
+        e.preventDefault();
+        const item = itemsMap.get(currentFocus);
+        if (item) {
+          item.toggleExpand();
+          itemsMap.set(currentFocus, { ...item, isExpanded: !item.isExpanded });
+          updateOrderedIds(currentKey);
+        }
         return;
       }
 
-      if (orderedIds.length > 0) {
-        const nextId = orderedIds[nextIndex];
-        setFocusedId(nextId);
-        
-        if (shouldScroll) {
-            const element = document.querySelector(`[data-nav-id="${nextId}"]`);
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
+      if (shouldScroll) {
+          const element = document.querySelector(`[data-nav-id="${nextId}"]`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
       }
     };
 
@@ -272,7 +279,7 @@ export function useKeyboardNavigation(pageKey: string) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [focusedId, pageKey, isMouseActive, getCachedActiveId]);
+  }, [focusedId, pageKey, isMouseActive, getCachedActiveId, setCacheActiveId]);
 
   // Reset focus when navigating to a new route (even if pageKey remains the same, e.g., project/a to project/b)
   useEffect(() => {

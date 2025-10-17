@@ -317,7 +317,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
         "scroll-mt-header-offset",
         !isInsideCarousel && "max-w-3xl",
         isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
-        !isFocused && "hover:focus-glow-border" // Apply hover focus highlight only if not already focused
+        // REMOVED: !isFocused && "hover:focus-glow-border" // Apply hover focus highlight only if not already focused
       )}
       onClick={() => onToggleExpand(project.id)}
       onMouseEnter={() => setLastActiveId(project.id)} // NEW: Set active ID on mouse enter

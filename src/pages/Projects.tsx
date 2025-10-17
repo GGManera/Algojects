@@ -48,11 +48,11 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
 
   const isOverallRefreshing = isRefreshingSocialData || isRefreshingProjectDetails;
 
-  // NEW: Effect to rebuild order when active
+  // NEW: Effect to rebuild order and set initial focus when active
   useEffect(() => {
     if (isActive) {
       const timer = setTimeout(() => {
-        rebuildOrder();
+        rebuildOrder(true); // Force focus to the first item
       }, 100); // Delay to ensure DOM is fully rendered
       return () => clearTimeout(timer);
     }

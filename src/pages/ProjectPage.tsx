@@ -43,7 +43,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
   useEffect(() => {
     if (isActive) {
       const timer = setTimeout(() => {
-        rebuildOrder();
+        rebuildOrder(true); // Force focus to the first item
       }, 100); // Delay to ensure DOM is fully rendered
       return () => clearTimeout(timer);
     }

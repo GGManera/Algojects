@@ -334,7 +334,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   useEffect(() => {
     if (isActive) {
       const timer = setTimeout(() => {
-        rebuildOrder();
+        rebuildOrder(true); // Force focus to the first item
       }, 100); // Delay to ensure DOM is fully rendered
       return () => clearTimeout(timer);
     }

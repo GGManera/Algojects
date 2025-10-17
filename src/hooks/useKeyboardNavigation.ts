@@ -178,8 +178,7 @@ export function useKeyboardNavigation(pageKey: string) {
 
     // Reset focus when the pageKey changes (e.g., navigating from project/a to project/b)
     setFocusedId(null);
-    // We intentionally DO NOT reset isKeyboardModeActive here, 
-    // so it persists across slide navigation if triggered by keyboard.
+    setIsKeyboardModeActive(false); // Reset mode on page change
     
     return () => {
       if (currentKey !== 'inactive') {
@@ -302,8 +301,7 @@ export function useKeyboardNavigation(pageKey: string) {
   // Reset focus when navigating to a new route (even if pageKey remains the same, e.g., project/a to project/b)
   useEffect(() => {
     setFocusedId(null);
-    // We intentionally DO NOT reset isKeyboardModeActive here, 
-    // so it persists across slide navigation if triggered by keyboard.
+    setIsKeyboardModeActive(false);
   }, [location.pathname]);
 
   return { focusedId, registerItem, rebuildOrder, setLastActiveId };

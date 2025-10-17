@@ -61,7 +61,6 @@ export function ThankContributorDialog({
   }, [initialMetadata]);
 
   const [totalRewardAlgos, setTotalRewardAlgos] = useState(DEFAULT_REWARD_ALGO);
-  // State to hold the contributor's share in ALGOs, defaulting to the total reward
   const [contributorAmountAlgos, setContributorAmountAlgos] = useState(DEFAULT_REWARD_ALGO);
   const [whitelistedEditors, setWhitelistedEditors] = useState(initialWhitelistedEditors);
 
@@ -76,7 +75,6 @@ export function ThankContributorDialog({
 
   // --- Derived values ---
   const algojectsAmountAlgos = useMemo(() => {
-    // Ensure the result is constrained and rounded to 2 decimal places
     const amount = totalRewardAlgos - contributorAmountAlgos;
     return parseFloat(Math.max(0, amount).toFixed(2));
   }, [totalRewardAlgos, contributorAmountAlgos]);
@@ -100,8 +98,8 @@ export function ThankContributorDialog({
     }
     
     setTotalRewardAlgos(newTotal);
-    // When total changes, reset contributor amount to the new total (100% share)
-    setContributorAmountAlgos(newTotal);
+    // When total changes, constrain contributor amount to the new total
+    setContributorAmountAlgos(Math.min(contributorAmountAlgos, newTotal));
   };
 
   const handleContributorAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,24 +126,22 @@ export function ThankContributorDialog({
         alert(`Total reward must be at least ${MIN_REWARD_ALGO} ALGO.`);
         return;
     }
-    // Pass the calculated percentage to the onConfirm handler
     await onConfirm(totalRewardAlgos, contributorSharePercentage, whitelistedEditors);
   };
 
-  const isCreator = activeAddress === projectCreatorAddress;
   const canConfirm = !isConfirming && totalRewardAlgos >= MIN_REWARD_ALGO;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[450px] bg-card text-foreground">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[450px] bg-card text-foreground p-4"> {/* Reduced padding */}
+        <DialogHeader className="pb-2"> {/* Reduced padding */}
           <DialogTitle className="gradient-text">Thank Contributor</DialogTitle>
           <DialogDescription>
             Finalize details and reward the contributor for adding <strong>{projectName}</strong>.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-3 py-3">
+        <div className="grid gap-4 py-2"> {/* Reduced vertical gap and padding */}
           {/* Contributor Info */}
           <div className="flex items-center justify-between p-2 rounded-md bg-muted/50">
             <Label className="text-sm text-muted-foreground">Contributor:</Label>
@@ -164,22 +160,22 @@ export function ThankContributorDialog({
               min={MIN_REWARD_ALGO}
               value={totalRewardAlgos}
               onChange={handleTotalRewardChange}
-              className="bg-muted/50 font-numeric"
+              className="bg-muted/50 font-numeric h-9" // Reduced height
             />
             <p className={cn("text-xs", totalRewardAlgos < MIN_REWARD_ALGO ? "text-red-500" : "text-muted-foreground")}>
               Minimum reward: {MIN_REWARD_ALGO} ALGO.
             </p>
           </div>
 
-          <Separator className="my-2" />
+          <Separator className="my-1" /> {/* Reduced margin */}
 
           {/* Reward Split Input & Slider */}
-          <div className="space-y-3">
+          <div className="space-y-2"> {/* Reduced space-y */}
             <Label className="text-sm font-semibold">Reward Split (Total: {totalRewardAlgos.toFixed(2)} ALGO)</Label>
             
             {/* Contributor Amount Input */}
             <div className="space-y-1">
-                <Label htmlFor="contributorAmount" className="text-sm font-semibold text-hodl-blue">
+                <Label htmlFor="contributorAmount" className="text-xs font-semibold text-hodl-blue">
                     Contributor Share (ALGO)
                 </Label>
                 <Input
@@ -190,7 +186,7 @@ export function ThankContributorDialog({
                     max={totalRewardAlgos}
                     value={contributorAmountAlgos}
                     onChange={handleContributorAmountChange}
-                    className="bg-muted/50 font-numeric text-hodl-blue"
+                    className="bg-muted/50 font-numeric text-hodl-blue h-9" // Reduced height
                 />
                 <p className="text-xs text-muted-foreground">
                     Max: {totalRewardAlgos.toFixed(2)} ALGO.
@@ -198,7 +194,7 @@ export function ThankContributorDialog({
             </div>
 
             {/* Percentage Display above Slider */}
-            <div className="flex justify-between text-xs font-semibold pt-2">
+            <div className="flex justify-between text-xs font-semibold pt-1"> {/* Reduced padding */}
                 <span className="text-hodl-blue">Contributor ({contributorSharePercentage.toFixed(1)}%)</span>
                 <span className="text-hodl-purple">AlgoJects ({(100 - contributorSharePercentage).toFixed(1)}%)</span>
             </div>
@@ -212,20 +208,20 @@ export function ThankContributorDialog({
               className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
             />
 
-            {/* Calculated Amounts */}
-            <div className="grid grid-cols-2 gap-2 text-center font-numeric">
-              <div className="p-2 rounded-md bg-hodl-blue/20">
+            {/* Calculated Amounts - Condensed Display */}
+            <div className="flex justify-between text-sm font-numeric pt-1">
+              <div className="flex flex-col items-start">
                 <span className="font-bold text-hodl-blue">{contributorAmountAlgos.toFixed(2)} ALGO</span>
                 <p className="text-xs text-muted-foreground">To Contributor</p>
               </div>
-              <div className="p-2 rounded-md bg-hodl-purple/20">
+              <div className="flex flex-col items-end">
                 <span className="font-bold text-hodl-purple">{algojectsAmountAlgos.toFixed(2)} ALGO</span>
                 <p className="text-xs text-muted-foreground">To AlgoJects</p>
               </div>
             </div>
           </div>
 
-          <Separator className="my-2" />
+          <Separator className="my-1" /> {/* Reduced margin */}
 
           {/* Whitelist Editor */}
           <div className="space-y-2">
@@ -240,12 +236,12 @@ export function ThankContributorDialog({
               disabled={isConfirming}
               onSubmit={() => {}}
               isSubmitDisabled={true}
-              className="bg-muted/50 min-h-[80px]"
+              className="bg-muted/50 min-h-[60px]" // Reduced min-height
             />
           </div>
         </div>
 
-        <DialogFooter className="pt-4">
+        <DialogFooter className="pt-2"> {/* Reduced padding */}
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isConfirming}>
             Cancel
           </Button>

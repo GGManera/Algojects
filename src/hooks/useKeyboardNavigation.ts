@@ -79,12 +79,19 @@ export function useKeyboardNavigation(pageKey: string) {
       return;
     }
 
-    // When a page becomes active, ensure focus is reset and the ordered list is built
+    // 1. Reset focus
     setFocusedId(null);
-    updateOrderedIds(currentKey);
+    
+    // 2. Force a delayed update of the ordered list to ensure all DOM elements are present
+    // This is crucial for carousel transitions where the DOM might lag slightly behind the component activation.
+    const delayedUpdate = setTimeout(() => {
+        updateOrderedIds(currentKey);
+        console.log(`[KeyboardNav] Forced delayed update for ${currentKey}. Total items: ${globalOrderedIdsMap.get(currentKey)?.length}`);
+    }, 100); // 100ms delay should be safe after carousel transition/render
 
     // Cleanup function for when the component unmounts or pageKey changes
     return () => {
+      clearTimeout(delayedUpdate); // Clear the delayed update if we switch away quickly
       // When the page becomes inactive, clear its state from the global maps
       if (currentKey !== 'inactive') {
         globalNavigableItemsMap.delete(currentKey);

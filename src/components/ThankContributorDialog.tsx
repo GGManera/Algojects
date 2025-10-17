@@ -133,15 +133,15 @@ export function ThankContributorDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[450px] bg-card text-foreground p-4"> {/* Reduced padding */}
-        <DialogHeader className="pb-2"> {/* Reduced padding */}
+      <DialogContent className="sm:max-w-[450px] bg-card text-foreground p-4">
+        <DialogHeader className="pb-2">
           <DialogTitle className="gradient-text">Thank Contributor</DialogTitle>
           <DialogDescription>
             Finalize details and reward the contributor for adding <strong>{projectName}</strong>.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2"> {/* Reduced vertical gap and padding */}
+        <div className="grid gap-4 py-2">
           {/* Contributor Info */}
           <div className="flex items-center justify-between p-2 rounded-md bg-muted/50">
             <Label className="text-sm text-muted-foreground">Contributor:</Label>
@@ -160,22 +160,22 @@ export function ThankContributorDialog({
               min={MIN_REWARD_ALGO}
               value={totalRewardAlgos}
               onChange={handleTotalRewardChange}
-              className="bg-muted/50 font-numeric h-9" // Reduced height
+              className="bg-muted/50 font-numeric h-9"
             />
             <p className={cn("text-xs", totalRewardAlgos < MIN_REWARD_ALGO ? "text-red-500" : "text-muted-foreground")}>
               Minimum reward: {MIN_REWARD_ALGO} ALGO.
             </p>
           </div>
 
-          <Separator className="my-1" /> {/* Reduced margin */}
+          <Separator className="my-1" />
 
           {/* Reward Split Input & Slider */}
-          <div className="space-y-2"> {/* Reduced space-y */}
-            <Label className="text-sm font-semibold">Reward Split (Total: {totalRewardAlgos.toFixed(2)} ALGO)</Label>
+          <div className="space-y-2">
+            {/* Removed: <Label className="text-sm font-semibold">Reward Split (Total: {totalRewardAlgos.toFixed(2)} ALGO)</Label> */}
             
             {/* Contributor Amount Input */}
             <div className="space-y-1">
-                <Label htmlFor="contributorAmount" className="text-xs font-semibold text-hodl-blue">
+                <Label htmlFor="contributorAmount" className="text-sm font-semibold text-hodl-blue">
                     Contributor Share (ALGO)
                 </Label>
                 <Input
@@ -186,7 +186,7 @@ export function ThankContributorDialog({
                     max={totalRewardAlgos}
                     value={contributorAmountAlgos}
                     onChange={handleContributorAmountChange}
-                    className="bg-muted/50 font-numeric text-hodl-blue h-9" // Reduced height
+                    className="bg-muted/50 font-numeric text-hodl-blue h-9"
                 />
                 <p className="text-xs text-muted-foreground">
                     Max: {totalRewardAlgos.toFixed(2)} ALGO.
@@ -194,7 +194,7 @@ export function ThankContributorDialog({
             </div>
 
             {/* Percentage Display above Slider */}
-            <div className="flex justify-between text-xs font-semibold pt-1"> {/* Reduced padding */}
+            <div className="flex justify-between text-xs font-semibold pt-1">
                 <span className="text-hodl-blue">Contributor ({contributorSharePercentage.toFixed(1)}%)</span>
                 <span className="text-hodl-purple">AlgoJects ({(100 - contributorSharePercentage).toFixed(1)}%)</span>
             </div>
@@ -221,7 +221,7 @@ export function ThankContributorDialog({
             </div>
           </div>
 
-          <Separator className="my-1" /> {/* Reduced margin */}
+          <Separator className="my-1" />
 
           {/* Whitelist Editor */}
           <div className="space-y-2">
@@ -236,12 +236,12 @@ export function ThankContributorDialog({
               disabled={isConfirming}
               onSubmit={() => {}}
               isSubmitDisabled={true}
-              className="bg-muted/50 min-h-[60px]" // Reduced min-height
+              className="bg-muted/50 min-h-[60px]"
             />
           </div>
         </div>
 
-        <DialogFooter className="pt-2"> {/* Reduced padding */}
+        <DialogFooter className="pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isConfirming}>
             Cancel
           </Button>

@@ -13,6 +13,7 @@ import { Skeleton } from "./ui/skeleton";
 import { AllCuratorCalculationsMap } from '@/hooks/useCuratorIndex';
 import { CollapsibleContent } from "./CollapsibleContent";
 import { cn } from "@/lib/utils";
+import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
 
 interface ReplyItemProps {
   reply: Reply;
@@ -78,7 +79,16 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             assetUnitName={assetUnitName}
             sourceContext={projectSourceContext}
           />
-          <span className="text-xs text-black/70 font-semibold">{formatTimestamp(reply.timestamp)}</span>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-black/70 font-semibold">{formatTimestamp(reply.timestamp)}</span>
+            <InteractionActionsMenu 
+              item={reply} 
+              project={project} 
+              review={review}
+              comment={comment}
+              onInteractionSuccess={onInteractionSuccess} 
+            />
+          </div>
         </div>
 
         <div className="px-3 pb-2">

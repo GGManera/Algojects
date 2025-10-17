@@ -8,6 +8,7 @@ export interface BaseInteraction {
   likes: Set<string>; // Set of sender addresses who liked
   likeCount: number;
   likeHistory: Array<{ sender: string; action: 'LIKE' | 'UNLIKE'; timestamp: number; txId: string }>; // NEW
+  isExcluded: boolean; // NEW: Flag if the post has been excluded/deleted
 }
 
 export interface Reply extends BaseInteraction {

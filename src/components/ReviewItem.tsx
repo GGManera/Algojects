@@ -16,6 +16,7 @@ import { InteractionDetailsPanel } from "./InteractionDetailsPanel";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { AllCuratorCalculationsMap } from '@/hooks/useCuratorIndex';
 import { CollapsibleContent } from "./CollapsibleContent";
+import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
 
 interface ReviewItemProps {
   review: Review;
@@ -126,7 +127,14 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
             assetUnitName={assetUnitName}
             projectSourceContext={projectSourceContext}
           />
-          <span className="text-xs text-white/70 font-semibold">{formatTimestamp(review.timestamp)}</span>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-white/70 font-semibold">{formatTimestamp(review.timestamp)}</span>
+            <InteractionActionsMenu 
+              item={review} 
+              project={project} 
+              onInteractionSuccess={onInteractionSuccess} 
+            />
+          </div>
         </div>
 
         <div className="px-3 pb-2">

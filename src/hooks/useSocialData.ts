@@ -26,7 +26,7 @@ const decodeNote = (note: string): string => {
   }
 };
 
-function ensureInteractionDataTypes<T extends { likes: Set<string> | any, likeHistory: any, likeCount: number }>(item: T): T {
+function ensureInteractionDataTypes<T extends { likes: Set<string> | any, likeHistory: any, likeCount: number, isExcluded: boolean }>(item: T): T {
   item.likeHistory = Array.isArray(item.likeHistory) ? item.likeHistory : [];
   const currentLikes = new Set<string>();
   const latestActionPerUser = new Map<string, 'LIKE' | 'UNLIKE'>();
@@ -116,17 +116,20 @@ const parseTransactions = (transactions: any[]): ProjectsData => {
             }
 
             if (!parsedProjects[proj]) parsedProjects[proj] = { id: proj, reviews: {}, proposedNoteEdits: {} };
-            if (review !== '0' && !parsedProjects[proj].reviews[review]) parsedProjects[proj].reviews[review] = { id: `${proj}.${review}`, sender: '', content: '', timestamp: 0, txId: '', latestVersion: -1, likes: new Set(), likeCount: 0, comments: {}, likeHistory: [] };
-            if (comm !== '0' && review !== '0' && !parsedProjects[proj].reviews[review]?.comments[comm]) parsedProjects[proj].reviews[review].comments[comm] = { id: `${proj}.${review}.${comm}`, sender: '', content: '', timestamp: 0, txId: '', latestVersion: -1, likes: new Set(), likeCount: 0, replies: {}, likeHistory: [] };
-            if (rep !== '0' && comm !== '0' && review !== '0' && !parsedProjects[proj].reviews[review]?.comments[comm]?.replies[rep]) parsedProjects[proj].reviews[review].comments[comm].replies[rep] = { id: `${proj}.${review}.${comm}.${rep}`, sender: '', content: '', timestamp: 0, txId: '', latestVersion: -1, likes: new Set(), likeCount: 0, likeHistory: [] };
+            if (review !== '0' && !parsedProjects[proj].reviews[review]) parsedProjects[proj].reviews[review] = { id: `${proj}.${review}`, sender: '', content: '', timestamp: 0, txId: '', latestVersion: -1, likes: new Set(), likeCount: 0, comments: {}, likeHistory: [], isExcluded: false };
+            if (comm !== '0' && review !== '0' && !parsedProjects[proj].reviews[review]?.comments[comm]) parsedProjects[proj].reviews[review].comments[comm] = { id: `${proj}.${review}.${comm}`, sender: '', content: '', timestamp: 0, txId: '', latestVersion: -1, likes: new Set(), likeCount: 0, replies: {}, likeHistory: [], isExcluded: false };
+            if (rep !== '0' && comm !== '0' && review !== '0' && !parsedProjects[proj].reviews[review]?.comments[comm]?.replies[rep]) parsedProjects[proj].reviews[review].comments[comm].replies[rep] = { id: `${proj}.${review}.${comm}.${rep}`, sender: '', content: '', timestamp: 0, txId: '', latestVersion: -1, likes: new Set(), likeCount: 0, likeHistory: [], isExcluded: false };
 
             const updateInteraction = (interaction: Review | Comment | Reply) => {
                 // Only update if this transaction is for a newer version or the same version but a later part
                 if (version > interaction.latestVersion || (version === interaction.latestVersion && order > (multiPartContent[`${interaction.id}.${version}`]?.[order] ? order : -1))) {
                     const versionedId = `${interaction.id}.${version}`;
-                    // If it's a new version, clear previous parts
+                    
+                    // If it's a new version, clear previous parts and reset exclusion status
                     if (version > interaction.latestVersion) {
                         multiPartContent[versionedId] = {};
+                        interaction.content = '';
+                        interaction.isExcluded = false; 
                     }
                     
                     interaction.latestVersion = version;
@@ -139,9 +142,19 @@ const parseTransactions = (transactions: any[]): ProjectsData => {
                     }
                     multiPartContent[versionedId][order] = contentOrAction;
 
+                    // Check if this chunk marks the post as excluded
+                    if (contentOrAction === 'EXCLUDE') {
+                        interaction.isExcluded = true;
+                        // If excluded, we don't need further chunks for this version
+                        multiPartContent[versionedId] = { 0: 'EXCLUDE' }; 
+                    } else if (interaction.isExcluded && version === interaction.latestVersion) {
+                        // If we are receiving content chunks for the current version, it means it's an edit, so un-exclude it.
+                        interaction.isExcluded = false;
+                    }
+
                     // NEW: Log when an interaction is updated
                     if (identifier.includes('K.d.a.1.0')) {
-                        console.log(`[useSocialData] Interaction updated for ${identifier}. Content chunk: '${contentOrAction}', order: ${order}`);
+                        console.log(`[useSocialData] Interaction updated for ${identifier}. Content chunk: '${contentOrAction}', order: ${order}, isExcluded: ${interaction.isExcluded}`);
                     }
                 }
             };
@@ -170,6 +183,11 @@ const parseTransactions = (transactions: any[]): ProjectsData => {
     Object.values(parsedProjects).forEach(proj => {
         Object.values(proj.reviews).forEach(review => {
             const assemble = (interaction: Review | Comment | Reply) => {
+                if (interaction.isExcluded) {
+                    interaction.content = "[EXCLUDED]";
+                    return;
+                }
+                
                 const versionedId = `${interaction.id}.${interaction.latestVersion}`;
                 if (multiPartContent[versionedId]) {
                     interaction.content = Object.keys(multiPartContent[versionedId]).map(Number).sort((a, b) => a - b).map(key => multiPartContent[versionedId][key]).join('');
@@ -213,12 +231,11 @@ const parseTransactions = (transactions: any[]): ProjectsData => {
         if (projectFirstReviewSender[proj.id]) proj.creatorWallet = projectFirstReviewSender[proj.id].sender;
         const filteredReviews: { [reviewId: string]: Review } = {};
         Object.values(proj.reviews).forEach(review => {
-            // Keep the review ONLY if its content is not empty or whitespace-only.
-            // This will filter out all truly empty reviews, including the initial 'a' post if it has no content.
-            if (review.content.trim() !== "") {
+            // Keep the review ONLY if its content is not empty or whitespace-only AND it is NOT excluded.
+            if (review.content.trim() !== "" && !review.isExcluded) {
                 filteredReviews[review.id.split('.')[1]] = review;
             } else {
-                console.log(`[useSocialData] Filtering out empty review: ${review.id}`);
+                console.log(`[useSocialData] Filtering out empty or excluded review: ${review.id}`);
             }
         });
         proj.reviews = filteredReviews;

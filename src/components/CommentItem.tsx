@@ -12,6 +12,8 @@ import { AllCuratorCalculationsMap } from "@/hooks/useCuratorIndex";
 import { InteractionDetailsPanel } from "./InteractionDetailsPanel";
 import { CollapsibleContent } from "./CollapsibleContent";
 import { cn } from "@/lib/utils";
+import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
+import { InteractionForm } from "./InteractionForm"; // NEW Import for reply form
 
 interface CommentItemProps {
   comment: Comment;
@@ -44,6 +46,7 @@ export function CommentItem({
 }: CommentItemProps) {
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
+  const [showReplyForm, setShowReplyForm] = useState(false); // NEW State for reply form
   const ref = useRef<HTMLDivElement>(null);
 
   const isHighlighted = useMemo(() => highlightCommentId === comment.id, [highlightCommentId, comment.id]);
@@ -81,6 +84,12 @@ export function CommentItem({
     return getCuratorWeightedLikeScore(comment, allCuratorData);
   }, [comment, allCuratorData]);
 
+  const handleReplyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAreRepliesVisible(true);
+    setShowReplyForm(prev => !prev);
+  };
+
   return (
     <div ref={ref} className="ml-4" id={comment.id}>
       <div 
@@ -100,7 +109,15 @@ export function CommentItem({
               assetUnitName={assetUnitName}
               sourceContext={projectSourceContext}
             />
-            <span className="text-xs text-white/70 font-semibold">{formatTimestamp(comment.timestamp)}</span>
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-white/70 font-semibold">{formatTimestamp(comment.timestamp)}</span>
+              <InteractionActionsMenu 
+                item={comment} 
+                project={project} 
+                review={review}
+                onInteractionSuccess={onInteractionSuccess} 
+              />
+            </div>
           </div>
           <p className="whitespace-pre-wrap font-semibold selectable-text">{comment.content}</p>
         </div>
@@ -115,7 +132,7 @@ export function CommentItem({
           <Button
             variant="ghost"
             size="sm"
-            onClick={toggleReplies}
+            onClick={handleReplyClick} // Use new handler
             className="flex items-center space-x-2 hover:text-white transition-colors"
           >
             <MessageSquare className="h-4 w-4" />
@@ -164,6 +181,18 @@ export function CommentItem({
               isHighlighted={highlightReplyId === reply.id}
             />
           ))}
+        {showReplyForm && (
+          <InteractionForm
+            type="reply"
+            project={project}
+            review={review}
+            comment={comment}
+            onInteractionSuccess={() => {
+              onInteractionSuccess();
+              setShowReplyForm(false);
+            }}
+          />
+        )}
       </CollapsibleContent>
     </div>
   );

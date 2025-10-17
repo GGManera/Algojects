@@ -21,6 +21,7 @@ import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { useNfd } from '@/hooks/useNfd';
 import { Footer } from '@/components/Footer';
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
+import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation'; // Import useKeyboardNavigation
 
 interface NewWebsiteProps {
   scrollToTopTrigger?: number;
@@ -238,16 +239,37 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   useEffect(() => {
     if (!api || isMobile) return;
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const targetTagName = (event.target as HTMLElement).tagName;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const targetTagName = (e.target as HTMLElement).tagName;
       if (targetTagName === 'INPUT' || targetTagName === 'TEXTAREA') {
         return;
       }
 
-      if (event.key === 'a' || event.key === 'ArrowLeft') {
-        api.scrollPrev();
-      } else if (event.key === 'd' || event.key === 'ArrowRight') {
+      const key = e.key.toLowerCase();
+      const isRightKey = ['arrowright', 'd'].includes(key);
+      const isLeftKey = ['arrowleft', 'a'].includes(key);
+
+      if (!isRightKey && !isLeftKey) return;
+
+      // 1. Check if we are on the Projects (Home) slide (index 0)
+      if (api.selectedScrollSnap() === 0 && isRightKey) {
+        const focusedElement = document.querySelector('#projects-home [data-nav-id].focus-glow-border');
+        if (focusedElement) {
+          const focusedProjectId = focusedElement.getAttribute('data-nav-id');
+          if (focusedProjectId) {
+            e.preventDefault();
+            // Navigate to the project page and trigger scroll to top
+            navigate(`/project/${focusedProjectId}`, { state: { scrollToTop: true } });
+            return;
+          }
+        }
+      }
+      
+      // 2. Default Carousel Navigation (A/D)
+      if (isRightKey) {
         api.scrollNext();
+      } else if (isLeftKey) {
+        api.scrollPrev();
       }
     };
 
@@ -256,7 +278,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [api, isMobile]);
+  }, [api, isMobile, navigate]);
 
   const cardContentMaxHeightClass = useMemo(() => {
     if (isMobile && isDeviceLandscape) {

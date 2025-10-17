@@ -81,14 +81,14 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
     };
   }, [setHeroLogoVisibility]);
 
-  useEffect(() => {
-    if (location.pathname === '/' && projectsPageRef.current) {
-      projectsPageRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [location.pathname]);
+  // Removed the local scroll to top effect, relying on parent component (NewWebsite)
+  // to handle scroll management via ref/prop.
 
   // NEW: Effect to scroll to top when scrollToTopTrigger changes
   useEffect(() => {
+    // This component is now wrapped in a CardContent which handles scrolling.
+    // We rely on the parent component (NewWebsite) to call scrollToTop on its ref.
+    // However, if we are NOT inside the carousel, we still need a local scroll ref.
     if (scrollToTopTrigger && projectsPageRef.current && location.pathname === '/') {
       console.log("[Projects] Scrolling to top due to trigger.");
       projectsPageRef.current.scrollTo({ top: 0, behavior: 'smooth' });

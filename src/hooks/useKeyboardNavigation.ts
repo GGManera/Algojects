@@ -98,14 +98,6 @@ export function useKeyboardNavigation(pageKey: string) {
     };
   }, [isMouseActive]);
 
-  // Effect to clear keyboard focus when mouse becomes active
-  useEffect(() => {
-    if (isMouseActive && focusedId !== null) {
-      // When mouse moves, clear keyboard focus. The cache is maintained by setLastActiveId (hover).
-      setFocusedId(null);
-    }
-  }, [isMouseActive, focusedId]);
-
   // NOTE: Removed the useEffect that automatically saves focusedId to cache when mouse stops moving.
   // This prevents the highlight from reappearing when the mouse stops moving outside a card.
 
@@ -153,9 +145,15 @@ export function useKeyboardNavigation(pageKey: string) {
 
   // --- Mouse Hover Tracking (External API) ---
   const setLastActiveId = useCallback((id: string | null) => {
-    // Always update the cache on hover/mouse leave, as requested.
+    // 1. Always update the cache on hover/mouse leave.
     setCacheActiveId(id);
-  }, [setCacheActiveId]);
+
+    // 2. If the mouse enters a valid item AND the keyboard currently has focus,
+    // clear the keyboard focus (focusedId) to transfer control to the mouse.
+    if (id !== null && focusedId !== null && id !== focusedId) {
+        setFocusedId(null);
+    }
+  }, [setCacheActiveId, focusedId]);
 
 
   // --- Effect to manage focus state and cleanup when pageKey changes ---
@@ -191,7 +189,11 @@ export function useKeyboardNavigation(pageKey: string) {
       const orderedIds = globalOrderedIdsMap.get(currentKey) || [];
       const itemsMap = globalNavigableItemsMap.get(currentKey) || new Map();
 
-      const isNavigationKey = ['ArrowDown', 'ArrowUp', 's', 'w', ' '].includes(e.key) || ['ArrowDown', 'ArrowUp', 's', 'w', ' '].includes(e.key.toLowerCase());
+      const key = e.key.toLowerCase();
+      const isMovementKey = ['arrowdown', 'arrowup', 's', 'w'].includes(key);
+      const isActionKey = key === ' ';
+      const isRightKey = ['arrowright', 'd'].includes(key);
+      const isNavigationKey = isMovementKey || isActionKey || isRightKey;
 
       if (!isNavigationKey) return;
 
@@ -215,12 +217,11 @@ export function useKeyboardNavigation(pageKey: string) {
             currentFocus = orderedIds[0];
         }
         // When restoring focus from cache, we only scroll if the user presses a movement key (ArrowUp/Down, s/w)
-        // If they press space, we expand the currently focused item without scrolling.
-        if (e.key !== ' ') {
+        if (isMovementKey) {
             shouldScroll = true;
         }
         setFocusedId(currentFocus);
-      } else if (currentFocus !== null && (e.key === 'ArrowDown' || e.key.toLowerCase() === 's' || e.key === 'ArrowUp' || e.key.toLowerCase() === 'w')) {
+      } else if (currentFocus !== null && isMovementKey) {
         // If focus is already set and a movement key is pressed, we should scroll.
         shouldScroll = true;
       }
@@ -228,13 +229,13 @@ export function useKeyboardNavigation(pageKey: string) {
       const currentIndex = currentFocus ? orderedIds.indexOf(currentFocus) : -1;
       let nextIndex = currentIndex;
 
-      if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') {
+      if (key === 'arrowdown' || key === 's') {
         e.preventDefault();
         nextIndex = Math.min(currentIndex + 1, orderedIds.length - 1);
-      } else if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') {
+      } else if (key === 'arrowup' || key === 'w') {
         e.preventDefault();
         nextIndex = Math.max(currentIndex - 1, 0);
-      } else if (e.key === ' ') {
+      } else if (isActionKey) {
         if (currentFocus) {
           e.preventDefault();
           const item = itemsMap.get(currentFocus);
@@ -244,6 +245,10 @@ export function useKeyboardNavigation(pageKey: string) {
             updateOrderedIds(currentKey);
           }
         }
+        return;
+      } else if (isRightKey) {
+        // Handle right navigation (Project Page specific logic handled in Projects.tsx)
+        // We only prevent default if we successfully navigate, otherwise let the carousel handle it.
         return;
       } else {
         return;
@@ -266,7 +271,7 @@ export function useKeyboardNavigation(pageKey: string) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [focusedId, pageKey, isMouseActive, getCachedActiveId]);
+  }, [focusedId, pageKey, isMouseActive, getCachedActiveId, setCacheActiveId]); // Added setCacheActiveId dependency
 
   // Reset focus when navigating to a new route (even if pageKey remains the same, e.g., project/a to project/b)
   useEffect(() => {

@@ -565,7 +565,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const MetadataMinicard = (
     <div className="w-full md:w-2/3">
       <Card className="bg-card shadow-deep-md">
-        <CardHeader className="text-center relative px-4 pt-4 pb-1">
+        <CardHeader className="text-center relative px-4 pt-4 pb-4"> {/* Increased pb-1 to pb-4 */}
           {/* Title, Description, Tags, Claim Button */}
           <CardTitle className="text-4xl font-bold gradient-text">
             {currentProjectName}
@@ -609,7 +609,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           
           {/* MOBILE ONLY: Stats Grid integrated here */}
           {isMobile && (
-            <div className="px-2 mt-12"> {/* Increased mt to mt-12 (48px) */}
+            <div className="px-2 mt-8"> {/* Added mt-8 here */}
               {StatsGrid}
             </div>
           )}

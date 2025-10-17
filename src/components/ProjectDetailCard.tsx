@@ -62,6 +62,7 @@ const getReviewInteractionScore = (review: Review): number => {
     replies.forEach(reply => {
       score += reply.likeCount || 0;
     });
+    // Removed: score += comment.likeCount || 0; // Likes on this comment
   });
 
   return score;
@@ -426,8 +427,8 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           
           {/* Project Description/Notes */}
           {(isLoadingDetails || (currentProjectDescription && currentProjectDescription.trim() !== '')) && (
-            <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-white rounded-md shadow-recessed">
-              <h3 className="text-lg font-semibold mb-2 text-white">
+            <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-black rounded-md shadow-recessed">
+              <h3 className="text-lg font-semibold mb-2 text-black">
                 {isCommunityNotes ? "Community Notes:" : (isCreatorAdded ? "Creator Notes:" : "Contributor Notes:")}
               </h3>
               {isLoadingDetails ? (
@@ -439,7 +440,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
                   <AlertDescription>{detailsError}</AlertDescription>
                 </Alert>
               ) : (
-                <p className="text-white/90 whitespace-pre-wrap selectable-text">{currentProjectDescription}</p>
+                <p className="text-black/90 whitespace-pre-wrap selectable-text">{currentProjectDescription}</p>
               )}
             </div>
           )}

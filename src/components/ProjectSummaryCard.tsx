@@ -272,12 +272,12 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
             <div className="mt-4 space-y-4">
               {/* Project Notes/Description */}
               {(isLoadingDetails || (projectDescription && projectDescription.trim() !== '')) && (
-                <div className="py-3 px-3 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-white rounded-md shadow-recessed">
-                  <h3 className="text-md font-semibold mb-2 text-white">Notes:</h3>
+                <div className="py-3 px-3 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-black rounded-md shadow-recessed">
+                  <h3 className="text-md font-semibold mb-2 text-black">Notes:</h3>
                   {isLoadingDetails ? (
                     <Skeleton className="h-16 w-full" />
                   ) : (
-                    <p className="text-white/90 whitespace-pre-wrap text-sm">{projectDescription}</p>
+                    <p className="text-black/90 whitespace-pre-wrap text-sm">{projectDescription}</p>
                   )}
                 </div>
               )}

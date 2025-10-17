@@ -334,8 +334,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   useEffect(() => {
     if (isActive) {
       const timer = setTimeout(() => {
-        // Force focus on the first item when the slide becomes active
-        rebuildOrder(true); 
+        rebuildOrder();
       }, 100); // Delay to ensure DOM is fully rendered
       return () => clearTimeout(timer);
     }

@@ -66,19 +66,16 @@ export function useKeyboardNavigation(pageKey: string) {
   }, []);
 
   // --- Explicit Rebuild Function ---
-  const rebuildOrder = useCallback((forceFocusFirst: boolean = false) => {
+  const rebuildOrder = useCallback(() => {
     const currentKey = pageKeyRef.current;
     if (currentKey === 'inactive') return;
     
     const orderedIds = updateOrderedIds(currentKey);
     console.log(`[KeyboardNav] Explicit Rebuild for ${currentKey}. Total items: ${orderedIds.length}`);
     
-    // If focus was lost, or if we explicitly force it, set focus to the first item.
-    if ((focusedId === null || forceFocusFirst) && orderedIds.length > 0) {
+    // If no item is currently focused AND there are items, set focus to the first one.
+    if (focusedId === null && orderedIds.length > 0) {
         setFocusedId(orderedIds[0]);
-    } else if (focusedId !== null && !orderedIds.includes(focusedId)) {
-        // If the currently focused item was removed from the DOM, move focus to the first item
-        setFocusedId(orderedIds[0] || null);
     }
     return orderedIds; // Return ordered IDs for external use
   }, [focusedId]);

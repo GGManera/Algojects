@@ -29,7 +29,7 @@ import { MetadataItem } from '@/types/project';
 import { ThankContributorDialog } from "./ThankContributorDialog"; // NEW Import
 import { thankContributorAndClaimProject } from "@/lib/coda"; // NEW Import
 import { useWallet } from "@txnlab/use-wallet-react"; // NEW Import
-import { useNfdAddressResolver } from "@/hooks/useNfdAddressResolver"; // NEW Import
+// Removed: import { useNfdAddressResolver } from "@/hooks/useNfdAddressResolver"; // NEW Import
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 
@@ -150,8 +150,9 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   // Determine the address that added the project, prioritizing Coda metadata but falling back to on-chain creator wallet
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
 
-  // NEW: Resolve the Creator Wallet metadata value (which might be an NFD)
-  const { resolvedAddress: resolvedCreatorAddress, loading: resolvingCreatorAddress } = useNfdAddressResolver(creatorWalletMetadata);
+  // NEW: Use raw metadata value as the address, since NFD resolution is removed from the form
+  const effectiveCreatorAddress = creatorWalletMetadata || project.creatorWallet;
+  const resolvingCreatorAddress = false; // No longer resolving
 
   const handleProjectDetailsUpdated = () => {
     refetchProjectDetails();
@@ -159,9 +160,6 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   };
 
   // --- NEW: Thank Contributor Logic ---
-  // Determine the address that should claim the project (resolved Creator Wallet metadata or the first review sender)
-  const effectiveCreatorAddress = resolvedCreatorAddress || creatorWalletMetadata || project.creatorWallet;
-  
   // The button should appear if:
   // 1. Wallet is connected (activeAddress)
   // 2. The project is not yet claimed (isClaimed === false)

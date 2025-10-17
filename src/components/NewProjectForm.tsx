@@ -109,6 +109,11 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
       showError("Project Name cannot be empty.");
       return null;
     }
+    // NEW: Validation for Creator Wallet
+    if (creatorWalletAddress.trim() && creatorWalletAddress.trim().length !== 58) {
+      showError("Creator Wallet must be a valid 58-character Algorand address.");
+      return null;
+    }
 
     setIsLoading(true);
     const toastId = showLoading("Preparing your new project...");
@@ -223,7 +228,8 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
   };
 
   const hasNfd = !!nfd?.name;
-  const canSubmit = !activeAddress || isLoading || nfdLoading || !hasNfd || !projectName.trim(); // Removed customCategoryInput check
+  const isCreatorWalletValid = !creatorWalletAddress.trim() || creatorWalletAddress.trim().length === 58;
+  const canSubmit = !activeAddress || isLoading || nfdLoading || !hasNfd || !projectName.trim() || !isCreatorWalletValid; // Added isCreatorWalletValid check
   const inputDisabled = !activeAddress || isLoading || nfdLoading;
 
   return (
@@ -272,8 +278,11 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
               htmlFor="creatorWalletAddress"
               className="absolute top-0 left-0 py-2 text-base text-white pointer-events-none transition-all duration-500 peer-focus:top-[-20px] peer-focus:left-0 peer-focus:text-[#bdb8b8] peer-focus:text-xs peer-valid:top-[-20px] peer-valid:left-0 peer-valid:text-[#bdb8b8] peer-valid:text-xs peer-focus:bg-hodl-darker peer-focus:px-1 peer-valid:bg-hodl-darker peer-valid:px-1"
             >
-              Creator Wallet Address/NFD (Optional)
+              Creator Wallet Address (Optional)
             </Label>
+            {creatorWalletAddress.trim() && creatorWalletAddress.trim().length !== 58 && (
+              <p className="text-xs text-red-500 mt-1">Must be a valid 58-character Algorand address.</p>
+            )}
           </div>
         )}
 

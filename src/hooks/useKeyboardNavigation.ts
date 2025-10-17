@@ -330,11 +330,11 @@ export function useKeyboardNavigation(pageKey: string) {
         }
         
         if (shouldScroll) {
-            // If we are focusing on the very first item (index 0), always scroll to the absolute top.
+            // Se o próximo item for o primeiro (índice 0), forçamos a rolagem para o topo absoluto.
             if (nextIndex === 0) {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
-                // Otherwise, scroll the element into view normally
+                // Caso contrário, rolamos o elemento para a visualização normalmente
                 const element = document.querySelector(`[data-nav-id="${nextId}"]`);
                 if (element) {
                   element.scrollIntoView({ behavior: 'smooth', block: 'start' });

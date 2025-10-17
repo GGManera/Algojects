@@ -44,6 +44,7 @@ interface ProjectDetailCardProps {
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
   isActive: boolean; // NEW PROP
+  setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
 }
 
 interface ProjectStats {
@@ -80,7 +81,8 @@ export function ProjectDetailCard({
   isInsideCarousel = false, 
   focusedId, 
   registerItem,
-  isActive // NEW PROP
+  isActive,
+  setLastActiveId // NEW PROP
 }: ProjectDetailCardProps) {
   const projectId = project.id;
   const { isMobile } = useAppContextDisplayMode();
@@ -700,6 +702,7 @@ export function ProjectDetailCard({
               focusedId={focusedId}
               registerItem={registerItem}
               isActive={isActive} // NEW
+              setLastActiveId={setLastActiveId} // NEW
             />
           ))
         ) : (

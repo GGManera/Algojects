@@ -44,7 +44,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
   const pageKey = 'projects-home'; // Unique key for navigation hook
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
-  const { focusedId, registerItem, rebuildOrder } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+  const { focusedId, registerItem, rebuildOrder, setLastActiveId } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
 
   const isOverallRefreshing = isRefreshingSocialData || isRefreshingProjectDetails;
 
@@ -217,6 +217,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
                 focusedId={focusedId}
                 registerItem={registerItem}
                 isActive={isActive} // NEW
+                setLastActiveId={setLastActiveId} // NEW
               />
             ))}
           </div>

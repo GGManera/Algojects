@@ -29,6 +29,7 @@ interface ProjectSummaryCardProps {
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
   isActive: boolean; // NEW PROP
+  setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
 }
 
 interface ProjectStats {
@@ -58,7 +59,7 @@ const getReviewInteractionScore = (review: Review): number => {
   return score;
 };
 
-export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRef, isInsideCarousel = false, focusedId, registerItem, isActive }: ProjectSummaryCardProps) {
+export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRef, isInsideCarousel = false, focusedId, registerItem, isActive, setLastActiveId }: ProjectSummaryCardProps) {
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
   const { isMobile } = useAppContextDisplayMode();
@@ -319,6 +320,8 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
         !isFocused && "hover:focus-glow-border" // Apply hover focus highlight only if not already focused
       )}
       onClick={() => onToggleExpand(project.id)}
+      onMouseEnter={() => setLastActiveId(project.id)} // NEW: Set active ID on mouse enter
+      onMouseLeave={() => setLastActiveId(null)} // NEW: Clear active ID on mouse leave
       data-nav-id={project.id} // Add data attribute for keyboard navigation
     >
       <Card className="w-full">

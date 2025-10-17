@@ -34,6 +34,7 @@ interface CommentItemProps {
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
   isActive: boolean; // NEW PROP
+  setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
 }
 
 export function CommentItem({
@@ -52,6 +53,7 @@ export function CommentItem({
   focusedId,
   registerItem,
   isActive,
+  setLastActiveId,
 }: CommentItemProps) {
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
@@ -138,6 +140,8 @@ export function CommentItem({
             : "bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white" // Normal style
         )}
         onClick={handleCardClick}
+        onMouseEnter={() => setLastActiveId(comment.id)} // NEW: Set active ID on mouse enter
+        onMouseLeave={() => setLastActiveId(null)} // NEW: Clear active ID on mouse leave
         data-nav-id={comment.id} // Add data attribute for keyboard navigation
       >
         <div className="p-3">
@@ -235,6 +239,7 @@ export function CommentItem({
                   focusedId={focusedId}
                   registerItem={registerItem}
                   isActive={isActive} // NEW
+                  setLastActiveId={setLastActiveId} // NEW
                 />
               ))}
             {showReplyForm && (

@@ -37,7 +37,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
   const pageKey = `project-page-${effectiveProjectId}`; // Unique key for navigation hook
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
-  const { focusedId, registerItem, rebuildOrder } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+  const { focusedId, registerItem, rebuildOrder, setLastActiveId } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
 
   // NEW: Effect to rebuild order when active
   useEffect(() => {
@@ -171,6 +171,8 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
         // NEW: Pass keyboard navigation props
         focusedId={focusedId}
         registerItem={registerItem}
+        isActive={isActive}
+        setLastActiveId={setLastActiveId} // NEW
       />
     </div>
   );

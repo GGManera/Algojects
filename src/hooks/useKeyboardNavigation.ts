@@ -15,6 +15,8 @@ const globalNavigableItemsMap = new Map<string, Map<string, NavigableItem>>();
 // Global map to hold the ordered IDs for each pageKey
 const globalOrderedIdsMap = new Map<string, string[]>();
 
+const LAST_ACTIVE_ID_KEY = 'algojects_last_active_id';
+
 // Function to update the ordered list of IDs based on DOM order for a specific pageKey
 const updateOrderedIds = (pageKey: string) => {
   const container = document.getElementById(pageKey); 
@@ -36,11 +38,40 @@ const updateOrderedIds = (pageKey: string) => {
 
 export function useKeyboardNavigation(pageKey: string) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
-  const [isMouseActive, setIsMouseActive] = useState(false); // NEW: State to track mouse activity
+  const [isMouseActive, setIsMouseActive] = useState(false);
   const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const location = useLocation();
   const pageKeyRef = useRef(pageKey);
   pageKeyRef.current = pageKey;
+
+  // --- Cache Management ---
+  const getCachedActiveId = useCallback(() => {
+    try {
+      const cached = localStorage.getItem(LAST_ACTIVE_ID_KEY);
+      if (cached) {
+        const { id, path } = JSON.parse(cached);
+        // Only restore if the path matches the current path
+        if (path === location.pathname) {
+          return id;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to read last active ID from cache:", e);
+    }
+    return null;
+  }, [location.pathname]);
+
+  const setCacheActiveId = useCallback((id: string | null) => {
+    if (id) {
+      try {
+        localStorage.setItem(LAST_ACTIVE_ID_KEY, JSON.stringify({ id, path: location.pathname }));
+      } catch (e) {
+        console.error("Failed to write last active ID to cache:", e);
+      }
+    } else {
+      localStorage.removeItem(LAST_ACTIVE_ID_KEY);
+    }
+  }, [location.pathname]);
 
   // --- Mouse Activity Detection ---
   useEffect(() => {
@@ -48,11 +79,9 @@ export function useKeyboardNavigation(pageKey: string) {
       if (!isMouseActive) {
         setIsMouseActive(true);
       }
-      // Clear any existing timeout
       if (mouseTimeoutRef.current) {
         clearTimeout(mouseTimeoutRef.current);
       }
-      // Set a new timeout to mark mouse as inactive after 500ms
       mouseTimeoutRef.current = setTimeout(() => {
         setIsMouseActive(false);
       }, 500);
@@ -71,9 +100,17 @@ export function useKeyboardNavigation(pageKey: string) {
   // Effect to clear keyboard focus when mouse becomes active
   useEffect(() => {
     if (isMouseActive && focusedId !== null) {
+      // When mouse moves, clear keyboard focus, but keep the ID in cache
       setFocusedId(null);
     }
   }, [isMouseActive, focusedId]);
+
+  // Effect to update cache when focusedId changes (only if it's a keyboard-driven change)
+  useEffect(() => {
+    if (focusedId !== null && !isMouseActive) {
+      setCacheActiveId(focusedId);
+    }
+  }, [focusedId, isMouseActive, setCacheActiveId]);
 
 
   // --- Registration Management ---
@@ -86,14 +123,10 @@ export function useKeyboardNavigation(pageKey: string) {
     }
     const itemsMap = globalNavigableItemsMap.get(currentKey)!;
     
-    // Update item details
     itemsMap.set(id, { id, toggleExpand, isExpanded, type });
-    
-    // Immediately update the ordered list (this is necessary for dynamic content like comments/replies)
     updateOrderedIds(currentKey);
 
     return () => {
-      // Only delete if the pageKey hasn't changed (i.e., we are cleaning up on the same page)
       if (pageKeyRef.current === currentKey) {
         itemsMap.delete(id);
         updateOrderedIds(currentKey);
@@ -107,14 +140,33 @@ export function useKeyboardNavigation(pageKey: string) {
     if (currentKey === 'inactive') return;
     
     const orderedIds = updateOrderedIds(currentKey);
-    console.log(`[KeyboardNav] Explicit Rebuild for ${currentKey}. Total items: ${orderedIds.length}`);
     
-    // If no item is currently focused AND there are items, set focus to the first one.
+    // If no item is currently focused, try to restore from cache
     if (focusedId === null && orderedIds.length > 0) {
-        setFocusedId(orderedIds[0]);
+        const cachedId = getCachedActiveId();
+        if (cachedId && orderedIds.includes(cachedId)) {
+            setFocusedId(cachedId);
+            // Scroll the restored item into view
+            const element = document.querySelector(`[data-nav-id="${cachedId}"]`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        } else {
+            // If cache is invalid or empty, set focus to the first item
+            setFocusedId(orderedIds[0]);
+        }
     }
-    return orderedIds; // Return ordered IDs for external use
-  }, [focusedId]);
+    return orderedIds;
+  }, [focusedId, getCachedActiveId]);
+
+  // --- Mouse Hover Tracking (External API) ---
+  const setLastActiveId = useCallback((id: string | null) => {
+    // This function is called by components on mouse enter/leave.
+    // We only use it to update the cache if the mouse is active.
+    if (isMouseActive) {
+      setCacheActiveId(id);
+    }
+  }, [isMouseActive, setCacheActiveId]);
 
 
   // --- Effect to manage focus state and cleanup when pageKey changes ---
@@ -122,18 +174,14 @@ export function useKeyboardNavigation(pageKey: string) {
     const currentKey = pageKeyRef.current;
     
     if (currentKey === 'inactive') {
-      // When becoming inactive, explicitly clear focus
       setFocusedId(null);
       return;
     }
 
-    // 1. Reset focus when the pageKey changes (e.g., navigating from project/a to project/b)
-    // We rely on the rebuildOrder call in the page component to set the initial focus when active.
+    // Reset focus when the pageKey changes (e.g., navigating from project/a to project/b)
     setFocusedId(null);
     
-    // 2. Cleanup function for when the component unmounts or pageKey changes
     return () => {
-      // When the page becomes inactive, clear its state from the global maps
       if (currentKey !== 'inactive') {
         globalNavigableItemsMap.delete(currentKey);
         globalOrderedIdsMap.delete(currentKey);
@@ -158,15 +206,27 @@ export function useKeyboardNavigation(pageKey: string) {
 
       if (!isNavigationKey) return;
 
-      // If mouse is active, ignore keyboard navigation until mouse is inactive
+      // If mouse is active, ignore keyboard navigation
       if (isMouseActive) {
-        // If a navigation key is pressed while the mouse is active, we still prevent default
-        // but we don't process the navigation, allowing the mouse to maintain control.
         e.preventDefault();
         return;
       }
 
-      const currentIndex = focusedId ? orderedIds.indexOf(focusedId) : -1;
+      // --- Keyboard Mode Re-activation / Focus Restoration ---
+      let currentFocus = focusedId;
+      if (currentFocus === null && orderedIds.length > 0) {
+        // If no item is focused (because mouse was active), try to restore from cache
+        const cachedId = getCachedActiveId();
+        if (cachedId && orderedIds.includes(cachedId)) {
+            currentFocus = cachedId;
+        } else {
+            // Fallback to the first item
+            currentFocus = orderedIds[0];
+        }
+        setFocusedId(currentFocus);
+      }
+      
+      const currentIndex = currentFocus ? orderedIds.indexOf(currentFocus) : -1;
       let nextIndex = currentIndex;
 
       if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') {
@@ -176,14 +236,12 @@ export function useKeyboardNavigation(pageKey: string) {
         e.preventDefault();
         nextIndex = Math.max(currentIndex - 1, 0);
       } else if (e.key === ' ') {
-        if (focusedId) {
+        if (currentFocus) {
           e.preventDefault();
-          const item = itemsMap.get(focusedId);
+          const item = itemsMap.get(currentFocus);
           if (item) {
             item.toggleExpand();
-            // Update the map immediately after toggling
-            itemsMap.set(focusedId, { ...item, isExpanded: !item.isExpanded });
-            // Rebuild order in case expansion/collapse changed DOM layout significantly (e.g., showing comments)
+            itemsMap.set(currentFocus, { ...item, isExpanded: !item.isExpanded });
             updateOrderedIds(currentKey);
           }
         }
@@ -193,18 +251,11 @@ export function useKeyboardNavigation(pageKey: string) {
       }
 
       if (orderedIds.length > 0) {
-        // If no item was focused, start at the top
-        if (currentIndex === -1) {
-            nextIndex = 0;
-        }
-        
         const nextId = orderedIds[nextIndex];
         setFocusedId(nextId);
         
-        // Scroll the focused item into view if it's not visible
         const element = document.querySelector(`[data-nav-id="${nextId}"]`);
         if (element) {
-          // Use scrollIntoView with 'start' and rely on CSS scroll-margin-top
           element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }
@@ -214,12 +265,12 @@ export function useKeyboardNavigation(pageKey: string) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [focusedId, pageKey, isMouseActive]); // Depend on isMouseActive
+  }, [focusedId, pageKey, isMouseActive, getCachedActiveId]);
 
   // Reset focus when navigating to a new route (even if pageKey remains the same, e.g., project/a to project/b)
   useEffect(() => {
     setFocusedId(null);
   }, [location.pathname]);
 
-  return { focusedId, registerItem, rebuildOrder };
+  return { focusedId, registerItem, rebuildOrder, setLastActiveId };
 }

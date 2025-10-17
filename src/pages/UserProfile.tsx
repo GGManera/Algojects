@@ -62,9 +62,10 @@ interface InteractionPreviewProps {
   userProfileActiveCategory: 'writing' | 'curating';
   focusedId: string | null; // NEW
   registerItem: (id: string, toggleExpand: () => void, isExpanded: boolean, type: 'review' | 'comment' | 'reply' | 'project-summary') => () => void; // NEW
+  setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
 }
 
-const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, userProfileNfdName, userProfileActiveCategory, focusedId, registerItem }: { review: Review } & InteractionPreviewProps) => {
+const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, userProfileNfdName, userProfileActiveCategory, focusedId, registerItem, setLastActiveId }: { review: Review } & InteractionPreviewProps) => {
   const interactionScore = getReviewInteractionScore(review);
   const commentsCount = Object.keys(review.comments || {}).length;
   const navigate = useNavigate();
@@ -88,11 +89,14 @@ const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, u
   return (
     <div
       className={cn(
-        "block w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg shadow-lg overflow-hidden mb-4 cursor-pointer transition-all duration-200",
-        isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "hover:opacity-90",
+        "block w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg shadow-lg overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent",
+        isFocused ? "focus-glow-border" : "",
+        !isFocused && "hover:focus-glow-border",
         isExpanded && "shadow-xl"
       )}
       onClick={() => handleNavigateToProjectReview(project.id, review.id.split('.')[1])}
+      onMouseEnter={() => setLastActiveId(review.id)} // NEW: Set active ID on mouse enter
+      onMouseLeave={() => setLastActiveId(null)} // NEW: Clear active ID on mouse leave
       data-nav-id={review.id} // NEW: Data attribute for keyboard navigation
     >
       <div className="px-3 py-2">
@@ -126,7 +130,7 @@ const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, u
   );
 };
 
-const CommentItemPreview = ({ comment, review, project, projectName, userProfileAddress, userProfileNfdName, userProfileActiveCategory, focusedId, registerItem }: { comment: Comment; review: Review } & InteractionPreviewProps) => {
+const CommentItemPreview = ({ comment, review, project, projectName, userProfileAddress, userProfileNfdName, userProfileActiveCategory, focusedId, registerItem, setLastActiveId }: { comment: Comment; review: Review } & InteractionPreviewProps) => {
   const interactionScore = getCommentInteractionScore(comment);
   const repliesCount = Object.keys(comment.replies || {}).length;
   const navigate = useNavigate();
@@ -155,10 +159,13 @@ const CommentItemPreview = ({ comment, review, project, projectName, userProfile
   return (
     <div
       className={cn(
-        "block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden mb-4 cursor-pointer transition-all duration-200",
-        isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "hover:opacity-90"
+        "block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent",
+        isFocused ? "focus-glow-border" : "",
+        !isFocused && "hover:focus-glow-border"
       )}
       onClick={() => handleNavigateToProjectComment(project.id, comment.id)}
+      onMouseEnter={() => setLastActiveId(comment.id)} // NEW: Set active ID on mouse enter
+      onMouseLeave={() => setLastActiveId(null)} // NEW: Clear active ID on mouse leave
       data-nav-id={comment.id} // NEW: Data attribute for keyboard navigation
     >
       <div className="px-3 py-2">
@@ -202,7 +209,7 @@ const CommentItemPreview = ({ comment, review, project, projectName, userProfile
   );
 };
 
-const ReplyItemPreview = ({ reply, comment, review, project, projectName, userProfileAddress, userProfileNfdName, userProfileActiveCategory, focusedId, registerItem }: { reply: Reply; comment: Comment; review: Review } & InteractionPreviewProps) => {
+const ReplyItemPreview = ({ reply, comment, review, project, projectName, userProfileAddress, userProfileNfdName, userProfileActiveCategory, focusedId, registerItem, setLastActiveId }: { reply: Reply; comment: Comment; review: Review } & InteractionPreviewProps) => {
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
   const [isExpanded, setIsExpanded] = useState(false); // Local expansion state
@@ -229,10 +236,13 @@ const ReplyItemPreview = ({ reply, comment, review, project, projectName, userPr
   return (
     <div
       className={cn(
-        "block w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-sm overflow-hidden mb-4 cursor-pointer transition-all duration-200",
-        isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "hover:opacity-90"
+        "block w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-sm overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent",
+        isFocused ? "focus-glow-border" : "",
+        !isFocused && "hover:focus-glow-border"
       )}
       onClick={() => handleNavigateToProjectReply(project.id, comment.id, reply.id)}
+      onMouseEnter={() => setLastActiveId(reply.id)} // NEW: Set active ID on mouse enter
+      onMouseLeave={() => setLastActiveId(null)} // NEW: Clear active ID on mouse leave
       data-nav-id={reply.id} // NEW: Data attribute for keyboard navigation
     >
       <div className="px-3 py-2">
@@ -328,7 +338,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
-  const { focusedId, registerItem, rebuildOrder } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+  const { focusedId, registerItem, rebuildOrder, setLastActiveId } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
 
   // NEW: Effect to rebuild order when active or when tab/category changes
   useEffect(() => {
@@ -613,6 +623,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                                             userProfileActiveCategory={activeCategory}
                                             focusedId={focusedId} // NEW
                                             registerItem={registerItem} // NEW
+                                            setLastActiveId={setLastActiveId} // NEW
                                           />
                                         ))}
                                       </div>
@@ -655,6 +666,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                                             userProfileActiveCategory={activeCategory}
                                             focusedId={focusedId} // NEW
                                             registerItem={registerItem} // NEW
+                                            setLastActiveId={setLastActiveId} // NEW
                                           />
                                         ))}
                                       </div>
@@ -698,6 +710,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                                             userProfileActiveCategory={activeCategory}
                                             focusedId={focusedId} // NEW
                                             registerItem={registerItem} // NEW
+                                            setLastActiveId={setLastActiveId} // NEW
                                           />
                                         ))}
                                       </div>

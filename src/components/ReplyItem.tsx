@@ -33,11 +33,12 @@ interface ReplyItemProps {
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
   isActive: boolean; // NEW PROP
+  setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
 }
 
 const CONTENT_TRUNCATE_LENGTH = 150;
 
-export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive }: ReplyItemProps) {
+export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive, setLastActiveId }: ReplyItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -106,6 +107,8 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             : "bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black" // Normal style
         )}
         onClick={handleCardClick}
+        onMouseEnter={() => setLastActiveId(reply.id)} // NEW: Set active ID on mouse enter
+        onMouseLeave={() => setLastActiveId(null)} // NEW: Clear active ID on mouse leave
         data-nav-id={reply.id} // Add data attribute for keyboard navigation
       >
         <div className="flex items-start justify-between p-2">

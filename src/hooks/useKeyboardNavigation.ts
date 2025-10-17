@@ -21,26 +21,18 @@ const updateOrderedIds = (pageKey: string) => {
   const container = document.getElementById(pageKey); 
   if (!container) return;
 
-  // Find all elements that are registered (have an ID in the map) and are visible
+  // Find all elements that are registered (have an ID in the map) and have the data attribute
   const elements = Array.from(container.querySelectorAll('[data-nav-id]')) as HTMLElement[];
   
   const currentItemsMap = globalNavigableItemsMap.get(pageKey) || new Map();
 
-  // Filter out elements that are hidden (e.g., excluded posts) and map to IDs
+  // Filter out elements that are registered and map to IDs based on DOM order
   const orderedIds = elements
     .map(el => el.getAttribute('data-nav-id'))
     .filter((id): id is string => id !== null && currentItemsMap.has(id));
     
   globalOrderedIdsMap.set(pageKey, orderedIds);
 };
-
-// Debounced function to update IDs
-let updateTimeout: NodeJS.Timeout;
-const debouncedUpdateOrderedIds = (pageKey: string) => {
-  clearTimeout(updateTimeout);
-  updateTimeout = setTimeout(() => updateOrderedIds(pageKey), 50);
-};
-
 
 export function useKeyboardNavigation(pageKey: string) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -58,14 +50,17 @@ export function useKeyboardNavigation(pageKey: string) {
     }
     const itemsMap = globalNavigableItemsMap.get(currentKey)!;
     
+    // Update item details
     itemsMap.set(id, { id, toggleExpand, isExpanded, type });
-    debouncedUpdateOrderedIds(currentKey);
+    
+    // Immediately update the ordered list (this is the key change)
+    updateOrderedIds(currentKey);
 
     return () => {
       // Only delete if the pageKey hasn't changed (i.e., we are cleaning up on the same page)
       if (pageKeyRef.current === currentKey) {
         itemsMap.delete(id);
-        debouncedUpdateOrderedIds(currentKey);
+        updateOrderedIds(currentKey);
       }
     };
   }, []);

@@ -145,7 +145,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
   }, [projects]);
 
   return (
-    <div ref={projectsPageRef} id={pageKey} className={cn(
+    <div id={pageKey} className={cn( // Set pageKey as ID here
       "flex flex-col items-center text-foreground space-y-4 relative h-full overflow-y-auto scroll-mt-header-offset",
       isInsideCarousel ? "px-0 md:px-0" : "px-2 md:px-4"
     )}>

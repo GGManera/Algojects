@@ -146,7 +146,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
   }
 
   return (
-    <div ref={scrollRef} id={pageKey} className={cn(
+    <div id={pageKey} className={cn( // Set pageKey as ID here
       "w-full text-foreground h-full overflow-y-auto", // Removed scroll-mt-header-offset
       !isInsideCarousel && "max-w-3xl mx-auto",
       isInsideCarousel ? "px-0 py-0 md:p-0" : "px-2 py-2 md:p-4"

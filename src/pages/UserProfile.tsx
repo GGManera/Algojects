@@ -496,7 +496,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   }
 
   return (
-    <div ref={scrollRef} id={pageKey} className={cn(
+    <div id={pageKey} className={cn( // Set pageKey as ID here
       "w-full text-foreground scroll-mt-header-offset",
       !isInsideCarousel && "max-w-md mx-auto",
       isInsideCarousel ? "p-0 md:p-0 h-full" : "p-2 md:p-4 h-full overflow-y-auto"

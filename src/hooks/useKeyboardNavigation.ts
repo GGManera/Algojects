@@ -39,7 +39,7 @@ const updateOrderedIds = (pageKey: string) => {
 export function useKeyboardNavigation(pageKey: string) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [isMouseActive, setIsMouseActive] = useState(false);
-  const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false);
+  const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false); // Export this state
   const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const location = useLocation();
   const pageKeyRef = useRef(pageKey);
@@ -98,18 +98,6 @@ export function useKeyboardNavigation(pageKey: string) {
       }
     };
   }, [isMouseActive]);
-
-  // --- Cursor Management Effect ---
-  useEffect(() => {
-    if (isKeyboardModeActive) {
-      document.body.style.cursor = 'none';
-    } else {
-      document.body.style.cursor = 'default';
-    }
-    return () => {
-      document.body.style.cursor = 'default';
-    };
-  }, [isKeyboardModeActive]);
 
   // --- Mouse Hover Tracking (External API) ---
   const setLastActiveId = useCallback((id: string | null) => {
@@ -291,5 +279,5 @@ export function useKeyboardNavigation(pageKey: string) {
     setIsKeyboardModeActive(false);
   }, [location.pathname]);
 
-  return { focusedId, registerItem, rebuildOrder, setLastActiveId };
+  return { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive };
 }

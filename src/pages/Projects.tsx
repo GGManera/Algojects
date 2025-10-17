@@ -25,9 +25,10 @@ interface ProjectsProps {
   isInsideCarousel?: boolean;
   scrollToTopTrigger?: number; // NEW prop
   isActive?: boolean; // NEW prop
+  onKeyboardModeChange?: (isActive: boolean) => void; // NEW PROP
 }
 
-const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = false }: ProjectsProps) => { // Accept scrollToTopTrigger
+const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange }: ProjectsProps) => { // Accept scrollToTopTrigger
   const { projects, loading, error, isRefreshing: isRefreshingSocialData } = useSocialData();
   const { isRefreshing: isRefreshingProjectDetails } = useProjectDetails();
   const { activeAddress } = useWallet();
@@ -44,7 +45,14 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
   const pageKey = 'projects-home'; // Unique key for navigation hook
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
-  const { focusedId, registerItem, rebuildOrder, setLastActiveId } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+  const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+
+  // NEW: Report keyboard mode change up to parent
+  useEffect(() => {
+    if (isActive && onKeyboardModeChange) {
+      onKeyboardModeChange(isKeyboardModeActive);
+    }
+  }, [isActive, isKeyboardModeActive, onKeyboardModeChange]);
 
   const isOverallRefreshing = isRefreshingSocialData || isRefreshingProjectDetails;
 

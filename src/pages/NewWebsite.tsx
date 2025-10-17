@@ -46,7 +46,8 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   
   const [api, setApi] = useState<CarouselApi>();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false); // NEW: State to track carousel transition
+  const [isTransitioning, setIsTransitioning] = useState(false); // State to track carousel transition
+  const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false); // NEW: State to track keyboard mode globally
   
   // New states for managing hash scrolling
   const [hashToScroll, setHashToScroll] = useState<string | null>(null);
@@ -75,19 +76,24 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
   const { nfd: effectiveProfileNfd, loading: nfdLoading } = useNfd(effectiveProfileAddress);
 
+  // Callback to receive keyboard mode status from the active slide
+  const handleKeyboardModeChange = useCallback((isActive: boolean) => {
+    setIsKeyboardModeActive(isActive);
+  }, []);
+
   const slidesConfig = useMemo(() => {
     const config = [];
-    config.push({ type: 'home', pathPrefix: '/', component: <Projects isInsideCarousel={true} scrollToTopTrigger={scrollToTopTrigger} />, maxWidth: 'max-w-[710px]' });
+    config.push({ type: 'home', pathPrefix: '/', component: <Projects isInsideCarousel={true} scrollToTopTrigger={scrollToTopTrigger} onKeyboardModeChange={handleKeyboardModeChange} />, maxWidth: 'max-w-[710px]' });
     
     if (effectiveProjectId) {
-      config.push({ type: 'project', pathPrefix: '/project/', component: <ProjectPage projectId={effectiveProjectId} isInsideCarousel={true} hashToScroll={hashToScroll} scrollTrigger={scrollTrigger} scrollToTopTrigger={scrollToTopTrigger} />, maxWidth: 'max-w-[710px]' });
+      config.push({ type: 'project', pathPrefix: '/project/', component: <ProjectPage projectId={effectiveProjectId} isInsideCarousel={true} hashToScroll={hashToScroll} scrollTrigger={scrollTrigger} scrollToTopTrigger={scrollToTopTrigger} onKeyboardModeChange={handleKeyboardModeChange} />, maxWidth: 'max-w-[710px]' });
     }
 
     if (effectiveProfileAddress) {
-      config.push({ type: 'profile', pathPrefix: '/profile/', component: <UserProfile address={effectiveProfileAddress} isInsideCarousel={true} scrollToTopTrigger={scrollToTopTrigger} />, maxWidth: 'max-w-[710px]' });
+      config.push({ type: 'profile', pathPrefix: '/profile/', component: <UserProfile address={effectiveProfileAddress} isInsideCarousel={true} scrollToTopTrigger={scrollToTopTrigger} onKeyboardModeChange={handleKeyboardModeChange} />, maxWidth: 'max-w-[710px]' });
     }
     return config;
-  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, scrollToTopTrigger]);
+  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, scrollToTopTrigger, handleKeyboardModeChange]);
 
   const targetSlideIndex = useMemo(() => {
     const currentPath = location.pathname;
@@ -230,18 +236,24 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     lastScrolledHash
   ]);
 
-  // NEW: Effect to manage cursor visibility during transition
+  // NEW: Effect to manage cursor visibility during transition based on keyboard mode
   useEffect(() => {
     if (isTransitioning) {
-      document.body.style.cursor = 'none';
+      // User requested: hide ONLY if keyboard mode is active.
+      if (isKeyboardModeActive) {
+        document.body.style.cursor = 'none';
+      } else {
+        document.body.style.cursor = 'default';
+      }
     } else {
-      // Only restore default if keyboard navigation mode is NOT active
-      // We rely on useKeyboardNavigation to manage the cursor when keyboard mode is active
-      if (document.body.style.cursor !== 'none') {
+      // If not transitioning, let the keyboard mode dictate the cursor state
+      if (isKeyboardModeActive) {
+        document.body.style.cursor = 'none';
+      } else {
         document.body.style.cursor = 'default';
       }
     }
-  }, [isTransitioning]);
+  }, [isTransitioning, isKeyboardModeActive]);
 
   useEffect(() => {
     const path = location.pathname;
@@ -261,7 +273,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     }
   }, [location.pathname, projectDetails, pushEntry, effectiveProfileNfd, nfdLoading]);
 
-  // Keyboard navigation effect
+  // Keyboard navigation effect (A/D/ArrowLeft/ArrowRight) remains the same, but now relies on isTransitioning state
   useEffect(() => {
     if (!api || isMobile) return;
 

@@ -20,9 +20,10 @@ interface ProjectPageProps {
   scrollTrigger: number; // New prop
   scrollToTopTrigger?: number; // NEW prop
   isActive?: boolean; // NEW prop
+  onKeyboardModeChange?: (isActive: boolean) => void; // NEW PROP
 }
 
-const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger, isActive = false }: ProjectPageProps) => { // Accept scrollToTopTrigger
+const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger, isActive = false, onKeyboardModeChange }: ProjectPageProps) => { // Accept scrollToTopTrigger
   const location = useLocation();
   const navigate = useNavigate();
   const { projects, loading, error, refetch } = useSocialData();
@@ -37,7 +38,14 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
   const pageKey = `project-page-${effectiveProjectId}`; // Unique key for navigation hook
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
-  const { focusedId, registerItem, rebuildOrder, setLastActiveId } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+  const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+
+  // NEW: Report keyboard mode change up to parent
+  useEffect(() => {
+    if (isActive && onKeyboardModeChange) {
+      onKeyboardModeChange(isKeyboardModeActive);
+    }
+  }, [isActive, isKeyboardModeActive, onKeyboardModeChange]);
 
   // NEW: Effect to rebuild order when active
   useEffect(() => {

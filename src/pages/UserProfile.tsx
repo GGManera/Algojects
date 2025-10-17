@@ -298,9 +298,10 @@ interface UserProfileProps {
   isInsideCarousel?: boolean;
   scrollToTopTrigger?: number; // NEW prop
   isActive?: boolean; // NEW prop
+  onKeyboardModeChange?: (isActive: boolean) => void; // NEW PROP
 }
 
-const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, isActive = false }: UserProfileProps) => { // Accept scrollToTopTrigger
+const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange }: UserProfileProps) => { // Accept scrollToTopTrigger
   const location = useLocation();
   // Read initialActiveCategory from location.state
   const initialCategoryFromState = (location.state as { initialActiveCategory?: 'writing' | 'curating' })?.initialActiveCategory;
@@ -341,7 +342,14 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
-  const { focusedId, registerItem, rebuildOrder, setLastActiveId } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+  const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+
+  // NEW: Report keyboard mode change up to parent
+  useEffect(() => {
+    if (isActive && onKeyboardModeChange) {
+      onKeyboardModeChange(isKeyboardModeActive);
+    }
+  }, [isActive, isKeyboardModeActive, onKeyboardModeChange]);
 
   // NEW: Effect to rebuild order when active or when tab/category changes
   useEffect(() => {

@@ -460,7 +460,8 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       {/* Interactions Header (Mobile only: col-span-2, Desktop: col-span-2) */}
       <div className={cn(
         "flex flex-col items-center space-y-1",
-        isMobile ? "col-span-2" : "col-span-2"
+        isMobile ? "col-span-2" : "col-span-2",
+        isMobile && "mb-4" // Added margin below the main interaction score on mobile
       )}>
         <TrendingUp className="h-5 w-5 text-hodl-blue" />
         <span className="font-bold font-numeric text-foreground">{stats.interactionScore}</span>
@@ -600,7 +601,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           
           {/* MOBILE ONLY: Stats Grid integrated here */}
           {isMobile && (
-            <div className="mt-4 px-2"> {/* Removed bg-muted/50 rounded-lg, kept px-2 for internal padding */}
+            <div className="mt-6 px-2"> {/* Increased margin from mt-4 to mt-6 */}
               {StatsGrid}
             </div>
           )}
@@ -616,7 +617,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     <div className={cn(
       "w-full",
     )}>
-      <Card className="bg-accent relative rounded-none border-none shadow-none"> {/* Removed mt-8, rounded-none, border-none, shadow-none */}
+      <Card className="bg-accent mt-8 relative"> {/* Added mt-8 for margin from top nav */}
         {activeAddress && (
             <Button
               variant="ghost"

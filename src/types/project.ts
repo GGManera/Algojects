@@ -1,7 +1,11 @@
-export interface MetadataItem {
-  title: string;
-  value: string;
-  type?: 'url' | 'x-url' | 'asset-id' | 'address' | 'text' | 'project-name' | 'project-description' | 'whitelisted-editors' | 'is-creator-added' | 'added-by-address' | 'is-community-notes' | 'tags' | 'is-claimed' | 'project-wallet'; // Added 'project-wallet'
+export interface ProjectMetadataItem {
+    type: string;
+    value: string;
 }
 
-export type ProjectMetadata = MetadataItem[];
+export interface Project {
+    projectId: string;
+    description: string;
+    metadata: ProjectMetadataItem[];
+    // Add other necessary project fields here
+}

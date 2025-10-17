@@ -471,29 +471,35 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       {/* Detailed Stats (Mobile: 2 columns, Desktop: 2 columns) */}
       <div className={cn(
         "grid gap-4 text-sm text-muted-foreground",
-        isMobile ? "grid-cols-2 col-span-2" : "grid-cols-2 col-span-2"
+        // On mobile, we want a fixed width container centered, and a 2-column grid inside
+        isMobile ? "grid-cols-2 col-span-2 max-w-xs mx-auto" : "grid-cols-2 col-span-2"
       )}>
-        {/* Reviews and Comments in the first row */}
-        <div className="flex flex-col items-center space-y-1">
-          <FileText className="h-5 w-5 text-hodl-purple" />
-          <span className="font-bold font-numeric text-foreground">{stats.reviewsCount}</span>
-          <span>Reviews</span>
+        {/* Reviews and Replies on the left column */}
+        <div className="flex flex-col items-center space-y-4">
+          <div className="flex flex-col items-center space-y-1">
+            <FileText className="h-5 w-5 text-hodl-purple" />
+            <span className="font-bold font-numeric text-foreground">{stats.reviewsCount}</span>
+            <span>Reviews</span>
+          </div>
+          <div className="flex flex-col items-center space-y-1">
+            <MessageSquare className="h-5 w-5 text-hodl-purple" />
+            <span className="font-bold font-numeric text-foreground">{stats.repliesCount}</span>
+            <span>Replies</span>
+          </div>
         </div>
-        <div className="flex flex-col items-center space-y-1">
-          <MessageCircle className="h-5 w-5 text-hodl-purple" />
-          <span className="font-bold font-numeric text-foreground">{stats.commentsCount}</span>
-          <span>Comments</span>
-        </div>
-        {/* Replies and Likes in the second row */}
-        <div className="flex flex-col items-center space-y-1">
-          <MessageSquare className="h-5 w-5 text-hodl-purple" />
-          <span className="font-bold font-numeric text-foreground">{stats.repliesCount}</span>
-          <span>Replies</span>
-        </div>
-        <div className="flex flex-col items-center space-y-1">
-          <Heart className="h-5 w-5 text-pink-400" />
-          <span className="font-bold font-numeric text-foreground">{stats.likesCount}</span>
-          <span>Likes</span>
+        
+        {/* Comments and Likes on the right column */}
+        <div className="flex flex-col items-center space-y-4">
+          <div className="flex flex-col items-center space-y-1">
+            <MessageCircle className="h-5 w-5 text-hodl-purple" />
+            <span className="font-bold font-numeric text-foreground">{stats.commentsCount}</span>
+            <span>Comments</span>
+          </div>
+          <div className="flex flex-col items-center space-y-1">
+            <Heart className="h-5 w-5 text-pink-400" />
+            <span className="font-bold font-numeric text-foreground">{stats.likesCount}</span>
+            <span>Likes</span>
+          </div>
         </div>
       </div>
     </div>

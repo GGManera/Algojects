@@ -596,7 +596,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
           {/* Display Added By Address */}
           {addedByAddress && (
-            <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1 mb-4"> {/* Added mb-4 here */}
+            <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1 mb-8"> {/* Increased mb-4 to mb-8 here */}
               Added by <UserDisplay
                 address={addedByAddress}
                 textSizeClass="text-sm"
@@ -609,7 +609,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           
           {/* MOBILE ONLY: Stats Grid integrated here */}
           {isMobile && (
-            <div className="px-2"> {/* Removed mt-8 here */}
+            <div className="px-2">
               {StatsGrid}
             </div>
           )}

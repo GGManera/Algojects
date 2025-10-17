@@ -487,36 +487,36 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     }
   };
 
-  // Component for the Stats Grid (5 columns on mobile, 2 columns on desktop)
+  // Component for the Stats Grid (2 columns on mobile, 2 columns on desktop)
   const StatsGrid = (
     <div className={cn(
       "grid gap-4 text-sm text-muted-foreground pb-4",
-      // Mobile: 5 columns, allowing wrap if needed (though 5 is usually fine)
-      "grid-cols-5",
+      // Mobile: 2 columns
+      "grid-cols-2",
       // Desktop: 2 columns, fixed width for the stats container
       "md:grid-cols-2 md:w-1/3 md:border-r md:border-border md:pr-4"
     )}>
-      <div className="flex flex-col items-center space-y-1 md:col-span-2">
+      <div className="flex flex-col items-center space-y-1 col-span-2">
         <TrendingUp className="h-5 w-5 text-hodl-blue" />
         <span className="font-bold font-numeric text-foreground">{stats.interactionScore}</span>
         <span>Interactions</span>
       </div>
-      <div className="flex flex-col items-center space-y-1 md:col-span-1">
+      <div className="flex flex-col items-center space-y-1">
         <FileText className="h-5 w-5 text-hodl-purple" />
         <span className="font-bold font-numeric text-foreground">{stats.reviewsCount}</span>
         <span>Reviews</span>
       </div>
-      <div className="flex flex-col items-center space-y-1 md:col-span-1">
+      <div className="flex flex-col items-center space-y-1">
         <MessageCircle className="h-5 w-5 text-hodl-purple" />
         <span className="font-bold font-numeric text-foreground">{stats.commentsCount}</span>
         <span>Comments</span>
       </div>
-      <div className="flex flex-col items-center space-y-1 md:col-span-1">
+      <div className="flex flex-col items-center space-y-1">
         <MessageSquare className="h-5 w-5 text-hodl-purple" />
         <span className="font-bold font-numeric text-foreground">{stats.repliesCount}</span>
         <span>Replies</span>
       </div>
-      <div className="flex flex-col items-center space-y-1 md:col-span-1">
+      <div className="flex flex-col items-center space-y-1">
         <Heart className="h-5 w-5 text-pink-400" />
         <span className="font-bold font-numeric text-foreground">{stats.likesCount}</span>
         <span>Likes</span>

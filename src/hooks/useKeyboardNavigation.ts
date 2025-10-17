@@ -37,7 +37,7 @@ const updateOrderedIds = (pageKey: string) => {
   // 2. Filter based on hierarchy and expansion state
   orderedRegisteredIds.forEach(id => {
     const item = currentItemsMap.get(id);
-    if (!item) return;
+    if (!item) return; // Should not happen due to filter above, but safe guard
 
     const parts = id.split('.');
     
@@ -55,7 +55,7 @@ const updateOrderedIds = (pageKey: string) => {
         const reviewId = `${parts[0]}.${parts[1]}`;
         const reviewItem = currentItemsMap.get(reviewId);
         
-        // If the review exists and is collapsed, skip this item and its children.
+        // If the review exists AND is collapsed, skip this item and its children.
         if (reviewItem && !reviewItem.isExpanded) {
             return;
         }
@@ -67,7 +67,7 @@ const updateOrderedIds = (pageKey: string) => {
         const commentId = `${parts[0]}.${parts[1]}.${parts[2]}`;
         const commentItem = currentItemsMap.get(commentId);
         
-        // If the comment exists and is collapsed (meaning replies are hidden), skip this reply.
+        // If the comment exists AND is collapsed (meaning replies are hidden), skip this reply.
         if (commentItem && !commentItem.isExpanded) {
             return;
         }
@@ -326,5 +326,5 @@ export function useKeyboardNavigation(pageKey: string) {
     setIsKeyboardModeActive(false);
   }, [location.pathname]);
 
-  return { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive };
+  return { focusedId, setFocusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive };
 }

@@ -609,7 +609,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           
           {/* MOBILE ONLY: Stats Grid integrated here */}
           {isMobile && (
-            <div className="px-2">
+            <div className="px-2 mt-8"> {/* Added mt-8 here */}
               {StatsGrid}
             </div>
           )}

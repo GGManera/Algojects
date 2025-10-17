@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { Project, ProjectsData, Review } from "@/types/social";
 import {
   Card,
@@ -15,7 +16,6 @@ import { ProjectDetailsForm } from "./ProjectDetailsForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp, DollarSign } from "lucide-react";
-import { useMemo, useState, useEffect, useCallback } from "react";
 import { UserDisplay } from "./UserDisplay";
 import { Button } from "@/components/ui/button";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";

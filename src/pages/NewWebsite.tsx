@@ -124,6 +124,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
         isInsideCarousel={true} 
         scrollToTopTrigger={internalScrollToTopTrigger} 
         onKeyboardModeChange={handleKeyboardModeChange} 
+        onScrollToTop={handleHeroScrollToTop} // Pass the scroll function
       />, 
       maxWidth: 'max-w-[710px]' 
     });
@@ -139,6 +140,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           scrollTrigger={scrollTrigger} 
           scrollToTopTrigger={internalScrollToTopTrigger} 
           onKeyboardModeChange={handleKeyboardModeChange} 
+          onScrollToTop={handleHeroScrollToTop} // Pass the scroll function
         />, 
         maxWidth: 'max-w-[710px]' 
       });
@@ -158,7 +160,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       });
     }
     return config;
-  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, internalScrollToTopTrigger, handleKeyboardModeChange]);
+  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, internalScrollToTopTrigger, handleKeyboardModeChange, handleHeroScrollToTop]);
 
   const targetSlideIndex = useMemo(() => {
     const currentPath = location.pathname;

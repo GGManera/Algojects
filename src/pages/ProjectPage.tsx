@@ -21,9 +21,10 @@ interface ProjectPageProps {
   scrollToTopTrigger?: number; // NEW prop
   isActive?: boolean; // NEW prop
   onKeyboardModeChange?: (isActive: boolean) => void; // NEW PROP
+  onScrollToTop: () => void; // Added prop
 }
 
-const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger, isActive = false, onKeyboardModeChange }: ProjectPageProps) => { // Accept scrollToTopTrigger
+const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop }: ProjectPageProps) => { // Accept onScrollToTop
   const location = useLocation();
   const navigate = useNavigate();
   const { projects, loading, error, refetch } = useSocialData();
@@ -72,7 +73,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
 
   useEffect(() => {
     if (location.pathname.startsWith('/project/') && scrollRef.current) {
-      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      // Removed local scroll to top logic here, relying on parent scroll
     }
   }, [location.pathname]);
 
@@ -100,11 +101,11 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
 
   // NEW: Effect to scroll to top when scrollToTopTrigger changes
   useEffect(() => {
-    if (scrollToTopTrigger && scrollRef.current && location.pathname.startsWith('/project/')) {
+    if (scrollToTopTrigger && location.pathname.startsWith('/project/')) {
       console.log("[ProjectPage] Scrolling to top due to trigger.");
-      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      onScrollToTop(); // Use the function provided by the parent (NewWebsite)
     }
-  }, [scrollToTopTrigger, location.pathname]);
+  }, [scrollToTopTrigger, location.pathname, onScrollToTop]);
 
   if (!effectiveProjectId) {
     return (
@@ -165,7 +166,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
 
   return (
     <div id={pageKey} className={cn( // Set pageKey as ID here
-      "w-full text-foreground h-full overflow-y-auto", // Removed scroll-mt-header-offset
+      "w-full text-foreground", // Removed h-full and overflow-y-auto
       !isInsideCarousel && "max-w-3xl mx-auto",
       isInsideCarousel ? "px-0 py-0 md:p-0" : "px-2 py-2 md:p-4"
     )}>

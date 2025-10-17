@@ -309,8 +309,8 @@ export function useKeyboardNavigation(pageKey: string) {
             updateOrderedIds(currentKey);
           } else {
             // If the item is not expandable (like the Logo/project-summary), 
-            // and space is pressed, scroll to the top of the page.
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // and space is pressed, execute the toggleExpand function (which might be onScrollToTop)
+            item?.toggleExpand();
           }
         }
         return;
@@ -330,15 +330,13 @@ export function useKeyboardNavigation(pageKey: string) {
         }
         
         if (shouldScroll) {
-            // Se o próximo item for o primeiro (índice 0), forçamos a rolagem para o topo absoluto.
-            if (nextIndex === 0) {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else {
-                // Caso contrário, rolamos o elemento para a visualização normalmente
-                const element = document.querySelector(`[data-nav-id="${nextId}"]`);
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+            const element = document.querySelector(`[data-nav-id="${nextId}"]`);
+            
+            if (element) {
+                // If moving to the first item (index 0), use 'start' block to ensure it's fully visible below the header.
+                // Otherwise, use 'nearest' for smooth navigation between items.
+                const blockType = nextIndex === 0 ? 'start' : 'nearest';
+                element.scrollIntoView({ behavior: 'smooth', block: blockType });
             }
         }
       }

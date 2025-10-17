@@ -231,10 +231,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   };
 
   // Extract specific metadata items for special rendering
-  const urlItem = projectMetadata.find(item => item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com')));
-  const xUrlItem = projectMetadata.find(item => item.type === 'x-url' || item.value.includes('x.com') || item.value.includes('twitter.com'));
   const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
-  const creatorWalletItemForDisplay = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet'); // Use the specific item
 
   const hasAnyMetadata = projectMetadata.length > 0;
 
@@ -346,6 +343,142 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     }
     return isAssetIdHovered ? assetIdValue : (defaultTitle || "Asset ID");
   }, [copiedAssetIdMessage, isMobile, showAssetIdValue, isAssetIdHovered]);
+
+  // --- Grouping and Ordering Logic for Dynamic Metadata ---
+  const dynamicMetadataGroups = useMemo(() => {
+    const groups: { [key: string]: MetadataItem[] } = {
+      'url': [],
+      'x-url': [],
+      'asset-id': [],
+      'address': [],
+      'text': [],
+    };
+
+    const fixedTypesAndTitles = new Set([
+      'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'Creator Wallet', 'project-wallet'
+    ]);
+
+    projectMetadata.forEach(item => {
+      // Skip fixed items
+      if (fixedTypesAndTitles.has(item.type || '')) return;
+      if (item.type === 'address' && item.title === 'Creator Wallet') return;
+      
+      // Determine type for grouping
+      let type: string = item.type || 'text';
+      
+      // Fallback type detection for items without explicit type
+      if (type === 'text') {
+        if (item.value.startsWith('http')) {
+          if (item.value.includes('x.com') || item.value.includes('twitter.com')) {
+            type = 'x-url';
+          } else {
+            type = 'url';
+          }
+        } else if (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0) {
+          type = 'asset-id';
+        } else if (item.value.length === 58) {
+          type = 'address';
+        }
+      }
+
+      if (groups[type]) {
+        groups[type].push(item);
+      } else {
+        // If a new type is encountered, add it to the 'text' group as a fallback
+        groups['text'].push(item);
+      }
+    });
+
+    // Define the desired order
+    const orderedGroups: { type: string; items: MetadataItem[] }[] = [
+      { type: 'url', items: groups['url'] },
+      { type: 'x-url', items: groups['x-url'] },
+      { type: 'asset-id', items: groups['asset-id'] },
+      { type: 'address', items: groups['address'] },
+      { type: 'text', items: groups['text'] },
+    ].filter(group => group.items.length > 0);
+
+    return orderedGroups;
+  }, [projectMetadata, isMobile, showAssetIdValue, isAssetIdHovered, copiedAssetIdMessage, getDisplayAssetIdText]);
+  // --- End Grouping and Ordering Logic ---
+
+
+  const renderMetadataItem = (item: MetadataItem, index: number) => {
+    if (item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com'))) {
+      return (
+        <div
+          key={index}
+          className="btn-profile mx-auto"
+          onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
+        >
+          <strong className="uppercase">{item.title || extractDomainFromUrl(item.value)}</strong>
+          <div id="container-stars">
+            <div id="stars"></div>
+          </div>
+          <div id="glow">
+            <div className="circle"></div>
+            <div className="circle"></div>
+          </div>
+        </div>
+      );
+    } else if (item.type === 'x-url' || item.value.includes('x.com') || item.value.includes('twitter.com')) {
+      return (
+        <div
+          key={index}
+          className="btn-profile mx-auto"
+          onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
+        >
+          <strong className="uppercase">{item.title || extractXHandleFromUrl(item.value)}</strong>
+          <div id="container-stars">
+            <div id="stars"></div>
+          </div>
+          <div id="glow">
+            <div className="circle"></div>
+            <div className="circle"></div>
+          </div>
+        </div>
+      );
+    } else if (item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0)) {
+      return (
+        <div
+          key={index}
+          className="btn-profile mx-auto"
+          onClick={(e) => handleAssetIdClick(e, item.value)}
+          onMouseEnter={() => !isMobile && setIsAssetIdHovered(true)}
+          onMouseLeave={() => !isMobile && setIsAssetIdHovered(false)}
+        >
+          <strong className="uppercase">{getDisplayAssetIdText(item.value, item.title)}</strong>
+          <div id="container-stars">
+            <div id="stars"></div>
+          </div>
+          <div id="glow">
+            <div className="circle"></div>
+            <div className="circle"></div>
+          </div>
+        </div>
+      );
+    } else if (item.type === 'address' || item.value.length === 58) {
+      return (
+        <div key={index} className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+          <span className="font-semibold text-muted-foreground text-xs">{item.title || 'Address'}:</span>
+          <UserDisplay
+            address={item.value}
+            textSizeClass="text-sm"
+            avatarSizeClass="h-5 w-5"
+            linkTo={`/profile/${item.value}`}
+            sourceContext={projectSourceContext}
+          />
+        </div>
+      );
+    } else {
+      return (
+        <div key={index} className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+          <span className="font-semibold text-muted-foreground text-xs">{item.title}:</span>
+          <p className="text-sm text-foreground selectable-text">{item.value}</p>
+        </div>
+      );
+    }
+  };
 
   return (
     <div className={cn(
@@ -486,92 +619,13 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
                     </div>
                 )}
                 
-                {/* Render other dynamic metadata */}
-                {projectMetadata.map((item, index) => {
-                  // Skip rendering of "fixed" metadata items here, as they are handled above or in forms
-                  if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'].includes(item.type || '')) {
-                    return null;
-                  }
-                  // Also skip the specific Creator Wallet item if it was rendered above
-                  if (item.type === 'address' && item.title === 'Creator Wallet') {
-                    return null;
-                  }
+                {/* Render grouped dynamic metadata */}
+                {dynamicMetadataGroups.map(group => (
+                  <React.Fragment key={group.type}>
+                    {group.items.map((item, index) => renderMetadataItem(item, index))}
+                  </React.Fragment>
+                ))}
 
-                  if (item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com'))) {
-                    return (
-                      <div
-                        key={index}
-                        className="btn-profile mx-auto"
-                        onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
-                      >
-                        <strong className="uppercase">{item.title || extractDomainFromUrl(item.value)}</strong>
-                        <div id="container-stars">
-                          <div id="stars"></div>
-                        </div>
-                        <div id="glow">
-                          <div className="circle"></div>
-                          <div className="circle"></div>
-                        </div>
-                      </div>
-                    );
-                  } else if (item.type === 'x-url' || item.value.includes('x.com') || item.value.includes('twitter.com')) {
-                    return (
-                      <div
-                        key={index}
-                        className="btn-profile mx-auto"
-                        onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
-                      >
-                        <strong className="uppercase">{item.title || extractXHandleFromUrl(item.value)}</strong>
-                        <div id="container-stars">
-                          <div id="stars"></div>
-                        </div>
-                        <div id="glow">
-                          <div className="circle"></div>
-                          <div className="circle"></div>
-                        </div>
-                      </div>
-                    );
-                  } else if (item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0)) {
-                    return (
-                      <div
-                        key={index}
-                        className="btn-profile mx-auto"
-                        onClick={(e) => handleAssetIdClick(e, item.value)}
-                        onMouseEnter={() => !isMobile && setIsAssetIdHovered(true)}
-                        onMouseLeave={() => !isMobile && setIsAssetIdHovered(false)}
-                      >
-                        <strong className="uppercase">{getDisplayAssetIdText(item.value, item.title)}</strong>
-                        <div id="container-stars">
-                          <div id="stars"></div>
-                        </div>
-                        <div id="glow">
-                          <div className="circle"></div>
-                          <div className="circle"></div>
-                        </div>
-                      </div>
-                    );
-                  } else if (item.type === 'address' || item.value.length === 58) {
-                    return (
-                      <div key={index} className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
-                        <span className="font-semibold text-muted-foreground text-xs">{item.title || 'Address'}:</span>
-                        <UserDisplay
-                          address={item.value}
-                          textSizeClass="text-sm"
-                          avatarSizeClass="h-5 w-5"
-                          linkTo={`/profile/${item.value}`}
-                          sourceContext={projectSourceContext}
-                        />
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div key={index} className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
-                        <span className="font-semibold text-muted-foreground text-xs">{item.title}:</span>
-                        <p className="text-sm text-foreground selectable-text">{item.value}</p>
-                      </div>
-                    );
-                  }
-                })}
                 {/* Display Your Holding if present (this should remain at the end) */}
                 {currentUserProjectHolding && (
                   <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">

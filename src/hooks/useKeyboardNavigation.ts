@@ -73,7 +73,7 @@ export function useKeyboardNavigation(pageKey: string) {
     const orderedIds = updateOrderedIds(currentKey);
     console.log(`[KeyboardNav] Explicit Rebuild for ${currentKey}. Total items: ${orderedIds.length}`);
     
-    // If focus was lost, try to restore it to the first item
+    // If no item is currently focused AND there are items, set focus to the first one.
     if (focusedId === null && orderedIds.length > 0) {
         setFocusedId(orderedIds[0]);
     }
@@ -86,11 +86,13 @@ export function useKeyboardNavigation(pageKey: string) {
     const currentKey = pageKeyRef.current;
     
     if (currentKey === 'inactive') {
+      // When becoming inactive, explicitly clear focus
       setFocusedId(null);
       return;
     }
 
-    // 1. Reset focus
+    // 1. Reset focus when the pageKey changes (e.g., navigating from project/a to project/b)
+    // We rely on the rebuildOrder call in the page component to set the initial focus when active.
     setFocusedId(null);
     
     // 2. Cleanup function for when the component unmounts or pageKey changes

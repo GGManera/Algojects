@@ -566,7 +566,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     <div className="w-full md:w-2/3">
       <Card className="bg-card shadow-deep-md">
         <CardHeader className="text-center relative px-4 pt-4 pb-1">
-          {/* Title, Description, Added By Address */}
+          {/* Title, Description, Tags, Claim Button */}
           <CardTitle className="text-4xl font-bold gradient-text">
             {currentProjectName}
           </CardTitle>
@@ -596,7 +596,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
           {/* Display Added By Address */}
           {addedByAddress && (
-            <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1 mb-8"> {/* Increased mb-4 to mb-8 here */}
+            <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1"> {/* Removed mb-8 */}
               Added by <UserDisplay
                 address={addedByAddress}
                 textSizeClass="text-sm"
@@ -609,7 +609,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           
           {/* MOBILE ONLY: Stats Grid integrated here */}
           {isMobile && (
-            <div className="px-2 mt-8"> {/* Added mt-8 here */}
+            <div className="px-2 mt-12"> {/* Increased mt to mt-12 (48px) */}
               {StatsGrid}
             </div>
           )}

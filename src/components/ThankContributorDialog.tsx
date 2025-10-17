@@ -22,6 +22,7 @@ import { useNfd } from '@/hooks/useNfd';
 import { Check, DollarSign, ArrowRight } from 'lucide-react';
 import { StyledTextarea } from './ui/StyledTextarea';
 
+const MIN_REWARD_ALGO = 10; // Enforce minimum reward of 10 ALGO
 const DEFAULT_REWARD_ALGO = 10;
 const MICRO_ALGOS_PER_ALGO = 1_000_000;
 
@@ -82,20 +83,24 @@ export function ThankContributorDialog({
 
   const handleTotalRewardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
+    // Allow input if it's empty or if it's a valid number greater than or equal to MIN_REWARD_ALGO
     if (!isNaN(value) && value >= 0) {
       setTotalRewardAlgos(value);
+    } else if (e.target.value === '') {
+      setTotalRewardAlgos(0); // Temporarily set to 0 if empty, but validation will prevent submission
     }
   };
 
   const handleConfirmClick = async () => {
-    if (totalRewardAlgos < 0.001) {
-        alert("Total reward must be at least 0.001 ALGO.");
+    if (totalRewardAlgos < MIN_REWARD_ALGO) {
+        alert(`Total reward must be at least ${MIN_REWARD_ALGO} ALGO.`);
         return;
     }
     await onConfirm(totalRewardAlgos, contributorShare[0], whitelistedEditors);
   };
 
   const isCreator = activeAddress === projectCreatorAddress;
+  const canConfirm = !isConfirming && totalRewardAlgos >= MIN_REWARD_ALGO;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -123,12 +128,12 @@ export function ThankContributorDialog({
               id="totalReward"
               type="number"
               step="0.01"
-              min="0.01"
+              min={MIN_REWARD_ALGO}
               value={totalRewardAlgos}
               onChange={handleTotalRewardChange}
               className="bg-muted/50 font-numeric"
             />
-            <p className="text-xs text-muted-foreground">Default: {DEFAULT_REWARD_ALGO} ALGO.</p>
+            <p className="text-xs text-muted-foreground">Minimum reward: {MIN_REWARD_ALGO} ALGO.</p>
           </div>
 
           <Separator className="my-2" />
@@ -186,7 +191,7 @@ export function ThankContributorDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isConfirming}>
             Cancel
           </Button>
-          <Button onClick={handleConfirmClick} disabled={isConfirming || totalRewardAlgos < 0.001}>
+          <Button onClick={handleConfirmClick} disabled={!canConfirm}>
             {isConfirming ? "Sending..." : "Send Reward & Claim"}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>

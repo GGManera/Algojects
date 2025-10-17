@@ -3,7 +3,7 @@
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { MetadataItem } from '@/types/project';
 import { cn } from '@/lib/utils';
-import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
+import { useKeyboardNavigation, globalOrderedIdsMap } from '@/hooks/useKeyboardNavigation'; // Import globalOrderedIdsMap
 import { Project } from '@/types/social';
 import { UserDisplay } from './UserDisplay';
 import { Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp, DollarSign } from "lucide-react";
@@ -26,6 +26,7 @@ interface ProjectMetadataNavigatorProps {
   isParentFocused: boolean;
   onFocusTransfer: (isInternal: boolean) => void;
   onFocusReturn: (direction: 'up' | 'down') => void;
+  setParentFocusedId: (id: string | null) => void; // NEW PROP
 }
 
 // Helper function to render individual metadata items (copied logic from ProjectDetailCard)
@@ -146,12 +147,13 @@ export function ProjectMetadataNavigator({
   isParentFocused,
   onFocusTransfer,
   onFocusReturn,
+  setParentFocusedId, // NEW: Accept setParentFocusedId
 }: ProjectMetadataNavigatorProps) {
   const { isMobile } = useAppContextDisplayMode();
   const pageKey = `project-metadata-${projectId}`;
   
   // Use a local instance of the navigation hook, only active if the parent is focused
-  const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive } = useKeyboardNavigation(isParentFocused ? pageKey : 'inactive');
+  const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive, setFocusedId } = useKeyboardNavigation(isParentFocused ? pageKey : 'inactive');
   
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false); // Used for desktop asset ID hover
@@ -244,6 +246,7 @@ export function ProjectMetadataNavigator({
           onFocusReturn('up'); // Return focus to parent
           setFocusedId(null);
           onFocusTransfer(false);
+          setParentFocusedId(projectId); // Ensure parent focus is set back to the card
         } else if (currentIndex > 0) {
           e.preventDefault();
           const nextId = orderedIds[currentIndex - 1];
@@ -256,6 +259,7 @@ export function ProjectMetadataNavigator({
           onFocusReturn('down'); // Return focus to parent
           setFocusedId(null);
           onFocusTransfer(false);
+          setParentFocusedId(projectId); // Ensure parent focus is set back to the card
         } else if (currentIndex < orderedIds.length - 1) {
           e.preventDefault();
           const nextId = orderedIds[currentIndex + 1];
@@ -267,7 +271,7 @@ export function ProjectMetadataNavigator({
 
     window.addEventListener('keydown', handleInternalMovement);
     return () => window.removeEventListener('keydown', handleInternalMovement);
-  }, [isParentFocused, isKeyboardModeActive, focusedId, onFocusReturn, onFocusTransfer, pageKey, setFocusedId]);
+  }, [isParentFocused, isKeyboardModeActive, focusedId, onFocusReturn, onFocusTransfer, pageKey, setFocusedId, setParentFocusedId, projectId]);
 
   // --- Asset ID Click Handler (for keyboard action) ---
   const handleAssetIdClick = async (e: React.MouseEvent, assetIdValue: string) => {

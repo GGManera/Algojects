@@ -103,19 +103,19 @@ export function ThankContributorDialog({
         <DialogHeader>
           <DialogTitle className="gradient-text">Thank Contributor</DialogTitle>
           <DialogDescription>
-            Reward the contributor who added <strong>{projectName}</strong> and finalize project details.
+            Finalize details and reward the contributor for adding <strong>{projectName}</strong>.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-3 py-3">
           {/* Contributor Info */}
-          <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
+          <div className="flex items-center justify-between p-2 rounded-md bg-muted/50">
             <Label className="text-sm text-muted-foreground">Contributor:</Label>
             <UserDisplay address={contributorAddress} textSizeClass="text-sm" avatarSizeClass="h-6 w-6" linkTo={null} />
           </div>
 
           {/* Total Reward Input */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="totalReward" className="text-sm font-semibold flex items-center gap-1">
               <DollarSign className="h-4 w-4" /> Total Reward (ALGO)
             </Label>
@@ -128,13 +128,13 @@ export function ThankContributorDialog({
               onChange={handleTotalRewardChange}
               className="bg-muted/50 font-numeric"
             />
-            <p className="text-xs text-muted-foreground">Standard reward is {DEFAULT_REWARD_ALGO} ALGO. You can increase this amount.</p>
+            <p className="text-xs text-muted-foreground">Default: {DEFAULT_REWARD_ALGO} ALGO.</p>
           </div>
 
           <Separator className="my-2" />
 
           {/* Reward Split Slider */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <Label className="text-sm font-semibold">Reward Split (Total: {totalRewardAlgos.toFixed(2)} ALGO)</Label>
             
             <div className="flex justify-between text-xs font-semibold">
@@ -179,9 +179,6 @@ export function ThankContributorDialog({
               isSubmitDisabled={true}
               className="bg-muted/50 min-h-[80px]"
             />
-            <p className="text-xs text-muted-foreground">
-              These addresses will also be authorized to edit project details.
-            </p>
           </div>
         </div>
 

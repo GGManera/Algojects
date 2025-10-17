@@ -14,6 +14,7 @@ import { AllCuratorCalculationsMap } from '@/hooks/useCuratorIndex';
 import { CollapsibleContent } from "./CollapsibleContent";
 import { cn } from "@/lib/utils";
 import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
+import { useWallet } from "@txnlab/use-wallet-react"; // Import useWallet
 
 interface ReplyItemProps {
   reply: Reply;
@@ -35,6 +36,12 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { activeAddress } = useWallet(); // Get active address
+
+  const isExcluded = reply.isExcluded;
+
+  // NEW: Check if the reply is excluded AND the current user is NOT the sender
+  const isHidden = isExcluded && activeAddress !== reply.sender;
 
   useEffect(() => {
     if (isHighlighted && ref.current) {
@@ -49,8 +56,6 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
     ? `${reply.content.substring(0, CONTENT_TRUNCATE_LENGTH)}...`
     : reply.content;
 
-  const isExcluded = reply.isExcluded;
-
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button, a')) {
       return;
@@ -63,6 +68,10 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
   const curatorWeightedLikeScore = useMemo(() => {
     return getCuratorWeightedLikeScore(reply, allCuratorData);
   }, [reply, allCuratorData]);
+
+  if (isHidden) {
+    return null;
+  }
 
   return (
     <div ref={ref} id={reply.id}>

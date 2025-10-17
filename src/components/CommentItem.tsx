@@ -14,6 +14,7 @@ import { CollapsibleContent } from "./CollapsibleContent";
 import { cn } from "@/lib/utils";
 import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
 import { InteractionForm } from "./InteractionForm"; // NEW Import for reply form
+import { useWallet } from "@txnlab/use-wallet-react"; // Import useWallet
 
 interface CommentItemProps {
   comment: Comment;
@@ -48,9 +49,13 @@ export function CommentItem({
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const [showReplyForm, setShowReplyForm] = useState(false); // NEW State for reply form
   const ref = useRef<HTMLDivElement>(null);
+  const { activeAddress } = useWallet(); // Get active address
 
   const isHighlighted = useMemo(() => highlightCommentId === comment.id, [highlightCommentId, comment.id]);
   const isExcluded = comment.isExcluded;
+
+  // NEW: Check if the comment is excluded AND the current user is NOT the sender
+  const isHidden = isExcluded && activeAddress !== comment.sender;
 
   useEffect(() => {
     if (expandCommentId && expandCommentId === comment.id) {
@@ -91,6 +96,10 @@ export function CommentItem({
     setAreRepliesVisible(true);
     setShowReplyForm(prev => !prev);
   };
+
+  if (isHidden) {
+    return null;
+  }
 
   return (
     <div ref={ref} className="ml-4" id={comment.id}>
@@ -180,6 +189,7 @@ export function CommentItem({
           <CollapsibleContent isOpen={areRepliesVisible} className="pl-4 border-l-2 border-gray-700 space-y-2">
             {Object.values(comment.replies)
               .sort((a, b) => a.timestamp - b.timestamp)
+              .filter(reply => !reply.isExcluded || activeAddress === reply.sender) // Filter excluded replies
               .map((reply) => (
                 <ReplyItem
                   key={reply.id}

@@ -45,6 +45,7 @@ const getCommentInteractionScore = (comment: Comment): number => {
 export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData }: ReviewItemProps) {
   const location = useLocation();
   const { expandCommentId, highlightReplyId, highlightCommentId } = (location.state as { expandCommentId?: string; highlightReplyId?: string; highlightCommentId?: string; }) || {};
+  const { activeAddress } = useWallet(); // Get active address
 
   const containsTargetComment = useMemo(() => {
     if (!expandCommentId || !review.comments) return false;
@@ -56,8 +57,10 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
   const [showCopied, setShowCopied] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
-  const { activeAddress } = useWallet();
   const navigate = useNavigate();
+
+  // NEW: Check if the review is excluded AND the current user is NOT the sender
+  const isHidden = review.isExcluded && activeAddress !== review.sender;
 
   useEffect(() => {
     if (containsTargetComment) {
@@ -67,13 +70,15 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
 
   const sortedComments = useMemo(() => {
     const allComments = Object.values(review.comments || {});
+    // Filter out excluded comments unless the current user is the sender
     return allComments
+      .filter(comment => !comment.isExcluded || activeAddress === comment.sender)
       .map(comment => ({
         comment,
         score: getCommentInteractionScore(comment),
       }))
       .sort((a, b) => b.score - a.score);
-  }, [review.comments]);
+  }, [review.comments, activeAddress]);
 
   const commentsToShow = showAllComments ? sortedComments : sortedComments.slice(0, 3);
   const hasComments = sortedComments.length > 0;
@@ -108,6 +113,10 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
   const curatorWeightedLikeScore = useMemo(() => {
     return getCuratorWeightedLikeScore(review, allCuratorData);
   }, [review, allCuratorData]);
+
+  if (isHidden) {
+    return null;
+  }
 
   return (
     <div 

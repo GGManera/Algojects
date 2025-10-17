@@ -11,6 +11,7 @@ import React, { useRef, useEffect, useMemo } from "react";
 import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { cn } from '@/lib/utils';
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
 
 interface ProjectPageProps {
   projectId: string | undefined;
@@ -32,6 +33,10 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const effectiveProjectId = projectId;
+  const pageKey = `project-page-${effectiveProjectId}`; // Unique key for navigation hook
+
+  // NEW: Initialize keyboard navigation hook
+  const { focusedId, registerItem } = useKeyboardNavigation(pageKey);
 
   // All hooks must be called unconditionally at the top level
   const currentProjectDetailsEntry = useMemo(() => {
@@ -140,7 +145,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
   }
 
   return (
-    <div ref={scrollRef} className={cn(
+    <div ref={scrollRef} id={pageKey} className={cn(
       "w-full text-foreground h-full overflow-y-auto", // Removed scroll-mt-header-offset
       !isInsideCarousel && "max-w-3xl mx-auto",
       isInsideCarousel ? "px-0 py-0 md:p-0" : "px-2 py-2 md:p-4"
@@ -152,6 +157,9 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
         onInteractionSuccess={refetch}
         currentProjectName={currentProjectName} // This prop is now derived internally by ProjectDetailCard
         isInsideCarousel={isInsideCarousel}
+        // NEW: Pass keyboard navigation props
+        focusedId={focusedId}
+        registerItem={registerItem}
       />
     </div>
   );

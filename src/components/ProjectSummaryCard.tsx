@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Project, Review, Comment } from "@/types/social";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
@@ -8,14 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageCircle, Heart, MessageSquare, TrendingUp, FileText, ChevronRight, Link as LinkIcon, X as XIcon, Gem, UserCircle } from "lucide-react";
 import { cn, parseProjectMetadata, formatTimestamp, extractDomainFromUrl, extractXHandleFromUrl } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion"; // Keep motion/AnimatePresence for UserDisplay/Share
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
 import { UserDisplay } from "./UserDisplay";
 import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { showError, showSuccess } from "@/utils/toast";
 import { MetadataItem } from '@/types/project';
-import { CollapsibleContent } from "./CollapsibleContent"; // ADDED
+import { CollapsibleContent } from "./CollapsibleContent";
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
 
 interface ProjectSummaryCardProps {
   project: Project;
@@ -23,6 +24,9 @@ interface ProjectSummaryCardProps {
   onToggleExpand: (projectId: string) => void;
   cardRef?: React.Ref<HTMLDivElement>;
   isInsideCarousel?: boolean;
+  // NEW: Keyboard navigation props
+  focusedId: string | null;
+  registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
 }
 
 interface ProjectStats {
@@ -52,7 +56,7 @@ const getReviewInteractionScore = (review: Review): number => {
   return score;
 };
 
-export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRef, isInsideCarousel = false }: ProjectSummaryCardProps) {
+export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRef, isInsideCarousel = false, focusedId, registerItem }: ProjectSummaryCardProps) {
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
   const { isMobile } = useAppContextDisplayMode();
@@ -63,6 +67,19 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
   const [showAssetIdValue, setShowAssetIdValue] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+
+  // NEW: Keyboard navigation state
+  const isFocused = focusedId === project.id;
+
+  const handleToggleExpand = useCallback(() => {
+    onToggleExpand(project.id);
+  }, [onToggleExpand, project.id]);
+
+  // Register item for keyboard navigation
+  useEffect(() => {
+    const cleanup = registerItem(project.id, handleToggleExpand, isExpanded, 'project-summary');
+    return cleanup;
+  }, [project.id, handleToggleExpand, isExpanded, registerItem]);
 
   const stats: ProjectStats = useMemo(() => {
     let reviewsCount = 0;
@@ -294,9 +311,11 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
         isExpanded ? "shadow-lg" : "",
         "flex flex-col",
         "scroll-mt-header-offset",
-        !isInsideCarousel && "max-w-3xl"
+        !isInsideCarousel && "max-w-3xl",
+        isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "" // Apply focus highlight
       )}
       onClick={() => onToggleExpand(project.id)}
+      data-nav-id={project.id} // Add data attribute for keyboard navigation
     >
       <Card className="w-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

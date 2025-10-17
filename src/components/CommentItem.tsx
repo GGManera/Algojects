@@ -1,7 +1,7 @@
 "use client";
 
 import { Comment, Project, Review, Reply } from "@/types/social";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { UserDisplay } from "./UserDisplay";
 import { LikeButton } from "./LikeButton";
 import { ReplyItem } from "./ReplyItem";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
 import { InteractionForm } from "./InteractionForm"; // NEW Import for reply form
 import { useWallet } from "@txnlab/use-wallet-react"; // Import useWallet
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
 
 interface CommentItemProps {
   comment: Comment;
@@ -29,6 +30,9 @@ interface CommentItemProps {
   expandCommentId?: string;
   highlightReplyId?: string;
   highlightCommentId?: string;
+  // NEW: Keyboard navigation props
+  focusedId: string | null;
+  registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
 }
 
 export function CommentItem({
@@ -44,6 +48,8 @@ export function CommentItem({
   expandCommentId,
   highlightReplyId,
   highlightCommentId,
+  focusedId,
+  registerItem,
 }: CommentItemProps) {
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
@@ -54,6 +60,9 @@ export function CommentItem({
   const isHighlighted = useMemo(() => highlightCommentId === comment.id, [highlightCommentId, comment.id]);
   const isExcluded = comment.isExcluded;
 
+  // NEW: Keyboard navigation state
+  const isFocused = focusedId === comment.id;
+
   // NEW: Check if the comment is excluded AND the current user is NOT the sender
   const isHidden = isExcluded && activeAddress !== comment.sender;
 
@@ -62,6 +71,17 @@ export function CommentItem({
       setAreRepliesVisible(true);
     }
   }, [expandCommentId, comment.id]);
+
+  const handleToggleExpand = useCallback(() => {
+    setAreRepliesVisible(prev => !prev);
+    setShowReplyForm(false); // Collapse form when collapsing comment
+  }, []);
+
+  // Register item for keyboard navigation
+  useEffect(() => {
+    const cleanup = registerItem(comment.id, handleToggleExpand, areRepliesVisible, 'comment');
+    return cleanup;
+  }, [comment.id, handleToggleExpand, areRepliesVisible, registerItem]);
 
   useEffect(() => {
     if (isHighlighted && ref.current) {
@@ -76,7 +96,7 @@ export function CommentItem({
 
   const toggleReplies = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setAreRepliesVisible((prev) => !prev);
+    handleToggleExpand();
   };
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -84,7 +104,7 @@ export function CommentItem({
       return;
     }
     if (isExcluded) return; // Prevent interaction if excluded
-    setAreRepliesVisible(prev => !prev);
+    handleToggleExpand();
     setShowInteractionDetails(false);
   };
 
@@ -108,11 +128,13 @@ export function CommentItem({
         className={cn(
           "block w-full rounded-lg shadow-md overflow-hidden transition-all duration-300 cursor-pointer",
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+          isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "", // Apply focus highlight
           isExcluded 
             ? "bg-muted/30 border border-destructive/50 pointer-events-none" // Muted style for excluded
             : "bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white" // Normal style
         )}
         onClick={handleCardClick}
+        data-nav-id={comment.id} // Add data attribute for keyboard navigation
       >
         <div className="p-3">
           <div className="flex items-start justify-between mb-2">
@@ -205,6 +227,9 @@ export function CommentItem({
                   projectSourceContext={projectSourceContext}
                   allCuratorData={allCuratorData}
                   isHighlighted={highlightReplyId === reply.id}
+                  // NEW: Pass keyboard navigation props
+                  focusedId={focusedId}
+                  registerItem={registerItem}
                 />
               ))}
             {showReplyForm && (

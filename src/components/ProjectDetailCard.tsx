@@ -29,7 +29,7 @@ import { MetadataItem } from '@/types/project';
 import { ThankContributorDialog } from "./ThankContributorDialog"; // NEW Import
 import { thankContributorAndClaimProject } from "@/lib/coda"; // NEW Import
 import { useWallet } from "@txnlab/use-wallet-react"; // NEW Import
-// Removed: import { useNfdAddressResolver } from "@/hooks/useNfdAddressResolver"; // NEW Import
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
@@ -40,6 +40,9 @@ interface ProjectDetailCardProps {
   onInteractionSuccess: () => void;
   currentProjectName: string;
   isInsideCarousel?: boolean;
+  // NEW: Keyboard navigation props
+  focusedId: string | null;
+  registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
 }
 
 interface ProjectStats {
@@ -63,13 +66,20 @@ const getReviewInteractionScore = (review: Review): number => {
     replies.forEach(reply => {
       score += reply.likeCount || 0;
     });
-    // Removed: score += comment.likeCount || 0; // Likes on this comment
   });
 
   return score;
 };
 
-export function ProjectDetailCard({ project, projectsData, activeAddress, onInteractionSuccess, isInsideCarousel = false }: ProjectDetailCardProps) {
+export function ProjectDetailCard({ 
+  project, 
+  projectsData, 
+  activeAddress, 
+  onInteractionSuccess, 
+  isInsideCarousel = false, 
+  focusedId, 
+  registerItem 
+}: ProjectDetailCardProps) {
   const projectId = project.id;
   const { isMobile } = useAppContextDisplayMode();
   const { transactionSigner, algodClient } = useWallet(); // Get wallet context
@@ -684,6 +694,9 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
               assetUnitName={assetUnitName}
               projectSourceContext={projectSourceContext}
               allCuratorData={allCuratorData}
+              // NEW: Pass keyboard navigation props
+              focusedId={focusedId}
+              registerItem={registerItem}
             />
           ))
         ) : (

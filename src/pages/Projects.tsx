@@ -19,6 +19,7 @@ import { Project } from "@/types/social";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from '@/lib/utils';
 import { HeroSection } from "@/components/HeroSection"; // NEW import
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
 
 interface ProjectsProps {
   isInsideCarousel?: boolean;
@@ -39,6 +40,10 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger }: ProjectsProp
   const heroLogoRef = useRef<HTMLDivElement>(null);
   const projectCardRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
   const projectsPageRef = useRef<HTMLDivElement>(null);
+  const pageKey = 'projects-home'; // Unique key for navigation hook
+
+  // NEW: Initialize keyboard navigation hook
+  const { focusedId, registerItem } = useKeyboardNavigation(pageKey);
 
   const isOverallRefreshing = isRefreshingSocialData || isRefreshingProjectDetails;
 
@@ -139,7 +144,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger }: ProjectsProp
   }, [projects]);
 
   return (
-    <div ref={projectsPageRef} className={cn(
+    <div ref={projectsPageRef} id={pageKey} className={cn(
       "flex flex-col items-center text-foreground space-y-4 relative h-full overflow-y-auto scroll-mt-header-offset",
       isInsideCarousel ? "px-0 md:px-0" : "px-2 md:px-4"
     )}>
@@ -197,6 +202,9 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger }: ProjectsProp
                 onToggleExpand={handleToggleExpand}
                 cardRef={(el) => projectCardRefs.current.set(project.id, el)}
                 isInsideCarousel={isInsideCarousel}
+                // NEW: Pass keyboard navigation props
+                focusedId={focusedId}
+                registerItem={registerItem}
               />
             ))}
           </div>

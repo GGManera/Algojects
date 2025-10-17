@@ -4,7 +4,7 @@ import { Reply, Project, Review, Comment } from "@/types/social";
 import { LikeButton } from "./LikeButton";
 import { UserDisplay } from "./UserDisplay";
 import { formatTimestamp, getCuratorWeightedLikeScore } from "@/lib/utils";
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Info, Gem, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { InteractionDetailsPanel } from "./InteractionDetailsPanel";
@@ -15,6 +15,7 @@ import { CollapsibleContent } from "./CollapsibleContent";
 import { cn } from "@/lib/utils";
 import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
 import { useWallet } from "@txnlab/use-wallet-react"; // Import useWallet
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
 
 interface ReplyItemProps {
   reply: Reply;
@@ -28,17 +29,23 @@ interface ReplyItemProps {
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
   isHighlighted?: boolean;
+  // NEW: Keyboard navigation props
+  focusedId: string | null;
+  registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
 }
 
 const CONTENT_TRUNCATE_LENGTH = 150;
 
-export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, isHighlighted = false }: ReplyItemProps) {
+export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem }: ReplyItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { activeAddress } = useWallet(); // Get active address
 
   const isExcluded = reply.isExcluded;
+
+  // NEW: Keyboard navigation state
+  const isFocused = focusedId === reply.id;
 
   // NEW: Check if the reply is excluded AND the current user is NOT the sender
   const isHidden = isExcluded && activeAddress !== reply.sender;
@@ -52,6 +59,16 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
     }
   }, [isHighlighted]);
 
+  const handleToggleExpand = useCallback(() => {
+    setIsExpanded(prev => !prev);
+  }, []);
+
+  // Register item for keyboard navigation
+  useEffect(() => {
+    const cleanup = registerItem(reply.id, handleToggleExpand, isExpanded, 'reply');
+    return cleanup;
+  }, [reply.id, handleToggleExpand, isExpanded, registerItem]);
+
   const isLongReply = reply.content.length > CONTENT_TRUNCATE_LENGTH;
   const displayContent = isLongReply && !isExpanded
     ? `${reply.content.substring(0, CONTENT_TRUNCATE_LENGTH)}...`
@@ -62,7 +79,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
       return;
     }
     if (isExcluded) return; // Prevent interaction if excluded
-    setIsExpanded(prev => !prev);
+    handleToggleExpand();
     setShowInteractionDetails(false);
   };
 
@@ -80,11 +97,13 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
         className={cn(
           "w-full rounded-lg shadow-md overflow-hidden cursor-pointer transition-all duration-300",
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+          isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "", // Apply focus highlight
           isExcluded 
             ? "bg-muted/30 border border-destructive/50 pointer-events-none" // Muted style for excluded
             : "bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black" // Normal style
         )}
         onClick={handleCardClick}
+        data-nav-id={reply.id} // Add data attribute for keyboard navigation
       >
         <div className="flex items-start justify-between p-2">
           <UserDisplay 

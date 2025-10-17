@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, ArrowLeft, TrendingUp, MessageCircle, MessageSquare, Heart } from "lucide-react";
 import { Review, Comment, Reply, Project } from "@/types/social";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { GlassRadioGroup, GlassRadioItem } from "@/components/GlassRadioGroup";
 import { GlassRadioGroupTwoItems, GlassRadioItemTwoItems } from "@/components/GlassRadioGroupTwoItems";
 import { formatTimestamp } from "@/lib/utils";
@@ -23,6 +23,7 @@ import { useLocation } from "react-router-dom";
 import { useAppContextDisplayMode } from "@/contexts/AppDisplayModeContext";
 import { cn } from '@/lib/utils';
 import { usePlatformAnalytics } from "@/hooks/usePlatformAnalytics";
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
 
 // Helper function to calculate interaction score for a review
 const getReviewInteractionScore = (review: Review): number => {
@@ -53,11 +54,32 @@ const getCommentInteractionScore = (comment: Comment): number => {
   return score;
 };
 
-const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, userProfileNfdName, userProfileActiveCategory }: { review: Review; project: Project; projectName: string; userProfileAddress: string; userProfileNfdName: string | null; userProfileActiveCategory: 'writing' | 'curating' }) => {
+interface InteractionPreviewProps {
+  project: Project;
+  projectName: string;
+  userProfileAddress: string;
+  userProfileNfdName: string | null;
+  userProfileActiveCategory: 'writing' | 'curating';
+  focusedId: string | null; // NEW
+  registerItem: (id: string, toggleExpand: () => void, isExpanded: boolean, type: 'review' | 'comment' | 'reply' | 'project-summary') => () => void; // NEW
+}
+
+const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, userProfileNfdName, userProfileActiveCategory, focusedId, registerItem }: { review: Review } & InteractionPreviewProps) => {
   const interactionScore = getReviewInteractionScore(review);
   const commentsCount = Object.keys(review.comments || {}).length;
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
+  const [isExpanded, setIsExpanded] = useState(false); // Local expansion state
+  const isFocused = focusedId === review.id;
+
+  const handleToggleExpand = useCallback(() => {
+    setIsExpanded(prev => !prev);
+  }, []);
+
+  useEffect(() => {
+    const cleanup = registerItem(review.id, handleToggleExpand, isExpanded, 'review');
+    return cleanup;
+  }, [review.id, handleToggleExpand, isExpanded, registerItem]);
 
   const handleNavigateToProjectReview = (projectId: string, reviewId: string) => {
     navigate(`/project/${projectId}#review-${reviewId}`);
@@ -65,8 +87,13 @@ const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, u
 
   return (
     <div
-      className="block w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg shadow-lg overflow-hidden mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+      className={cn(
+        "block w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg shadow-lg overflow-hidden mb-4 cursor-pointer transition-all duration-200",
+        isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "hover:opacity-90",
+        isExpanded && "shadow-xl"
+      )}
       onClick={() => handleNavigateToProjectReview(project.id, review.id.split('.')[1])}
+      data-nav-id={review.id} // NEW: Data attribute for keyboard navigation
     >
       <div className="px-3 py-2">
         <div className="flex items-start justify-between mb-2">
@@ -99,11 +126,22 @@ const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, u
   );
 };
 
-const CommentItemPreview = ({ comment, review, project, projectName, userProfileAddress, userProfileNfdName, userProfileActiveCategory }: { comment: Comment; review: Review; project: Project; projectName: string; userProfileAddress: string; userProfileNfdName: string | null; userProfileActiveCategory: 'writing' | 'curating' }) => {
+const CommentItemPreview = ({ comment, review, project, projectName, userProfileAddress, userProfileNfdName, userProfileActiveCategory, focusedId, registerItem }: { comment: Comment; review: Review } & InteractionPreviewProps) => {
   const interactionScore = getCommentInteractionScore(comment);
   const repliesCount = Object.keys(comment.replies || {}).length;
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
+  const [isExpanded, setIsExpanded] = useState(false); // Local expansion state
+  const isFocused = focusedId === comment.id;
+
+  const handleToggleExpand = useCallback(() => {
+    setIsExpanded(prev => !prev);
+  }, []);
+
+  useEffect(() => {
+    const cleanup = registerItem(comment.id, handleToggleExpand, isExpanded, 'comment');
+    return cleanup;
+  }, [comment.id, handleToggleExpand, isExpanded, registerItem]);
 
   const handleNavigateToProjectComment = (projectId: string, commentId: string) => {
     navigate(`/project/${projectId}#${commentId}`, {
@@ -116,8 +154,12 @@ const CommentItemPreview = ({ comment, review, project, projectName, userProfile
 
   return (
     <div
-      className="block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+      className={cn(
+        "block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden mb-4 cursor-pointer transition-all duration-200",
+        isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "hover:opacity-90"
+      )}
       onClick={() => handleNavigateToProjectComment(project.id, comment.id)}
+      data-nav-id={comment.id} // NEW: Data attribute for keyboard navigation
     >
       <div className="px-3 py-2">
         <div className="flex items-start justify-between mb-2">
@@ -160,9 +202,20 @@ const CommentItemPreview = ({ comment, review, project, projectName, userProfile
   );
 };
 
-const ReplyItemPreview = ({ reply, comment, review, project, projectName, userProfileAddress, userProfileNfdName, userProfileActiveCategory }: { reply: Reply; comment: Comment; review: Review; project: Project; projectName: string; userProfileAddress: string; userProfileNfdName: string | null; userProfileActiveCategory: 'writing' | 'curating' }) => {
+const ReplyItemPreview = ({ reply, comment, review, project, projectName, userProfileAddress, userProfileNfdName, userProfileActiveCategory, focusedId, registerItem }: { reply: Reply; comment: Comment; review: Review } & InteractionPreviewProps) => {
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
+  const [isExpanded, setIsExpanded] = useState(false); // Local expansion state
+  const isFocused = focusedId === reply.id;
+
+  const handleToggleExpand = useCallback(() => {
+    setIsExpanded(prev => !prev);
+  }, []);
+
+  useEffect(() => {
+    const cleanup = registerItem(reply.id, handleToggleExpand, isExpanded, 'reply');
+    return cleanup;
+  }, [reply.id, handleToggleExpand, isExpanded, registerItem]);
 
   const handleNavigateToProjectReply = (projectId: string, commentId: string, replyId: string) => {
     navigate(`/project/${projectId}#${replyId}`, {
@@ -175,8 +228,12 @@ const ReplyItemPreview = ({ reply, comment, review, project, projectName, userPr
 
   return (
     <div
-      className="block w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-sm overflow-hidden mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+      className={cn(
+        "block w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-sm overflow-hidden mb-4 cursor-pointer transition-all duration-200",
+        isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "hover:opacity-90"
+      )}
       onClick={() => handleNavigateToProjectReply(project.id, comment.id, reply.id)}
+      data-nav-id={reply.id} // NEW: Data attribute for keyboard navigation
     >
       <div className="px-3 py-2">
         <div className="flex items-start justify-between mb-2">
@@ -263,10 +320,14 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger }: 
   const { isMobile } = useAppContextDisplayMode();
 
   const effectiveAddress = address;
+  const pageKey = `profile-page-${effectiveAddress}`; // Unique key for navigation hook
 
   const { nfd: userProfileNfd, loading: nfdLoading } = useNfd(effectiveAddress);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // NEW: Initialize keyboard navigation hook
+  const { focusedId, registerItem } = useKeyboardNavigation(pageKey);
 
   useEffect(() => {
     if (location.pathname.startsWith('/profile/') && scrollRef.current) {
@@ -434,7 +495,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger }: 
   }
 
   return (
-    <div ref={scrollRef} className={cn(
+    <div ref={scrollRef} id={pageKey} className={cn(
       "w-full text-foreground scroll-mt-header-offset",
       !isInsideCarousel && "max-w-md mx-auto",
       isInsideCarousel ? "p-0 md:p-0 h-full" : "p-2 md:p-4 h-full overflow-y-auto"
@@ -539,6 +600,8 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger }: 
                                             userProfileAddress={effectiveAddress}
                                             userProfileNfdName={userProfileNfd?.name || null}
                                             userProfileActiveCategory={activeCategory}
+                                            focusedId={focusedId} // NEW
+                                            registerItem={registerItem} // NEW
                                           />
                                         ))}
                                       </div>
@@ -579,6 +642,8 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger }: 
                                             userProfileAddress={effectiveAddress}
                                             userProfileNfdName={userProfileNfd?.name || null}
                                             userProfileActiveCategory={activeCategory}
+                                            focusedId={focusedId} // NEW
+                                            registerItem={registerItem} // NEW
                                           />
                                         ))}
                                       </div>
@@ -620,6 +685,8 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger }: 
                                             userProfileAddress={effectiveAddress}
                                             userProfileNfdName={userProfileNfd?.name || null}
                                             userProfileActiveCategory={activeCategory}
+                                            focusedId={focusedId} // NEW
+                                            registerItem={registerItem} // NEW
                                           />
                                         ))}
                                       </div>

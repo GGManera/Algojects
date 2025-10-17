@@ -4,7 +4,7 @@ import { Review, Project, Comment } from "@/types/social";
 import { CommentItem } from "./CommentItem";
 import { LikeButton } from "./LikeButton";
 import { InteractionForm } from "./InteractionForm";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import { UserDisplay } from "./UserDisplay";
 import { TrendingUp, Share2, MessageCircle, Gem, Star } from "lucide-react";
@@ -17,6 +17,8 @@ import { useWallet } from "@txnlab/use-wallet-react";
 import { AllCuratorCalculationsMap } from '@/hooks/useCuratorIndex';
 import { CollapsibleContent } from "./CollapsibleContent";
 import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
+import { cn } from "@/lib/utils";
 
 interface ReviewItemProps {
   review: Review;
@@ -28,6 +30,9 @@ interface ReviewItemProps {
   assetUnitName: string | null;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
+  // NEW: Keyboard navigation props
+  focusedId: string | null;
+  registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
 }
 
 const CONTENT_TRUNCATE_LENGTH = 280;
@@ -42,7 +47,7 @@ const getCommentInteractionScore = (comment: Comment): number => {
   return score;
 };
 
-export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData }: ReviewItemProps) {
+export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, focusedId, registerItem }: ReviewItemProps) {
   const location = useLocation();
   const { expandCommentId, highlightReplyId, highlightCommentId } = (location.state as { expandCommentId?: string; highlightReplyId?: string; highlightCommentId?: string; }) || {};
   const { activeAddress } = useWallet(); // Get active address
@@ -59,6 +64,9 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
   const [showCommentForm, setShowCommentForm] = useState(false);
   const navigate = useNavigate();
 
+  // NEW: Keyboard navigation state
+  const isFocused = focusedId === review.id;
+
   // NEW: Check if the review is excluded AND the current user is NOT the sender
   const isHidden = review.isExcluded && activeAddress !== review.sender;
 
@@ -67,6 +75,17 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
       setIsExpanded(true);
     }
   }, [containsTargetComment]);
+
+  const handleToggleExpand = useCallback(() => {
+    setIsExpanded(prev => !prev);
+    setShowCommentForm(false); // Collapse form when collapsing review
+  }, []);
+
+  // Register item for keyboard navigation
+  useEffect(() => {
+    const cleanup = registerItem(review.id, handleToggleExpand, isExpanded, 'review');
+    return cleanup;
+  }, [review.id, handleToggleExpand, isExpanded, registerItem]);
 
   const sortedComments = useMemo(() => {
     const allComments = Object.values(review.comments || {});
@@ -92,7 +111,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
     if ((e.target as HTMLElement).closest('button, a')) {
       return;
     }
-    setIsExpanded(prev => !prev);
+    handleToggleExpand();
     setShowInteractionDetails(false);
   };
 
@@ -124,8 +143,12 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
       className="scroll-mt-header-offset mb-4"
     >
       <div 
-        className="w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg overflow-hidden cursor-pointer"
+        className={cn(
+          "w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg overflow-hidden cursor-pointer transition-all duration-200",
+          isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "", // Apply focus highlight
+        )}
         onClick={handleCardClick}
+        data-nav-id={review.id} // Add data attribute for keyboard navigation
       >
         <div className="flex items-start justify-between p-2">
           <UserDisplay 
@@ -240,6 +263,9 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
                 expandCommentId={expandCommentId}
                 highlightReplyId={highlightReplyId}
                 highlightCommentId={highlightCommentId}
+                // NEW: Pass keyboard navigation props
+                focusedId={focusedId}
+                registerItem={registerItem}
               />
             ))}
             {sortedComments.length > 3 && (

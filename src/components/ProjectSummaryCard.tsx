@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageCircle, Heart, MessageSquare, TrendingUp, FileText, ChevronRight, Link as LinkIcon, X as XIcon, Gem, UserCircle } from "lucide-react";
 import { cn, parseProjectMetadata, formatTimestamp, extractDomainFromUrl, extractXHandleFromUrl } from "@/lib/utils";
-import { motion, AnimatePresence }framer-motion"; // Keep motion/AnimatePresence for UserDisplay/Share
+import { motion, AnimatePresence } from "framer-motion"; // Keep motion/AnimatePresence for UserDisplay/Share
 import { Button } from "./ui/button";
 import { UserDisplay } from "./UserDisplay";
 import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';

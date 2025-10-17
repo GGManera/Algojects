@@ -9,10 +9,11 @@ import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useNfdResolver } from "@/hooks/useNfdResolver";
+import { useNfdAddressResolver } from "@/hooks/useNfdAddressResolver"; // NEW Import
 import { StyledTextarea } from "@/components/ui/StyledTextarea";
 import { InteractionCardInput } from "./InteractionCardInput";
 import { ProjectMetadata, MetadataItem } from '@/types/project';
-import { PlusCircle, Trash2, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { PlusCircle, Trash2, AlertTriangle, CheckCircle, Loader2 } from "lucide-react"; // Added CheckCircle, Loader2
 import {
   Select,
   SelectContent,
@@ -20,8 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserDisplay } from "./UserDisplay";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { UserDisplay } from "./UserDisplay"; // Import UserDisplay
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"; // Import Alert components
 import { cn } from "@/lib/utils";
 
 const DESCRIPTION_MAX_LENGTH = 2048;
@@ -75,12 +76,8 @@ export function ProjectDetailsForm({
   const isClaimed = findMetadataItem('is-claimed')?.value === 'true';
   const creatorWalletContent = findMetadataItem('address', 'Creator Wallet')?.value || ''; // Look for type 'address' AND title 'Creator Wallet'
 
-  // --- Manual Address Validation (NFD resolution disabled for this field) ---
-  const isAlgorandAddress = creatorWalletContent.length === 58;
-  const resolvedCreatorAddress = isAlgorandAddress ? creatorWalletContent : null;
-  const resolvingCreatorAddress = false;
-  const creatorAddressError = creatorWalletContent.trim() && !isAlgorandAddress ? "Must be a 58-character Algorand address." : null;
-  // --- End Manual Address Validation ---
+  // NEW: Resolve Creator Wallet input
+  const { resolvedAddress: resolvedCreatorAddress, loading: resolvingCreatorAddress, error: creatorAddressError } = useNfdAddressResolver(creatorWalletContent);
 
   // Filter out the "fixed" metadata items from the dynamic list for rendering
   const fixedTypesAndTitles = useMemo(() => new Set([
@@ -188,10 +185,8 @@ export function ProjectDetailsForm({
       showError("Project name cannot be empty.");
       return;
     }
-    
-    // Manual validation check for Creator Wallet
     if (creatorWalletContent.trim() && !resolvedCreatorAddress) {
-      showError("Creator Wallet address must be a 58-character Algorand address.");
+      showError("Creator Wallet address/NFD is invalid or could not be resolved.");
       return;
     }
 
@@ -214,8 +209,8 @@ export function ProjectDetailsForm({
         { title: 'Added By Address', value: addedByAddress || '', type: 'added-by-address' },
         { title: 'Is Community Notes', value: isCommunityNotes ? 'true' : 'false', type: 'is-community-notes' },
         { title: 'Is Claimed', value: isClaimed ? 'true' : 'false', type: 'is-claimed' },
-        // Creator Wallet: Use the raw input (which is now validated as an address)
-        { title: 'Creator Wallet', value: creatorWalletContent, type: 'address' }, 
+        // Creator Wallet: Use the resolved address if available, otherwise the raw input (which will be validated by the resolver)
+        { title: 'Creator Wallet', value: resolvedCreatorAddress || creatorWalletContent, type: 'address' }, 
       ].filter(item => item.value.trim() || ['is-creator-added', 'is-community-notes', 'is-claimed'].includes(item.type || ''));
 
       // 3. Combine all items, filtering out any fixed items that are empty (except boolean flags)
@@ -237,7 +232,7 @@ export function ProjectDetailsForm({
     }
   };
 
-  const canSubmit = !activeAddress || isLoading || !isAuthorized() || resolvingAuthNfds || isProjectDetailsFetching || (creatorWalletContent.trim() && !resolvedCreatorAddress);
+  const canSubmit = !activeAddress || isLoading || !isAuthorized() || resolvingAuthNfds || isProjectDetailsFetching || resolvingCreatorAddress || (creatorWalletContent.trim() && !resolvedCreatorAddress);
   const inputDisabled = !activeAddress || isLoading || resolvingAuthNfds || isProjectDetailsFetching;
 
   if (!activeAddress) {
@@ -313,7 +308,7 @@ export function ProjectDetailsForm({
             id="projectTags"
             placeholder="e.g., DeFi, NFT, Gaming"
             value={projectTags}
-            onChange={(e) => setProjectTags(e.target.value)}
+            onChange={(e) => setProjectTags(e.target.value)} // Tags are handled via local state and then merged in handleSubmit
             disabled={inputDisabled}
             className="bg-muted/50"
           />
@@ -341,10 +336,10 @@ export function ProjectDetailsForm({
           </div>
         )}
         <div className="relative">
-          <Label htmlFor="creatorWallet" className="text-white text-xs absolute top-[-20px] left-0 bg-hodl-darker px-1">Creator Wallet (Address only)</Label>
+          <Label htmlFor="creatorWallet" className="text-white text-xs absolute top-[-20px] left-0 bg-hodl-darker px-1">Creator Wallet (Address/NFD)</Label>
           <Input
             id="creatorWallet"
-            placeholder="Enter creator wallet address..."
+            placeholder="Enter creator wallet address or NFD..."
             value={creatorWalletContent}
             onChange={(e) => updateOrCreateMetadataItem('address', 'Creator Wallet', e.target.value)}
             disabled={inputDisabled}
@@ -354,6 +349,7 @@ export function ProjectDetailsForm({
             })}
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
+            {resolvingCreatorAddress && <Loader2 className="h-4 w-4 animate-spin text-hodl-blue" />}
             {creatorAddressError && <AlertTriangle className="h-4 w-4 text-red-500" />}
             {resolvedCreatorAddress && !resolvingCreatorAddress && <CheckCircle className="h-4 w-4 text-green-500" />}
           </div>

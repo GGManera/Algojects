@@ -344,6 +344,18 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     return isAssetIdHovered ? assetIdValue : (defaultTitle || "Asset ID");
   }, [copiedAssetIdMessage, isMobile, showAssetIdValue, isAssetIdHovered]);
 
+  // --- Fixed Wallet Items ---
+  const fixedWalletItems = useMemo(() => {
+    const items: { title: string; value: string; type: MetadataItem['type'] }[] = [];
+    if (creatorWalletMetadata) {
+        items.push({ title: 'Creator Wallet', value: creatorWalletMetadata, type: 'address' });
+    }
+    if (projectWalletMetadata) {
+        items.push({ title: 'Project Wallet', value: projectWalletMetadata, type: 'project-wallet' });
+    }
+    return items;
+  }, [creatorWalletMetadata, projectWalletMetadata]);
+
   // --- Grouping and Ordering Logic for Dynamic Metadata ---
   const dynamicMetadataGroups = useMemo(() => {
     const groups: { [key: string]: MetadataItem[] } = {
@@ -550,62 +562,56 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       {/* Project Metadata */}
       {hasAnyMetadata && (
         <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
+          
+          {/* 1. Dynamic Buttons and Cards (URL, X, Asset ID, Generic Text/Address) */}
           <div className="grid grid-cols-2 gap-4 text-sm">
-            
-            {/* RENDER GROUPED DYNAMIC METADATA FIRST */}
             {dynamicMetadataGroups.map(group => (
               <React.Fragment key={group.type}>
                 {group.items.map((item, index) => renderMetadataItem(item, index))}
               </React.Fragment>
             ))}
-
-            {/* THEN RENDER FIXED WALLET ADDRESSES */}
-            {creatorWalletMetadata && (
-                <div className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full max-w-[180px] mx-auto")}>
-                    <span className="font-semibold text-muted-foreground text-xs">Creator Wallet:</span>
-                    <UserDisplay
-                        address={creatorWalletMetadata}
-                        textSizeClass="text-sm"
-                        avatarSizeClass="h-5 w-5"
-                        linkTo={`/profile/${creatorWalletMetadata}`}
-                        sourceContext={projectSourceContext}
-                        className="justify-center"
-                    />
-                </div>
-            )}
-            {projectWalletMetadata && (
-                <div className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full max-w-[180px] mx-auto")}>
-                    <span className="font-semibold text-muted-foreground text-xs">Project Wallet:</span>
-                    <UserDisplay
-                        address={projectWalletMetadata}
-                        textSizeClass="text-sm"
-                        avatarSizeClass="h-5 w-5"
-                        linkTo={`/profile/${projectWalletMetadata}`}
-                        sourceContext={projectSourceContext}
-                        className="justify-center"
-                    />
-                </div>
-            )}
-            
-            {/* Display Your Holding if present (this should remain at the end) */}
-            {currentUserProjectHolding && (
-              <div className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full max-w-[180px] mx-auto")}>
-                <span className="font-semibold text-muted-foreground text-xs">Your Holding:</span>
-                {tokenHoldingsLoading || assetUnitNameLoading ? (
-                  <Skeleton className="h-4 w-20" />
-                ) : currentUserProjectHolding ? (
-                  <div className="flex items-center gap-1 justify-center">
-                    <Gem className="h-4 w-4 text-hodl-blue" />
-                    <span className="font-numeric font-bold text-primary selectable-text">
-                      {currentUserProjectHolding.amount} {assetUnitName || ''}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground selectable-text">0 (Not held)</p>
-                )}
-              </div>
-            )}
           </div>
+          
+          {/* 2. Fixed Wallet Addresses and User Holding - Tightly packed grid */}
+          {(fixedWalletItems.length > 0 || currentUserProjectHolding) && (
+            <div className={cn(
+                "grid grid-cols-2 gap-x-4 gap-y-2 text-sm pt-4 mt-4 border-t border-border"
+            )}>
+                
+                {fixedWalletItems.map((item, index) => (
+                    <div key={item.title} className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full max-w-[180px] mx-auto")}>
+                        <span className="font-semibold text-muted-foreground text-xs">{item.title}:</span>
+                        <UserDisplay
+                            address={item.value}
+                            textSizeClass="text-sm"
+                            avatarSizeClass="h-5 w-5"
+                            linkTo={`/profile/${item.value}`}
+                            sourceContext={projectSourceContext}
+                            className="justify-center"
+                        />
+                    </div>
+                ))}
+                
+                {/* Display Your Holding if present */}
+                {currentUserProjectHolding && (
+                    <div className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full max-w-[180px] mx-auto")}>
+                        <span className="font-semibold text-muted-foreground text-xs">Your Holding:</span>
+                        {tokenHoldingsLoading || assetUnitNameLoading ? (
+                            <Skeleton className="h-4 w-20" />
+                        ) : currentUserProjectHolding ? (
+                            <div className="flex items-center gap-1 justify-center">
+                                <Gem className="h-4 w-4 text-hodl-blue" />
+                                <span className="font-numeric font-bold text-primary selectable-text">
+                                    {currentUserProjectHolding.amount} {assetUnitName || ''}
+                                </span>
+                            </div>
+                        ) : (
+                            <p className="text-xs text-muted-foreground selectable-text">0 (Not held)</p>
+                        )}
+                    </div>
+                )}
+            </div>
+          )}
         </div>
       )}
     </div>

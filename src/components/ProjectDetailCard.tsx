@@ -454,34 +454,44 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const StatsGrid = (
     <div className={cn(
       "grid gap-4 text-sm text-muted-foreground",
-      // Mobile: 5 columns (or 2 columns if inside the main grid)
-      isMobile ? "grid-cols-5 gap-2" : "grid-cols-2 md:w-full",
-      isMobile && "px-2 py-2 bg-muted/50 rounded-lg" // Added background and padding for mobile integration
+      // Desktop: 2 columns
+      "md:grid-cols-2 md:w-full"
     )}>
-      <div className={cn("flex flex-col items-center space-y-1", isMobile ? "col-span-5" : "col-span-2")}>
+      {/* Interactions Header (Mobile only: col-span-2, Desktop: col-span-2) */}
+      <div className={cn(
+        "flex flex-col items-center space-y-1",
+        isMobile ? "col-span-2" : "col-span-2"
+      )}>
         <TrendingUp className="h-5 w-5 text-hodl-blue" />
         <span className="font-bold font-numeric text-foreground">{stats.interactionScore}</span>
         <span>Interactions</span>
       </div>
-      <div className="flex flex-col items-center space-y-1">
-        <FileText className="h-5 w-5 text-hodl-purple" />
-        <span className="font-bold font-numeric text-foreground">{stats.reviewsCount}</span>
-        <span>Reviews</span>
-      </div>
-      <div className="flex flex-col items-center space-y-1">
-        <MessageCircle className="h-5 w-5 text-hodl-purple" />
-        <span className="font-bold font-numeric text-foreground">{stats.commentsCount}</span>
-        <span>Comments</span>
-      </div>
-      <div className="flex flex-col items-center space-y-1">
-        <MessageSquare className="h-5 w-5 text-hodl-purple" />
-        <span className="font-bold font-numeric text-foreground">{stats.repliesCount}</span>
-        <span>Replies</span>
-      </div>
-      <div className="flex flex-col items-center space-y-1">
-        <Heart className="h-5 w-5 text-pink-400" />
-        <span className="font-bold font-numeric text-foreground">{stats.likesCount}</span>
-        <span>Likes</span>
+      
+      {/* Detailed Stats (Mobile: 2 columns, Desktop: 2 columns) */}
+      <div className={cn(
+        "grid gap-4 text-sm text-muted-foreground",
+        isMobile ? "grid-cols-2 col-span-2" : "grid-cols-2 col-span-2"
+      )}>
+        <div className="flex flex-col items-center space-y-1">
+          <FileText className="h-5 w-5 text-hodl-purple" />
+          <span className="font-bold font-numeric text-foreground">{stats.reviewsCount}</span>
+          <span>Reviews</span>
+        </div>
+        <div className="flex flex-col items-center space-y-1">
+          <MessageCircle className="h-5 w-5 text-hodl-purple" />
+          <span className="font-bold font-numeric text-foreground">{stats.commentsCount}</span>
+          <span>Comments</span>
+        </div>
+        <div className="flex flex-col items-center space-y-1">
+          <MessageSquare className="h-5 w-5 text-hodl-purple" />
+          <span className="font-bold font-numeric text-foreground">{stats.repliesCount}</span>
+          <span>Replies</span>
+        </div>
+        <div className="flex flex-col items-center space-y-1">
+          <Heart className="h-5 w-5 text-pink-400" />
+          <span className="font-bold font-numeric text-foreground">{stats.likesCount}</span>
+          <span>Likes</span>
+        </div>
       </div>
     </div>
   );
@@ -590,7 +600,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           
           {/* MOBILE ONLY: Stats Grid integrated here */}
           {isMobile && (
-            <div className="mt-4">
+            <div className="mt-4 px-2"> {/* Removed bg-muted/50 rounded-lg, kept px-2 for internal padding */}
               {StatsGrid}
             </div>
           )}
@@ -606,7 +616,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     <div className={cn(
       "w-full",
     )}>
-      <Card className="bg-accent mt-8 relative">
+      <Card className="bg-accent relative rounded-none border-none shadow-none"> {/* Removed mt-8, rounded-none, border-none, shadow-none */}
         {activeAddress && (
             <Button
               variant="ghost"
@@ -619,7 +629,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             </Button>
           )}
         {/* Removed CardHeader */}
-        <CardContent className={cn("space-y-4 p-4", isMobile && "p-2")}>
+        <CardContent className={cn("space-y-4 p-4", isMobile && "p-0")}> {/* Changed p-2 to p-0 on mobile */}
           
           {/* Main Content Area: Stats (Left) + Metadata (Right) on Desktop */}
           <div className={cn(

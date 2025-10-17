@@ -102,7 +102,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
           "rounded-lg", // ADDED rounded-lg here
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
-          // REMOVED: !isFocused && "hover:focus-glow-border", // Apply hover focus highlight only if not already focused
+          !isFocused && "hover:focus-glow-border", // Apply hover focus highlight only if not already focused
           isExcluded 
             ? "bg-muted/30 border border-destructive/50 pointer-events-none" // Muted style for excluded
             : "bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black" // Normal style

@@ -135,7 +135,7 @@ export function CommentItem({
           "rounded-lg", // ADDED rounded-lg here
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
-          // REMOVED: !isFocused && "hover:focus-glow-border", // Apply hover focus highlight only if not already focused
+          !isFocused && "hover:focus-glow-border", // Apply hover focus highlight only if not already focused
           isExcluded 
             ? "bg-muted/30 border border-destructive/50 pointer-events-none" // Muted style for excluded
             : "bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white" // Normal style

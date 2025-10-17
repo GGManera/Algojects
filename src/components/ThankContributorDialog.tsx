@@ -61,39 +61,66 @@ export function ThankContributorDialog({
   }, [initialMetadata]);
 
   const [totalRewardAlgos, setTotalRewardAlgos] = useState(DEFAULT_REWARD_ALGO);
-  const [contributorShare, setContributorShare] = useState<number[]>([100]); // Percentage 0-100
+  // State to hold the contributor's share in ALGOs, defaulting to the total reward
+  const [contributorAmountAlgos, setContributorAmountAlgos] = useState(DEFAULT_REWARD_ALGO);
   const [whitelistedEditors, setWhitelistedEditors] = useState(initialWhitelistedEditors);
 
   // Reset state when dialog opens
   React.useEffect(() => {
     if (isOpen) {
       setTotalRewardAlgos(DEFAULT_REWARD_ALGO);
-      setContributorShare([100]);
+      setContributorAmountAlgos(DEFAULT_REWARD_ALGO);
       setWhitelistedEditors(initialWhitelistedEditors);
     }
   }, [isOpen, initialWhitelistedEditors]);
 
-  const contributorAmount = useMemo(() => {
-    // Use toFixed(2) to ensure the calculation is precise to 2 decimal places (0.01 ALGO)
-    return parseFloat((totalRewardAlgos * (contributorShare[0] / 100)).toFixed(2));
-  }, [totalRewardAlgos, contributorShare]);
+  // --- Derived values ---
+  const algojectsAmountAlgos = useMemo(() => {
+    // Ensure the result is constrained and rounded to 2 decimal places
+    const amount = totalRewardAlgos - contributorAmountAlgos;
+    return parseFloat(Math.max(0, amount).toFixed(2));
+  }, [totalRewardAlgos, contributorAmountAlgos]);
 
-  const algojectsAmount = useMemo(() => {
-    // Use toFixed(2) to ensure the calculation is precise to 2 decimal places (0.01 ALGO)
-    return parseFloat((totalRewardAlgos - contributorAmount).toFixed(2));
-  }, [totalRewardAlgos, contributorAmount]);
+  const contributorSharePercentage = useMemo(() => {
+    if (totalRewardAlgos === 0) return 0;
+    return parseFloat(((contributorAmountAlgos / totalRewardAlgos) * 100).toFixed(1));
+  }, [totalRewardAlgos, contributorAmountAlgos]);
+
+  // --- Handlers ---
 
   const handleTotalRewardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
     const value = parseFloat(rawValue);
 
+    let newTotal = 0;
     if (rawValue === '') {
-      // Allow clearing the input
-      setTotalRewardAlgos(0);
+      newTotal = 0;
     } else if (!isNaN(value)) {
-      // Use the parsed float value to strip leading zeros (e.g., "06" becomes 6)
-      setTotalRewardAlgos(value);
+      newTotal = value;
     }
+    
+    setTotalRewardAlgos(newTotal);
+    // When total changes, reset contributor amount to the new total (100% share)
+    setContributorAmountAlgos(newTotal);
+  };
+
+  const handleContributorAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const value = parseFloat(rawValue);
+
+    if (rawValue === '') {
+      setContributorAmountAlgos(0);
+    } else if (!isNaN(value)) {
+      // Constrain the input between 0 and totalRewardAlgos
+      const constrainedValue = Math.max(0, Math.min(totalRewardAlgos, value));
+      setContributorAmountAlgos(constrainedValue);
+    }
+  };
+
+  const handleSliderChange = (value: number[]) => {
+    const percentage = value[0];
+    const newAmount = parseFloat(((totalRewardAlgos * percentage) / 100).toFixed(2));
+    setContributorAmountAlgos(newAmount);
   };
 
   const handleConfirmClick = async () => {
@@ -101,7 +128,8 @@ export function ThankContributorDialog({
         alert(`Total reward must be at least ${MIN_REWARD_ALGO} ALGO.`);
         return;
     }
-    await onConfirm(totalRewardAlgos, contributorShare[0], whitelistedEditors);
+    // Pass the calculated percentage to the onConfirm handler
+    await onConfirm(totalRewardAlgos, contributorSharePercentage, whitelistedEditors);
   };
 
   const isCreator = activeAddress === projectCreatorAddress;
@@ -145,30 +173,53 @@ export function ThankContributorDialog({
 
           <Separator className="my-2" />
 
-          {/* Reward Split Slider */}
+          {/* Reward Split Input & Slider */}
           <div className="space-y-3">
             <Label className="text-sm font-semibold">Reward Split (Total: {totalRewardAlgos.toFixed(2)} ALGO)</Label>
             
-            <div className="flex justify-between text-xs font-semibold">
-                <span className="text-hodl-blue">Contributor ({contributorShare[0].toFixed(1)}%)</span>
-                <span className="text-hodl-purple">AlgoJects ({(100 - contributorShare[0]).toFixed(1)}%)</span>
+            {/* Contributor Amount Input */}
+            <div className="space-y-1">
+                <Label htmlFor="contributorAmount" className="text-sm font-semibold text-hodl-blue">
+                    Contributor Share (ALGO)
+                </Label>
+                <Input
+                    id="contributorAmount"
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    max={totalRewardAlgos}
+                    value={contributorAmountAlgos}
+                    onChange={handleContributorAmountChange}
+                    className="bg-muted/50 font-numeric text-hodl-blue"
+                />
+                <p className="text-xs text-muted-foreground">
+                    Max: {totalRewardAlgos.toFixed(2)} ALGO.
+                </p>
             </div>
 
+            {/* Percentage Display above Slider */}
+            <div className="flex justify-between text-xs font-semibold pt-2">
+                <span className="text-hodl-blue">Contributor ({contributorSharePercentage.toFixed(1)}%)</span>
+                <span className="text-hodl-purple">AlgoJects ({(100 - contributorSharePercentage).toFixed(1)}%)</span>
+            </div>
+
+            {/* Slider (now controlled by amount) */}
             <Slider
-              value={contributorShare}
-              onValueChange={setContributorShare}
+              value={[contributorSharePercentage]}
+              onValueChange={handleSliderChange}
               max={100}
-              step={0.1} // Changed step to 0.1 for finer control
+              step={0.1}
               className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
             />
 
+            {/* Calculated Amounts */}
             <div className="grid grid-cols-2 gap-2 text-center font-numeric">
               <div className="p-2 rounded-md bg-hodl-blue/20">
-                <span className="font-bold text-hodl-blue">{contributorAmount.toFixed(2)} ALGO</span>
+                <span className="font-bold text-hodl-blue">{contributorAmountAlgos.toFixed(2)} ALGO</span>
                 <p className="text-xs text-muted-foreground">To Contributor</p>
               </div>
               <div className="p-2 rounded-md bg-hodl-purple/20">
-                <span className="font-bold text-hodl-purple">{algojectsAmount.toFixed(2)} ALGO</span>
+                <span className="font-bold text-hodl-purple">{algojectsAmountAlgos.toFixed(2)} ALGO</span>
                 <p className="text-xs text-muted-foreground">To AlgoJects</p>
               </div>
             </div>

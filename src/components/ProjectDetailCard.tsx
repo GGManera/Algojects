@@ -522,26 +522,6 @@ export function ProjectDetailCard({
   // Component for the Metadata Section Content (excluding header)
   const MetadataSectionContent = (
     <div className="space-y-4">
-      {/* Project Description/Notes */}
-      {(isLoadingDetails || (currentProjectDescription && currentProjectDescription.trim() !== '')) && (
-        <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-black rounded-md shadow-recessed">
-          <h3 className="text-lg font-semibold mb-2 text-black">
-            {isCommunityNotes ? "Community Notes:" : (isCreatorAdded ? "Creator Notes:" : "Contributor Notes:")}
-          </h3>
-          {isLoadingDetails ? (
-            <Skeleton className="h-20 w-full" />
-          ) : detailsError ? (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{detailsError}</AlertDescription>
-            </Alert>
-          ) : (
-            <p className="text-black/90 whitespace-pre-wrap selectable-text">{currentProjectDescription}</p>
-          )}
-        </div>
-      )}
-
       {/* Project Metadata */}
       {allRenderableMetadataItems.length > 0 && (
         <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
@@ -573,6 +553,29 @@ export function ProjectDetailCard({
         </div>
       )}
     </div>
+  );
+
+  // NEW: Component for Project Notes/Description (moved out of MetadataSectionContent)
+  const ProjectNotesContainer = (
+    // Only render if loading or content exists
+    (isLoadingDetails || (currentProjectDescription && currentProjectDescription.trim() !== '')) && (
+      <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-black rounded-md shadow-recessed">
+        <h3 className="text-lg font-semibold mb-2 text-black">
+          {isCommunityNotes ? "Community Notes:" : (isCreatorAdded ? "Creator Notes:" : "Contributor Notes:")}
+        </h3>
+        {isLoadingDetails ? (
+          <Skeleton className="h-20 w-full" />
+        ) : detailsError ? (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{detailsError}</AlertDescription>
+          </Alert>
+        ) : (
+          <p className="text-black/90 whitespace-pre-wrap selectable-text">{currentProjectDescription}</p>
+        )}
+      </div>
+    )
   );
 
   // The Metadata Minicard wrapper (now includes the header content)
@@ -672,6 +675,9 @@ export function ProjectDetailCard({
             {MetadataMinicard}
           </div>
           
+          {/* NEW: Project Notes/Description Container (Moved here) */}
+          {ProjectNotesContainer}
+
           {/* Project Details Form is now conditionally rendered here */}
           {activeAddress && showProjectDetailsForm && (
             <ProjectDetailsForm

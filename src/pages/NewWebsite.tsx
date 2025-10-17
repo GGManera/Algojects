@@ -338,10 +338,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           return;
       }
 
-      const currentSlideIndex = api.selectedScrollSnap();
-      const currentSlideType = slidesConfig[currentSlideIndex]?.type;
-      const nextSlideIndex = currentSlideIndex + 1;
-      const prevSlideIndex = currentSlideIndex - 1;
+      const currentSlideType = slidesConfig[api.selectedScrollSnap()]?.type;
 
       // 1. Handle navigation from Project Page back to Home (A/ArrowLeft)
       if (currentSlideType === 'project' && isLeftKey && effectiveProjectId) {
@@ -357,20 +354,20 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
       // 2. Handle navigation from Home to Project Page (D/ArrowRight)
       if (currentSlideType === 'home' && isRightKey) {
-        // A. Check if the focused element is the Hero Logo
+        // Check if the focused element is the Hero Logo
         if (activeSlideFocusedId === 'hero-logo') {
           if (lastProjectPath) {
             e.preventDefault();
             navigate(lastProjectPath.path, { state: { scrollToTop: true } });
             return;
           } else {
-            // If no last project, prevent default carousel scroll
+            // If no last project, do nothing (prevent default carousel scroll)
             e.preventDefault();
             return;
           }
         }
         
-        // B. Check if the focused element is a Project Summary Card
+        // Check if the focused element is a Project Summary Card
         const focusedElement = document.querySelector('#projects-home [data-nav-id].focus-glow-border');
         if (focusedElement) {
           const focusedProjectId = focusedElement.getAttribute('data-nav-id');
@@ -380,26 +377,14 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
             return;
           }
         }
-        
-        // C. If no specific item is focused, or focus is on RevenueCalculator, allow carousel scroll IF the next slide exists.
-        if (nextSlideIndex < slidesConfig.length) {
-            api.scrollNext();
-        }
-        e.preventDefault(); // Prevent default browser scroll
-        return;
       }
       
-      // 3. Default Carousel Navigation (A/D) for other slides
+      // 3. Default Carousel Navigation (A/D)
       if (isRightKey) {
-        if (nextSlideIndex < slidesConfig.length) {
-            api.scrollNext();
-        }
+        api.scrollNext();
       } else if (isLeftKey) {
-        if (prevSlideIndex >= 0) {
-            api.scrollPrev();
-        }
+        api.scrollPrev();
       }
-      e.preventDefault(); // Prevent default browser scroll for A/D/Arrow keys
     };
 
     document.addEventListener('keydown', handleKeyDown);

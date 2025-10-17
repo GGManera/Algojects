@@ -55,7 +55,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   const [internalScrollToTopTrigger, setInternalScrollToTopTrigger] = useState(0);
 
   const slideRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
-  const projectsRef = useRef<{ focusedId: string | null }>({ focusedId: null }); // Ref to hold Projects focused ID
 
   const { projectIdFromUrl, addressFromUrl } = useMemo(() => {
     const pathParts = location.pathname.split('/').filter(Boolean);
@@ -71,7 +70,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return { projectIdFromUrl: pId, addressFromUrl: addr };
   }, [location.pathname]);
 
-  // Determine the effective IDs based on URL or history
   const effectiveProjectId = projectIdFromUrl || lastProjectPath?.path.split('/')[2];
   const effectiveProfileAddress = addressFromUrl || lastProfilePath?.path.split('/')[2] || activeAddress;
 
@@ -107,7 +105,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     setInternalScrollToTopTrigger(prev => prev + 1);
   }, []);
 
-  // NEW: Função para ser passada para HeroSection/ProjectPage para scrollar o slide ativo
+  // NEW: Função para ser passada para HeroSection para scrollar o slide ativo
   const handleHeroScrollToTop = useCallback(() => {
     scrollToActiveSlideTop();
   }, [scrollToActiveSlideTop]);
@@ -119,70 +117,50 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
   const slidesConfig = useMemo(() => {
     const config = [];
-    
-    // Slide 0: Home (Projects) - Always exists
     config.push({ 
       type: 'home', 
       pathPrefix: '/', 
       component: <Projects 
         isInsideCarousel={true} 
         scrollToTopTrigger={internalScrollToTopTrigger} 
-        isActive={location.pathname === '/'}
         onKeyboardModeChange={handleKeyboardModeChange} 
-        onScrollToTop={handleHeroScrollToTop}
-        projectsRef={projectsRef} // Pass ref to capture focused ID
+        onScrollToTop={handleHeroScrollToTop} // Pass the scroll function
       />, 
       maxWidth: 'max-w-[710px]' 
     });
     
-    // Slide 1: Project Page - Only exists if there is an effectiveProjectId
     if (effectiveProjectId) {
       config.push({ 
         type: 'project', 
         pathPrefix: '/project/', 
         component: <ProjectPage 
-          projectId={projectIdFromUrl} // Use projectIdFromUrl for the component to fetch data
+          projectId={effectiveProjectId} 
           isInsideCarousel={true} 
           hashToScroll={hashToScroll} 
           scrollTrigger={scrollTrigger} 
           scrollToTopTrigger={internalScrollToTopTrigger} 
-          isActive={location.pathname.startsWith('/project/')}
           onKeyboardModeChange={handleKeyboardModeChange} 
-          onScrollToTop={handleHeroScrollToTop}
+          onScrollToTop={handleHeroScrollToTop} // Pass the scroll function
         />, 
         maxWidth: 'max-w-[710px]' 
       });
     }
 
-    // Slide 2: User Profile - Only exists if there is an effectiveProfileAddress
     if (effectiveProfileAddress) {
       config.push({ 
         type: 'profile', 
         pathPrefix: '/profile/', 
         component: <UserProfile 
-          address={addressFromUrl || activeAddress} // Use addressFromUrl or activeAddress for the component to fetch data
+          address={effectiveProfileAddress} 
           isInsideCarousel={true} 
           scrollToTopTrigger={internalScrollToTopTrigger} 
-          isActive={location.pathname.startsWith('/profile/')}
           onKeyboardModeChange={handleKeyboardModeChange} 
         />, 
         maxWidth: 'max-w-[710px]' 
       });
     }
     return config;
-  }, [
-    effectiveProjectId, 
-    effectiveProfileAddress, 
-    projectIdFromUrl, 
-    addressFromUrl, 
-    activeAddress, 
-    hashToScroll, 
-    scrollTrigger, 
-    internalScrollToTopTrigger, 
-    handleKeyboardModeChange, 
-    handleHeroScrollToTop,
-    location.pathname, // Added location.pathname to ensure re-memoization when active slide changes
-  ]);
+  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, internalScrollToTopTrigger, handleKeyboardModeChange, handleHeroScrollToTop]);
 
   const targetSlideIndex = useMemo(() => {
     const currentPath = location.pathname;
@@ -213,19 +191,15 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
         if (selectedSlide.type === 'home') {
           newPath = '/';
         } else if (selectedSlide.type === 'project') {
-          // If navigating to project slide, use the effectiveProjectId
           if (effectiveProjectId) {
             newPath = `/project/${effectiveProjectId}`;
           } else {
-            // Should not happen if slidesConfig is correct, but fallback to home
             newPath = '/';
           }
         } else if (selectedSlide.type === 'profile') {
-          // If navigating to profile slide, use the effectiveProfileAddress
           if (effectiveProfileAddress) {
             newPath = `/profile/${effectiveProfileAddress}`;
           } else {
-            // Should not happen if slidesConfig is correct, but fallback to home
             newPath = '/';
           }
         }
@@ -259,7 +233,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
     setHashToScroll(location.hash);
 
-    // Handle redirection for "empty" project or profile pages
     if (location.pathname.startsWith('/project/') && !effectiveProjectId) {
       navigate('/');
       return;
@@ -271,7 +244,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
     if (api.selectedScrollSnap() !== targetSlideIndex) {
       api.scrollTo(targetSlideIndex);
-    } else if (targetSlideIndex === slidesConfig.findIndex(s => s.type === 'project') && location.pathname.startsWith('/project/') && location.hash) {
+    } else if (targetSlideIndex === 1 && location.pathname.startsWith('/project/') && location.hash) {
       if (location.hash !== lastScrolledHash) {
         setScrollTrigger(prev => prev + 1);
         setLastScrolledHash(location.hash);
@@ -360,7 +333,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       if (currentSlideType === 'project' && isLeftKey && effectiveProjectId) {
         e.preventDefault();
         try {
-          // Cache the project ID so the home page can focus on it
           localStorage.setItem(LAST_ACTIVE_ID_KEY, JSON.stringify({ id: effectiveProjectId, path: '/' }));
         } catch (error) {
           console.error("Failed to cache project ID for home page focus:", error);
@@ -371,25 +343,14 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
       // 2. Handle navigation from Home to Project Page (D/ArrowRight)
       if (currentSlideType === 'home' && isRightKey) {
-        // Use the focused ID from the Projects component (if available)
-        const focusedProjectId = projectsRef.current.focusedId;
-        
-        // If a project is focused, navigate to it
-        if (focusedProjectId && focusedProjectId !== 'hero-logo' && focusedProjectId !== 'revenue-calculator') {
-          e.preventDefault();
-          navigate(`/project/${focusedProjectId}`, { state: { scrollToTop: true } });
-          return;
-        } 
-        // If no project is focused, but there is a last viewed project, navigate to it
-        else if (effectiveProjectId) {
-          e.preventDefault();
-          navigate(`/project/${effectiveProjectId}`, { state: { scrollToTop: true } });
-          return;
-        }
-        // If neither, do nothing (prevent default carousel scroll)
-        else {
-          e.preventDefault();
-          return;
+        const focusedElement = document.querySelector('#projects-home [data-nav-id].focus-glow-border');
+        if (focusedElement) {
+          const focusedProjectId = focusedElement.getAttribute('data-nav-id');
+          if (focusedProjectId) {
+            e.preventDefault();
+            navigate(`/project/${focusedProjectId}`, { state: { scrollToTop: true } });
+            return;
+          }
         }
       }
       
@@ -406,7 +367,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [api, isMobile, navigate, effectiveProjectId, effectiveProfileAddress, slidesConfig, location.pathname, isTransitioning]);
+  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
   const cardContentMaxHeightClass = useMemo(() => {
     if (isMobile && isDeviceLandscape) {
@@ -424,8 +385,8 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
         <CarouselContent>
           {slidesConfig.map((slide, index) => {
             const slideComponent = React.cloneElement(slide.component, {
-              isActive: index === targetSlideIndex,
-              onScrollToTop: handleHeroScrollToTop,
+              isActive: index === currentSlideIndex,
+              onScrollToTop: handleHeroScrollToTop, // Pass the scroll function to HeroSection
             });
 
             return (
@@ -433,7 +394,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
                 key={slide.type} 
                 className={cn(
                   "h-full",
-                  index === targetSlideIndex && "carousel-item-active"
+                  index === currentSlideIndex && "carousel-item-active"
                 )}
               >
                 <Card className={cn(

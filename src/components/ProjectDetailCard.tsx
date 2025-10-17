@@ -344,76 +344,23 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     return isAssetIdHovered ? assetIdValue : (defaultTitle || "Asset ID");
   }, [copiedAssetIdMessage, isMobile, showAssetIdValue, isAssetIdHovered]);
 
-  // --- Fixed Wallet Items ---
-  const fixedWalletItems = useMemo(() => {
-    const items: { title: string; value: string; type: MetadataItem['type'] }[] = [];
-    if (creatorWalletMetadata) {
-        items.push({ title: 'Creator Wallet', value: creatorWalletMetadata, type: 'address' });
-    }
-    if (projectWalletMetadata) {
-        items.push({ title: 'Project Wallet', value: projectWalletMetadata, type: 'project-wallet' });
-    }
-    return items;
-  }, [creatorWalletMetadata, projectWalletMetadata]);
-
-  // --- Grouping and Ordering Logic for Dynamic Metadata ---
-  const dynamicMetadataGroups = useMemo(() => {
-    const groups: { [key: string]: MetadataItem[] } = {
-      'url': [],
-      'x-url': [],
-      'asset-id': [],
-      'address': [],
-      'text': [],
-    };
-
-    const fixedTypesAndTitles = new Set([
-      'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'Creator Wallet', 'project-wallet'
+  // --- Grouping and Ordering Logic for All Renderable Metadata ---
+  const allRenderableMetadataItems = useMemo(() => {
+    const items: MetadataItem[] = [];
+    
+    // Filter out all fixed types that should NOT be rendered in the grid
+    const excludedFixedTypes = new Set([
+        'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed'
     ]);
 
     projectMetadata.forEach(item => {
-      // Skip fixed items
-      if (fixedTypesAndTitles.has(item.type || '')) return;
-      if (item.type === 'address' && item.title === 'Creator Wallet') return;
-      
-      // Determine type for grouping
-      let type: string = item.type || 'text';
-      
-      // Fallback type detection for items without explicit type
-      if (type === 'text') {
-        if (item.value.startsWith('http')) {
-          if (item.value.includes('x.com') || item.value.includes('twitter.com')) {
-            type = 'x-url';
-          } else {
-            type = 'url';
-          }
-        } else if (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0) {
-          type = 'asset-id';
-        } else if (item.value.length === 58) {
-          type = 'address';
+        if (!excludedFixedTypes.has(item.type || '')) {
+            items.push(item);
         }
-      }
-
-      if (groups[type]) {
-        groups[type].push(item);
-      } else {
-        // If a new type is encountered, add it to the 'text' group as a fallback
-        groups['text'].push(item);
-      }
     });
-
-    // Define the desired order
-    const orderedGroups: { type: string; items: MetadataItem[] }[] = [
-      { type: 'url', items: groups['url'] },
-      { type: 'x-url', items: groups['x-url'] },
-      { type: 'asset-id', items: groups['asset-id'] },
-      { type: 'address', items: groups['address'] },
-      { type: 'text', items: groups['text'] },
-    ].filter(group => group.items.length > 0);
-
-    return orderedGroups;
-  }, [projectMetadata, isMobile, showAssetIdValue, isAssetIdHovered, copiedAssetIdMessage, getDisplayAssetIdText]);
-  // --- End Grouping and Ordering Logic ---
-
+    
+    return items;
+  }, [projectMetadata]);
 
   const renderMetadataItem = (item: MetadataItem, index: number) => {
     // Base classes for centering and max width
@@ -563,55 +510,30 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       {hasAnyMetadata && (
         <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
           
-          {/* 1. Dynamic Buttons and Cards (URL, X, Asset ID, Generic Text/Address) */}
+          {/* RENDER ALL ITEMS IN A SINGLE GRID WITH UNIFORM GAP-4 */}
           <div className="grid grid-cols-2 gap-4 text-sm">
-            {dynamicMetadataGroups.map(group => (
-              <React.Fragment key={group.type}>
-                {group.items.map((item, index) => renderMetadataItem(item, index))}
-              </React.Fragment>
-            ))}
+            
+            {allRenderableMetadataItems.map((item, index) => renderMetadataItem(item, index))}
+
+            {/* Display Your Holding if present - Rendered as a custom minicard inside the grid */}
+            {currentUserProjectHolding && (
+                <div className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full max-w-[180px] mx-auto")}>
+                    <span className="font-semibold text-muted-foreground text-xs">Your Holding:</span>
+                    {tokenHoldingsLoading || assetUnitNameLoading ? (
+                        <Skeleton className="h-4 w-20" />
+                    ) : currentUserProjectHolding ? (
+                        <div className="flex items-center gap-1 justify-center">
+                            <Gem className="h-4 w-4 text-hodl-blue" />
+                            <span className="font-numeric font-bold text-primary selectable-text">
+                                {currentUserProjectHolding.amount} {assetUnitName || ''}
+                            </span>
+                        </div>
+                    ) : (
+                        <p className="text-xs text-muted-foreground selectable-text">0 (Not held)</p>
+                    )}
+                </div>
+            )}
           </div>
-          
-          {/* 2. Fixed Wallet Addresses and User Holding - Tightly packed grid */}
-          {(fixedWalletItems.length > 0 || currentUserProjectHolding) && (
-            <div className={cn(
-                "grid grid-cols-2 gap-x-4 gap-y-2 text-sm pt-4 mt-4 border-t border-border"
-            )}>
-                
-                {fixedWalletItems.map((item, index) => (
-                    <div key={item.title} className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full max-w-[180px] mx-auto")}>
-                        <span className="font-semibold text-muted-foreground text-xs">{item.title}:</span>
-                        <UserDisplay
-                            address={item.value}
-                            textSizeClass="text-sm"
-                            avatarSizeClass="h-5 w-5"
-                            linkTo={`/profile/${item.value}`}
-                            sourceContext={projectSourceContext}
-                            className="justify-center"
-                        />
-                    </div>
-                ))}
-                
-                {/* Display Your Holding if present */}
-                {currentUserProjectHolding && (
-                    <div className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full max-w-[180px] mx-auto")}>
-                        <span className="font-semibold text-muted-foreground text-xs">Your Holding:</span>
-                        {tokenHoldingsLoading || assetUnitNameLoading ? (
-                            <Skeleton className="h-4 w-20" />
-                        ) : currentUserProjectHolding ? (
-                            <div className="flex items-center gap-1 justify-center">
-                                <Gem className="h-4 w-4 text-hodl-blue" />
-                                <span className="font-numeric font-bold text-primary selectable-text">
-                                    {currentUserProjectHolding.amount} {assetUnitName || ''}
-                                </span>
-                            </div>
-                        ) : (
-                            <p className="text-xs text-muted-foreground selectable-text">0 (Not held)</p>
-                        )}
-                    </div>
-                )}
-            </div>
-          )}
         </div>
       )}
     </div>

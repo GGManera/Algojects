@@ -38,25 +38,27 @@ export function ProjectDetailsForm({
   projectCreatorAddress,
   onProjectDetailsUpdated
 }: ProjectDetailsFormProps) {
-  const [metadataItems, setMetadataItems] = useState<MetadataItem[]>(initialProjectMetadata);
+  const [metadataItems, setMetadataItems] = useState<ProjectMetadata>(initialProjectMetadata);
   const [projectTags, setProjectTags] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { activeAddress } = useWallet();
   const { updateProjectDetails, loading: detailsLoadingState, isRefreshing: detailsRefreshingState } = useProjectDetails();
   const isProjectDetailsFetching = detailsLoadingState || detailsRefreshingState;
 
-  // Helper to find a metadata item by type
-  const findMetadataItem = useCallback((type: MetadataItem['type']) => {
-    return metadataItems.find(item => item.type === type);
+  // Helper to find a metadata item by type OR title (for non-standard fields like 'Creator Wallet')
+  const findMetadataItem = useCallback((type: MetadataItem['type'] | string, title?: string) => {
+    return metadataItems.find(item => item.type === type || (title && item.title === title));
   }, [metadataItems]);
 
   // Helper to update or add a metadata item
   const updateOrCreateMetadataItem = useCallback((type: MetadataItem['type'], title: string, value: string) => {
     setMetadataItems(prev => {
-      const existingIndex = prev.findIndex(item => item.type === type);
+      const existingIndex = prev.findIndex(item => item.type === type && item.title === title);
       if (existingIndex !== -1) {
         return prev.map((item, i) => i === existingIndex ? { ...item, title, value } : item);
       } else {
+        // If we are updating a fixed field, we might need to remove an old version if it existed under a different type/title combination.
+        // For simplicity and robustness, we rely on the filter/reconstruction in handleSubmit to clean up.
         return [...prev, { title, value, type }];
       }
     });
@@ -69,14 +71,26 @@ export function ProjectDetailsForm({
   const isCreatorAdded = findMetadataItem('is-creator-added')?.value === 'true';
   const addedByAddress = findMetadataItem('added-by-address')?.value;
   const isCommunityNotes = findMetadataItem('is-community-notes')?.value === 'true';
-  const creatorWalletContent = findMetadataItem('Creator Wallet')?.value || ''; // NEW: Creator Wallet
+  const isClaimed = findMetadataItem('is-claimed')?.value === 'true';
+  const creatorWalletContent = findMetadataItem('address', 'Creator Wallet')?.value || ''; // Look for type 'address' AND title 'Creator Wallet'
 
   // Filter out the "fixed" metadata items from the dynamic list for rendering
+  const fixedTypesAndTitles = useMemo(() => new Set([
+    'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'Creator Wallet'
+  ]), []);
+
   const dynamicMetadataItems = useMemo(() => {
-    return metadataItems.filter(item =>
-      !['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'Creator Wallet'].includes(item.type || '')
-    );
-  }, [metadataItems]);
+    return metadataItems.filter(item => {
+      // Check if it's a fixed type
+      if (fixedTypesAndTitles.has(item.type || '')) return false;
+      // Check if it's the fixed 'Creator Wallet' item (which uses type 'address' and title 'Creator Wallet')
+      if (item.type === 'address' && item.title === 'Creator Wallet') return false;
+      // Check if it's the fixed 'Tags' item (which uses type 'text' and title 'Tags')
+      if (item.type === 'text' && item.title === 'Tags') return false;
+      
+      return true;
+    });
+  }, [metadataItems, fixedTypesAndTitles]);
 
   const handleAddDynamicMetadataItem = useCallback(() => {
     setMetadataItems(prev => [...prev, { title: '', value: '', type: 'text' }]);
@@ -84,21 +98,19 @@ export function ProjectDetailsForm({
 
   const handleUpdateDynamicMetadataItem = useCallback((index: number, field: keyof MetadataItem, value: string) => {
     setMetadataItems(prev => {
-      const dynamicIndex = prev.indexOf(dynamicMetadataItems[index]); // Find the actual index in the full array
-      if (dynamicIndex !== -1) {
-        return prev.map((item, i) => i === dynamicIndex ? { ...item, [field]: value } : item);
-      }
-      return prev;
+      const itemToUpdate = dynamicMetadataItems[index];
+      if (!itemToUpdate) return prev;
+
+      return prev.map(item => item === itemToUpdate ? { ...item, [field]: value } : item);
     });
   }, [dynamicMetadataItems]);
 
   const handleUpdateDynamicMetadataType = useCallback((index: number, type: MetadataItem['type']) => {
     setMetadataItems(prev => {
-      const dynamicIndex = prev.indexOf(dynamicMetadataItems[index]);
-      if (dynamicIndex !== -1) {
-        return prev.map((item, i) => i === dynamicIndex ? { ...item, type } : item);
-      }
-      return prev;
+      const itemToUpdate = dynamicMetadataItems[index];
+      if (!itemToUpdate) return prev;
+
+      return prev.map(item => item === itemToUpdate ? { ...item, type } : item);
     });
   }, [dynamicMetadataItems]);
 
@@ -113,24 +125,19 @@ export function ProjectDetailsForm({
   const effectiveAuthInputs = useMemo(() => {
     const authAddresses: string[] = [];
     
-    // 1. Always include the project creator/owner address if available
     if (projectCreatorAddress) {
       authAddresses.push(projectCreatorAddress);
     }
     
-    // 2. Always include the original contributor address if available
     if (addedByAddress) {
       authAddresses.push(addedByAddress);
     }
     
-    // 3. Always include explicitly whitelisted editors
     whitelistedAddressesContent.split(',').map(addr => addr.trim()).filter(Boolean).forEach(addr => authAddresses.push(addr));
     
-    // Use a Set to ensure uniqueness before returning the array
     return Array.from(new Set(authAddresses));
   }, [projectCreatorAddress, addedByAddress, whitelistedAddressesContent]);
 
-  // Use the NFD resolver hook with the effective authorization inputs
   const { resolvedAddresses: authorizedAddresses, loading: resolvingAuthNfds } = useNfdResolver(effectiveAuthInputs);
 
   useEffect(() => {
@@ -142,7 +149,7 @@ export function ProjectDetailsForm({
     if (initialTagsItem?.value) {
       setProjectTags(initialTagsItem.value);
     } else {
-      setProjectTags(""); // Default if no tags found
+      setProjectTags("");
     }
   }, [initialProjectMetadata]);
 
@@ -150,10 +157,6 @@ export function ProjectDetailsForm({
   const isAuthorized = () => {
     if (!activeAddress) return false;
     if (resolvingAuthNfds) return false;
-
-    // Authorization is granted if the active address is in the set of resolved authorized addresses.
-    // Since effectiveAuthInputs now includes all relevant parties (Creator, Contributor, Whitelist), 
-    // we only need to check the resolved set.
     return authorizedAddresses.has(activeAddress);
   };
 
@@ -175,24 +178,31 @@ export function ProjectDetailsForm({
     const toastId = showLoading("Updating project details...");
 
     try {
-      // Update the "fixed" metadata items in the full metadataItems array
-      updateOrCreateMetadataItem('project-name', 'Project Name', projectNameContent);
-      updateOrCreateMetadataItem('project-description', 'Description', projectDescriptionContent);
-      updateOrCreateMetadataItem('tags', 'Tags', projectTags);
-      updateOrCreateMetadataItem('whitelisted-editors', 'Whitelisted Editors', whitelistedAddressesContent);
-      updateOrCreateMetadataItem('is-creator-added', 'Is Creator Added', isCreatorAdded ? 'true' : 'false');
-      updateOrCreateMetadataItem('added-by-address', 'Added By Address', addedByAddress || '');
-      updateOrCreateMetadataItem('is-community-notes', 'Is Community Notes', isCommunityNotes ? 'true' : 'false');
-      updateOrCreateMetadataItem('Creator Wallet', 'Creator Wallet', creatorWalletContent); // NEW: Update Creator Wallet
+      // 1. Collect all dynamic metadata items that have content
+      const dynamicItemsToSend: ProjectMetadata = dynamicMetadataItems
+        .filter(item => item.title.trim() && item.value.trim())
+        .map(item => ({ ...item, type: item.type || 'text' }));
 
-      // Filter out empty dynamic metadata items before sending
-      const finalMetadata: ProjectMetadata = metadataItems.filter(item => item.title.trim() && item.value.trim()).map(item => {
-        return { ...item, type: item.type || 'text' };
-      });
+      // 2. Define all fixed metadata items based on current local state
+      const fixedItems: ProjectMetadata = [
+        { title: 'Project Name', value: projectNameContent, type: 'project-name' },
+        { title: 'Description', value: projectDescriptionContent, type: 'project-description' },
+        { title: 'Tags', value: projectTags, type: 'tags' },
+        { title: 'Whitelisted Editors', value: whitelistedAddressesContent, type: 'whitelisted-editors' },
+        { title: 'Is Creator Added', value: isCreatorAdded ? 'true' : 'false', type: 'is-creator-added' },
+        { title: 'Added By Address', value: addedByAddress || '', type: 'added-by-address' },
+        { title: 'Is Community Notes', value: isCommunityNotes ? 'true' : 'false', type: 'is-community-notes' },
+        { title: 'Is Claimed', value: isClaimed ? 'true' : 'false', type: 'is-claimed' },
+        // Creator Wallet uses type 'address' and title 'Creator Wallet'
+        { title: 'Creator Wallet', value: creatorWalletContent, type: 'address' }, 
+      ].filter(item => item.value.trim() || ['is-creator-added', 'is-community-notes', 'is-claimed'].includes(item.type || ''));
+
+      // 3. Combine all items, filtering out any fixed items that are empty (except boolean flags)
+      const finalMetadata: ProjectMetadata = [...fixedItems, ...dynamicItemsToSend];
 
       await updateProjectDetails(
         projectId,
-        finalMetadata // Pass the full, updated metadata array
+        finalMetadata
       );
       dismissToast(toastId);
       showSuccess("Project details updated successfully!");
@@ -207,7 +217,7 @@ export function ProjectDetailsForm({
   };
 
   const canSubmit = !activeAddress || isLoading || !isAuthorized() || resolvingAuthNfds || isProjectDetailsFetching;
-  const inputDisabled = !activeAddress || isLoading || resolvingAuthNfds || isProjectDetailsFetching; // Separate disabled state for inputs
+  const inputDisabled = !activeAddress || isLoading || resolvingAuthNfds || isProjectDetailsFetching;
 
   if (!activeAddress) {
     return (
@@ -282,7 +292,7 @@ export function ProjectDetailsForm({
             id="projectTags"
             placeholder="e.g., DeFi, NFT, Gaming"
             value={projectTags}
-            onChange={(e) => setProjectTags(e.target.value)}
+            onChange={(e) => updateOrCreateMetadataItem('tags', 'Tags', e.target.value)} // Use updateOrCreateMetadataItem for tags
             disabled={inputDisabled}
             className="bg-muted/50"
           />
@@ -315,7 +325,7 @@ export function ProjectDetailsForm({
             id="creatorWallet"
             placeholder="Enter creator wallet address or NFD..."
             value={creatorWalletContent}
-            onChange={(e) => updateOrCreateMetadataItem('Creator Wallet', 'Creator Wallet', e.target.value)}
+            onChange={(e) => updateOrCreateMetadataItem('address', 'Creator Wallet', e.target.value)} // Use type 'address' and title 'Creator Wallet'
             disabled={inputDisabled}
             className="bg-muted/50"
           />

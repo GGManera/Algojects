@@ -82,12 +82,16 @@ export function ThankContributorDialog({
   }, [totalRewardAlgos, contributorAmount]);
 
   const handleTotalRewardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
-    // Allow input if it's empty or if it's a valid number greater than or equal to MIN_REWARD_ALGO
-    if (!isNaN(value) && value >= 0) {
+    const rawValue = e.target.value;
+    const value = parseFloat(rawValue);
+
+    if (rawValue === '') {
+      // Allow clearing the input
+      setTotalRewardAlgos(0);
+    } else if (!isNaN(value)) {
+      // If the user is typing a number, update the state immediately.
+      // The `canConfirm` check will prevent submission if it's below MIN_REWARD_ALGO.
       setTotalRewardAlgos(value);
-    } else if (e.target.value === '') {
-      setTotalRewardAlgos(0); // Temporarily set to 0 if empty, but validation will prevent submission
     }
   };
 
@@ -133,7 +137,9 @@ export function ThankContributorDialog({
               onChange={handleTotalRewardChange}
               className="bg-muted/50 font-numeric"
             />
-            <p className="text-xs text-muted-foreground">Minimum reward: {MIN_REWARD_ALGO} ALGO.</p>
+            <p className={cn("text-xs", totalRewardAlgos < MIN_REWARD_ALGO ? "text-red-500" : "text-muted-foreground")}>
+              Minimum reward: {MIN_REWARD_ALGO} ALGO.
+            </p>
           </div>
 
           <Separator className="my-2" />

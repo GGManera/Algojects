@@ -36,9 +36,45 @@ const updateOrderedIds = (pageKey: string) => {
 
 export function useKeyboardNavigation(pageKey: string) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [isMouseActive, setIsMouseActive] = useState(false); // NEW: State to track mouse activity
+  const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const location = useLocation();
   const pageKeyRef = useRef(pageKey);
   pageKeyRef.current = pageKey;
+
+  // --- Mouse Activity Detection ---
+  useEffect(() => {
+    const handleMouseMove = () => {
+      if (!isMouseActive) {
+        setIsMouseActive(true);
+      }
+      // Clear any existing timeout
+      if (mouseTimeoutRef.current) {
+        clearTimeout(mouseTimeoutRef.current);
+      }
+      // Set a new timeout to mark mouse as inactive after 500ms
+      mouseTimeoutRef.current = setTimeout(() => {
+        setIsMouseActive(false);
+      }, 500);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (mouseTimeoutRef.current) {
+        clearTimeout(mouseTimeoutRef.current);
+      }
+    };
+  }, [isMouseActive]);
+
+  // Effect to clear keyboard focus when mouse becomes active
+  useEffect(() => {
+    if (isMouseActive && focusedId !== null) {
+      setFocusedId(null);
+    }
+  }, [isMouseActive, focusedId]);
+
 
   // --- Registration Management ---
   const registerItem = useCallback((id: string, toggleExpand: () => void, isExpanded: boolean, type: NavigableItem['type']) => {
@@ -118,6 +154,18 @@ export function useKeyboardNavigation(pageKey: string) {
       const orderedIds = globalOrderedIdsMap.get(currentKey) || [];
       const itemsMap = globalNavigableItemsMap.get(currentKey) || new Map();
 
+      const isNavigationKey = ['ArrowDown', 'ArrowUp', 's', 'w', ' '].includes(e.key) || ['ArrowDown', 'ArrowUp', 's', 'w', ' '].includes(e.key.toLowerCase());
+
+      if (!isNavigationKey) return;
+
+      // If mouse is active, ignore keyboard navigation until mouse is inactive
+      if (isMouseActive) {
+        // If a navigation key is pressed while the mouse is active, we still prevent default
+        // but we don't process the navigation, allowing the mouse to maintain control.
+        e.preventDefault();
+        return;
+      }
+
       const currentIndex = focusedId ? orderedIds.indexOf(focusedId) : -1;
       let nextIndex = currentIndex;
 
@@ -166,7 +214,7 @@ export function useKeyboardNavigation(pageKey: string) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [focusedId, pageKey]);
+  }, [focusedId, pageKey, isMouseActive]); // Depend on isMouseActive
 
   // Reset focus when navigating to a new route (even if pageKey remains the same, e.g., project/a to project/b)
   useEffect(() => {

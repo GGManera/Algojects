@@ -109,6 +109,12 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
       showError("Project Name cannot be empty.");
       return null;
     }
+    
+    // NEW: Manual validation check for Creator Wallet address
+    if (creatorWalletAddress.trim() && creatorWalletAddress.length !== 58) {
+      showError("Creator Wallet address must be a 58-character Algorand address.");
+      return null;
+    }
 
     setIsLoading(true);
     const toastId = showLoading("Preparing your new project...");
@@ -185,13 +191,13 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
       const fullProjectMetadata: MetadataItem[] = [
         { title: 'Project Name', value: projectName, type: 'project-name' },
         { title: 'Description', value: projectNotes, type: 'project-description' },
-        { title: 'Tags', value: projectTags, type: 'tags' }, // Changed to 'Tags'
+        { title: 'Tags', value: projectTags, type: 'tags' },
         { title: 'Whitelisted Editors', value: parsedWhitelistedAddresses.join(', '), type: 'whitelisted-editors' },
         { title: 'Is Creator Added', value: isCreator ? 'true' : 'false', type: 'is-creator-added' },
         { title: 'Added By Address', value: activeAddress!, type: 'added-by-address' },
         { title: 'Is Community Notes', value: 'false', type: 'is-community-notes' },
-        { title: 'Is Claimed', value: 'false', type: 'is-claimed' }, // NEW: Default to unclaimed
-        // NEW: Add Creator Wallet Address if provided
+        { title: 'Is Claimed', value: 'false', type: 'is-claimed' },
+        // Creator Wallet: Use the raw input (which is now validated as an address)
         ...(creatorWalletAddress.trim() ? [{ title: 'Creator Wallet', value: creatorWalletAddress.trim(), type: 'address' as const }] : []),
         ...metadataItems.filter(item => item.title.trim() && item.value.trim()).map(item => ({
           ...item,
@@ -203,9 +209,9 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
       toast.success("Your new project has been added!", { id: loadingToastIdRef.current });
       setProjectName("");
       setProjectNotes("");
-      setCreatorWalletAddress(""); // Clear new field
+      setCreatorWalletAddress("");
       setWhitelistedEditors("");
-      setProjectTags(""); // Clear projectTags
+      setProjectTags("");
       setMetadataItems([]);
       setIsCreator(false);
       onInteractionSuccess();
@@ -223,7 +229,8 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
   };
 
   const hasNfd = !!nfd?.name;
-  const canSubmit = !activeAddress || isLoading || nfdLoading || !hasNfd || !projectName.trim(); // Removed customCategoryInput check
+  const isCreatorWalletValid = !creatorWalletAddress.trim() || creatorWalletAddress.length === 58;
+  const canSubmit = !activeAddress || isLoading || nfdLoading || !hasNfd || !projectName.trim() || !isCreatorWalletValid;
   const inputDisabled = !activeAddress || isLoading || nfdLoading;
 
   return (
@@ -232,12 +239,11 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
         <div className="relative user-box">
           <Input
             id="projectName"
-            placeholder="" // Placeholder is handled by label
+            placeholder=""
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             disabled={inputDisabled}
             className="peer w-full py-2 text-base text-white mb-[30px] border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
-            // Removed 'required' attribute
           />
           <Label
             htmlFor="projectName"
@@ -272,8 +278,11 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
               htmlFor="creatorWalletAddress"
               className="absolute top-0 left-0 py-2 text-base text-white pointer-events-none transition-all duration-500 peer-focus:top-[-20px] peer-focus:left-0 peer-focus:text-[#bdb8b8] peer-focus:text-xs peer-valid:top-[-20px] peer-valid:left-0 peer-valid:text-[#bdb8b8] peer-valid:text-xs peer-focus:bg-hodl-darker peer-focus:px-1 peer-valid:bg-hodl-darker peer-valid:px-1"
             >
-              Creator Wallet Address/NFD (Optional)
+              Creator Wallet Address (Optional)
             </Label>
+            {!isCreatorWalletValid && (
+              <p className="text-xs text-red-500 mt-1">Must be a 58-character Algorand address.</p>
+            )}
           </div>
         )}
 
@@ -303,7 +312,7 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
             onChange={(e) => setProjectNotes(e.target.value)}
             disabled={inputDisabled}
             onSubmit={handleSubmit}
-            isSubmitDisabled={true} // Ensure submit button is disabled for this field
+            isSubmitDisabled={true}
             className="peer w-full py-2 text-base text-white mb-[30px] border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0 min-h-[80px]"
           />
           <Label

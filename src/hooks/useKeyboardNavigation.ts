@@ -39,7 +39,7 @@ const updateOrderedIds = (pageKey: string) => {
 export function useKeyboardNavigation(pageKey: string) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [isMouseActive, setIsMouseActive] = useState(false);
-  const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false); // NEW state
+  const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false);
   const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const location = useLocation();
   const pageKeyRef = useRef(pageKey);
@@ -209,57 +209,44 @@ export function useKeyboardNavigation(pageKey: string) {
 
       if (!isNavigationKey) return;
 
-      // If mouse is active, ignore keyboard navigation
-      if (isMouseActive) {
-        // If a movement key is pressed while mouse is active, activate keyboard mode
-        if (isMovementKey) {
-            setIsKeyboardModeActive(true);
-            // If focusedId is null, try to restore it now to start keyboard navigation
-            if (focusedId === null && orderedIds.length > 0) {
-                const cachedId = getCachedActiveId();
-                if (cachedId && orderedIds.includes(cachedId)) {
-                    setFocusedId(cachedId);
-                } else {
-                    setFocusedId(orderedIds[0]);
-                }
-            }
-        } else {
-            e.preventDefault();
-            return;
-        }
+      // If mouse is active, ignore keyboard navigation unless it's a movement key
+      if (isMouseActive && !isMovementKey) {
+        e.preventDefault();
+        return;
       }
 
-      // If keyboard mode is not active, only movement keys can activate it
-      if (!isKeyboardModeActive && isMovementKey) {
-          setIsKeyboardModeActive(true);
-      }
-
-      if (!isKeyboardModeActive) return; // Only proceed if keyboard mode is active
-
-      // --- Keyboard Mode Logic ---
+      // --- Activation Logic ---
       let currentFocus = focusedId;
-      let shouldScroll = false; 
+      let shouldScroll = false;
+      let activateKeyboardMode = false;
 
-      if (currentFocus === null && orderedIds.length > 0) {
-        // This block should only run if keyboard mode was just activated by a movement key
-        const cachedId = getCachedActiveId();
-        currentFocus = (cachedId && orderedIds.includes(cachedId)) ? cachedId : orderedIds[0];
-        if (isMovementKey) {
-            shouldScroll = true;
+      if (isMovementKey) {
+        e.preventDefault(); // Prevent default scroll behavior for movement keys
+        
+        if (!isKeyboardModeActive) {
+          activateKeyboardMode = true;
+          setIsKeyboardModeActive(true);
         }
-        setFocusedId(currentFocus);
-      } else if (currentFocus !== null && isMovementKey) {
-        shouldScroll = true;
+
+        if (currentFocus === null && orderedIds.length > 0) {
+          // If no focus is set, try to restore from cache or default to first item
+          const cachedId = getCachedActiveId();
+          currentFocus = (cachedId && orderedIds.includes(cachedId)) ? cachedId : orderedIds[0];
+          shouldScroll = true; // Scroll to the initial focus
+        } else if (currentFocus !== null) {
+          shouldScroll = true;
+        }
       }
-      
+
+      if (!isKeyboardModeActive && !activateKeyboardMode) return; // Only proceed if active or just activated
+
+      // --- Movement Logic ---
       const currentIndex = currentFocus ? orderedIds.indexOf(currentFocus) : -1;
       let nextIndex = currentIndex;
 
       if (key === 'arrowdown' || key === 's') {
-        e.preventDefault();
         nextIndex = Math.min(currentIndex + 1, orderedIds.length - 1);
       } else if (key === 'arrowup' || key === 'w') {
-        e.preventDefault();
         nextIndex = Math.max(currentIndex - 1, 0);
       } else if (isActionKey) {
         if (currentFocus) {

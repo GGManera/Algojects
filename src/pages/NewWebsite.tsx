@@ -70,6 +70,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return { projectIdFromUrl: pId, addressFromUrl: addr };
   }, [location.pathname]);
 
+  // Determine the effective project ID: URL first, then last visited project
   const effectiveProjectId = projectIdFromUrl || lastProjectPath?.path.split('/')[2];
   const effectiveProfileAddress = addressFromUrl || lastProfilePath?.path.split('/')[2] || activeAddress;
 
@@ -129,6 +130,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       maxWidth: 'max-w-[710px]' 
     });
     
+    // Include ProjectPage slide ONLY if there is an effectiveProjectId
     if (effectiveProjectId) {
       config.push({ 
         type: 'project', 
@@ -233,6 +235,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
     setHashToScroll(location.hash);
 
+    // Handle redirection for "empty" project or profile pages
     if (location.pathname.startsWith('/project/') && !effectiveProjectId) {
       navigate('/');
       return;
@@ -244,7 +247,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
     if (api.selectedScrollSnap() !== targetSlideIndex) {
       api.scrollTo(targetSlideIndex);
-    } else if (targetSlideIndex === 1 && location.pathname.startsWith('/project/') && location.hash) {
+    } else if (targetSlideIndex === slidesConfig.findIndex(s => s.type === 'project') && location.pathname.startsWith('/project/') && location.hash) {
       if (location.hash !== lastScrolledHash) {
         setScrollTrigger(prev => prev + 1);
         setLastScrolledHash(location.hash);
@@ -332,29 +335,33 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       // 1. Handle navigation from Project Page back to Home (A/ArrowLeft)
       if (currentSlideType === 'project' && isLeftKey && effectiveProjectId) {
         e.preventDefault();
-        try {
-          localStorage.setItem(LAST_ACTIVE_ID_KEY, JSON.stringify({ id: effectiveProjectId, path: '/' }));
-        } catch (error) {
-          console.error("Failed to cache project ID for home page focus:", error);
-        }
+        // No need to cache focused ID here, as the Projects page handles its own focus restoration
         navigate('/');
         return;
       }
 
       // 2. Handle navigation from Home to Project Page (D/ArrowRight)
       if (currentSlideType === 'home' && isRightKey) {
-        const focusedElement = document.querySelector('#projects-home [data-nav-id].focus-glow-border');
-        if (focusedElement) {
-          const focusedProjectId = focusedElement.getAttribute('data-nav-id');
-          if (focusedProjectId) {
-            e.preventDefault();
-            navigate(`/project/${focusedProjectId}`, { state: { scrollToTop: true } });
-            return;
-          }
+        // Check if there is a last visited project path
+        if (lastProjectPath) {
+          e.preventDefault();
+          navigate(lastProjectPath.path);
+          return;
         }
+        
+        // If no last project, check if there is a profile to go to
+        if (effectiveProfileAddress) {
+          e.preventDefault();
+          navigate(`/profile/${effectiveProfileAddress}`);
+          return;
+        }
+        
+        // If neither, do nothing (prevent default carousel scroll)
+        e.preventDefault();
+        return;
       }
       
-      // 3. Default Carousel Navigation (A/D)
+      // 3. Default Carousel Navigation (A/D) - Only for other slides
       if (isRightKey) {
         api.scrollNext();
       } else if (isLeftKey) {
@@ -367,7 +374,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
+  }, [api, isMobile, navigate, effectiveProjectId, effectiveProfileAddress, slidesConfig, location.pathname, isTransitioning, lastProjectPath]);
 
   const cardContentMaxHeightClass = useMemo(() => {
     if (isMobile && isDeviceLandscape) {

@@ -461,7 +461,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       <div className={cn(
         "flex flex-col items-center space-y-1",
         isMobile ? "col-span-2" : "col-span-2",
-        isMobile && "mb-6" // Increased margin below the main interaction score
+        isMobile && "mb-2" // Reduced margin below the main interaction score
       )}>
         <TrendingUp className="h-5 w-5 text-hodl-blue" />
         <span className="font-bold font-numeric text-foreground">{stats.interactionScore}</span>
@@ -596,7 +596,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
           {/* Display Added By Address */}
           {addedByAddress && (
-            <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1">
+            <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1 mb-4"> {/* Added mb-4 here */}
               Added by <UserDisplay
                 address={addedByAddress}
                 textSizeClass="text-sm"
@@ -609,7 +609,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           
           {/* MOBILE ONLY: Stats Grid integrated here */}
           {isMobile && (
-            <div className="mt-8 px-2">
+            <div className="px-2"> {/* Removed mt-8 here */}
               {StatsGrid}
             </div>
           )}

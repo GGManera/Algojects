@@ -99,7 +99,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
         className={cn(
           "w-full rounded-lg shadow-md overflow-hidden cursor-pointer transition-all duration-300",
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-          isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "", // Apply focus highlight
+          isFocused ? "focus-glow-border" : "", // Apply new focus highlight
           isExcluded 
             ? "bg-muted/30 border border-destructive/50 pointer-events-none" // Muted style for excluded
             : "bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black" // Normal style

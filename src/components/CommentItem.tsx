@@ -131,7 +131,7 @@ export function CommentItem({
         className={cn(
           "block w-full rounded-lg shadow-md overflow-hidden transition-all duration-300 cursor-pointer",
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-          isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "", // Apply focus highlight
+          isFocused ? "focus-glow-border" : "", // Apply new focus highlight
           isExcluded 
             ? "bg-muted/30 border border-destructive/50 pointer-events-none" // Muted style for excluded
             : "bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white" // Normal style

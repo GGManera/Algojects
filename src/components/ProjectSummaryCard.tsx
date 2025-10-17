@@ -315,7 +315,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
         "flex flex-col",
         "scroll-mt-header-offset",
         !isInsideCarousel && "max-w-3xl",
-        isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "" // Apply focus highlight
+        isFocused ? "focus-glow-border" : "" // Apply new focus highlight
       )}
       onClick={() => onToggleExpand(project.id)}
       data-nav-id={project.id} // Add data attribute for keyboard navigation

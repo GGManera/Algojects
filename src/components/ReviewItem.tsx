@@ -147,7 +147,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
       <div 
         className={cn(
           "w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg overflow-hidden cursor-pointer transition-all duration-200",
-          isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "", // Apply focus highlight
+          isFocused ? "focus-glow-border" : "", // Apply new focus highlight
         )}
         onClick={handleCardClick}
         data-nav-id={review.id} // Add data attribute for keyboard navigation

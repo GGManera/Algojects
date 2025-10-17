@@ -46,6 +46,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   
   const [api, setApi] = useState<CarouselApi>();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false); // NEW: State to track carousel transition
   
   // New states for managing hash scrolling
   const [hashToScroll, setHashToScroll] = useState<string | null>(null);
@@ -174,10 +175,18 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       if (settledSlide?.type === 'project' && location.pathname.startsWith('/project/')) {
         setScrollTrigger(prev => prev + 1);
       }
+      setIsTransitioning(false); // Transition finished
+    };
+
+    const handleScroll = () => {
+      if (api.scrollProgress() > 0.001 && api.scrollProgress() < 0.999) {
+        setIsTransitioning(true); // Transition started
+      }
     };
 
     api.on("select", handleSelect);
     api.on("settle", handleSettle);
+    api.on("scroll", handleScroll); // Listen for scroll event
 
     setHashToScroll(location.hash);
 
@@ -202,6 +211,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return () => {
       api.off("select", handleSelect);
       api.off("settle", handleSettle);
+      api.off("scroll", handleScroll);
     };
   }, [
     api,
@@ -219,6 +229,19 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     addressFromUrl,
     lastScrolledHash
   ]);
+
+  // NEW: Effect to manage cursor visibility during transition
+  useEffect(() => {
+    if (isTransitioning) {
+      document.body.style.cursor = 'none';
+    } else {
+      // Only restore default if keyboard navigation mode is NOT active
+      // We rely on useKeyboardNavigation to manage the cursor when keyboard mode is active
+      if (document.body.style.cursor !== 'none') {
+        document.body.style.cursor = 'default';
+      }
+    }
+  }, [isTransitioning]);
 
   useEffect(() => {
     const path = location.pathname;
@@ -253,6 +276,12 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       const isLeftKey = ['arrowleft', 'a'].includes(key);
 
       if (!isRightKey && !isLeftKey) return;
+      
+      // Prevent carousel navigation during transition
+      if (isTransitioning) {
+          e.preventDefault();
+          return;
+      }
 
       const currentSlideType = slidesConfig[api.selectedScrollSnap()]?.type;
 
@@ -297,7 +326,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname]); // Added effectiveProjectId and location.pathname
+  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]); // Added isTransitioning
 
   const cardContentMaxHeightClass = useMemo(() => {
     if (isMobile && isDeviceLandscape) {

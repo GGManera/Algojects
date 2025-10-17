@@ -145,8 +145,13 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value; // Renamed local variable
   const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true';
   const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true'; // NEW: Check if claimed
-  const creatorWalletMetadata = projectMetadata.find(item => item.title === 'Creator Wallet')?.value; // Get Creator Wallet from metadata
-  const projectWalletMetadata = projectMetadata.find(item => item.type === 'project-wallet')?.value; // NEW: Get Project Wallet from metadata
+  
+  // --- Updated extraction for Wallets ---
+  const creatorWalletItem = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet');
+  const projectWalletItem = projectMetadata.find(item => item.type === 'project-wallet');
+  const creatorWalletMetadata = creatorWalletItem?.value;
+  const projectWalletMetadata = projectWalletItem?.value;
+  // --- End Updated extraction ---
 
   // Determine the address that added the project, prioritizing Coda metadata but falling back to on-chain creator wallet
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
@@ -229,7 +234,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const urlItem = projectMetadata.find(item => item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com')));
   const xUrlItem = projectMetadata.find(item => item.type === 'x-url' || item.value.includes('x.com') || item.value.includes('twitter.com'));
   const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
-  const creatorWalletItem = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet'); // Use the specific item
+  const creatorWalletItemForDisplay = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet'); // Use the specific item
 
   const hasAnyMetadata = projectMetadata.length > 0;
 
@@ -455,9 +460,40 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           {hasAnyMetadata && (
             <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                {/* Render Creator Wallet and Project Wallet side-by-side first */}
+                {creatorWalletMetadata && (
+                    <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+                        <span className="font-semibold text-muted-foreground text-xs">Creator Wallet:</span>
+                        <UserDisplay
+                            address={creatorWalletMetadata}
+                            textSizeClass="text-sm"
+                            avatarSizeClass="h-5 w-5"
+                            linkTo={`/profile/${creatorWalletMetadata}`}
+                            sourceContext={projectSourceContext}
+                        />
+                    </div>
+                )}
+                {projectWalletMetadata && (
+                    <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+                        <span className="font-semibold text-muted-foreground text-xs">Project Wallet:</span>
+                        <UserDisplay
+                            address={projectWalletMetadata}
+                            textSizeClass="text-sm"
+                            avatarSizeClass="h-5 w-5"
+                            linkTo={`/profile/${projectWalletMetadata}`}
+                            sourceContext={projectSourceContext}
+                        />
+                    </div>
+                )}
+                
+                {/* Render other dynamic metadata */}
                 {projectMetadata.map((item, index) => {
                   // Skip rendering of "fixed" metadata items here, as they are handled above or in forms
                   if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'].includes(item.type || '')) {
+                    return null;
+                  }
+                  // Also skip the specific Creator Wallet item if it was rendered above
+                  if (item.type === 'address' && item.title === 'Creator Wallet') {
                     return null;
                   }
 
@@ -536,20 +572,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
                     );
                   }
                 })}
-                {/* Display Project Wallet if present */}
-                {projectWalletMetadata && (
-                  <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
-                    <span className="font-semibold text-muted-foreground text-xs">Project Wallet:</span>
-                    <UserDisplay
-                      address={projectWalletMetadata}
-                      textSizeClass="text-sm"
-                      avatarSizeClass="h-5 w-5"
-                      linkTo={`/profile/${projectWalletMetadata}`}
-                      sourceContext={projectSourceContext}
-                    />
-                  </div>
-                )}
-                {/* End Display Project Wallet */}
+                {/* Display Your Holding if present (this should remain at the end) */}
                 {currentUserProjectHolding && (
                   <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
                     <span className="font-semibold text-muted-foreground text-xs">Your Holding:</span>

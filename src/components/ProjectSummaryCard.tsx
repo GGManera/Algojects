@@ -313,10 +313,10 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                 </div>
               )}
 
-              {/* Project Metadata - Changed from grid to flex-wrap */}
+              {/* Project Metadata - Enforcing 2 columns */}
               {hasAnyMetadata && (
                 <div className="py-4 px-3 bg-muted/50 text-foreground rounded-md shadow-recessed">
-                  <div className="flex flex-wrap justify-center gap-4 text-xs"> {/* Changed grid to flex-wrap */}
+                  <div className="grid grid-cols-2 gap-4 text-xs">
                     {projectMetadata.map((item, index) => {
                       // Skip rendering of "fixed" metadata items here
                       if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'].includes(item.type || '') || (item.type === 'address' && item.title === 'Creator Wallet')) {
@@ -327,7 +327,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                         return (
                           <div
                             key={index}
-                            className="btn-profile" // Removed mx-auto
+                            className="btn-profile w-full"
                             onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
                           >
                             <strong className="uppercase">{item.title || extractDomainFromUrl(item.value)}</strong>
@@ -344,7 +344,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                         return (
                           <div
                             key={index}
-                            className="btn-profile" // Removed mx-auto
+                            className="btn-profile w-full"
                             onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
                           >
                             <strong className="uppercase">{item.title || extractXHandleFromUrl(item.value)}</strong>
@@ -361,7 +361,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                         return (
                           <div
                             key={index}
-                            className="btn-profile" // Removed mx-auto
+                            className="btn-profile w-full"
                             onClick={(e) => handleAssetIdClick(e, item.value)}
                             onMouseEnter={() => !isMobile && setIsHovered(true)}
                             onMouseLeave={() => !isMobile && setIsHovered(false)}
@@ -378,14 +378,14 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                         );
                       } else if (item.type === 'address' || item.value.length === 58) {
                         return (
-                          <div key={index} className="inline-flex flex-col p-2 rounded-md bg-background/50 border border-border text-center w-auto">
+                          <div key={index} className="inline-flex flex-col p-2 rounded-md bg-background/50 border border-border text-center w-full">
                             <span className="font-semibold text-muted-foreground text-xs">{item.title || 'Address'}:</span>
                             <UserDisplay address={item.value} textSizeClass="text-xs" avatarSizeClass="h-5 w-5" linkTo={`/profile/${item.value}`} sourceContext={projectSourceContext} className="justify-center" />
                           </div>
                         );
                       } else {
                         return (
-                          <div key={index} className="inline-flex flex-col p-2 rounded-md bg-background/50 border border-border text-center w-auto">
+                          <div key={index} className="inline-flex flex-col p-2 rounded-md bg-background/50 border border-border text-center w-full">
                             <span className="font-semibold text-muted-foreground text-xs">{item.title}:</span>
                             <p className="text-sm text-foreground selectable-text">{item.value}</p>
                           </div>

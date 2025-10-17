@@ -364,7 +364,11 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
 
   const renderMetadataItem = (item: MetadataItem, index: number) => {
     // Base classes for centering and max width
-    const baseItemClasses = "w-full max-w-[180px] mx-auto";
+    // On mobile, we want full width, so we remove max-w-[180px] and mx-auto
+    const baseItemClasses = cn(
+      "w-full",
+      !isMobile && "max-w-[180px] mx-auto"
+    );
 
     // For URL/X-URL/Asset-ID, we use the btn-profile
     if (item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com'))) {
@@ -517,7 +521,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
 
             {/* Display Your Holding if present - Rendered as a custom minicard inside the grid */}
             {currentUserProjectHolding && (
-                <div className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full max-w-[180px] mx-auto")}>
+                <div className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full", !isMobile && "max-w-[180px] mx-auto")}>
                     <span className="font-semibold text-muted-foreground text-xs">Your Holding:</span>
                     {tokenHoldingsLoading || assetUnitNameLoading ? (
                         <Skeleton className="h-4 w-20" />
@@ -543,16 +547,16 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const MetadataMinicard = (
     <div className="w-full md:w-2/3">
       <Card className="bg-card shadow-deep-md">
-        <CardHeader className="text-center relative px-4 pt-4 pb-1"> {/* Reduced pb-2 to pb-1 */}
+        <CardHeader className="text-center relative px-4 pt-4 pb-1">
           {/* Title, Description, Added By Address */}
           <CardTitle className="text-4xl font-bold gradient-text">
             {currentProjectName}
           </CardTitle>
-          <CardDescription className="mt-0"> {/* Removed mt-0, CardDescription handles its own margin */}
+          <CardDescription>
             {stats.reviewsCount} {stats.reviewsCount === 1 ? 'review' : 'reviews'} found for this project.
           </CardDescription>
           {currentProjectTags && ( // Display tags if available
-            <div className="flex flex-wrap justify-center gap-2 mt-0"> {/* Reduced mt-1 to mt-0 */}
+            <div className="flex flex-wrap justify-center gap-2 mt-1">
               {currentProjectTags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
                 <span key={index} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary-foreground">
                   {tag}
@@ -562,7 +566,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
           {/* NEW: Thank Contributor Button */}
           {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && (
-            <div className="mt-2"> {/* Reduced mt-4 to mt-2 */}
+            <div className="mt-4">
               <Button
                 onClick={() => setShowThankContributorDialog(true)}
                 disabled={isClaiming || resolvingCreatorAddress}
@@ -574,7 +578,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
           {/* Display Added By Address */}
           {addedByAddress && (
-            <div className="mt-1 text-sm text-muted-foreground flex items-center justify-center gap-1"> {/* Reduced mt-2 to mt-1 */}
+            <div className="mt-1 text-sm text-muted-foreground flex items-center justify-center gap-1">
               Added by <UserDisplay
                 address={addedByAddress}
                 textSizeClass="text-sm"
@@ -585,7 +589,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             </div>
           )}
         </CardHeader>
-        <CardContent className="space-y-4 px-4 pb-4 pt-1"> {/* Reduced pt-2 to pt-1 */}
+        <CardContent className="space-y-4 px-4 pb-4 pt-2">
           {MetadataSectionContent}
         </CardContent>
       </Card>
@@ -609,7 +613,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             </Button>
           )}
         {/* Removed CardHeader */}
-        <CardContent className="space-y-4 p-4">
+        <CardContent className={cn("space-y-4 p-4", isMobile && "p-2")}>
           
           {/* Main Content Area: Stats (Left) + Metadata (Right) on Desktop */}
           <div className={cn(
@@ -639,7 +643,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
         </CardContent>
       </Card>
 
-      <div className="space-y-6 mt-8">
+      <div className={cn("space-y-6 mt-8", isMobile && "px-2")}>
         {sortedReviews.length > 0 ? (
           sortedReviews.map(({ review, score }) => (
             <ReviewItem

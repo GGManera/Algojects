@@ -132,6 +132,7 @@ export function CommentItem({
       <div 
         className={cn(
           "block w-full rounded-lg shadow-md overflow-hidden transition-all duration-300 cursor-pointer border-2 border-transparent", // Added transparent border base
+          "rounded-lg", // ADDED rounded-lg here
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
           !isFocused && "hover:focus-glow-border", // Apply hover focus highlight only if not already focused

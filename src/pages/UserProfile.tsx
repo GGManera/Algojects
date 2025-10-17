@@ -90,6 +90,7 @@ const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, u
     <div
       className={cn(
         "block w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg shadow-lg overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent",
+        "rounded-lg", // ADDED rounded-lg here
         isFocused ? "focus-glow-border" : "",
         !isFocused && "hover:focus-glow-border",
         isExpanded && "shadow-xl"
@@ -160,6 +161,7 @@ const CommentItemPreview = ({ comment, review, project, projectName, userProfile
     <div
       className={cn(
         "block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-md overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent",
+        "rounded-lg", // ADDED rounded-lg here
         isFocused ? "focus-glow-border" : "",
         !isFocused && "hover:focus-glow-border"
       )}
@@ -237,6 +239,7 @@ const ReplyItemPreview = ({ reply, comment, review, project, projectName, userPr
     <div
       className={cn(
         "block w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-sm overflow-hidden mb-4 cursor-pointer transition-all duration-200 border-2 border-transparent",
+        "rounded-lg", // ADDED rounded-lg here
         isFocused ? "focus-glow-border" : "",
         !isFocused && "hover:focus-glow-border"
       )}

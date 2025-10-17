@@ -311,7 +311,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
       layout
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className={cn(
-        "w-full cursor-pointer transition-all duration-300 ease-in-out border-2 border-transparent", // Added transparent border base
+        "w-full cursor-pointer transition-all duration-300 ease-in-out border-2 border-transparent rounded-lg", // ADDED rounded-lg here
         isExpanded ? "shadow-lg" : "",
         "flex flex-col",
         "scroll-mt-header-offset",

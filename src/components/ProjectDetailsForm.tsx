@@ -112,17 +112,23 @@ export function ProjectDetailsForm({
   // Determine the effective list of inputs for NFD resolution for authorization
   const effectiveAuthInputs = useMemo(() => {
     const authAddresses: string[] = [];
+    
+    // 1. Always include the project creator/owner address if available
     if (projectCreatorAddress) {
       authAddresses.push(projectCreatorAddress);
     }
-    if (isCreatorAdded && projectCreatorAddress) {
-      // This branch is redundant if projectCreatorAddress is always included, but kept for clarity
-    } else if (!isCreatorAdded && addedByAddress) {
+    
+    // 2. Always include the original contributor address if available
+    if (addedByAddress) {
       authAddresses.push(addedByAddress);
-      whitelistedAddressesContent.split(',').map(addr => addr.trim()).filter(Boolean).forEach(addr => authAddresses.push(addr));
     }
-    return authAddresses;
-  }, [isCreatorAdded, projectCreatorAddress, addedByAddress, whitelistedAddressesContent]);
+    
+    // 3. Always include explicitly whitelisted editors
+    whitelistedAddressesContent.split(',').map(addr => addr.trim()).filter(Boolean).forEach(addr => authAddresses.push(addr));
+    
+    // Use a Set to ensure uniqueness before returning the array
+    return Array.from(new Set(authAddresses));
+  }, [projectCreatorAddress, addedByAddress, whitelistedAddressesContent]);
 
   // Use the NFD resolver hook with the effective authorization inputs
   const { resolvedAddresses: authorizedAddresses, loading: resolvingAuthNfds } = useNfdResolver(effectiveAuthInputs);
@@ -145,10 +151,9 @@ export function ProjectDetailsForm({
     if (!activeAddress) return false;
     if (resolvingAuthNfds) return false;
 
-    if (projectCreatorAddress && activeAddress === projectCreatorAddress) {
-      return true;
-    }
-
+    // Authorization is granted if the active address is in the set of resolved authorized addresses.
+    // Since effectiveAuthInputs now includes all relevant parties (Creator, Contributor, Whitelist), 
+    // we only need to check the resolved set.
     return authorizedAddresses.has(activeAddress);
   };
 

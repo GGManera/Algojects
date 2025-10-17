@@ -158,11 +158,10 @@ export function useKeyboardNavigation(pageKey: string) {
   // --- Mouse Hover Tracking (External API) ---
   const setLastActiveId = useCallback((id: string | null) => {
     // This function is called by components on mouse enter/leave.
-    // We only use it to update the cache if the mouse is active.
-    if (isMouseActive) {
-      setCacheActiveId(id);
-    }
-  }, [isMouseActive, setCacheActiveId]);
+    // It should always update the cache if an ID is provided, regardless of isMouseActive state.
+    // This ensures the last hovered item is the starting point for keyboard navigation.
+    setCacheActiveId(id);
+  }, [setCacheActiveId]);
 
 
   // --- Effect to manage focus state and cleanup when pageKey changes ---

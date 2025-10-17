@@ -323,12 +323,15 @@ export function useKeyboardNavigation(pageKey: string) {
 
       if (orderedIds.length > 0) {
         const nextId = orderedIds[nextIndex];
-        setFocusedId(nextId);
+        
+        // Only update focus if it's actually changing, or if we are initializing focus
+        if (nextId !== focusedId || focusedId === null) {
+            setFocusedId(nextId);
+        }
         
         if (shouldScroll) {
-            // Check if we are focusing on the very first item
+            // If we are focusing on the very first item (index 0), always scroll to the absolute top.
             if (nextIndex === 0) {
-                // If it's the first item, scroll to the absolute top of the window
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
                 // Otherwise, scroll the element into view normally

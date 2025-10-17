@@ -543,16 +543,16 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const MetadataMinicard = (
     <div className="w-full md:w-2/3">
       <Card className="bg-card shadow-deep-md">
-        <CardHeader className="text-center relative px-4 pt-4 pb-1">
+        <CardHeader className="text-center relative px-4 pt-4 pb-1"> {/* Reduced pb-2 to pb-1 */}
           {/* Title, Description, Added By Address */}
           <CardTitle className="text-4xl font-bold gradient-text">
             {currentProjectName}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="mt-0"> {/* Removed mt-0, CardDescription handles its own margin */}
             {stats.reviewsCount} {stats.reviewsCount === 1 ? 'review' : 'reviews'} found for this project.
           </CardDescription>
           {currentProjectTags && ( // Display tags if available
-            <div className="flex flex-wrap justify-center gap-2 mt-1">
+            <div className="flex flex-wrap justify-center gap-2 mt-0"> {/* Reduced mt-1 to mt-0 */}
               {currentProjectTags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
                 <span key={index} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary-foreground">
                   {tag}
@@ -562,7 +562,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
           {/* NEW: Thank Contributor Button */}
           {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && (
-            <div className="mt-2">
+            <div className="mt-2"> {/* Reduced mt-4 to mt-2 */}
               <Button
                 onClick={() => setShowThankContributorDialog(true)}
                 disabled={isClaiming || resolvingCreatorAddress}
@@ -574,7 +574,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
           {/* Display Added By Address */}
           {addedByAddress && (
-            <div className="mt-1 text-sm text-muted-foreground flex items-center justify-center gap-1">
+            <div className="mt-1 text-sm text-muted-foreground flex items-center justify-center gap-1"> {/* Reduced mt-2 to mt-1 */}
               Added by <UserDisplay
                 address={addedByAddress}
                 textSizeClass="text-sm"
@@ -585,7 +585,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             </div>
           )}
         </CardHeader>
-        <CardContent className="space-y-4 px-4 pb-4 pt-1">
+        <CardContent className="space-y-4 px-4 pb-4 pt-1"> {/* Reduced pt-2 to pt-1 */}
           {MetadataSectionContent}
         </CardContent>
       </Card>
@@ -596,13 +596,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     <div className={cn(
       "w-full",
     )}>
-      <Card className={cn(
-        "bg-accent relative",
-        // Mobile: Remove top margin, remove border/shadow, ensure full width
-        isMobile && "mt-0 border-none shadow-none",
-        // Desktop: Keep margin
-        !isMobile && "mt-8"
-      )}>
+      <Card className="bg-accent mt-8 relative">
         {activeAddress && (
             <Button
               variant="ghost"
@@ -615,11 +609,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             </Button>
           )}
         {/* Removed CardHeader */}
-        <CardContent className={cn(
-          "space-y-4",
-          // Mobile: Remove horizontal padding, keep vertical padding
-          isMobile ? "p-0" : "p-4"
-        )}>
+        <CardContent className="space-y-4 p-4">
           
           {/* Main Content Area: Stats (Left) + Metadata (Right) on Desktop */}
           <div className={cn(
@@ -629,82 +619,27 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             {/* Stats Grid Wrapper: Stretches vertically, content aligned to CENTER */}
             <div className={cn(
                 "w-full md:w-1/3 flex flex-col md:justify-center", // Changed justify-end to justify-center
-                "pb-4 md:pb-0 md:pr-4",
-                isMobile && "px-4 pt-4" // Add padding back to stats grid on mobile
+                "pb-4 md:pb-0 md:pr-4"
             )}>
                 {StatsGrid}
             </div>
             
-            {/* Metadata Minicard Wrapper: Ensure full width on mobile */}
-            <div className={cn(
-              "w-full md:w-2/3",
-              isMobile && "px-4" // Add padding back to metadata card wrapper on mobile
-            )}>
-              <Card className="bg-card shadow-deep-md">
-                <CardHeader className="text-center relative px-4 pt-4 pb-1">
-                  {/* Title, Description, Added By Address */}
-                  <CardTitle className="text-4xl font-bold gradient-text">
-                    {currentProjectName}
-                  </CardTitle>
-                  <CardDescription>
-                    {stats.reviewsCount} {stats.reviewsCount === 1 ? 'review' : 'reviews'} found for this project.
-                  </CardDescription>
-                  {currentProjectTags && ( // Display tags if available
-                    <div className="flex flex-wrap justify-center gap-2 mt-1">
-                      {currentProjectTags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
-                        <span key={index} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary-foreground">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {/* NEW: Thank Contributor Button */}
-                  {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && (
-                    <div className="mt-2">
-                      <Button
-                        onClick={() => setShowThankContributorDialog(true)}
-                        disabled={isClaiming || resolvingCreatorAddress}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <DollarSign className="h-4 w-4 mr-2" /> Thank Contributor & Claim
-                      </Button>
-                    </div>
-                  )}
-                  {/* Display Added By Address */}
-                  {addedByAddress && (
-                    <div className="mt-1 text-sm text-muted-foreground flex items-center justify-center gap-1">
-                      Added by <UserDisplay
-                        address={addedByAddress}
-                        textSizeClass="text-sm"
-                        avatarSizeClass="h-6 w-6"
-                        linkTo={`/profile/${addedByAddress}`}
-                        sourceContext={projectSourceContext}
-                      />
-                    </div>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-4 px-4 pb-4 pt-1">
-                  {MetadataSectionContent}
-                </CardContent>
-              </Card>
-            </div>
+            {MetadataMinicard}
           </div>
           
           {/* Project Details Form is now conditionally rendered here */}
           {activeAddress && showProjectDetailsForm && (
-            <div className={cn(isMobile && "px-4")}>
-              <ProjectDetailsForm
-                projectId={projectId}
-                initialProjectMetadata={projectMetadata}
-                projectCreatorAddress={effectiveCreatorAddress}
-                onProjectDetailsUpdated={handleProjectDetailsUpdated}
-              />
-            </div>
+            <ProjectDetailsForm
+              projectId={projectId}
+              initialProjectMetadata={projectMetadata}
+              projectCreatorAddress={effectiveCreatorAddress}
+              onProjectDetailsUpdated={handleProjectDetailsUpdated}
+            />
           )}
         </CardContent>
       </Card>
 
-      <div className={cn("space-y-6 mt-8", isMobile && "px-4")}>
+      <div className="space-y-6 mt-8">
         {sortedReviews.length > 0 ? (
           sortedReviews.map(({ review, score }) => (
             <ReviewItem

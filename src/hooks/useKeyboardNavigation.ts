@@ -39,10 +39,8 @@ const updateOrderedIds = (pageKey: string) => {
 export function useKeyboardNavigation(pageKey: string) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [isMouseActive, setIsMouseActive] = useState(false);
-  const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false);
-  const [ignoreMouseMovement, setIgnoreMouseMovement] = useState(false); // NEW state
+  const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false); // NEW state
   const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const ignoreMouseTimeoutRef = useRef<NodeJS.Timeout | null>(null); // NEW ref
   const location = useLocation();
   const pageKeyRef = useRef(pageKey);
   pageKeyRef.current = pageKey;
@@ -79,8 +77,6 @@ export function useKeyboardNavigation(pageKey: string) {
   // --- Mouse Activity Detection ---
   useEffect(() => {
     const handleMouseMove = () => {
-      if (ignoreMouseMovement) return; // Ignore if flag is set
-
       if (!isMouseActive) {
         setIsMouseActive(true);
       }
@@ -101,7 +97,7 @@ export function useKeyboardNavigation(pageKey: string) {
         clearTimeout(mouseTimeoutRef.current);
       }
     };
-  }, [isMouseActive, ignoreMouseMovement]); // Added ignoreMouseMovement dependency
+  }, [isMouseActive]);
 
   // --- Cursor Management Effect ---
   useEffect(() => {
@@ -182,7 +178,8 @@ export function useKeyboardNavigation(pageKey: string) {
 
     // Reset focus when the pageKey changes (e.g., navigating from project/a to project/b)
     setFocusedId(null);
-    // isKeyboardModeActive is intentionally NOT reset here.
+    // We intentionally DO NOT reset isKeyboardModeActive here, 
+    // so it persists across slide navigation if triggered by keyboard.
     
     return () => {
       if (currentKey !== 'inactive') {
@@ -209,8 +206,7 @@ export function useKeyboardNavigation(pageKey: string) {
       const isMovementKey = ['arrowdown', 'arrowup', 's', 'w'].includes(key);
       const isActionKey = key === ' ';
       const isRightKey = ['arrowright', 'd'].includes(key);
-      const isLeftKey = ['arrowleft', 'a'].includes(key);
-      const isNavigationKey = isMovementKey || isActionKey || isRightKey || isLeftKey;
+      const isNavigationKey = isMovementKey || isActionKey || isRightKey;
 
       if (!isNavigationKey) return;
 
@@ -277,18 +273,8 @@ export function useKeyboardNavigation(pageKey: string) {
           }
         }
         return;
-      } else if (isRightKey || isLeftKey) {
-        // If navigation keys are pressed, temporarily ignore mouse movement
-        setIgnoreMouseMovement(true);
-        if (ignoreMouseTimeoutRef.current) {
-            clearTimeout(ignoreMouseTimeoutRef.current);
-        }
-        ignoreMouseTimeoutRef.current = setTimeout(() => {
-            setIgnoreMouseMovement(false);
-            ignoreMouseTimeoutRef.current = null;
-        }, 500); // Ignore mouse for 500ms after slide navigation
-        
-        // Let the parent component handle slide navigation (NewWebsite.tsx)
+      } else if (isRightKey) {
+        // Let the parent component handle right navigation (NewWebsite.tsx)
         return;
       } else {
         return;
@@ -310,16 +296,14 @@ export function useKeyboardNavigation(pageKey: string) {
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      if (ignoreMouseTimeoutRef.current) {
-          clearTimeout(ignoreMouseTimeoutRef.current);
-      }
     };
   }, [focusedId, pageKey, isMouseActive, isKeyboardModeActive, getCachedActiveId, setCacheActiveId]);
 
   // Reset focus when navigating to a new route (even if pageKey remains the same, e.g., project/a to project/b)
   useEffect(() => {
     setFocusedId(null);
-    // isKeyboardModeActive is intentionally NOT reset here.
+    // We intentionally DO NOT reset isKeyboardModeActive here, 
+    // so it persists across slide navigation if triggered by keyboard.
   }, [location.pathname]);
 
   return { focusedId, registerItem, rebuildOrder, setLastActiveId };

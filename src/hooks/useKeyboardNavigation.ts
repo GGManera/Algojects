@@ -39,6 +39,7 @@ const updateOrderedIds = (pageKey: string) => {
 export function useKeyboardNavigation(pageKey: string) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [isMouseActive, setIsMouseActive] = useState(false);
+  const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false); // NEW state
   const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const location = useLocation();
   const pageKeyRef = useRef(pageKey);
@@ -98,8 +99,30 @@ export function useKeyboardNavigation(pageKey: string) {
     };
   }, [isMouseActive]);
 
-  // NOTE: Removed the useEffect that automatically saves focusedId to cache when mouse stops moving.
-  // This prevents the highlight from reappearing when the mouse stops moving outside a card.
+  // --- Cursor Management Effect ---
+  useEffect(() => {
+    if (isKeyboardModeActive) {
+      document.body.style.cursor = 'none';
+    } else {
+      document.body.style.cursor = 'default';
+    }
+    return () => {
+      document.body.style.cursor = 'default';
+    };
+  }, [isKeyboardModeActive]);
+
+  // --- Mouse Hover Tracking (External API) ---
+  const setLastActiveId = useCallback((id: string | null) => {
+    // 1. Always update the cache on hover/mouse leave.
+    setCacheActiveId(id);
+
+    // 2. If the mouse enters a valid item AND the keyboard currently has focus,
+    // clear the keyboard focus (focusedId) to transfer control to the mouse.
+    if (id !== null && focusedId !== null && id !== focusedId) {
+        setFocusedId(null);
+        setIsKeyboardModeActive(false); // Disable keyboard mode when mouse takes over
+    }
+  }, [setCacheActiveId, focusedId]);
 
   // --- Registration Management ---
   const registerItem = useCallback((id: string, toggleExpand: () => void, isExpanded: boolean, type: NavigableItem['type']) => {
@@ -143,30 +166,19 @@ export function useKeyboardNavigation(pageKey: string) {
     return orderedIds;
   }, [focusedId, getCachedActiveId]);
 
-  // --- Mouse Hover Tracking (External API) ---
-  const setLastActiveId = useCallback((id: string | null) => {
-    // 1. Always update the cache on hover/mouse leave.
-    setCacheActiveId(id);
-
-    // 2. If the mouse enters a valid item AND the keyboard currently has focus,
-    // clear the keyboard focus (focusedId) to transfer control to the mouse.
-    if (id !== null && focusedId !== null && id !== focusedId) {
-        setFocusedId(null);
-    }
-  }, [setCacheActiveId, focusedId]);
-
-
   // --- Effect to manage focus state and cleanup when pageKey changes ---
   useEffect(() => {
     const currentKey = pageKeyRef.current;
     
     if (currentKey === 'inactive') {
       setFocusedId(null);
+      setIsKeyboardModeActive(false); // Ensure mode is off
       return;
     }
 
     // Reset focus when the pageKey changes (e.g., navigating from project/a to project/b)
     setFocusedId(null);
+    setIsKeyboardModeActive(false); // Reset mode on page change
     
     return () => {
       if (currentKey !== 'inactive') {
@@ -199,30 +211,44 @@ export function useKeyboardNavigation(pageKey: string) {
 
       // If mouse is active, ignore keyboard navigation
       if (isMouseActive) {
-        e.preventDefault();
-        return;
+        // If a movement key is pressed while mouse is active, activate keyboard mode
+        if (isMovementKey) {
+            setIsKeyboardModeActive(true);
+            // If focusedId is null, try to restore it now to start keyboard navigation
+            if (focusedId === null && orderedIds.length > 0) {
+                const cachedId = getCachedActiveId();
+                if (cachedId && orderedIds.includes(cachedId)) {
+                    setFocusedId(cachedId);
+                } else {
+                    setFocusedId(orderedIds[0]);
+                }
+            }
+        } else {
+            e.preventDefault();
+            return;
+        }
       }
 
-      // --- Keyboard Mode Re-activation / Focus Restoration ---
+      // If keyboard mode is not active, only movement keys can activate it
+      if (!isKeyboardModeActive && isMovementKey) {
+          setIsKeyboardModeActive(true);
+      }
+
+      if (!isKeyboardModeActive) return; // Only proceed if keyboard mode is active
+
+      // --- Keyboard Mode Logic ---
       let currentFocus = focusedId;
-      let shouldScroll = false; // Flag to control scrolling
+      let shouldScroll = false; 
 
       if (currentFocus === null && orderedIds.length > 0) {
-        // If no item is focused (because mouse was active), try to restore from cache
+        // This block should only run if keyboard mode was just activated by a movement key
         const cachedId = getCachedActiveId();
-        if (cachedId && orderedIds.includes(cachedId)) {
-            currentFocus = cachedId;
-        } else {
-            // Fallback to the first item
-            currentFocus = orderedIds[0];
-        }
-        // When restoring focus from cache, we only scroll if the user presses a movement key (ArrowUp/Down, s/w)
+        currentFocus = (cachedId && orderedIds.includes(cachedId)) ? cachedId : orderedIds[0];
         if (isMovementKey) {
             shouldScroll = true;
         }
         setFocusedId(currentFocus);
       } else if (currentFocus !== null && isMovementKey) {
-        // If focus is already set and a movement key is pressed, we should scroll.
         shouldScroll = true;
       }
       
@@ -247,8 +273,7 @@ export function useKeyboardNavigation(pageKey: string) {
         }
         return;
       } else if (isRightKey) {
-        // Handle right navigation (Project Page specific logic handled in Projects.tsx)
-        // We only prevent default if we successfully navigate, otherwise let the carousel handle it.
+        // Let the parent component handle right navigation (NewWebsite.tsx)
         return;
       } else {
         return;
@@ -271,11 +296,12 @@ export function useKeyboardNavigation(pageKey: string) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [focusedId, pageKey, isMouseActive, getCachedActiveId, setCacheActiveId]); // Added setCacheActiveId dependency
+  }, [focusedId, pageKey, isMouseActive, isKeyboardModeActive, getCachedActiveId, setCacheActiveId]);
 
   // Reset focus when navigating to a new route (even if pageKey remains the same, e.g., project/a to project/b)
   useEffect(() => {
     setFocusedId(null);
+    setIsKeyboardModeActive(false);
   }, [location.pathname]);
 
   return { focusedId, registerItem, rebuildOrder, setLastActiveId };

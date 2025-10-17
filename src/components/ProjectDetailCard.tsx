@@ -453,13 +453,12 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   // Component for the Stats Grid (2 columns on mobile, 2 columns on desktop)
   const StatsGrid = (
     <div className={cn(
-      "grid gap-4 text-sm text-muted-foreground", // Removed pb-4
-      // Mobile: 2 columns
-      "grid-cols-2",
-      // Desktop: 2 columns
-      "md:grid-cols-2 md:w-full" // Use w-full inside the 1/3 wrapper
+      "grid gap-4 text-sm text-muted-foreground",
+      // Mobile: 5 columns (or 2 columns if inside the main grid)
+      isMobile ? "grid-cols-5 gap-2" : "grid-cols-2 md:w-full",
+      isMobile && "px-2 py-2 bg-muted/50 rounded-lg" // Added background and padding for mobile integration
     )}>
-      <div className="flex flex-col items-center space-y-1 col-span-2">
+      <div className={cn("flex flex-col items-center space-y-1", isMobile ? "col-span-5" : "col-span-2")}>
         <TrendingUp className="h-5 w-5 text-hodl-blue" />
         <span className="font-bold font-numeric text-foreground">{stats.interactionScore}</span>
         <span>Interactions</span>
@@ -566,7 +565,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
           {/* NEW: Thank Contributor Button */}
           {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && (
-            <div className="mt-4">
+            <div className="mt-2">
               <Button
                 onClick={() => setShowThankContributorDialog(true)}
                 disabled={isClaiming || resolvingCreatorAddress}
@@ -586,6 +585,13 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
                 linkTo={`/profile/${addedByAddress}`}
                 sourceContext={projectSourceContext}
               />
+            </div>
+          )}
+          
+          {/* MOBILE ONLY: Stats Grid integrated here */}
+          {isMobile && (
+            <div className="mt-4">
+              {StatsGrid}
             </div>
           )}
         </CardHeader>
@@ -620,13 +626,15 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             "flex flex-col md:flex-row md:items-stretch", // Use items-stretch to ensure equal height
             "md:space-x-4"
           )}>
-            {/* Stats Grid Wrapper: Stretches vertically, content aligned to CENTER */}
-            <div className={cn(
-                "w-full md:w-1/3 flex flex-col md:justify-center", // Changed justify-end to justify-center
-                "pb-4 md:pb-0 md:pr-4"
-            )}>
-                {StatsGrid}
-            </div>
+            {/* DESKTOP ONLY: Stats Grid Wrapper */}
+            {!isMobile && (
+              <div className={cn(
+                  "w-full md:w-1/3 flex flex-col md:justify-center", // Changed justify-end to justify-center
+                  "pb-4 md:pb-0 md:pr-4"
+              )}>
+                  {StatsGrid}
+              </div>
+            )}
             
             {MetadataMinicard}
           </div>

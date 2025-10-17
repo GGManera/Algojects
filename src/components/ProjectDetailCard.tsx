@@ -14,7 +14,7 @@ import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { ProjectDetailsForm } from "./ProjectDetailsForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp, DollarSign } from "lucide-react";
+import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp, DollarSign, Loader2 } from "lucide-react";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { UserDisplay } from "./UserDisplay";
 import { Button } from "@/components/ui/button";
@@ -26,10 +26,10 @@ import { cn } from '@/lib/utils';
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { useCuratorIndex } from '@/hooks/useCuratorIndex';
 import { MetadataItem } from '@/types/project';
-import { ThankContributorDialog } from "./ThankContributorDialog"; // NEW Import
-import { thankContributorAndClaimProject } from "@/lib/coda"; // NEW Import
-import { useWallet } from "@txnlab/use-wallet-react"; // NEW Import
-import { useNfdAddressResolver } from "@/hooks/useNfdAddressResolver"; // NEW Import
+import { ThankContributorDialog } from "./ThankContributorDialog";
+import { thankContributorAndClaimProject } from "@/lib/coda";
+import { useWallet } from "@txnlab/use-wallet-react";
+import { useNfdAddressResolver } from "@/hooks/useNfdAddressResolver";
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 
@@ -63,7 +63,6 @@ const getReviewInteractionScore = (review: Review): number => {
     replies.forEach(reply => {
       score += reply.likeCount || 0;
     });
-    // Removed: score += comment.likeCount || 0; // Likes on this comment
   });
 
   return score;
@@ -72,7 +71,7 @@ const getReviewInteractionScore = (review: Review): number => {
 export function ProjectDetailCard({ project, projectsData, activeAddress, onInteractionSuccess, isInsideCarousel = false }: ProjectDetailCardProps) {
   const projectId = project.id;
   const { isMobile } = useAppContextDisplayMode();
-  const { transactionSigner, algodClient } = useWallet(); // Get wallet context
+  const { transactionSigner, algodClient } = useWallet();
 
   const { projectDetails, loading, isRefreshing, error: detailsError, refetch: refetchProjectDetails } = useProjectDetails();
   const isLoadingDetails = loading || isRefreshing;
@@ -87,8 +86,8 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const [isAssetIdHovered, setIsAssetIdHovered] = useState(false);
 
   const [showProjectDetailsForm, setShowProjectDetailsForm] = useState(false);
-  const [showThankContributorDialog, setShowThankContributorDialog] = useState(false); // NEW State
-  const [isClaiming, setIsClaiming] = useState(false); // NEW State
+  const [showThankContributorDialog, setShowThankContributorDialog] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
 
   const { tokenHoldings, loading: tokenHoldingsLoading } = useUserProjectTokenHoldings(activeAddress, projectsData, projectDetails);
   const { allCuratorData, loading: curatorIndexLoading } = useCuratorIndex(undefined, projectsData);
@@ -139,13 +138,16 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   // Extract "fixed" fields from projectMetadata
   const currentProjectName = projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${projectId}`;
   const currentProjectDescription = projectMetadata.find(item => item.type === 'project-description')?.value;
-  const currentProjectTags = projectMetadata.find(item => item.type === 'tags')?.value; // Changed from category to tags
+  const currentProjectTags = projectMetadata.find(item => item.type === 'tags')?.value;
   const currentWhitelistedAddresses = projectMetadata.find(item => item.type === 'whitelisted-editors')?.value?.split(',').map(addr => addr.trim()).filter(Boolean) || [];
   const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
-  const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value; // Renamed local variable
+  const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value;
   const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true';
-  const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true'; // NEW: Check if claimed
-  const creatorWalletMetadata = projectMetadata.find(item => item.title === 'Creator Wallet')?.value; // NEW: Get Creator Wallet from metadata
+  const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true';
+  
+  // Get Creator Wallet metadata item
+  const creatorWalletItem = projectMetadata.find(item => item.title === 'Creator Wallet');
+  const creatorWalletMetadata = creatorWalletItem?.value;
 
   // Determine the address that added the project, prioritizing Coda metadata but falling back to on-chain creator wallet
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
@@ -153,12 +155,6 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   // NEW: Resolve the Creator Wallet metadata value (which might be an NFD)
   const { resolvedAddress: resolvedCreatorAddress, loading: resolvingCreatorAddress } = useNfdAddressResolver(creatorWalletMetadata);
 
-  const handleProjectDetailsUpdated = () => {
-    refetchProjectDetails();
-    onInteractionSuccess();
-  };
-
-  // --- NEW: Thank Contributor Logic ---
   // Determine the address that should claim the project (resolved Creator Wallet metadata or the first review sender)
   const effectiveCreatorAddress = resolvedCreatorAddress || creatorWalletMetadata || project.creatorWallet;
   
@@ -168,6 +164,11 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   // 3. The connected user is the effective creator (activeAddress === effectiveCreatorAddress)
   // 4. The project was added by a different address (addedByAddress exists and addedByAddress !== effectiveCreatorAddress)
   const isAuthorizedToClaim = activeAddress && effectiveCreatorAddress && activeAddress === effectiveCreatorAddress && !isClaimed && addedByAddress && activeAddress !== addedByAddress;
+
+  const handleProjectDetailsUpdated = () => {
+    refetchProjectDetails();
+    onInteractionSuccess();
+  };
 
   const handleClaimProject = useCallback(async (
     totalRewardAlgos: number,
@@ -198,8 +199,8 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       dismissToast(toastId);
       showSuccess("Project claimed and contributor rewarded successfully!");
       setShowThankContributorDialog(false);
-      refetchProjectDetails(); // Force refresh Coda data
-      onInteractionSuccess(); // Force refresh social data
+      refetchProjectDetails();
+      onInteractionSuccess();
     } catch (err) {
       dismissToast(toastId);
       console.error("Claim failed:", err);
@@ -208,7 +209,6 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       setIsClaiming(false);
     }
   }, [activeAddress, transactionSigner, algodClient, addedByAddress, projectId, currentProjectName, projectMetadata, refetchProjectDetails, onInteractionSuccess, effectiveCreatorAddress]);
-  // --- END NEW: Thank Contributor Logic ---
 
 
   const handleCopyAllMetadata = async () => {
@@ -230,7 +230,6 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const urlItem = projectMetadata.find(item => item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com')));
   const xUrlItem = projectMetadata.find(item => item.type === 'x-url' || item.value.includes('x.com') || item.value.includes('twitter.com'));
   const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
-  const creatorWalletItem = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet'); // Use the specific item
 
   const hasAnyMetadata = projectMetadata.length > 0;
 
@@ -367,7 +366,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           <CardDescription>
             {sortedReviews.length} review(s) found for this project.
           </CardDescription>
-          {currentProjectTags && ( // Display tags if available
+          {currentProjectTags && (
             <div className="flex flex-wrap justify-center gap-2 mt-1">
               {currentProjectTags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
                 <span key={index} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary-foreground">
@@ -456,9 +455,25 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           {hasAnyMetadata && (
             <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                {/* Explicitly render Creator Wallet here, showing only the resolved address/raw input */}
+                {creatorWalletItem && (
+                    <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+                        <span className="font-semibold text-muted-foreground text-xs">{creatorWalletItem.title}:</span>
+                        {resolvingCreatorAddress ? (
+                            <div className="flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin text-hodl-blue" />
+                                <span className="text-sm text-muted-foreground">Resolving...</span>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-foreground selectable-text break-all">
+                                {resolvedCreatorAddress || creatorWalletMetadata || 'N/A'}
+                            </p>
+                        )}
+                    </div>
+                )}
                 {projectMetadata.map((item, index) => {
-                  // Skip rendering of "fixed" metadata items here, as they are handled above or in forms
-                  if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed'].includes(item.type || '')) {
+                  // Skip rendering of "fixed" metadata items here, including Creator Wallet
+                  if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'Creator Wallet'].includes(item.title || '')) {
                     return null;
                   }
 

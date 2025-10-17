@@ -27,13 +27,58 @@ const updateOrderedIds = (pageKey: string) => {
   
   const currentItemsMap = globalNavigableItemsMap.get(pageKey) || new Map();
 
-  // Filter and map to IDs based on DOM order, ensuring they are registered
-  const orderedIds = elements
+  // 1. Get all registered IDs in DOM order
+  const orderedRegisteredIds = elements
     .map(el => el.getAttribute('data-nav-id'))
     .filter((id): id is string => id !== null && currentItemsMap.has(id));
+
+  const finalOrderedIds: string[] = [];
+
+  // 2. Filter based on hierarchy and expansion state
+  orderedRegisteredIds.forEach(id => {
+    const item = currentItemsMap.get(id);
+    if (!item) return;
+
+    const parts = id.split('.');
     
-  globalOrderedIdsMap.set(pageKey, orderedIds);
-  return orderedIds;
+    // Project Summary cards are always visible on the Projects page.
+    if (item.type === 'project-summary') {
+        finalOrderedIds.push(id);
+        return;
+    }
+    
+    // Logic for Review, Comment, Reply (ProjectPage/UserProfile)
+    
+    // Check Review Parent (applies to Comment and Reply)
+    if (item.type === 'comment' || item.type === 'reply') {
+        // Review ID is parts[0].parts[1] (e.g., d.a)
+        const reviewId = `${parts[0]}.${parts[1]}`;
+        const reviewItem = currentItemsMap.get(reviewId);
+        
+        // If the review exists and is collapsed, skip this item and its children.
+        if (reviewItem && !reviewItem.isExpanded) {
+            return;
+        }
+    }
+    
+    // Check Comment Parent (applies only to Reply)
+    if (item.type === 'reply') {
+        // Comment ID is parts[0].parts[1].parts[2] (e.g., d.a.b)
+        const commentId = `${parts[0]}.${parts[1]}.${parts[2]}`;
+        const commentItem = currentItemsMap.get(commentId);
+        
+        // If the comment exists and is collapsed (meaning replies are hidden), skip this reply.
+        if (commentItem && !commentItem.isExpanded) {
+            return;
+        }
+    }
+
+    // If it passed all checks, it's visible.
+    finalOrderedIds.push(id);
+  });
+    
+  globalOrderedIdsMap.set(pageKey, finalOrderedIds);
+  return finalOrderedIds;
 };
 
 export function useKeyboardNavigation(pageKey: string) {
@@ -122,8 +167,9 @@ export function useKeyboardNavigation(pageKey: string) {
     }
     const itemsMap = globalNavigableItemsMap.get(currentKey)!;
     
+    // Store or update the item with its current expansion state
     itemsMap.set(id, { id, toggleExpand, isExpanded, type });
-    updateOrderedIds(currentKey);
+    updateOrderedIds(currentKey); // Rebuild order immediately upon registration/update
 
     return () => {
       if (pageKeyRef.current === currentKey) {
@@ -242,6 +288,7 @@ export function useKeyboardNavigation(pageKey: string) {
           const item = itemsMap.get(currentFocus);
           if (item) {
             item.toggleExpand();
+            // Update the item's state in the map and rebuild order immediately
             itemsMap.set(currentFocus, { ...item, isExpanded: !item.isExpanded });
             updateOrderedIds(currentKey);
           }

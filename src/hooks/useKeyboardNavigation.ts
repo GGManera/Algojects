@@ -17,21 +17,21 @@ const globalOrderedIdsMap = new Map<string, string[]>();
 
 // Function to update the ordered list of IDs based on DOM order for a specific pageKey
 const updateOrderedIds = (pageKey: string) => {
-  // We target the main content area of the active carousel item using the pageKey ID
   const container = document.getElementById(pageKey); 
   if (!container) return;
 
-  // Find all elements that are registered (have an ID in the map) and have the data attribute
+  // Find all elements that have the data attribute in DOM order
   const elements = Array.from(container.querySelectorAll('[data-nav-id]')) as HTMLElement[];
   
   const currentItemsMap = globalNavigableItemsMap.get(pageKey) || new Map();
 
-  // Filter out elements that are registered and map to IDs based on DOM order
+  // Filter and map to IDs based on DOM order, ensuring they are registered
   const orderedIds = elements
     .map(el => el.getAttribute('data-nav-id'))
     .filter((id): id is string => id !== null && currentItemsMap.has(id));
     
   globalOrderedIdsMap.set(pageKey, orderedIds);
+  return orderedIds;
 };
 
 export function useKeyboardNavigation(pageKey: string) {
@@ -50,20 +50,38 @@ export function useKeyboardNavigation(pageKey: string) {
     }
     const itemsMap = globalNavigableItemsMap.get(currentKey)!;
     
-    // Update item details
+    // Only update item metadata, do not trigger DOM scan here
     itemsMap.set(id, { id, toggleExpand, isExpanded, type });
     
-    // Immediately update the ordered list (this is the key change)
-    updateOrderedIds(currentKey);
+    // If the item is registered/updated, we might need to rebuild the order if it's the active page
+    // We call rebuildOrder here, which will check if it's the active page and trigger a DOM scan.
+    // This handles dynamic additions/removals (like comments/replies appearing/disappearing).
+    if (currentKey === pageKeyRef.current) {
+        updateOrderedIds(currentKey);
+    }
 
     return () => {
-      // Only delete if the pageKey hasn't changed (i.e., we are cleaning up on the same page)
       if (pageKeyRef.current === currentKey) {
         itemsMap.delete(id);
         updateOrderedIds(currentKey);
       }
     };
   }, []);
+
+  // --- Explicit Rebuild Function ---
+  const rebuildOrder = useCallback(() => {
+    const currentKey = pageKeyRef.current;
+    if (currentKey === 'inactive') return;
+    
+    const orderedIds = updateOrderedIds(currentKey);
+    console.log(`[KeyboardNav] Explicit Rebuild for ${currentKey}. Total items: ${orderedIds.length}`);
+    
+    // If focus was lost, try to restore it to the first item
+    if (focusedId === null && orderedIds.length > 0) {
+        setFocusedId(orderedIds[0]);
+    }
+  }, [focusedId]);
+
 
   // --- Effect to manage focus state and cleanup when pageKey changes ---
   useEffect(() => {
@@ -77,16 +95,8 @@ export function useKeyboardNavigation(pageKey: string) {
     // 1. Reset focus
     setFocusedId(null);
     
-    // 2. Force a delayed update of the ordered list to ensure all DOM elements are present
-    // This is crucial for carousel transitions where the DOM might lag slightly behind the component activation.
-    const delayedUpdate = setTimeout(() => {
-        updateOrderedIds(currentKey);
-        console.log(`[KeyboardNav] Forced delayed update for ${currentKey}. Total items: ${globalOrderedIdsMap.get(currentKey)?.length}`);
-    }, 300); // Increased delay to 300ms
-
-    // Cleanup function for when the component unmounts or pageKey changes
+    // 2. Cleanup function for when the component unmounts or pageKey changes
     return () => {
-      clearTimeout(delayedUpdate); // Clear the delayed update if we switch away quickly
       // When the page becomes inactive, clear its state from the global maps
       if (currentKey !== 'inactive') {
         globalNavigableItemsMap.delete(currentKey);
@@ -125,6 +135,8 @@ export function useKeyboardNavigation(pageKey: string) {
             item.toggleExpand();
             // Update the map immediately after toggling
             itemsMap.set(focusedId, { ...item, isExpanded: !item.isExpanded });
+            // Rebuild order in case expansion/collapse changed DOM layout significantly (e.g., showing comments)
+            updateOrderedIds(currentKey);
           }
         }
         return;
@@ -154,12 +166,12 @@ export function useKeyboardNavigation(pageKey: string) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [focusedId, pageKey]); // Depend on pageKey to re-attach handler when active
+  }, [focusedId, pageKey]);
 
   // Reset focus when navigating to a new route (even if pageKey remains the same, e.g., project/a to project/b)
   useEffect(() => {
     setFocusedId(null);
   }, [location.pathname]);
 
-  return { focusedId, registerItem };
+  return { focusedId, registerItem, rebuildOrder };
 }

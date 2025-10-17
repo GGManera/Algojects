@@ -44,9 +44,19 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
   const pageKey = 'projects-home'; // Unique key for navigation hook
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
-  const { focusedId, registerItem } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+  const { focusedId, registerItem, rebuildOrder } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
 
   const isOverallRefreshing = isRefreshingSocialData || isRefreshingProjectDetails;
+
+  // NEW: Effect to rebuild order when active
+  useEffect(() => {
+    if (isActive) {
+      const timer = setTimeout(() => {
+        rebuildOrder();
+      }, 100); // Delay to ensure DOM is fully rendered
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, rebuildOrder]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

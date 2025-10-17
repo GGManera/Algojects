@@ -37,7 +37,17 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
   const pageKey = `project-page-${effectiveProjectId}`; // Unique key for navigation hook
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
-  const { focusedId, registerItem } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+  const { focusedId, registerItem, rebuildOrder } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+
+  // NEW: Effect to rebuild order when active
+  useEffect(() => {
+    if (isActive) {
+      const timer = setTimeout(() => {
+        rebuildOrder();
+      }, 100); // Delay to ensure DOM is fully rendered
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, rebuildOrder]);
 
   // All hooks must be called unconditionally at the top level
   const currentProjectDetailsEntry = useMemo(() => {

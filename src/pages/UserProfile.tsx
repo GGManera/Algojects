@@ -328,7 +328,17 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
-  const { focusedId, registerItem } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+  const { focusedId, registerItem, rebuildOrder } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+
+  // NEW: Effect to rebuild order when active or when tab/category changes
+  useEffect(() => {
+    if (isActive) {
+      const timer = setTimeout(() => {
+        rebuildOrder();
+      }, 100); // Delay to ensure DOM is fully rendered
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, rebuildOrder, activeTab, activeCategory]);
 
   useEffect(() => {
     if (location.pathname.startsWith('/profile/') && scrollRef.current) {

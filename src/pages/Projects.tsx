@@ -26,11 +26,10 @@ interface ProjectsProps {
   scrollToTopTrigger?: number;
   isActive?: boolean;
   onKeyboardModeChange?: (isActive: boolean) => void;
-  onScrollToTop: () => void;
-  onFocusedIdChange: (id: string | null) => void; // NEW PROP
+  onScrollToTop: () => void; // Added prop
 }
 
-const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop, onFocusedIdChange }: ProjectsProps) => {
+const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop }: ProjectsProps) => {
   const { projects, loading, error, isRefreshing: isRefreshingSocialData } = useSocialData();
   const { isRefreshing: isRefreshingProjectDetails } = useProjectDetails();
   const { activeAddress } = useWallet();
@@ -48,15 +47,6 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
 
   // NEW: Initialize keyboard navigation hook
   const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
-
-  // NEW: Report focusedId up to parent
-  useEffect(() => {
-    if (isActive) {
-      onFocusedIdChange(focusedId);
-    } else {
-      onFocusedIdChange(null);
-    }
-  }, [isActive, focusedId, onFocusedIdChange]);
 
   // NEW: Report keyboard mode change up to parent
   useEffect(() => {

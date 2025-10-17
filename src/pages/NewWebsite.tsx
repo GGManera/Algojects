@@ -46,7 +46,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false);
-  const [activeSlideFocusedId, setActiveSlideFocusedId] = useState<string | null>(null); // NEW: Track focused ID of the active slide
   
   const [hashToScroll, setHashToScroll] = useState<string | null>(null);
   const [scrollTrigger, setScrollTrigger] = useState(0);
@@ -78,11 +77,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
   const handleKeyboardModeChange = useCallback((isActive: boolean) => {
     setIsKeyboardModeActive(isActive);
-  }, []);
-
-  // NEW: Function to update the focused ID from the active child component
-  const handleFocusedIdChange = useCallback((id: string | null) => {
-    setActiveSlideFocusedId(id);
   }, []);
 
   // NEW: Função para rolar o slide ativo para o topo (chamada pelo Layout/DynamicNavButtons)
@@ -130,13 +124,11 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
         isInsideCarousel={true} 
         scrollToTopTrigger={internalScrollToTopTrigger} 
         onKeyboardModeChange={handleKeyboardModeChange} 
-        onScrollToTop={handleHeroScrollToTop}
-        onFocusedIdChange={handleFocusedIdChange} // NEW: Pass handler
+        onScrollToTop={handleHeroScrollToTop} // Pass the scroll function
       />, 
       maxWidth: 'max-w-[710px]' 
     });
     
-    // Only include project slide if there is an effective project ID
     if (effectiveProjectId) {
       config.push({ 
         type: 'project', 
@@ -148,8 +140,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           scrollTrigger={scrollTrigger} 
           scrollToTopTrigger={internalScrollToTopTrigger} 
           onKeyboardModeChange={handleKeyboardModeChange} 
-          onScrollToTop={handleHeroScrollToTop}
-          onFocusedIdChange={handleFocusedIdChange} // NEW: Pass handler
+          onScrollToTop={handleHeroScrollToTop} // Pass the scroll function
         />, 
         maxWidth: 'max-w-[710px]' 
       });
@@ -163,14 +154,13 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           address={effectiveProfileAddress} 
           isInsideCarousel={true} 
           scrollToTopTrigger={internalScrollToTopTrigger} 
-          onKeyboardModeChange={handleKeyboardModeChange}
-          onFocusedIdChange={handleFocusedIdChange} // NEW: Pass handler
+          onKeyboardModeChange={handleKeyboardModeChange} 
         />, 
         maxWidth: 'max-w-[710px]' 
       });
     }
     return config;
-  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, internalScrollToTopTrigger, handleKeyboardModeChange, handleHeroScrollToTop, handleFocusedIdChange]);
+  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, internalScrollToTopTrigger, handleKeyboardModeChange, handleHeroScrollToTop]);
 
   const targetSlideIndex = useMemo(() => {
     const currentPath = location.pathname;
@@ -243,21 +233,18 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
     setHashToScroll(location.hash);
 
-    // Redirection logic based on dynamic slidesConfig
-    const currentSlideType = slidesConfig[targetSlideIndex]?.type;
-
-    if (location.pathname.startsWith('/project/') && currentSlideType !== 'project') {
+    if (location.pathname.startsWith('/project/') && !effectiveProjectId) {
       navigate('/');
       return;
     }
-    if (location.pathname.startsWith('/profile/') && currentSlideType !== 'profile') {
+    if (location.pathname.startsWith('/profile/') && !effectiveProfileAddress) {
       navigate('/');
       return;
     }
 
     if (api.selectedScrollSnap() !== targetSlideIndex) {
       api.scrollTo(targetSlideIndex);
-    } else if (targetSlideIndex === slidesConfig.findIndex(s => s.type === 'project') && location.pathname.startsWith('/project/') && location.hash) {
+    } else if (targetSlideIndex === 1 && location.pathname.startsWith('/project/') && location.hash) {
       if (location.hash !== lastScrolledHash) {
         setScrollTrigger(prev => prev + 1);
         setLastScrolledHash(location.hash);
@@ -320,7 +307,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     }
   }, [location.pathname, projectDetails, pushEntry, effectiveProfileNfd, nfdLoading]);
 
-  // --- Custom Keyboard Navigation Logic ---
   useEffect(() => {
     if (!api || isMobile) return;
 
@@ -357,24 +343,10 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
       // 2. Handle navigation from Home to Project Page (D/ArrowRight)
       if (currentSlideType === 'home' && isRightKey) {
-        // Check if the focused element is the Hero Logo
-        if (activeSlideFocusedId === 'hero-logo') {
-          if (lastProjectPath) {
-            e.preventDefault();
-            navigate(lastProjectPath.path, { state: { scrollToTop: true } });
-            return;
-          } else {
-            // If no last project, do nothing (prevent default carousel scroll)
-            e.preventDefault();
-            return;
-          }
-        }
-        
-        // Check if the focused element is a Project Summary Card
         const focusedElement = document.querySelector('#projects-home [data-nav-id].focus-glow-border');
         if (focusedElement) {
           const focusedProjectId = focusedElement.getAttribute('data-nav-id');
-          if (focusedProjectId && focusedProjectId !== 'hero-logo' && focusedProjectId !== 'revenue-calculator') {
+          if (focusedProjectId) {
             e.preventDefault();
             navigate(`/project/${focusedProjectId}`, { state: { scrollToTop: true } });
             return;
@@ -395,7 +367,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning, lastProjectPath, activeSlideFocusedId]);
+  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
   const cardContentMaxHeightClass = useMemo(() => {
     if (isMobile && isDeviceLandscape) {
@@ -414,8 +386,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           {slidesConfig.map((slide, index) => {
             const slideComponent = React.cloneElement(slide.component, {
               isActive: index === currentSlideIndex,
-              onScrollToTop: handleHeroScrollToTop,
-              onFocusedIdChange: handleFocusedIdChange, // Pass the focused ID handler
+              onScrollToTop: handleHeroScrollToTop, // Pass the scroll function to HeroSection
             });
 
             return (

@@ -22,10 +22,9 @@ interface ProjectPageProps {
   isActive?: boolean; // NEW prop
   onKeyboardModeChange?: (isActive: boolean) => void; // NEW PROP
   onScrollToTop: () => void; // Added prop
-  onFocusedIdChange: (id: string | null) => void; // NEW PROP
 }
 
-const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop, onFocusedIdChange }: ProjectPageProps) => { // Accept onFocusedIdChange
+const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop }: ProjectPageProps) => { // Accept onScrollToTop
   const location = useLocation();
   const navigate = useNavigate();
   const { projects, loading, error, refetch } = useSocialData();
@@ -41,15 +40,6 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
   const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive, setFocusedId } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
-
-  // NEW: Report focusedId up to parent
-  useEffect(() => {
-    if (isActive) {
-      onFocusedIdChange(focusedId);
-    } else {
-      onFocusedIdChange(null);
-    }
-  }, [isActive, focusedId, onFocusedIdChange]);
 
   // NEW: Report keyboard mode change up to parent
   useEffect(() => {
@@ -191,9 +181,8 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
         focusedId={focusedId}
         registerItem={registerItem}
         isActive={isActive}
-        setLastActiveId={setLastActiveId}
+        setLastActiveId={setLastActiveId} // NEW
         setFocusedId={setFocusedId} // NEW: Pass setFocusedId
-        onScrollToTop={onScrollToTop} // NEW: Pass onScrollToTop
       />
     </div>
   );

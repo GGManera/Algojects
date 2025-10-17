@@ -51,7 +51,8 @@ interface NewProjectFormProps {
 export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFormProps) {
   const [projectName, setProjectName] = useState("");
   const [projectNotes, setProjectNotes] = useState("");
-  const [creatorWalletAddress, setCreatorWalletAddress] = useState(""); // NEW: Creator Wallet Address
+  const [creatorWalletAddress, setCreatorWalletAddress] = useState("");
+  const [projectWalletAddress, setProjectWalletAddress] = useState(""); // NEW: Project Wallet Address
   const [whitelistedEditors, setWhitelistedEditors] = useState("");
   const [projectTags, setProjectTags] = useState("");
   const [metadataItems, setMetadataItems] = useState<MetadataItem[]>([]);
@@ -109,9 +110,14 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
       showError("Project Name cannot be empty.");
       return null;
     }
-    // NEW: Validation for Creator Wallet
+    // Validation for Creator Wallet
     if (creatorWalletAddress.trim() && creatorWalletAddress.trim().length !== 58) {
       showError("Creator Wallet must be a valid 58-character Algorand address.");
+      return null;
+    }
+    // NEW: Validation for Project Wallet
+    if (projectWalletAddress.trim() && projectWalletAddress.trim().length !== 58) {
+      showError("Project Wallet must be a valid 58-character Algorand address.");
       return null;
     }
 
@@ -196,8 +202,10 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
         { title: 'Added By Address', value: activeAddress!, type: 'added-by-address' },
         { title: 'Is Community Notes', value: 'false', type: 'is-community-notes' },
         { title: 'Is Claimed', value: 'false', type: 'is-claimed' }, // NEW: Default to unclaimed
-        // NEW: Add Creator Wallet Address if provided
+        // Add Creator Wallet Address if provided
         ...(creatorWalletAddress.trim() ? [{ title: 'Creator Wallet', value: creatorWalletAddress.trim(), type: 'address' as const }] : []),
+        // NEW: Add Project Wallet Address if provided
+        ...(projectWalletAddress.trim() ? [{ title: 'Project Wallet', value: projectWalletAddress.trim(), type: 'project-wallet' as const }] : []),
         ...metadataItems.filter(item => item.title.trim() && item.value.trim()).map(item => ({
           ...item,
           type: item.type || 'text'
@@ -209,6 +217,7 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
       setProjectName("");
       setProjectNotes("");
       setCreatorWalletAddress(""); // Clear new field
+      setProjectWalletAddress(""); // Clear new field
       setWhitelistedEditors("");
       setProjectTags(""); // Clear projectTags
       setMetadataItems([]);
@@ -229,7 +238,8 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
 
   const hasNfd = !!nfd?.name;
   const isCreatorWalletValid = !creatorWalletAddress.trim() || creatorWalletAddress.trim().length === 58;
-  const canSubmit = !activeAddress || isLoading || nfdLoading || !hasNfd || !projectName.trim() || !isCreatorWalletValid; // Added isCreatorWalletValid check
+  const isProjectWalletValid = !projectWalletAddress.trim() || projectWalletAddress.trim().length === 58; // NEW validation
+  const canSubmit = !activeAddress || isLoading || nfdLoading || !hasNfd || !projectName.trim() || !isCreatorWalletValid || !isProjectWalletValid; // Updated canSubmit
   const inputDisabled = !activeAddress || isLoading || nfdLoading;
 
   return (
@@ -264,27 +274,47 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
           <Label htmlFor="isCreator" className="text-white text-sm">I'm this Project's Creator</Label>
         </div>
 
-        {!isCreator && (
-          <div className="relative user-box">
-            <Input
-              id="creatorWalletAddress"
-              placeholder=""
-              value={creatorWalletAddress}
-              onChange={(e) => setCreatorWalletAddress(e.target.value)}
-              disabled={inputDisabled}
-              className="peer w-full py-2 text-base text-white mb-[30px] border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
-            />
-            <Label
-              htmlFor="creatorWalletAddress"
-              className="absolute top-0 left-0 py-2 text-base text-white pointer-events-none transition-all duration-500 peer-focus:top-[-20px] peer-focus:left-0 peer-focus:text-[#bdb8b8] peer-focus:text-xs peer-valid:top-[-20px] peer-valid:left-0 peer-valid:text-[#bdb8b8] peer-valid:text-xs peer-focus:bg-hodl-darker peer-focus:px-1 peer-valid:bg-hodl-darker peer-valid:px-1"
-            >
-              Creator Wallet Address (Optional)
-            </Label>
-            {creatorWalletAddress.trim() && creatorWalletAddress.trim().length !== 58 && (
-              <p className="text-xs text-red-500 mt-1">Must be a valid 58-character Algorand address.</p>
-            )}
-          </div>
-        )}
+        <div className="relative user-box">
+          <Input
+            id="creatorWalletAddress"
+            placeholder=""
+            value={creatorWalletAddress}
+            onChange={(e) => setCreatorWalletAddress(e.target.value)}
+            disabled={inputDisabled}
+            className="peer w-full py-2 text-base text-white mb-[30px] border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
+          />
+          <Label
+            htmlFor="creatorWalletAddress"
+            className="absolute top-0 left-0 py-2 text-base text-white pointer-events-none transition-all duration-500 peer-focus:top-[-20px] peer-focus:left-0 peer-focus:text-[#bdb8b8] peer-focus:text-xs peer-valid:top-[-20px] peer-valid:left-0 peer-valid:text-[#bdb8b8] peer-valid:text-xs peer-focus:bg-hodl-darker peer-focus:px-1 peer-valid:bg-hodl-darker peer-valid:px-1"
+          >
+            Creator Wallet Address (Algorand Address)
+          </Label>
+          {creatorWalletAddress.trim() && creatorWalletAddress.trim().length !== 58 && (
+            <p className="text-xs text-red-500 mt-1">Must be a valid 58-character Algorand address.</p>
+          )}
+        </div>
+
+        {/* NEW: Project Wallet Address */}
+        <div className="relative user-box">
+          <Input
+            id="projectWalletAddress"
+            placeholder=""
+            value={projectWalletAddress}
+            onChange={(e) => setProjectWalletAddress(e.target.value)}
+            disabled={inputDisabled}
+            className="peer w-full py-2 text-base text-white mb-[30px] border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
+          />
+          <Label
+            htmlFor="projectWalletAddress"
+            className="absolute top-0 left-0 py-2 text-base text-white pointer-events-none transition-all duration-500 peer-focus:top-[-20px] peer-focus:left-0 peer-focus:text-[#bdb8b8] peer-focus:text-xs peer-valid:top-[-20px] peer-valid:left-0 peer-valid:text-[#bdb8b8] peer-valid:text-xs peer-focus:bg-hodl-darker peer-focus:px-1 peer-valid:bg-hodl-darker peer-valid:px-1"
+          >
+            Project Wallet Address (Algorand Address, Optional)
+          </Label>
+          {projectWalletAddress.trim() && projectWalletAddress.trim().length !== 58 && (
+            <p className="text-xs text-red-500 mt-1">Must be a valid 58-character Algorand address.</p>
+          )}
+        </div>
+        {/* END NEW */}
 
         <div className="relative user-box mb-[30px]">
           <Input

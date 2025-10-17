@@ -145,12 +145,13 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value; // Renamed local variable
   const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true';
   const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true'; // NEW: Check if claimed
-  const creatorWalletMetadata = projectMetadata.find(item => item.title === 'Creator Wallet')?.value; // NEW: Get Creator Wallet from metadata
+  const creatorWalletMetadata = projectMetadata.find(item => item.title === 'Creator Wallet')?.value; // Get Creator Wallet from metadata
+  const projectWalletMetadata = projectMetadata.find(item => item.type === 'project-wallet')?.value; // NEW: Get Project Wallet from metadata
 
   // Determine the address that added the project, prioritizing Coda metadata but falling back to on-chain creator wallet
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
 
-  // NEW: Use raw metadata value as the address, since NFD resolution is removed from the form
+  // Use raw metadata value as the address
   const effectiveCreatorAddress = creatorWalletMetadata || project.creatorWallet;
   const resolvingCreatorAddress = false; // No longer resolving
 
@@ -456,7 +457,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 {projectMetadata.map((item, index) => {
                   // Skip rendering of "fixed" metadata items here, as they are handled above or in forms
-                  if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed'].includes(item.type || '')) {
+                  if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'].includes(item.type || '')) {
                     return null;
                   }
 
@@ -535,6 +536,20 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
                     );
                   }
                 })}
+                {/* Display Project Wallet if present */}
+                {projectWalletMetadata && (
+                  <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+                    <span className="font-semibold text-muted-foreground text-xs">Project Wallet:</span>
+                    <UserDisplay
+                      address={projectWalletMetadata}
+                      textSizeClass="text-sm"
+                      avatarSizeClass="h-5 w-5"
+                      linkTo={`/profile/${projectWalletMetadata}`}
+                      sourceContext={projectSourceContext}
+                    />
+                  </div>
+                )}
+                {/* End Display Project Wallet */}
                 {currentUserProjectHolding && (
                   <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
                     <span className="font-semibold text-muted-foreground text-xs">Your Holding:</span>

@@ -77,10 +77,11 @@ export function ProjectDetailsForm({
   const isCommunityNotes = findMetadataItem('is-community-notes')?.value === 'true';
   const isClaimed = findMetadataItem('is-claimed')?.value === 'true';
   const creatorWalletContent = findMetadataItem('address', 'Creator Wallet')?.value || ''; // Look for type 'address' AND title 'Creator Wallet'
+  const projectWalletContent = findMetadataItem('project-wallet')?.value || ''; // NEW: Project Wallet
 
   // Filter out the "fixed" metadata items from the dynamic list for rendering
   const fixedTypesAndTitles = useMemo(() => new Set([
-    'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'Creator Wallet'
+    'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'Creator Wallet', 'project-wallet'
   ]), []);
 
   const dynamicMetadataItems = useMemo(() => {
@@ -130,9 +131,12 @@ export function ProjectDetailsForm({
   const effectiveAuthInputs = useMemo(() => {
     const authAddresses: string[] = [];
     
-    // Only include creatorWalletContent if it looks like an address
+    // Only include wallet contents if they look like an address
     if (isValidAlgorandAddress(creatorWalletContent)) {
       authAddresses.push(creatorWalletContent);
+    }
+    if (isValidAlgorandAddress(projectWalletContent)) {
+      authAddresses.push(projectWalletContent);
     }
     
     if (projectCreatorAddress) {
@@ -146,7 +150,7 @@ export function ProjectDetailsForm({
     whitelistedAddressesContent.split(',').map(addr => addr.trim()).filter(Boolean).forEach(addr => authAddresses.push(addr));
     
     return Array.from(new Set(authAddresses));
-  }, [projectCreatorAddress, addedByAddress, whitelistedAddressesContent, creatorWalletContent]);
+  }, [projectCreatorAddress, addedByAddress, whitelistedAddressesContent, creatorWalletContent, projectWalletContent]);
 
   const { resolvedAddresses: authorizedAddresses, loading: resolvingAuthNfds } = useNfdResolver(effectiveAuthInputs);
 
@@ -188,6 +192,11 @@ export function ProjectDetailsForm({
       showError("Creator Wallet must be a valid 58-character Algorand address.");
       return;
     }
+    // NEW: Validation for Project Wallet: must be empty or a valid 58-char address
+    if (projectWalletContent.trim() && !isValidAlgorandAddress(projectWalletContent)) {
+      showError("Project Wallet must be a valid 58-character Algorand address.");
+      return;
+    }
 
     setIsLoading(true);
     const toastId = showLoading("Updating project details...");
@@ -199,7 +208,8 @@ export function ProjectDetailsForm({
         .map(item => ({ ...item, type: item.type || 'text' }));
 
       // 2. Define all fixed metadata items based on current local state
-      const finalCreatorWalletValue = creatorWalletContent.trim(); // Use raw content
+      const finalCreatorWalletValue = creatorWalletContent.trim();
+      const finalProjectWalletValue = projectWalletContent.trim(); // NEW: Project Wallet value
       
       const fixedItems: ProjectMetadata = [
         { title: 'Project Name', value: projectNameContent, type: 'project-name' },
@@ -212,6 +222,8 @@ export function ProjectDetailsForm({
         { title: 'Is Claimed', value: isClaimed ? 'true' : 'false', type: 'is-claimed' },
         // Creator Wallet: Use the raw content, validated as an address above
         ...(finalCreatorWalletValue ? [{ title: 'Creator Wallet', value: finalCreatorWalletValue, type: 'address' as const }] : []),
+        // NEW: Project Wallet
+        ...(finalProjectWalletValue ? [{ title: 'Project Wallet', value: finalProjectWalletValue, type: 'project-wallet' as const }] : []),
       ].filter(item => item.value.trim() || ['is-creator-added', 'is-community-notes', 'is-claimed'].includes(item.type || ''));
 
       // 3. Combine all items, filtering out any fixed items that are empty (except boolean flags)
@@ -233,7 +245,10 @@ export function ProjectDetailsForm({
     }
   };
 
-  const canSubmit = !activeAddress || isLoading || !isAuthorized() || resolvingAuthNfds || isProjectDetailsFetching || (creatorWalletContent.trim() && !isValidAlgorandAddress(creatorWalletContent));
+  const isProjectWalletValid = !projectWalletContent.trim() || isValidAlgorandAddress(projectWalletContent); // NEW validation
+  const isCreatorWalletValid = !creatorWalletContent.trim() || isValidAlgorandAddress(creatorWalletContent); // Existing validation
+
+  const canSubmit = !activeAddress || isLoading || !isAuthorized() || resolvingAuthNfds || isProjectDetailsFetching || !isCreatorWalletValid || !isProjectWalletValid;
   const inputDisabled = !activeAddress || isLoading || resolvingAuthNfds || isProjectDetailsFetching;
 
   if (!activeAddress) {
@@ -329,13 +344,15 @@ export function ProjectDetailsForm({
           />
         </div>
 
-        {/* Fixed Fields: Added By Address & Creator Wallet */}
+        {/* Fixed Fields: Added By Address */}
         {addedByAddress && (
           <div className="flex flex-col p-2 rounded-md bg-muted/50 border border-border">
             <span className="font-semibold text-muted-foreground text-xs">Added By Address:</span>
             <UserDisplay address={addedByAddress} textSizeClass="text-sm" avatarSizeClass="h-5 w-5" linkTo={`/profile/${addedByAddress}`} />
           </div>
         )}
+        
+        {/* Fixed Fields: Creator Wallet */}
         <div className="relative">
           <Label htmlFor="creatorWallet" className="text-white text-xs absolute top-[-20px] left-0 bg-hodl-darker px-1">Creator Wallet (Algorand Address)</Label>
           <Input
@@ -353,6 +370,26 @@ export function ProjectDetailsForm({
             <p className="text-xs text-red-500 mt-1">Must be a valid 58-character Algorand address.</p>
           )}
         </div>
+
+        {/* NEW Fixed Field: Project Wallet */}
+        <div className="relative">
+          <Label htmlFor="projectWallet" className="text-white text-xs absolute top-[-20px] left-0 bg-hodl-darker px-1">Project Wallet (Algorand Address)</Label>
+          <Input
+            id="projectWallet"
+            placeholder="Enter project wallet address..."
+            value={projectWalletContent}
+            onChange={(e) => updateOrCreateMetadataItem('project-wallet', 'Project Wallet', e.target.value)}
+            disabled={inputDisabled}
+            className={cn("bg-muted/50 pr-4", {
+              "border-red-500": projectWalletContent.trim() && !isValidAlgorandAddress(projectWalletContent),
+              "border-green-500": projectWalletContent.trim() && isValidAlgorandAddress(projectWalletContent),
+            })}
+          />
+          {projectWalletContent.trim() && !isValidAlgorandAddress(projectWalletContent) && (
+            <p className="text-xs text-red-500 mt-1">Must be a valid 58-character Algorand address.</p>
+          )}
+        </div>
+        {/* END NEW */}
 
         {/* Dynamic Metadata Fields */}
         <div className="space-y-2">

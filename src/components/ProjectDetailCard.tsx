@@ -484,6 +484,136 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     }
   };
 
+  // Component for the Stats Grid (5 columns on mobile, 2 columns on desktop)
+  const StatsGrid = (
+    <div className={cn(
+      "grid gap-4 text-sm text-muted-foreground pb-4",
+      // Mobile: 5 columns, allowing wrap if needed (though 5 is usually fine)
+      "grid-cols-5",
+      // Desktop: 2 columns, fixed width for the stats container
+      "md:grid-cols-2 md:w-1/3 md:border-r md:border-border md:pr-4"
+    )}>
+      <div className="flex flex-col items-center space-y-1 md:col-span-2">
+        <TrendingUp className="h-5 w-5 text-hodl-blue" />
+        <span className="font-bold font-numeric text-foreground">{stats.interactionScore}</span>
+        <span>Interactions</span>
+      </div>
+      <div className="flex flex-col items-center space-y-1 md:col-span-1">
+        <FileText className="h-5 w-5 text-hodl-purple" />
+        <span className="font-bold font-numeric text-foreground">{stats.reviewsCount}</span>
+        <span>Reviews</span>
+      </div>
+      <div className="flex flex-col items-center space-y-1 md:col-span-1">
+        <MessageCircle className="h-5 w-5 text-hodl-purple" />
+        <span className="font-bold font-numeric text-foreground">{stats.commentsCount}</span>
+        <span>Comments</span>
+      </div>
+      <div className="flex flex-col items-center space-y-1 md:col-span-1">
+        <MessageSquare className="h-5 w-5 text-hodl-purple" />
+        <span className="font-bold font-numeric text-foreground">{stats.repliesCount}</span>
+        <span>Replies</span>
+      </div>
+      <div className="flex flex-col items-center space-y-1 md:col-span-1">
+        <Heart className="h-5 w-5 text-pink-400" />
+        <span className="font-bold font-numeric text-foreground">{stats.likesCount}</span>
+        <span>Likes</span>
+      </div>
+    </div>
+  );
+
+  // Component for the Metadata Section
+  const MetadataSection = (
+    <div className={cn(
+      "space-y-4",
+      // Mobile: Full width, border top
+      "border-t border-border pt-4",
+      // Desktop: Occupy remaining space, no border top
+      "md:border-t-0 md:pt-0 md:pl-4 md:w-2/3"
+    )}>
+      {/* Project Description/Notes */}
+      {(isLoadingDetails || (currentProjectDescription && currentProjectDescription.trim() !== '')) && (
+        <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-black rounded-md shadow-recessed">
+          <h3 className="text-lg font-semibold mb-2 text-black">
+            {isCommunityNotes ? "Community Notes:" : (isCreatorAdded ? "Creator Notes:" : "Contributor Notes:")}
+          </h3>
+          {isLoadingDetails ? (
+            <Skeleton className="h-20 w-full" />
+          ) : detailsError ? (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{detailsError}</AlertDescription>
+            </Alert>
+          ) : (
+            <p className="text-black/90 whitespace-pre-wrap selectable-text">{currentProjectDescription}</p>
+          )}
+        </div>
+      )}
+
+      {/* Project Metadata */}
+      {hasAnyMetadata && (
+        <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
+          <div className="flex flex-wrap justify-center gap-4 text-sm">
+            
+            {/* RENDER GROUPED DYNAMIC METADATA FIRST */}
+            {dynamicMetadataGroups.map(group => (
+              <React.Fragment key={group.type}>
+                {group.items.map((item, index) => renderMetadataItem(item, index))}
+              </React.Fragment>
+            ))}
+
+            {/* THEN RENDER FIXED WALLET ADDRESSES */}
+            {creatorWalletMetadata && (
+                <div className="inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center w-auto">
+                    <span className="font-semibold text-muted-foreground text-xs">Creator Wallet:</span>
+                    <UserDisplay
+                        address={creatorWalletMetadata}
+                        textSizeClass="text-sm"
+                        avatarSizeClass="h-5 w-5"
+                        linkTo={`/profile/${creatorWalletMetadata}`}
+                        sourceContext={projectSourceContext}
+                        className="justify-center"
+                    />
+                </div>
+            )}
+            {projectWalletMetadata && (
+                <div className="inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center w-auto">
+                    <span className="font-semibold text-muted-foreground text-xs">Project Wallet:</span>
+                    <UserDisplay
+                        address={projectWalletMetadata}
+                        textSizeClass="text-sm"
+                        avatarSizeClass="h-5 w-5"
+                        linkTo={`/profile/${projectWalletMetadata}`}
+                        sourceContext={projectSourceContext}
+                        className="justify-center"
+                    />
+                </div>
+            )}
+            
+            {/* Display Your Holding if present (this should remain at the end) */}
+            {currentUserProjectHolding && (
+              <div className="inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center w-auto">
+                <span className="font-semibold text-muted-foreground text-xs">Your Holding:</span>
+                {tokenHoldingsLoading || assetUnitNameLoading ? (
+                  <Skeleton className="h-4 w-20" />
+                ) : currentUserProjectHolding ? (
+                  <div className="flex items-center gap-1 justify-center">
+                    <Gem className="h-4 w-4 text-hodl-blue" />
+                    <span className="font-numeric font-bold text-primary selectable-text">
+                      {currentUserProjectHolding.amount} {assetUnitName || ''}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground selectable-text">0 (Not held)</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className={cn(
       "w-full",
@@ -544,117 +674,13 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
         </CardHeader>
         <CardContent className="space-y-4 p-4">
-          {/* Project Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm text-muted-foreground border-b border-border pb-4">
-            <div className="flex flex-col items-center space-y-1">
-              <TrendingUp className="h-5 w-5 text-hodl-blue" />
-              <span className="font-bold font-numeric text-foreground">{stats.interactionScore}</span>
-              <span>Interactions</span>
-            </div>
-            <div className="flex flex-col items-center space-y-1">
-              <FileText className="h-5 w-5 text-hodl-purple" />
-              <span className="font-bold font-numeric text-foreground">{stats.reviewsCount}</span>
-              <span>Reviews</span>
-            </div>
-            <div className="flex flex-col items-center space-y-1">
-              <MessageCircle className="h-5 w-5 text-hodl-purple" />
-              <span className="font-bold font-numeric text-foreground">{stats.commentsCount}</span>
-              <span>Comments</span>
-            </div>
-            <div className="flex flex-col items-center space-y-1">
-              <MessageSquare className="h-5 w-5 text-hodl-purple" />
-              <span className="font-bold font-numeric text-foreground">{stats.repliesCount}</span>
-              <span>Replies</span>
-            </div>
-            <div className="flex flex-col items-center space-y-1">
-              <Heart className="h-5 w-5 text-pink-400" />
-              <span className="font-bold font-numeric text-foreground">{stats.likesCount}</span>
-              <span>Likes</span>
-            </div>
+          
+          {/* Main Content Area: Stats (Left) + Metadata (Right) on Desktop */}
+          <div className="flex flex-col md:flex-row">
+            {StatsGrid}
+            {MetadataSection}
           </div>
           
-          {/* Project Description/Notes */}
-          {(isLoadingDetails || (currentProjectDescription && currentProjectDescription.trim() !== '')) && (
-            <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-black rounded-md shadow-recessed">
-              <h3 className="text-lg font-semibold mb-2 text-black">
-                {isCommunityNotes ? "Community Notes:" : (isCreatorAdded ? "Creator Notes:" : "Contributor Notes:")}
-              </h3>
-              {isLoadingDetails ? (
-                <Skeleton className="h-20 w-full" />
-              ) : detailsError ? (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{detailsError}</AlertDescription>
-                </Alert>
-              ) : (
-                <p className="text-black/90 whitespace-pre-wrap selectable-text">{currentProjectDescription}</p>
-              )}
-            </div>
-          )}
-
-          {/* Project Metadata */}
-          {hasAnyMetadata && (
-            <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
-              <div className="flex flex-wrap justify-center gap-4 text-sm">
-                
-                {/* RENDER GROUPED DYNAMIC METADATA FIRST */}
-                {dynamicMetadataGroups.map(group => (
-                  <React.Fragment key={group.type}>
-                    {group.items.map((item, index) => renderMetadataItem(item, index))}
-                  </React.Fragment>
-                ))}
-
-                {/* THEN RENDER FIXED WALLET ADDRESSES */}
-                {creatorWalletMetadata && (
-                    <div className="inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center w-auto">
-                        <span className="font-semibold text-muted-foreground text-xs">Creator Wallet:</span>
-                        <UserDisplay
-                            address={creatorWalletMetadata}
-                            textSizeClass="text-sm"
-                            avatarSizeClass="h-5 w-5"
-                            linkTo={`/profile/${creatorWalletMetadata}`}
-                            sourceContext={projectSourceContext}
-                            className="justify-center"
-                        />
-                    </div>
-                )}
-                {projectWalletMetadata && (
-                    <div className="inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center w-auto">
-                        <span className="font-semibold text-muted-foreground text-xs">Project Wallet:</span>
-                        <UserDisplay
-                            address={projectWalletMetadata}
-                            textSizeClass="text-sm"
-                            avatarSizeClass="h-5 w-5"
-                            linkTo={`/profile/${projectWalletMetadata}`}
-                            sourceContext={projectSourceContext}
-                            className="justify-center"
-                        />
-                    </div>
-                )}
-                
-                {/* Display Your Holding if present (this should remain at the end) */}
-                {currentUserProjectHolding && (
-                  <div className="inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center w-auto">
-                    <span className="font-semibold text-muted-foreground text-xs">Your Holding:</span>
-                    {tokenHoldingsLoading || assetUnitNameLoading ? (
-                      <Skeleton className="h-4 w-20" />
-                    ) : currentUserProjectHolding ? (
-                      <div className="flex items-center gap-1 justify-center">
-                        <Gem className="h-4 w-4 text-hodl-blue" />
-                        <span className="font-numeric font-bold text-primary selectable-text">
-                          {currentUserProjectHolding.amount} {assetUnitName || ''}
-                        </span>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground selectable-text">0 (Not held)</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Project Details Form is now conditionally rendered here */}
           {activeAddress && showProjectDetailsForm && (
             <ProjectDetailsForm

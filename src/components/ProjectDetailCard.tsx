@@ -461,7 +461,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       <div className={cn(
         "flex flex-col items-center space-y-1",
         isMobile ? "col-span-2" : "col-span-2",
-        isMobile && "mb-6" // Increased margin below the main interaction score from mb-4 to mb-6
+        isMobile && "mb-6" // Increased margin below the main interaction score
       )}>
         <TrendingUp className="h-5 w-5 text-hodl-blue" />
         <span className="font-bold font-numeric text-foreground">{stats.interactionScore}</span>
@@ -473,6 +473,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
         "grid gap-4 text-sm text-muted-foreground",
         isMobile ? "grid-cols-2 col-span-2" : "grid-cols-2 col-span-2"
       )}>
+        {/* Reviews and Comments in the first row */}
         <div className="flex flex-col items-center space-y-1">
           <FileText className="h-5 w-5 text-hodl-purple" />
           <span className="font-bold font-numeric text-foreground">{stats.reviewsCount}</span>
@@ -483,6 +484,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           <span className="font-bold font-numeric text-foreground">{stats.commentsCount}</span>
           <span>Comments</span>
         </div>
+        {/* Replies and Likes in the second row */}
         <div className="flex flex-col items-center space-y-1">
           <MessageSquare className="h-5 w-5 text-hodl-purple" />
           <span className="font-bold font-numeric text-foreground">{stats.repliesCount}</span>
@@ -588,7 +590,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
           {/* Display Added By Address */}
           {addedByAddress && (
-            <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1"> {/* Increased mt-1 to mt-4 */}
+            <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1">
               Added by <UserDisplay
                 address={addedByAddress}
                 textSizeClass="text-sm"
@@ -601,7 +603,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           
           {/* MOBILE ONLY: Stats Grid integrated here */}
           {isMobile && (
-            <div className="mt-8 px-2"> {/* Increased margin from mt-6 to mt-8 */}
+            <div className="mt-8 px-2">
               {StatsGrid}
             </div>
           )}
@@ -617,7 +619,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     <div className={cn(
       "w-full",
     )}>
-      <Card className="bg-accent mt-8 relative"> {/* Kept mt-8 */}
+      <Card className="bg-accent mt-8 relative">
         {activeAddress && (
             <Button
               variant="ghost"
@@ -630,7 +632,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             </Button>
           )}
         {/* Removed CardHeader */}
-        <CardContent className={cn("space-y-4 p-4", isMobile && "p-0")}> {/* Changed p-2 to p-0 on mobile */}
+        <CardContent className={cn("space-y-4 p-4", isMobile && "p-0")}>
           
           {/* Main Content Area: Stats (Left) + Metadata (Right) on Desktop */}
           <div className={cn(

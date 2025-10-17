@@ -458,6 +458,7 @@
 
   /* NEW: Custom focus style for keyboard navigation */
   .focus-glow-border {
+    @apply rounded-lg; /* ADDED rounded-lg here */
     border: 2px solid hsl(var(--border-accent-green));
     box-shadow: 0 0 10px 0px hsl(var(--border-accent-green) / 0.8);
   }

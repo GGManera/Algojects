@@ -145,12 +145,8 @@ export function useKeyboardNavigation(pageKey: string) {
     if (focusedId === null && orderedIds.length > 0) {
         const cachedId = getCachedActiveId();
         if (cachedId && orderedIds.includes(cachedId)) {
+            // Restore focus ID, but DO NOT scroll into view here.
             setFocusedId(cachedId);
-            // Scroll the restored item into view
-            const element = document.querySelector(`[data-nav-id="${cachedId}"]`);
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
         } else {
             // If cache is invalid or empty, set focus to the first item
             setFocusedId(orderedIds[0]);
@@ -214,6 +210,8 @@ export function useKeyboardNavigation(pageKey: string) {
 
       // --- Keyboard Mode Re-activation / Focus Restoration ---
       let currentFocus = focusedId;
+      let shouldScroll = false; // Flag to control scrolling
+
       if (currentFocus === null && orderedIds.length > 0) {
         // If no item is focused (because mouse was active), try to restore from cache
         const cachedId = getCachedActiveId();
@@ -223,7 +221,15 @@ export function useKeyboardNavigation(pageKey: string) {
             // Fallback to the first item
             currentFocus = orderedIds[0];
         }
+        // When restoring focus from cache, we only scroll if the user presses a movement key (ArrowUp/Down, s/w)
+        // If they press space, we expand the currently focused item without scrolling.
+        if (e.key !== ' ') {
+            shouldScroll = true;
+        }
         setFocusedId(currentFocus);
+      } else if (currentFocus !== null && (e.key === 'ArrowDown' || e.key.toLowerCase() === 's' || e.key === 'ArrowUp' || e.key.toLowerCase() === 'w')) {
+        // If focus is already set and a movement key is pressed, we should scroll.
+        shouldScroll = true;
       }
       
       const currentIndex = currentFocus ? orderedIds.indexOf(currentFocus) : -1;
@@ -254,9 +260,11 @@ export function useKeyboardNavigation(pageKey: string) {
         const nextId = orderedIds[nextIndex];
         setFocusedId(nextId);
         
-        const element = document.querySelector(`[data-nav-id="${nextId}"]`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (shouldScroll) {
+            const element = document.querySelector(`[data-nav-id="${nextId}"]`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
       }
     };

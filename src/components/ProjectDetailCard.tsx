@@ -494,7 +494,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       // Mobile: 2 columns
       "grid-cols-2",
       // Desktop: 2 columns, fixed width for the stats container
-      "md:grid-cols-2 md:w-1/3 md:border-r md:border-border md:pr-4"
+      "md:grid-cols-2 md:w-1/3 md:pr-4" // Removed md:border-r and md:border-border
     )}>
       <div className="flex flex-col items-center space-y-1 col-span-2">
         <TrendingUp className="h-5 w-5 text-hodl-blue" />
@@ -529,7 +529,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     <div className={cn(
       "space-y-4",
       // Mobile: Full width, border top
-      "border-t border-border pt-4",
+      "border-t border-border pt-4", // Keep border-t for mobile separation
       // Desktop: Occupy remaining space, no border top
       "md:border-t-0 md:pt-0 md:pl-4 md:w-2/3"
     )}>

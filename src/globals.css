@@ -74,7 +74,7 @@
     /* CSS Variables for Header Heights */
     --sticky-header-height: 48px; /* h-12 */
     --dynamic-nav-buttons-height: 32px; /* h-6 + py-0.5 = 24px + 4px = 28px */
-    --dynamic-nav-buttons-desktop-vertical-gap: 16px; /* Adjusted from 12px to 16px */
+    --dynamic-nav-buttons-desktop-vertical-gap: 12px; /* Adjusted from 11px to 12px */
     --mobile-bottom-bar-height: 64px; /* h-16 */
 
     /* NEW: CardContent default padding (p-6) */
@@ -85,7 +85,7 @@
       var(--sticky-header-height) + 
       var(--dynamic-nav-buttons-height) +
       (2 * var(--dynamic-nav-buttons-desktop-vertical-gap))
-    ); /* 48 + 32 + 32 = 112px */
+    ); /* 48 + 32 + 20 = 100px */
 
     --total-fixed-offset-mobile: calc(
       var(--sticky-header-height) +

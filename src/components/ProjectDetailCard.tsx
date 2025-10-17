@@ -404,12 +404,15 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
 
 
   const renderMetadataItem = (item: MetadataItem, index: number) => {
-    // For URL/X-URL/Asset-ID, we use the btn-profile which is already width-auto
+    // Base classes for centering and max width
+    const baseItemClasses = "w-full max-w-[180px] mx-auto";
+
+    // For URL/X-URL/Asset-ID, we use the btn-profile
     if (item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com'))) {
       return (
         <div
           key={index}
-          className="btn-profile w-full" // Added w-full
+          className={cn("btn-profile", baseItemClasses)}
           onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
         >
           <strong className="uppercase">{item.title || extractDomainFromUrl(item.value)}</strong>
@@ -426,7 +429,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       return (
         <div
           key={index}
-          className="btn-profile w-full" // Added w-full
+          className={cn("btn-profile", baseItemClasses)}
           onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
         >
           <strong className="uppercase">{item.title || extractXHandleFromUrl(item.value)}</strong>
@@ -443,7 +446,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       return (
         <div
           key={index}
-          className="btn-profile w-full" // Added w-full
+          className={cn("btn-profile", baseItemClasses)}
           onClick={(e) => handleAssetIdClick(e, item.value)}
           onMouseEnter={() => !isMobile && setIsAssetIdHovered(true)}
           onMouseLeave={() => !isMobile && setIsAssetIdHovered(false)}
@@ -461,7 +464,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     } else if (item.type === 'address' || item.value.length === 58) {
       // Wallet/Address card - use w-full
       return (
-        <div key={index} className="inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center w-full">
+        <div key={index} className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", baseItemClasses)}>
           <span className="font-semibold text-muted-foreground text-xs">{item.title || 'Address'}:</span>
           <UserDisplay
             address={item.value}
@@ -476,7 +479,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     } else {
       // Generic text card - use w-full
       return (
-        <div key={index} className="inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center w-full">
+        <div key={index} className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", baseItemClasses)}>
           <span className="font-semibold text-muted-foreground text-xs">{item.title}:</span>
           <p className="text-sm text-foreground selectable-text">{item.value}</p>
         </div>
@@ -564,7 +567,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
 
             {/* THEN RENDER FIXED WALLET ADDRESSES */}
             {creatorWalletMetadata && (
-                <div className="inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center w-full">
+                <div className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full max-w-[180px] mx-auto")}>
                     <span className="font-semibold text-muted-foreground text-xs">Creator Wallet:</span>
                     <UserDisplay
                         address={creatorWalletMetadata}
@@ -577,7 +580,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
                 </div>
             )}
             {projectWalletMetadata && (
-                <div className="inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center w-full">
+                <div className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full max-w-[180px] mx-auto")}>
                     <span className="font-semibold text-muted-foreground text-xs">Project Wallet:</span>
                     <UserDisplay
                         address={projectWalletMetadata}
@@ -592,7 +595,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             
             {/* Display Your Holding if present (this should remain at the end) */}
             {currentUserProjectHolding && (
-              <div className="inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center w-full">
+              <div className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full max-w-[180px] mx-auto")}>
                 <span className="font-semibold text-muted-foreground text-xs">Your Holding:</span>
                 {tokenHoldingsLoading || assetUnitNameLoading ? (
                   <Skeleton className="h-4 w-20" />

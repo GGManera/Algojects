@@ -50,17 +50,14 @@ export function useKeyboardNavigation(pageKey: string) {
     }
     const itemsMap = globalNavigableItemsMap.get(currentKey)!;
     
-    // Only update item metadata, do not trigger DOM scan here
+    // Update item details
     itemsMap.set(id, { id, toggleExpand, isExpanded, type });
     
-    // If the item is registered/updated, we might need to rebuild the order if it's the active page
-    // We call rebuildOrder here, which will check if it's the active page and trigger a DOM scan.
-    // This handles dynamic additions/removals (like comments/replies appearing/disappearing).
-    if (currentKey === pageKeyRef.current) {
-        updateOrderedIds(currentKey);
-    }
+    // Immediately update the ordered list (this is necessary for dynamic content like comments/replies)
+    updateOrderedIds(currentKey);
 
     return () => {
+      // Only delete if the pageKey hasn't changed (i.e., we are cleaning up on the same page)
       if (pageKeyRef.current === currentKey) {
         itemsMap.delete(id);
         updateOrderedIds(currentKey);
@@ -80,6 +77,7 @@ export function useKeyboardNavigation(pageKey: string) {
     if (focusedId === null && orderedIds.length > 0) {
         setFocusedId(orderedIds[0]);
     }
+    return orderedIds; // Return ordered IDs for external use
   }, [focusedId]);
 
 

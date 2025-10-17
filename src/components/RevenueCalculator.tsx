@@ -18,15 +18,17 @@ import {
 } from "@/components/ui/collapsible";
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext'; // Import useAppContextDisplayMode
 
-const ClickableStat = ({ id, icon, value, onClick }: { id: string, icon: React.ReactNode, value: number, onClick: (id: string) => void }) => {
+const ClickableStat = ({ id, icon, value, onClick, colorClass }: { id: string, icon: React.ReactNode, value: number, onClick: (id: string) => void, colorClass: string }) => {
   return (
     <button
       type="button"
       className="flex items-center gap-2 cursor-pointer p-2 h-10 rounded-md hover:bg-muted/50 transition-colors"
       onClick={() => onClick(id)}
     >
-      {icon}
-      <span className="font-numeric text-foreground w-8 text-left">{value}</span>
+      {/* Clone the icon element and merge the color class */}
+      {React.cloneElement(icon as React.ReactElement, { className: cn((icon as React.ReactElement).props.className, colorClass) })}
+      {/* Apply colorClass to the value */}
+      <span className={cn("font-numeric w-8 text-left", colorClass)}>{value}</span>
     </button>
   );
 };
@@ -195,15 +197,17 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
                               icon={<FileText className="h-4 w-4" />}
                               value={totalReviews}
                               onClick={handleStatClick}
+                              colorClass="text-gradient-end" // Light Green
                             />
                           </div>
-                          <div className="text-center text-muted-foreground font-semibold">Reviews</div>
+                          <div className="text-center font-semibold text-gradient-end">Reviews</div>
                           <div className="flex justify-start border-l border-border pl-4">
                             <ClickableStat
                               id="reviewLikes"
-                              icon={<Heart className="h-4 w-4 text-pink-400" />}
+                              icon={<Heart className="h-4 w-4" />}
                               value={totalReviewLikes}
                               onClick={handleStatClick}
+                              colorClass="text-gradient-end" // Light Green
                             />
                           </div>
                         </div>
@@ -216,15 +220,17 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
                               icon={<MessageCircle className="h-4 w-4" />}
                               value={totalComments}
                               onClick={handleStatClick}
+                              colorClass="text-comment-gradient-end" // Red/Orange
                             />
                           </div>
-                          <div className="text-center text-muted-foreground font-semibold">Comments</div>
+                          <div className="text-center font-semibold text-comment-gradient-end">Comments</div>
                           <div className="flex justify-start border-l border-border pl-4">
                             <ClickableStat
                               id="commentLikes"
-                              icon={<Heart className="h-4 w-4 text-pink-400" />}
+                              icon={<Heart className="h-4 w-4" />}
                               value={totalCommentLikes}
                               onClick={handleStatClick}
+                              colorClass="text-comment-gradient-end" // Red/Orange
                             />
                           </div>
                         </div>
@@ -237,15 +243,17 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
                               icon={<MessageSquare className="h-4 w-4" />}
                               value={totalReplies}
                               onClick={handleStatClick}
+                              colorClass="text-notes-gradient-end" // Light Slate/White
                             />
                           </div>
-                          <div className="text-center text-muted-foreground font-semibold">Replies</div>
+                          <div className="text-center font-semibold text-notes-gradient-end">Replies</div>
                           <div className="flex justify-start border-l border-border pl-4">
                             <ClickableStat
                               id="replyLikes"
                               icon={<Heart className="h-4 w-4" />}
                               value={totalReplyLikes}
                               onClick={handleStatClick}
+                              colorClass="text-notes-gradient-end" // Light Slate/White
                             />
                           </div>
                         </div>

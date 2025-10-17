@@ -77,12 +77,12 @@
     --dynamic-nav-buttons-desktop-vertical-gap: 12px; /* Adjusted from 11px to 12px */
     --mobile-bottom-bar-height: 64px; /* h-16 */
 
-    /* NEW: Total fixed height of elements *outside* the scrollable CardContent */
+    /* RECALCULATED: Total fixed height = Header (48) + Gap Above Nav (12) + Nav (32) + Gap Below Nav (12) = 104px */
     --total-fixed-header-height: calc(
       var(--sticky-header-height) + 
-      var(--dynamic-nav-buttons-height) +
-      var(--dynamic-nav-buttons-desktop-vertical-gap)
-    ); /* 48 + 32 + 12 = 92px */
+      (2 * var(--dynamic-nav-buttons-desktop-vertical-gap)) +
+      var(--dynamic-nav-buttons-height)
+    ); 
 
     /* NEW: CardContent default padding (p-6) */
     --card-content-padding-y: 48px; /* 24px top + 24px bottom */
@@ -460,7 +460,7 @@
   .scroll-mt-header-offset {
     scroll-margin-top: calc(
       var(--total-fixed-header-height) + 
-      16px + /* Add 16px buffer (p-4 equivalent) */
+      32px + /* Increased buffer to 32px (104px + 32px = 136px total margin) */
       env(safe-area-inset-top)
     );
   }

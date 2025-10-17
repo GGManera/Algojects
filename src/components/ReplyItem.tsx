@@ -46,8 +46,8 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
   useEffect(() => {
     if (isHighlighted && ref.current) {
       setTimeout(() => {
-        // Use 'start' block to rely on scroll-mt-header-offset
-        ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Use 'center' block for small elements like replies for better visibility
+        ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 300); // Delay to allow for expansion animation
     }
   }, [isHighlighted]);

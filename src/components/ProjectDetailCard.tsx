@@ -688,10 +688,10 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             "flex flex-col md:flex-row md:items-stretch", // Use items-stretch to ensure equal height
             "md:space-x-4"
           )}>
-            {/* Stats Grid Wrapper: Stretches vertically, content aligned to bottom */}
+            {/* Stats Grid Wrapper: Stretches vertically, content aligned to CENTER */}
             <div className={cn(
-                "w-full md:w-1/3 flex flex-col justify-end", // flex-col and justify-end pushes content to the bottom
-                "pb-4 md:pb-0 md:pr-4" // pb-4 for mobile separation, removed on desktop, added pr-4 for desktop spacing
+                "w-full md:w-1/3 flex flex-col md:justify-center", // Changed justify-end to justify-center
+                "pb-4 md:pb-0 md:pr-4"
             )}>
                 {StatsGrid}
             </div>

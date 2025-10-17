@@ -52,9 +52,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   const [scrollTrigger, setScrollTrigger] = useState(0);
   const [lastScrolledHash, setLastScrolledHash] = useState<string | null>(null);
 
-  // NEW: State to track if navigation was initiated by keyboard
-  const [isKeyboardNavigating, setIsKeyboardNavigating] = useState(false);
-
   // NEW: Referências para os CardContents roláveis de cada slide
   const slideRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
@@ -166,14 +163,9 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
         newPath = '/';
       }
 
-      // Only navigate if the path is actually changing
       if (newPath !== location.pathname) {
-        // Use the isKeyboardNavigating state to pass information via location state
-        navigate(newPath, { state: { isKeyboardNav: isKeyboardNavigating } });
+        navigate(newPath);
       }
-      
-      // Reset keyboard navigating state after navigation attempt
-      setIsKeyboardNavigating(false);
     };
 
     const handleSettle = () => {
@@ -225,9 +217,26 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     activeAddress,
     projectIdFromUrl,
     addressFromUrl,
-    lastScrolledHash,
-    isKeyboardNavigating // Added dependency
+    lastScrolledHash
   ]);
+
+  useEffect(() => {
+    const path = location.pathname;
+    let label = "Projects";
+
+    if (path.startsWith('/project/')) {
+      const currentProjectId = path.split('/')[2];
+      const project = projectDetails.find(pd => pd.projectId === currentProjectId);
+      label = project?.projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${currentProjectId}`;
+    } else if (path.startsWith('/profile/')) {
+      const currentProfileAddress = path.split('/')[2];
+      label = effectiveProfileNfd?.name || `${currentProfileAddress.substring(0, 8)}... Profile`;
+    }
+
+    if (!path.startsWith('/profile/') || !nfdLoading) {
+      pushEntry({ path, label, activeCategory: undefined });
+    }
+  }, [location.pathname, projectDetails, pushEntry, effectiveProfileNfd, nfdLoading]);
 
   // Keyboard navigation effect
   useEffect(() => {
@@ -250,12 +259,13 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       // 1. Handle navigation from Project Page back to Home (A/ArrowLeft)
       if (currentSlideType === 'project' && isLeftKey && effectiveProjectId) {
         e.preventDefault();
+        // 1a. Cache the current project ID as the last active item on the home page
         try {
           localStorage.setItem(LAST_ACTIVE_ID_KEY, JSON.stringify({ id: effectiveProjectId, path: '/' }));
         } catch (error) {
           console.error("Failed to cache project ID for home page focus:", error);
         }
-        setIsKeyboardNavigating(true); // Set flag before navigation
+        // 1b. Navigate to home (which will trigger carousel scroll to index 0)
         navigate('/');
         return;
       }
@@ -267,8 +277,8 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           const focusedProjectId = focusedElement.getAttribute('data-nav-id');
           if (focusedProjectId) {
             e.preventDefault();
-            setIsKeyboardNavigating(true); // Set flag before navigation
-            navigate(`/project/${focusedProjectId}`, { state: { scrollToTop: true, isKeyboardNav: true } });
+            // Navigate to the project page and trigger scroll to top
+            navigate(`/project/${focusedProjectId}`, { state: { scrollToTop: true } });
             return;
           }
         }
@@ -276,10 +286,8 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       
       // 3. Default Carousel Navigation (A/D)
       if (isRightKey) {
-        setIsKeyboardNavigating(true); // Set flag before navigation
         api.scrollNext();
       } else if (isLeftKey) {
-        setIsKeyboardNavigating(true); // Set flag before navigation
         api.scrollPrev();
       }
     };
@@ -289,25 +297,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, effectiveProfileAddress]); // Added effectiveProfileAddress
-
-  useEffect(() => {
-    const path = location.pathname;
-    let label = "Projects";
-
-    if (path.startsWith('/project/')) {
-      const currentProjectId = path.split('/')[2];
-      const project = projectDetails.find(pd => pd.projectId === currentProjectId);
-      label = project?.projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${currentProjectId}`;
-    } else if (path.startsWith('/profile/')) {
-      const currentProfileAddress = path.split('/')[2];
-      label = effectiveProfileNfd?.name || `${currentProfileAddress.substring(0, 8)}... Profile`;
-    }
-
-    if (!path.startsWith('/profile/') || !nfdLoading) {
-      pushEntry({ path, label, activeCategory: undefined });
-    }
-  }, [location.pathname, projectDetails, pushEntry, effectiveProfileNfd, nfdLoading]);
+  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname]); // Added effectiveProjectId and location.pathname
 
   const cardContentMaxHeightClass = useMemo(() => {
     if (isMobile && isDeviceLandscape) {

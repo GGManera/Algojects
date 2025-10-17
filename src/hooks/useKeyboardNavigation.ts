@@ -40,9 +40,9 @@ export function useKeyboardNavigation(pageKey: string) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [isMouseActive, setIsMouseActive] = useState(false);
   const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false);
-  const [ignoreMouseMovement, setIgnoreMouseMovement] = useState(false);
+  const [ignoreMouseMovement, setIgnoreMouseMovement] = useState(false); // NEW state
   const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const ignoreMouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const ignoreMouseTimeoutRef = useRef<NodeJS.Timeout | null>(null); // NEW ref
   const location = useLocation();
   const pageKeyRef = useRef(pageKey);
   pageKeyRef.current = pageKey;
@@ -101,7 +101,7 @@ export function useKeyboardNavigation(pageKey: string) {
         clearTimeout(mouseTimeoutRef.current);
       }
     };
-  }, [isMouseActive, ignoreMouseMovement]);
+  }, [isMouseActive, ignoreMouseMovement]); // Added ignoreMouseMovement dependency
 
   // --- Cursor Management Effect ---
   useEffect(() => {
@@ -192,37 +192,6 @@ export function useKeyboardNavigation(pageKey: string) {
     };
   }, [pageKey]);
 
-  // --- NEW: Effect to force keyboard mode active after keyboard navigation ---
-  useEffect(() => {
-    const isKeyboardNav = (location.state as { isKeyboardNav?: boolean })?.isKeyboardNav;
-    
-    if (isKeyboardNav) {
-      console.log("[KeyboardNav] Route change detected via keyboard navigation. Forcing keyboard mode active.");
-      setIsKeyboardModeActive(true);
-      
-      // Temporarily ignore mouse movement to prevent immediate deactivation
-      setIgnoreMouseMovement(true);
-      if (ignoreMouseTimeoutRef.current) {
-          clearTimeout(ignoreMouseTimeoutRef.current);
-      }
-      ignoreMouseTimeoutRef.current = setTimeout(() => {
-          setIgnoreMouseMovement(false);
-          ignoreMouseTimeoutRef.current = null;
-      }, 500);
-      
-      // Attempt to restore focus immediately
-      const orderedIds = globalOrderedIdsMap.get(pageKeyRef.current) || [];
-      if (focusedId === null && orderedIds.length > 0) {
-        const cachedId = getCachedActiveId();
-        if (cachedId && orderedIds.includes(cachedId)) {
-            setFocusedId(cachedId);
-        } else {
-            setFocusedId(orderedIds[0]);
-        }
-      }
-    }
-  }, [location.pathname, getCachedActiveId, focusedId]);
-
 
   // --- Keyboard Handler ---
   useEffect(() => {
@@ -309,6 +278,16 @@ export function useKeyboardNavigation(pageKey: string) {
         }
         return;
       } else if (isRightKey || isLeftKey) {
+        // If navigation keys are pressed, temporarily ignore mouse movement
+        setIgnoreMouseMovement(true);
+        if (ignoreMouseTimeoutRef.current) {
+            clearTimeout(ignoreMouseTimeoutRef.current);
+        }
+        ignoreMouseTimeoutRef.current = setTimeout(() => {
+            setIgnoreMouseMovement(false);
+            ignoreMouseTimeoutRef.current = null;
+        }, 500); // Ignore mouse for 500ms after slide navigation
+        
         // Let the parent component handle slide navigation (NewWebsite.tsx)
         return;
       } else {
@@ -331,6 +310,9 @@ export function useKeyboardNavigation(pageKey: string) {
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      if (ignoreMouseTimeoutRef.current) {
+          clearTimeout(ignoreMouseTimeoutRef.current);
+      }
     };
   }, [focusedId, pageKey, isMouseActive, isKeyboardModeActive, getCachedActiveId, setCacheActiveId]);
 

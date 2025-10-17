@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp, DollarSign } from "lucide-react";
 import { UserDisplay } from "./UserDisplay";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { parseProjectMetadata, extractDomainFromUrl, extractXHandleFromUrl } from '@/lib/utils';
 import { useUserProjectTokenHoldings } from '@/hooks/useUserProjectTokenHoldings';
@@ -609,7 +609,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           
           {/* MOBILE ONLY: Stats Grid integrated here */}
           {isMobile && (
-            <div className="px-2 mt-8"> {/* Added mt-8 here */}
+            <div className="px-2 pt-8"> {/* Changed mt-8 to pt-8 */}
               {StatsGrid}
             </div>
           )}

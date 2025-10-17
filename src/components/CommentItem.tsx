@@ -129,9 +129,10 @@ export function CommentItem({
     <div ref={ref} className={cn("ml-4 scroll-mt-header-offset")} id={comment.id}>
       <div 
         className={cn(
-          "block w-full rounded-lg shadow-md overflow-hidden transition-all duration-300 cursor-pointer",
+          "block w-full rounded-lg shadow-md overflow-hidden transition-all duration-300 cursor-pointer border-2 border-transparent", // Added transparent border base
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-          isFocused ? "focus-glow-border" : "", // Apply new focus highlight
+          isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
+          !isFocused && "hover:focus-glow-border", // Apply hover focus highlight only if not already focused
           isExcluded 
             ? "bg-muted/30 border border-destructive/50 pointer-events-none" // Muted style for excluded
             : "bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white" // Normal style

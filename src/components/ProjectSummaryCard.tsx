@@ -310,12 +310,13 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
       layout
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className={cn(
-        "w-full cursor-pointer transition-all duration-300 ease-in-out",
+        "w-full cursor-pointer transition-all duration-300 ease-in-out border-2 border-transparent", // Added transparent border base
         isExpanded ? "shadow-lg" : "",
         "flex flex-col",
         "scroll-mt-header-offset",
         !isInsideCarousel && "max-w-3xl",
-        isFocused ? "focus-glow-border" : "" // Apply new focus highlight
+        isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
+        !isFocused && "hover:focus-glow-border" // Apply hover focus highlight only if not already focused
       )}
       onClick={() => onToggleExpand(project.id)}
       data-nav-id={project.id} // Add data attribute for keyboard navigation

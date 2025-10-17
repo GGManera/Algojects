@@ -490,11 +490,11 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   // Component for the Stats Grid (2 columns on mobile, 2 columns on desktop)
   const StatsGrid = (
     <div className={cn(
-      "grid gap-4 text-sm text-muted-foreground pb-4",
+      "grid gap-4 text-sm text-muted-foreground",
       // Mobile: 2 columns
       "grid-cols-2",
       // Desktop: 2 columns, fixed width for the stats container
-      "md:grid-cols-2 md:w-1/3 md:pr-4" // Removed md:border-r and md:border-border
+      "md:grid-cols-2 md:w-1/3 md:pr-4 md:flex md:flex-col md:justify-end" // Added flex-col justify-end for base alignment
     )}>
       <div className="flex flex-col items-center space-y-1 col-span-2">
         <TrendingUp className="h-5 w-5 text-hodl-blue" />
@@ -530,8 +530,8 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       "space-y-4",
       // Mobile: Full width, border top
       "border-t border-border pt-4", // Keep border-t for mobile separation
-      // Desktop: Occupy remaining space, no border top
-      "md:border-t-0 md:pt-0 md:pl-4 md:w-2/3"
+      // Desktop: Occupy remaining space, no border top, base alignment
+      "md:border-t-0 md:pt-0 md:pl-4 md:w-2/3 md:flex md:flex-col md:justify-end" // Added flex-col justify-end for base alignment
     )}>
       {/* Project Description/Notes */}
       {(isLoadingDetails || (currentProjectDescription && currentProjectDescription.trim() !== '')) && (
@@ -635,48 +635,52 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
               <Edit className="h-4 w-4" />
             </Button>
           )}
-          <CardTitle className="text-4xl font-bold gradient-text">
-            {currentProjectName}
-          </CardTitle>
-          <CardDescription>
-            {sortedReviews.length} review(s) found for this project.
-          </CardDescription>
-          {currentProjectTags && ( // Display tags if available
-            <div className="flex flex-wrap justify-center gap-2 mt-1">
-              {currentProjectTags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
-                <span key={index} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary-foreground">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-          {/* NEW: Thank Contributor Button */}
-          {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && (
-            <div className="mt-4">
-              <Button
-                onClick={() => setShowThankContributorDialog(true)}
-                disabled={isClaiming || resolvingCreatorAddress}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <DollarSign className="h-4 w-4 mr-2" /> Thank Contributor & Claim
-              </Button>
-            </div>
-          )}
-          {/* END NEW */}
-          {/* Display Added By Address */}
-          {addedByAddress && (
-            <div className="mt-2 text-sm text-muted-foreground flex items-center justify-center gap-1">
-              Added by <UserDisplay
-                address={addedByAddress}
-                textSizeClass="text-sm"
-                avatarSizeClass="h-6 w-6"
-                linkTo={`/profile/${addedByAddress}`}
-                sourceContext={projectSourceContext}
-              />
-            </div>
-          )}
+          {/* REMOVED: CardTitle, CardDescription, Tags, Claim Button, Added By Address */}
         </CardHeader>
         <CardContent className="space-y-4 p-4">
+          
+          {/* NEW: Title Block (Full width on mobile, 2/3 width aligned right on desktop) */}
+          <div className="flex flex-col items-center md:items-start md:w-2/3 md:ml-auto">
+            <CardTitle className="text-4xl font-bold gradient-text text-center md:text-left">
+              {currentProjectName}
+            </CardTitle>
+            <CardDescription className="text-center md:text-left">
+              {sortedReviews.length} review(s) found for this project.
+            </CardDescription>
+            {currentProjectTags && ( // Display tags if available
+              <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-1">
+                {currentProjectTags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
+                  <span key={index} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary-foreground">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+            {/* NEW: Thank Contributor Button */}
+            {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && (
+              <div className="mt-4 w-full max-w-xs md:max-w-none">
+                <Button
+                  onClick={() => setShowThankContributorDialog(true)}
+                  disabled={isClaiming || resolvingCreatorAddress}
+                  className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto"
+                >
+                  <DollarSign className="h-4 w-4 mr-2" /> Thank Contributor & Claim
+                </Button>
+              </div>
+            )}
+            {/* Display Added By Address */}
+            {addedByAddress && (
+              <div className="mt-2 text-sm text-muted-foreground flex items-center justify-center md:justify-start gap-1">
+                Added by <UserDisplay
+                  address={addedByAddress}
+                  textSizeClass="text-sm"
+                  avatarSizeClass="h-6 w-6"
+                  linkTo={`/profile/${addedByAddress}`}
+                  sourceContext={projectSourceContext}
+                />
+              </div>
+            )}
+          </div>
           
           {/* Main Content Area: Stats (Left) + Metadata (Right) on Desktop */}
           <div className="flex flex-col md:flex-row">

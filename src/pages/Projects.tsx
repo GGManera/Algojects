@@ -159,7 +159,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         registerItem={registerItem}
         isActive={isActive}
         setLastActiveId={setLastActiveId}
-        onScrollToTop={onScrollToTop} // Pass the scroll function directly
+        onScrollToTop={onScrollToTop} // Pass the prop directly
       />
 
       <RevenueCalculator 

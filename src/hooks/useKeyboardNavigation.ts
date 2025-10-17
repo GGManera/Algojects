@@ -66,15 +66,15 @@ export function useKeyboardNavigation(pageKey: string) {
   }, []);
 
   // --- Explicit Rebuild Function ---
-  const rebuildOrder = useCallback((forceFocusToFirst: boolean = false) => {
+  const rebuildOrder = useCallback(() => {
     const currentKey = pageKeyRef.current;
     if (currentKey === 'inactive') return;
     
     const orderedIds = updateOrderedIds(currentKey);
     console.log(`[KeyboardNav] Explicit Rebuild for ${currentKey}. Total items: ${orderedIds.length}`);
     
-    // If forcing focus OR if no item is currently focused AND there are items, set focus to the first one.
-    if ((forceFocusToFirst || focusedId === null) && orderedIds.length > 0) {
+    // If no item is currently focused AND there are items, set focus to the first one.
+    if (focusedId === null && orderedIds.length > 0) {
         setFocusedId(orderedIds[0]);
     }
     return orderedIds; // Return ordered IDs for external use
@@ -173,5 +173,5 @@ export function useKeyboardNavigation(pageKey: string) {
     setFocusedId(null);
   }, [location.pathname]);
 
-  return { focusedId, setFocusedId, registerItem, rebuildOrder };
+  return { focusedId, registerItem, rebuildOrder };
 }

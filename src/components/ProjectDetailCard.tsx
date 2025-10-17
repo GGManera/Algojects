@@ -29,6 +29,7 @@ import { MetadataItem } from '@/types/project';
 import { ThankContributorDialog } from "./ThankContributorDialog"; // NEW Import
 import { thankContributorAndClaimProject } from "@/lib/coda"; // NEW Import
 import { useWallet } from "@txnlab/use-wallet-react"; // NEW Import
+import { useNfdAddressResolver } from "@/hooks/useNfdAddressResolver"; // NEW Import
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 
@@ -149,14 +150,17 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   // Determine the address that added the project, prioritizing Coda metadata but falling back to on-chain creator wallet
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
 
+  // NEW: Resolve the Creator Wallet metadata value (which might be an NFD)
+  const { resolvedAddress: resolvedCreatorAddress, loading: resolvingCreatorAddress } = useNfdAddressResolver(creatorWalletMetadata);
+
   const handleProjectDetailsUpdated = () => {
     refetchProjectDetails();
     onInteractionSuccess();
   };
 
   // --- NEW: Thank Contributor Logic ---
-  // Determine the address that should claim the project (either the first review sender or the explicit Creator Wallet metadata)
-  const effectiveCreatorAddress = creatorWalletMetadata || project.creatorWallet;
+  // Determine the address that should claim the project (resolved Creator Wallet metadata or the first review sender)
+  const effectiveCreatorAddress = resolvedCreatorAddress || creatorWalletMetadata || project.creatorWallet;
   
   // The button should appear if:
   // 1. Wallet is connected (activeAddress)
@@ -226,7 +230,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const urlItem = projectMetadata.find(item => item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com')));
   const xUrlItem = projectMetadata.find(item => item.type === 'x-url' || item.value.includes('x.com') || item.value.includes('twitter.com'));
   const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
-  const creatorWalletItem = projectMetadata.find(item => item.type === 'address' || item.value.length === 58); // Basic Algorand address length check
+  const creatorWalletItem = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet'); // Use the specific item
 
   const hasAnyMetadata = projectMetadata.length > 0;
 
@@ -377,7 +381,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             <div className="mt-4">
               <Button
                 onClick={() => setShowThankContributorDialog(true)}
-                disabled={isClaiming}
+                disabled={isClaiming || resolvingCreatorAddress}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <DollarSign className="h-4 w-4 mr-2" /> Thank Contributor & Claim

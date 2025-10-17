@@ -49,10 +49,13 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
     ? `${reply.content.substring(0, CONTENT_TRUNCATE_LENGTH)}...`
     : reply.content;
 
+  const isExcluded = reply.isExcluded;
+
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button, a')) {
       return;
     }
+    if (isExcluded) return; // Prevent interaction if excluded
     setIsExpanded(prev => !prev);
     setShowInteractionDetails(false);
   };
@@ -65,8 +68,11 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
     <div ref={ref} id={reply.id}>
       <div 
         className={cn(
-          "w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-md overflow-hidden cursor-pointer transition-all duration-300",
-          isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+          "w-full rounded-lg shadow-md overflow-hidden cursor-pointer transition-all duration-300",
+          isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+          isExcluded 
+            ? "bg-muted/30 border border-destructive/50 pointer-events-none" // Muted style for excluded
+            : "bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black" // Normal style
         )}
         onClick={handleCardClick}
       >
@@ -80,7 +86,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             sourceContext={projectSourceContext}
           />
           <div className="flex items-center space-x-2">
-            <span className="text-xs text-black/70 font-semibold">{formatTimestamp(reply.timestamp)}</span>
+            <span className={cn("text-xs font-semibold", isExcluded ? "text-muted-foreground" : "text-black/70")}>{formatTimestamp(reply.timestamp)}</span>
             <InteractionActionsMenu 
               item={reply} 
               project={project} 
@@ -92,47 +98,57 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
         </div>
 
         <div className="px-3 pb-2">
-          <p className="whitespace-pre-wrap text-black font-semibold selectable-text">{displayContent}</p>
-          {isLongReply && !isExpanded && (
-            <span className="text-blue-700 font-bold mt-2 inline-block">
-              Continue reading
-            </span>
+          {isExcluded ? (
+            <p className="font-bold text-destructive/80 text-base text-center py-1">[EXCLUDED]</p>
+          ) : (
+            <>
+              <p className="whitespace-pre-wrap text-black font-semibold selectable-text">{displayContent}</p>
+              {isLongReply && !isExpanded && (
+                <span className="text-blue-700 font-bold mt-2 inline-block">
+                  Continue reading
+                </span>
+              )}
+            </>
           )}
         </div>
 
-        <div className="flex justify-around items-center p-1 text-black/70 border-t border-black/20">
-          <LikeButton
-            item={reply}
-            project={project}
-            onInteractionSuccess={onInteractionSuccess}
-            review={review}
-            comment={comment}
-            className="hover:text-pink-400"
-          />
-          <div className="flex items-center space-x-2">
-            <Star className="h-4 w-4 text-yellow-500" />
-            <span className="font-numeric">{curatorWeightedLikeScore.toFixed(1)}</span>
+        {!isExcluded && (
+          <div className="flex justify-around items-center p-1 text-black/70 border-t border-black/20">
+            <LikeButton
+              item={reply}
+              project={project}
+              onInteractionSuccess={onInteractionSuccess}
+              review={review}
+              comment={comment}
+              className="hover:text-pink-400"
+            />
+            <div className="flex items-center space-x-2">
+              <Star className="h-4 w-4 text-yellow-500" />
+              <span className="font-numeric">{curatorWeightedLikeScore.toFixed(1)}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => { e.stopPropagation(); setShowInteractionDetails(prev => !prev); }}
+              className="flex items-center space-x-2 hover:text-foreground transition-colors"
+            >
+              <Info className="h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); setShowInteractionDetails(prev => !prev); }}
-            className="flex items-center space-x-2 hover:text-foreground transition-colors"
-          >
-            <Info className="h-4 w-4" />
-          </Button>
-        </div>
+        )}
       </div>
 
-      <CollapsibleContent isOpen={showInteractionDetails}>
-        <InteractionDetailsPanel
-          item={reply}
-          project={project}
-          review={review}
-          comment={comment}
-          onInteractionSuccess={onInteractionSuccess}
-        />
-      </CollapsibleContent>
+      {!isExcluded && (
+        <CollapsibleContent isOpen={showInteractionDetails}>
+          <InteractionDetailsPanel
+            item={reply}
+            project={project}
+            review={review}
+            comment={comment}
+            onInteractionSuccess={onInteractionSuccess}
+          />
+        </CollapsibleContent>
+      )}
     </div>
   );
 }

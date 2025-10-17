@@ -141,10 +141,13 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const currentProjectTags = projectMetadata.find(item => item.type === 'tags')?.value; // Changed from category to tags
   const currentWhitelistedAddresses = projectMetadata.find(item => item.type === 'whitelisted-editors')?.value?.split(',').map(addr => addr.trim()).filter(Boolean) || [];
   const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
-  const addedByAddress = projectMetadata.find(item => item.type === 'added-by-address')?.value;
+  const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value; // Renamed local variable
   const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true';
   const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true'; // NEW: Check if claimed
   const creatorWalletMetadata = projectMetadata.find(item => item.title === 'Creator Wallet')?.value; // NEW: Get Creator Wallet from metadata
+
+  // Determine the address that added the project, prioritizing Coda metadata but falling back to on-chain creator wallet
+  const addedByAddress = addedByAddressCoda || project.creatorWallet;
 
   const handleProjectDetailsUpdated = () => {
     refetchProjectDetails();

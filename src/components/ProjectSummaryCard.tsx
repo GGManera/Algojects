@@ -102,8 +102,10 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
   const projectDescription = projectMetadata.find(item => item.type === 'project-description')?.value;
   const projectTags = projectMetadata.find(item => item.type === 'tags')?.value; // Changed from category to tags
   const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
-  const addedByAddress = projectMetadata.find(item => item.type === 'added-by-address')?.value;
+  const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value;
 
+  // Determine the address that added the project, prioritizing Coda metadata but falling back to on-chain creator wallet
+  const addedByAddress = addedByAddressCoda || project.creatorWallet;
 
   const hasAnyMetadata = projectMetadata.length > 0;
 
@@ -296,18 +298,27 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                 </div>
               )}
 
+              {/* Added By Address */}
+              {addedByAddress && (
+                <div className="py-3 px-3 bg-muted/50 text-foreground rounded-md shadow-recessed flex items-center justify-between">
+                  <h3 className="text-md font-semibold">Added By:</h3>
+                  <UserDisplay 
+                    address={addedByAddress} 
+                    textSizeClass="text-sm" 
+                    avatarSizeClass="h-6 w-6" 
+                    linkTo={`/profile/${addedByAddress}`} 
+                    sourceContext={projectSourceContext} 
+                  />
+                </div>
+              )}
+
               {/* Project Metadata */}
               {hasAnyMetadata && (
                 <div className="py-4 px-3 bg-muted/50 text-foreground rounded-md shadow-recessed">
-                  {/* Removed: <h3 className="text-md font-semibold mb-2">Metadata:</h3> */}
-                  {/* Removed: <Button variant="ghost" size="icon" onClick={handleCopyAllMetadata} className="h-6 w-6">
-                    <Copy className="h-4 w-4" />
-                    <span className="sr-only">Copy all metadata</span>
-                  </Button> */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     {projectMetadata.map((item, index) => {
                       // Skip rendering of "fixed" metadata items here
-                      if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags'].includes(item.type || '')) { // Changed 'category' to 'tags'
+                      if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed'].includes(item.type || '')) { // Changed 'category' to 'tags'
                         return null;
                       }
 

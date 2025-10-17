@@ -6,7 +6,6 @@ import { useLocation } from 'react-router-dom';
 interface NavigableItem {
   id: string;
   toggleExpand: () => void;
-  setExpanded: (expanded: boolean) => void; // Added setExpanded
   isExpanded: boolean;
   type: 'review' | 'comment' | 'reply' | 'project-summary';
 }
@@ -169,7 +168,7 @@ export function useKeyboardNavigation(pageKey: string) {
   }, [setCacheActiveId, focusedId]);
 
   // --- Registration Management ---
-  const registerItem = useCallback((id: string, toggleExpand: () => void, setExpanded: (expanded: boolean) => void, isExpanded: boolean, type: NavigableItem['type']) => {
+  const registerItem = useCallback((id: string, toggleExpand: () => void, isExpanded: boolean, type: NavigableItem['type']) => {
     const currentKey = pageKeyRef.current;
     if (currentKey === 'inactive') return () => {};
 
@@ -178,8 +177,8 @@ export function useKeyboardNavigation(pageKey: string) {
     }
     const itemsMap = globalNavigableItemsMap.get(currentKey)!;
     
-    // Store or update the item with its current expansion state and setter
-    itemsMap.set(id, { id, toggleExpand, setExpanded, isExpanded, type });
+    // Store or update the item with its current expansion state
+    itemsMap.set(id, { id, toggleExpand, isExpanded, type });
     updateOrderedIds(currentKey); // Rebuild order immediately upon registration/update
 
     return () => {
@@ -210,105 +209,6 @@ export function useKeyboardNavigation(pageKey: string) {
     }
     return orderedIds;
   }, [focusedId, getCachedActiveId]);
-  
-  // --- Expansion Control Functions ---
-
-  const setExpansionState = useCallback((
-    targetTypes: Array<NavigableItem['type']>, 
-    shouldExpand: boolean
-  ) => {
-    const currentKey = pageKeyRef.current;
-    if (currentKey === 'inactive') return;
-
-    const itemsMap = globalNavigableItemsMap.get(currentKey);
-    if (!itemsMap) return;
-
-    let stateChanged = false;
-
-    itemsMap.forEach(item => {
-        if (targetTypes.includes(item.type)) {
-            if (item.isExpanded !== shouldExpand) {
-                // Call the setter provided by the component
-                item.setExpanded(shouldExpand); 
-                
-                // Optimistically update the map state immediately for subsequent checks
-                itemsMap.set(item.id, { ...item, isExpanded: shouldExpand });
-                stateChanged = true;
-            }
-        }
-    });
-
-    if (stateChanged) {
-        // Rebuild order to reflect the new visibility of items
-        rebuildOrder();
-    }
-  }, [rebuildOrder]);
-
-
-  // 1. Expand All: Expands all reviews and comments. (Used for "Interactions")
-  const expandAll = useCallback(() => {
-      setExpansionState(['review', 'comment'], true);
-  }, [setExpansionState]);
-
-  // 2. Collapse All: Collapses all reviews and comments. (Used for "Reviews")
-  const collapseAll = useCallback(() => {
-      setExpansionState(['review', 'comment'], false);
-  }, [setExpansionState]);
-
-  // 3. Expand Reviews, Collapse Comments: Expands reviews while keeping comments collapsed. (Used for "Comments")
-  const expandReviewsCollapseComments = useCallback(() => {
-      // Collapse all comments (and implicitly replies)
-      setExpansionState(['comment'], false);
-      // Expand all reviews
-      setExpansionState(['review'], true);
-  }, [setExpansionState]);
-
-  // 4. Toggle Replies Visibility: Collapse reviews/comments without replies, expand those with replies. (Used for "Replies")
-  const toggleRepliesVisibility = useCallback(() => {
-      const currentKey = pageKeyRef.current;
-      if (currentKey === 'inactive') return;
-
-      const itemsMap = globalNavigableItemsMap.get(currentKey);
-      if (!itemsMap) return;
-
-      let stateChanged = false;
-
-      // 1. Identify all IDs of reviews/comments that have replies
-      const itemsWithReplies = new Set<string>();
-      itemsMap.forEach(item => {
-          if (item.type === 'reply') {
-              const parts = item.id.split('.');
-              // Assuming ID structure: P1.R1.C1.L1 (4 segments)
-              if (parts.length >= 4) { 
-                  // Comment ID (P1.R1.C1)
-                  const commentId = parts.slice(0, 3).join('.');
-                  itemsWithReplies.add(commentId);
-                  
-                  // Review ID (P1.R1)
-                  const reviewId = parts.slice(0, 2).join('.');
-                  itemsWithReplies.add(reviewId);
-              }
-          }
-      });
-
-      // 2. Iterate and set expansion state for reviews and comments
-      itemsMap.forEach(item => {
-          if (item.type === 'review' || item.type === 'comment') {
-              const shouldExpand = itemsWithReplies.has(item.id);
-              
-              if (item.isExpanded !== shouldExpand) {
-                  item.setExpanded(shouldExpand);
-                  itemsMap.set(item.id, { ...item, isExpanded: shouldExpand });
-                  stateChanged = true;
-              }
-          }
-      });
-
-      if (stateChanged) {
-          rebuildOrder();
-      }
-  }, [rebuildOrder]);
-
 
   // --- Effect to manage focus state and cleanup when pageKey changes ---
   useEffect(() => {
@@ -456,16 +356,5 @@ export function useKeyboardNavigation(pageKey: string) {
     setIsKeyboardModeActive(false);
   }, [location.pathname]);
 
-  return { 
-    focusedId, 
-    setFocusedId, 
-    registerItem, 
-    rebuildOrder, 
-    setLastActiveId, 
-    isKeyboardModeActive,
-    expandAll,
-    collapseAll,
-    expandReviewsCollapseComments,
-    toggleRepliesVisibility
-  };
+  return { focusedId, setFocusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive };
 }

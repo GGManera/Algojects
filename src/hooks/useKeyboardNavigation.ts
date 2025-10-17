@@ -11,9 +11,9 @@ interface NavigableItem {
 }
 
 // Global map to hold all registered items, scoped by pageKey
-const globalNavigableItemsMap = new Map<string, Map<string, NavigableItem>>();
+export const globalNavigableItemsMap = new Map<string, Map<string, NavigableItem>>();
 // Global map to hold the ordered IDs for each pageKey
-const globalOrderedIdsMap = new Map<string, string[]>();
+export const globalOrderedIdsMap = new Map<string, string[]>();
 
 const LAST_ACTIVE_ID_KEY = 'algojects_last_active_id';
 

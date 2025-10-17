@@ -103,6 +103,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
   const projectTags = projectMetadata.find(item => item.type === 'tags')?.value; // Changed from category to tags
   const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
   const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value;
+  const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true'; // NEW: Check if claimed
 
   // Determine the address that added the project, prioritizing Coda metadata but falling back to on-chain creator wallet
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
@@ -312,13 +313,13 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                 </div>
               )}
 
-              {/* Project Metadata */}
+              {/* Project Metadata - Changed from grid to flex-wrap */}
               {hasAnyMetadata && (
                 <div className="py-4 px-3 bg-muted/50 text-foreground rounded-md shadow-recessed">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="flex flex-wrap justify-center gap-4 text-xs"> {/* Changed grid to flex-wrap */}
                     {projectMetadata.map((item, index) => {
                       // Skip rendering of "fixed" metadata items here
-                      if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed'].includes(item.type || '')) { // Changed 'category' to 'tags'
+                      if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'].includes(item.type || '') || (item.type === 'address' && item.title === 'Creator Wallet')) {
                         return null;
                       }
 
@@ -326,7 +327,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                         return (
                           <div
                             key={index}
-                            className="btn-profile mx-auto"
+                            className="btn-profile" // Removed mx-auto
                             onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
                           >
                             <strong className="uppercase">{item.title || extractDomainFromUrl(item.value)}</strong>
@@ -343,7 +344,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                         return (
                           <div
                             key={index}
-                            className="btn-profile mx-auto"
+                            className="btn-profile" // Removed mx-auto
                             onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
                           >
                             <strong className="uppercase">{item.title || extractXHandleFromUrl(item.value)}</strong>
@@ -360,7 +361,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                         return (
                           <div
                             key={index}
-                            className="btn-profile mx-auto"
+                            className="btn-profile" // Removed mx-auto
                             onClick={(e) => handleAssetIdClick(e, item.value)}
                             onMouseEnter={() => !isMobile && setIsHovered(true)}
                             onMouseLeave={() => !isMobile && setIsHovered(false)}
@@ -377,14 +378,14 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                         );
                       } else if (item.type === 'address' || item.value.length === 58) {
                         return (
-                          <div key={index} className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+                          <div key={index} className="inline-flex flex-col p-2 rounded-md bg-background/50 border border-border text-center w-auto">
                             <span className="font-semibold text-muted-foreground text-xs">{item.title || 'Address'}:</span>
-                            <UserDisplay address={item.value} textSizeClass="text-xs" avatarSizeClass="h-5 w-5" linkTo={`/profile/${item.value}`} sourceContext={projectSourceContext} />
+                            <UserDisplay address={item.value} textSizeClass="text-xs" avatarSizeClass="h-5 w-5" linkTo={`/profile/${item.value}`} sourceContext={projectSourceContext} className="justify-center" />
                           </div>
                         );
                       } else {
                         return (
-                          <div key={index} className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+                          <div key={index} className="inline-flex flex-col p-2 rounded-md bg-background/50 border border-border text-center w-auto">
                             <span className="font-semibold text-muted-foreground text-xs">{item.title}:</span>
                             <p className="text-sm text-foreground selectable-text">{item.value}</p>
                           </div>

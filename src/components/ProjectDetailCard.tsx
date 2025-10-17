@@ -31,7 +31,7 @@ import { thankContributorAndClaimProject } from "@/lib/coda"; // NEW Import
 import { useWallet } from "@txnlab/use-wallet-react"; // NEW Import
 // Removed: import { useNfdAddressResolver } from "@/hooks/useNfdAddressResolver"; // NEW Import
 
-const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
+const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
 interface ProjectDetailCardProps {
   project: Project;
@@ -409,7 +409,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       return (
         <div
           key={index}
-          className="btn-profile mx-auto"
+          className="btn-profile" // Removed mx-auto
           onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
         >
           <strong className="uppercase">{item.title || extractDomainFromUrl(item.value)}</strong>
@@ -426,7 +426,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       return (
         <div
           key={index}
-          className="btn-profile mx-auto"
+          className="btn-profile" // Removed mx-auto
           onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
         >
           <strong className="uppercase">{item.title || extractXHandleFromUrl(item.value)}</strong>
@@ -443,7 +443,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       return (
         <div
           key={index}
-          className="btn-profile mx-auto"
+          className="btn-profile" // Removed mx-auto
           onClick={(e) => handleAssetIdClick(e, item.value)}
           onMouseEnter={() => !isMobile && setIsAssetIdHovered(true)}
           onMouseLeave={() => !isMobile && setIsAssetIdHovered(false)}

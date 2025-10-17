@@ -21,19 +21,17 @@ import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { useNfd } from '@/hooks/useNfd';
 import { Footer } from '@/components/Footer';
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
-import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation'; // Import useKeyboardNavigation
+import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
 
 interface NewWebsiteProps {
   scrollToTopTrigger?: number;
 }
 
-// Definindo o tipo para a referência exposta
 export interface NewWebsiteRef {
   scrollToActiveSlideTop: () => void;
-  resetAllScrolls: () => void; // NEW: Função para resetar a rolagem de todos os slides
+  resetAllScrolls: () => void;
 }
 
-// Constante para a chave de cache do último item ativo (importada de useKeyboardNavigation)
 const LAST_ACTIVE_ID_KEY = 'algojects_last_active_id';
 
 const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToTopTrigger }, ref) => {
@@ -46,15 +44,16 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   
   const [api, setApi] = useState<CarouselApi>();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false); // State to track carousel transition
-  const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false); // NEW: State to track keyboard mode globally
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false);
   
-  // New states for managing hash scrolling
   const [hashToScroll, setHashToScroll] = useState<string | null>(null);
   const [scrollTrigger, setScrollTrigger] = useState(0);
   const [lastScrolledHash, setLastScrolledHash] = useState<string | null>(null);
+  
+  // NEW: State to trigger scroll to top from HeroSection/Logo click
+  const [internalScrollToTopTrigger, setInternalScrollToTopTrigger] = useState(0);
 
-  // NEW: Referências para os CardContents roláveis de cada slide
   const slideRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
   const { projectIdFromUrl, addressFromUrl } = useMemo(() => {
@@ -76,24 +75,90 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
   const { nfd: effectiveProfileNfd, loading: nfdLoading } = useNfd(effectiveProfileAddress);
 
-  // Callback to receive keyboard mode status from the active slide
   const handleKeyboardModeChange = useCallback((isActive: boolean) => {
     setIsKeyboardModeActive(isActive);
   }, []);
 
+  // NEW: Função para rolar o slide ativo para o topo (chamada pelo Layout/DynamicNavButtons)
+  const scrollToActiveSlideTop = useCallback(() => {
+    if (!api) return;
+    const activeSlideType = slidesConfig[api.selectedScrollSnap()]?.type;
+    const activeRef = slideRefs.current.get(activeSlideType || 'home');
+    
+    if (activeRef) {
+      console.log(`[NewWebsite] Scrolling active slide (${activeSlideType}) to top.`);
+      activeRef.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      console.warn(`[NewWebsite] Could not find ref for active slide type: ${activeSlideType}`);
+    }
+  }, [api]);
+
+  // NEW: Função para rolar TODOS os slides para o topo
+  const resetAllScrolls = useCallback(() => {
+    console.log("[NewWebsite] Resetting scroll position for all slides.");
+    slideRefs.current.forEach(ref => {
+      if (ref) {
+        ref.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+    // Also reset the internal scroll trigger for the active slide components
+    setInternalScrollToTopTrigger(prev => prev + 1);
+  }, []);
+
+  // NEW: Função para ser passada para HeroSection para scrollar o slide ativo
+  const handleHeroScrollToTop = useCallback(() => {
+    scrollToActiveSlideTop();
+  }, [scrollToActiveSlideTop]);
+
+  useImperativeHandle(ref, () => ({
+    scrollToActiveSlideTop,
+    resetAllScrolls,
+  }));
+
   const slidesConfig = useMemo(() => {
     const config = [];
-    config.push({ type: 'home', pathPrefix: '/', component: <Projects isInsideCarousel={true} scrollToTopTrigger={scrollToTopTrigger} onKeyboardModeChange={handleKeyboardModeChange} />, maxWidth: 'max-w-[710px]' });
+    config.push({ 
+      type: 'home', 
+      pathPrefix: '/', 
+      component: <Projects 
+        isInsideCarousel={true} 
+        scrollToTopTrigger={internalScrollToTopTrigger} 
+        onKeyboardModeChange={handleKeyboardModeChange} 
+      />, 
+      maxWidth: 'max-w-[710px]' 
+    });
     
     if (effectiveProjectId) {
-      config.push({ type: 'project', pathPrefix: '/project/', component: <ProjectPage projectId={effectiveProjectId} isInsideCarousel={true} hashToScroll={hashToScroll} scrollTrigger={scrollTrigger} scrollToTopTrigger={scrollToTopTrigger} onKeyboardModeChange={handleKeyboardModeChange} />, maxWidth: 'max-w-[710px]' });
+      config.push({ 
+        type: 'project', 
+        pathPrefix: '/project/', 
+        component: <ProjectPage 
+          projectId={effectiveProjectId} 
+          isInsideCarousel={true} 
+          hashToScroll={hashToScroll} 
+          scrollTrigger={scrollTrigger} 
+          scrollToTopTrigger={internalScrollToTopTrigger} 
+          onKeyboardModeChange={handleKeyboardModeChange} 
+        />, 
+        maxWidth: 'max-w-[710px]' 
+      });
     }
 
     if (effectiveProfileAddress) {
-      config.push({ type: 'profile', pathPrefix: '/profile/', component: <UserProfile address={effectiveProfileAddress} isInsideCarousel={true} scrollToTopTrigger={scrollToTopTrigger} onKeyboardModeChange={handleKeyboardModeChange} />, maxWidth: 'max-w-[710px]' });
+      config.push({ 
+        type: 'profile', 
+        pathPrefix: '/profile/', 
+        component: <UserProfile 
+          address={effectiveProfileAddress} 
+          isInsideCarousel={true} 
+          scrollToTopTrigger={internalScrollToTopTrigger} 
+          onKeyboardModeChange={handleKeyboardModeChange} 
+        />, 
+        maxWidth: 'max-w-[710px]' 
+      });
     }
     return config;
-  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, scrollToTopTrigger, handleKeyboardModeChange]);
+  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, internalScrollToTopTrigger, handleKeyboardModeChange]);
 
   const targetSlideIndex = useMemo(() => {
     const currentPath = location.pathname;
@@ -108,36 +173,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     const index = slidesConfig.findIndex(slide => slide.type === targetType);
     return index !== -1 ? index : 0;
   }, [location.pathname, slidesConfig]);
-
-  // Função para rolar o slide ativo para o topo
-  const scrollToActiveSlideTop = useCallback(() => {
-    if (!api) return;
-    const activeSlideType = slidesConfig[api.selectedScrollSnap()]?.type;
-    const activeRef = slideRefs.current.get(activeSlideType || 'home');
-    
-    if (activeRef) {
-      console.log(`[NewWebsite] Scrolling active slide (${activeSlideType}) to top.`);
-      activeRef.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      console.warn(`[NewWebsite] Could not find ref for active slide type: ${activeSlideType}`);
-    }
-  }, [api, slidesConfig]);
-
-  // NEW: Função para rolar TODOS os slides para o topo
-  const resetAllScrolls = useCallback(() => {
-    console.log("[NewWebsite] Resetting scroll position for all slides.");
-    slideRefs.current.forEach(ref => {
-      if (ref) {
-        ref.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    });
-  }, []);
-
-  // Expor as funções de rolagem para o componente pai (Layout)
-  useImperativeHandle(ref, () => ({
-    scrollToActiveSlideTop,
-    resetAllScrolls, // Expor a nova função
-  }));
 
   useEffect(() => {
     if (!api) return;
@@ -181,18 +216,18 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       if (settledSlide?.type === 'project' && location.pathname.startsWith('/project/')) {
         setScrollTrigger(prev => prev + 1);
       }
-      setIsTransitioning(false); // Transition finished
+      setIsTransitioning(false);
     };
 
     const handleScroll = () => {
       if (api.scrollProgress() > 0.001 && api.scrollProgress() < 0.999) {
-        setIsTransitioning(true); // Transition started
+        setIsTransitioning(true);
       }
     };
 
     api.on("select", handleSelect);
     api.on("settle", handleSettle);
-    api.on("scroll", handleScroll); // Listen for scroll event
+    api.on("scroll", handleScroll);
 
     setHashToScroll(location.hash);
 
@@ -236,17 +271,14 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     lastScrolledHash
   ]);
 
-  // NEW: Effect to manage cursor visibility during transition based on keyboard mode
   useEffect(() => {
     if (isTransitioning) {
-      // User requested: hide ONLY if keyboard mode is active.
       if (isKeyboardModeActive) {
         document.body.style.cursor = 'none';
       } else {
         document.body.style.cursor = 'default';
       }
     } else {
-      // If not transitioning, let the keyboard mode dictate the cursor state
       if (isKeyboardModeActive) {
         document.body.style.cursor = 'none';
       } else {
@@ -273,7 +305,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     }
   }, [location.pathname, projectDetails, pushEntry, effectiveProfileNfd, nfdLoading]);
 
-  // Keyboard navigation effect (A/D/ArrowLeft/ArrowRight) remains the same, but now relies on isTransitioning state
   useEffect(() => {
     if (!api || isMobile) return;
 
@@ -289,7 +320,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
       if (!isRightKey && !isLeftKey) return;
       
-      // Prevent carousel navigation during transition
       if (isTransitioning) {
           e.preventDefault();
           return;
@@ -300,13 +330,11 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       // 1. Handle navigation from Project Page back to Home (A/ArrowLeft)
       if (currentSlideType === 'project' && isLeftKey && effectiveProjectId) {
         e.preventDefault();
-        // 1a. Cache the current project ID as the last active item on the home page
         try {
           localStorage.setItem(LAST_ACTIVE_ID_KEY, JSON.stringify({ id: effectiveProjectId, path: '/' }));
         } catch (error) {
           console.error("Failed to cache project ID for home page focus:", error);
         }
-        // 1b. Navigate to home (which will trigger carousel scroll to index 0)
         navigate('/');
         return;
       }
@@ -318,7 +346,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           const focusedProjectId = focusedElement.getAttribute('data-nav-id');
           if (focusedProjectId) {
             e.preventDefault();
-            // Navigate to the project page and trigger scroll to top
             navigate(`/project/${focusedProjectId}`, { state: { scrollToTop: true } });
             return;
           }
@@ -338,7 +365,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]); // Added isTransitioning
+  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
   const cardContentMaxHeightClass = useMemo(() => {
     if (isMobile && isDeviceLandscape) {
@@ -355,9 +382,9 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       <Carousel setApi={setApi} className="w-full" opts={{ duration: 20 }}>
         <CarouselContent>
           {slidesConfig.map((slide, index) => {
-            // Clone the component and inject the isActive prop
             const slideComponent = React.cloneElement(slide.component, {
-              isActive: index === currentSlideIndex, // Pass isActive based on currentSlideIndex
+              isActive: index === currentSlideIndex,
+              onScrollToTop: handleHeroScrollToTop, // Pass the scroll function to HeroSection
             });
 
             return (

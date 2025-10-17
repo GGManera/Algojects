@@ -26,10 +26,11 @@ import { cn } from '@/lib/utils';
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { useCuratorIndex } from '@/hooks/useCuratorIndex';
 import { MetadataItem } from '@/types/project';
-import { ThankContributorDialog } from "./ThankContributorDialog"; // NEW Import
-import { thankContributorAndClaimProject } from "@/lib/coda"; // NEW Import
-import { useWallet } from "@txnlab/use-wallet-react"; // NEW Import
-import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
+import { ThankContributorDialog } from "./ThankContributorDialog";
+import { thankContributorAndClaimProject } from "@/lib/coda";
+import { useWallet } from "@txnlab/use-wallet-react";
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
+import { ProjectMetadataNavigator } from "./ProjectMetadataNavigator"; // NEW Import
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
@@ -43,8 +44,8 @@ interface ProjectDetailCardProps {
   // NEW: Keyboard navigation props
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
-  isActive: boolean; // NEW PROP
-  setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
+  isActive: boolean;
+  setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId'];
 }
 
 interface ProjectStats {
@@ -82,11 +83,11 @@ export function ProjectDetailCard({
   focusedId, 
   registerItem,
   isActive,
-  setLastActiveId // NEW PROP
+  setLastActiveId
 }: ProjectDetailCardProps) {
   const projectId = project.id;
   const { isMobile } = useAppContextDisplayMode();
-  const { transactionSigner, algodClient } = useWallet(); // Get wallet context
+  const { transactionSigner, algodClient } = useWallet();
 
   const { projectDetails, loading, isRefreshing, error: detailsError, refetch: refetchProjectDetails } = useProjectDetails();
   const isLoadingDetails = loading || isRefreshing;
@@ -101,8 +102,11 @@ export function ProjectDetailCard({
   const [isAssetIdHovered, setIsAssetIdHovered] = useState(false);
 
   const [showProjectDetailsForm, setShowProjectDetailsForm] = useState(false);
-  const [showThankContributorDialog, setShowThankContributorDialog] = useState(false); // NEW State
-  const [isClaiming, setIsClaiming] = useState(false); // NEW State
+  const [showThankContributorDialog, setShowThankContributorDialog] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
+  
+  // NEW: State to track if focus is inside the Metadata Navigator
+  const [isMetadataNavigatorFocused, setIsMetadataNavigatorFocused] = useState(false);
 
   const { tokenHoldings, loading: tokenHoldingsLoading } = useUserProjectTokenHoldings(activeAddress, projectsData, projectDetails);
   const { allCuratorData, loading: curatorIndexLoading } = useCuratorIndex(undefined, projectsData);
@@ -153,38 +157,23 @@ export function ProjectDetailCard({
   // Extract "fixed" fields from projectMetadata
   const currentProjectName = projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${projectId}`;
   const currentProjectDescription = projectMetadata.find(item => item.type === 'project-description')?.value;
-  const currentProjectTags = projectMetadata.find(item => item.type === 'tags')?.value; // Changed from category to tags
-  const currentWhitelistedAddresses = projectMetadata.find(item => item.type === 'whitelisted-editors')?.value?.split(',').map(addr => addr.trim()).filter(Boolean) || [];
+  const currentProjectTags = projectMetadata.find(item => item.type === 'tags')?.value;
   const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
-  const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value; // Renamed local variable
+  const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value;
   const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true';
-  const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true'; // NEW: Check if claimed
+  const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true';
   
-  // --- Updated extraction for Wallets ---
   const creatorWalletItem = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet');
-  const projectWalletItem = projectMetadata.find(item => item.type === 'project-wallet');
   const creatorWalletMetadata = creatorWalletItem?.value;
-  const projectWalletMetadata = projectWalletItem?.value;
-  // --- End Updated extraction ---
-
-  // Determine the address that added the project, prioritizing Coda metadata but falling back to on-chain creator wallet
+  
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
-
-  // Use raw metadata value as the address
   const effectiveCreatorAddress = creatorWalletMetadata || project.creatorWallet;
-  const resolvingCreatorAddress = false; // No longer resolving
 
   const handleProjectDetailsUpdated = () => {
     refetchProjectDetails();
     onInteractionSuccess();
   };
 
-  // --- NEW: Thank Contributor Logic ---
-  // The button should appear if:
-  // 1. Wallet is connected (activeAddress)
-  // 2. The project is not yet claimed (isClaimed === false)
-  // 3. The connected user is the effective creator (activeAddress === effectiveCreatorAddress)
-  // 4. The project was added by a different address (addedByAddress exists and addedByAddress !== effectiveCreatorAddress)
   const isAuthorizedToClaim = activeAddress && effectiveCreatorAddress && activeAddress === effectiveCreatorAddress && !isClaimed && addedByAddress && activeAddress !== addedByAddress;
 
   const handleClaimProject = useCallback(async (
@@ -216,8 +205,8 @@ export function ProjectDetailCard({
       dismissToast(toastId);
       showSuccess("Project claimed and contributor rewarded successfully!");
       setShowThankContributorDialog(false);
-      refetchProjectDetails(); // Force refresh Coda data
-      onInteractionSuccess(); // Force refresh social data
+      refetchProjectDetails();
+      onInteractionSuccess();
     } catch (err) {
       dismissToast(toastId);
       console.error("Claim failed:", err);
@@ -226,8 +215,6 @@ export function ProjectDetailCard({
       setIsClaiming(false);
     }
   }, [activeAddress, transactionSigner, algodClient, addedByAddress, projectId, currentProjectName, projectMetadata, refetchProjectDetails, onInteractionSuccess, effectiveCreatorAddress]);
-  // --- END NEW: Thank Contributor Logic ---
-
 
   const handleCopyAllMetadata = async () => {
     if (projectMetadata.length > 0) {
@@ -244,10 +231,7 @@ export function ProjectDetailCard({
     }
   };
 
-  // Extract specific metadata items for special rendering
   const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
-
-  const hasAnyMetadata = projectMetadata.length > 0;
 
   useEffect(() => {
     const fetchAssetUnitName = async () => {
@@ -313,182 +297,91 @@ export function ProjectDetailCard({
     label: currentProjectName,
   }), [projectId, currentProjectName]);
 
-  const handleAssetIdClick = async (e: React.MouseEvent, assetIdValue: string) => {
-    e.stopPropagation();
+  // --- Keyboard Navigation Logic for ProjectDetailCard ---
+  const isFocused = focusedId === project.id;
+  const isExpanded = true; // ProjectDetailCard is always conceptually expanded
 
-    if (isMobile) {
-      if (showAssetIdValue) {
-        if (assetIdValue) {
-          try {
-            await navigator.clipboard.writeText(assetIdValue);
-            setCopiedAssetIdMessage("Copied!");
-            setTimeout(() => {
-              setCopiedAssetIdMessage(null);
-              setShowAssetIdValue(false);
-            }, 2000);
-          } catch (err) {
-            showError("Failed to copy Asset ID.");
+  // 1. Register ProjectDetailCard itself
+  const handleToggleExpand = useCallback(() => {
+    // When spacebar is pressed on the main card, transfer focus to the metadata navigator
+    if (!isMetadataNavigatorFocused) {
+      setIsMetadataNavigatorFocused(true);
+    }
+  }, [isMetadataNavigatorFocused]);
+
+  useEffect(() => {
+    // Register the main card. It's always expanded.
+    const cleanup = registerItem(project.id, handleToggleExpand, true, 'project-summary');
+    return cleanup;
+  }, [project.id, handleToggleExpand, registerItem, isActive]);
+
+  // 2. Handle focus return from Metadata Navigator
+  const handleFocusReturn = useCallback((direction: 'up' | 'down') => {
+    setIsMetadataNavigatorFocused(false);
+    setFocusedId(project.id); // Return focus to the main card
+    
+    // If returning focus, immediately move to the next/previous item outside the card
+    if (direction === 'down') {
+        // Simulate ArrowDown press to move to the first ReviewItem
+        const event = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true });
+        document.dispatchEvent(event);
+    } else if (direction === 'up') {
+        // Simulate ArrowUp press to move to the previous item (which should be the last item before the card)
+        const event = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true });
+        document.dispatchEvent(event);
+    }
+  }, [project.id, setFocusedId]);
+
+  // 3. Handle focus transfer status from Metadata Navigator
+  const handleFocusTransfer = useCallback((isInternal: boolean) => {
+    setIsMetadataNavigatorFocused(isInternal);
+  }, []);
+
+  // 4. Handle spacebar press on the main card to transfer focus
+  useEffect(() => {
+    if (isFocused && !isMetadataNavigatorFocused) {
+      const handleSpacebar = (e: KeyboardEvent) => {
+        if (e.key === ' ') {
+          e.preventDefault();
+          // Check if the Metadata Navigator has items before transferring focus
+          const metadataNavigatorHasItems = projectMetadata.filter(item => !['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'].includes(item.type || '') && !(item.type === 'address' && item.title === 'Creator Wallet')).length > 0;
+          
+          if (metadataNavigatorHasItems) {
+            setIsMetadataNavigatorFocused(true);
+          } else {
+            // If no metadata items, treat spacebar as down arrow to move to the next item (first review)
+            const event = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true });
+            document.dispatchEvent(event);
           }
         }
-      } else {
-        setShowAssetIdValue(true);
-        setTimeout(() => {
-          if (!copiedAssetIdMessage) setShowAssetIdValue(false);
-        }, 3000);
-      }
-    } else {
-      if (assetIdValue) {
-        try {
-          await navigator.clipboard.writeText(assetIdValue);
-          setCopiedAssetIdMessage("Copied!");
-          setTimeout(() => setCopiedAssetIdMessage(null), 2000);
-        } catch (err) {
-          showError("Failed to copy Asset ID.");
-        }
-      }
+      };
+      window.addEventListener('keydown', handleSpacebar);
+      return () => window.removeEventListener('keydown', handleSpacebar);
     }
-  };
+  }, [isFocused, isMetadataNavigatorFocused, projectMetadata]);
 
-  // Modified to accept defaultTitle and prioritize dynamic states
-  const getDisplayAssetIdText = useCallback((assetIdValue: string, defaultTitle: string | undefined) => {
-    if (copiedAssetIdMessage) return copiedAssetIdMessage;
-    if (isMobile) {
-      return showAssetIdValue ? assetIdValue : (defaultTitle || "Asset ID");
-    }
-    return isAssetIdHovered ? assetIdValue : (defaultTitle || "Asset ID");
-  }, [copiedAssetIdMessage, isMobile, showAssetIdValue, isAssetIdHovered]);
-
-  // --- Grouping and Ordering Logic for All Renderable Metadata ---
-  const allRenderableMetadataItems = useMemo(() => {
-    const items: MetadataItem[] = [];
-    
-    // Filter out all fixed types that should NOT be rendered in the grid
-    const excludedFixedTypes = new Set([
-        'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed'
-    ]);
-
-    projectMetadata.forEach(item => {
-        if (!excludedFixedTypes.has(item.type || '')) {
-            items.push(item);
-        }
-    });
-    
-    return items;
-  }, [projectMetadata]);
-
-  const renderMetadataItem = (item: MetadataItem, index: number) => {
-    // Base classes for centering and max width
-    // On mobile, we want full width, so we remove max-w-[180px] and mx-auto
-    const baseItemClasses = cn(
-      "w-full",
-      !isMobile && "max-w-[180px] mx-auto"
-    );
-
-    // For URL/X-URL/Asset-ID, we use the btn-profile
-    if (item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com'))) {
-      return (
-        <div
-          key={index}
-          className={cn("btn-profile", baseItemClasses)}
-          onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
-        >
-          <strong className="uppercase">{item.title || extractDomainFromUrl(item.value)}</strong>
-          <div id="container-stars">
-            <div id="stars"></div>
-          </div>
-          <div id="glow">
-            <div className="circle"></div>
-            <div className="circle"></div>
-          </div>
-        </div>
-      );
-    } else if (item.type === 'x-url' || item.value.includes('x.com') || item.value.includes('twitter.com')) {
-      return (
-        <div
-          key={index}
-          className={cn("btn-profile", baseItemClasses)}
-          onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
-        >
-          <strong className="uppercase">{item.title || extractXHandleFromUrl(item.value)}</strong>
-          <div id="container-stars">
-            <div id="stars"></div>
-          </div>
-          <div id="glow">
-            <div className="circle"></div>
-            <div className="circle"></div>
-          </div>
-        </div>
-      );
-    } else if (item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0)) {
-      return (
-        <div
-          key={index}
-          className={cn("btn-profile", baseItemClasses)}
-          onClick={(e) => handleAssetIdClick(e, item.value)}
-          onMouseEnter={() => !isMobile && setIsAssetIdHovered(true)}
-          onMouseLeave={() => !isMobile && setIsAssetIdHovered(false)}
-        >
-          <strong className="uppercase">{getDisplayAssetIdText(item.value, item.title)}</strong>
-          <div id="container-stars">
-            <div id="stars"></div>
-          </div>
-          <div id="glow">
-            <div className="circle"></div>
-            <div className="circle"></div>
-          </div>
-        </div>
-      );
-    } else if (item.type === 'address' || item.value.length === 58) {
-      // Wallet/Address card - use w-full
-      return (
-        <div key={index} className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", baseItemClasses)}>
-          <span className="font-semibold text-muted-foreground text-xs">{item.title || 'Address'}:</span>
-          <UserDisplay
-            address={item.value}
-            textSizeClass="text-sm"
-            avatarSizeClass="h-5 w-5"
-            linkTo={`/profile/${item.value}`}
-            sourceContext={projectSourceContext}
-            className="justify-center" // Center UserDisplay content
-          />
-        </div>
-      );
-    } else {
-      // Generic text card - use w-full
-      return (
-        <div key={index} className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", baseItemClasses)}>
-          <span className="font-semibold text-muted-foreground text-xs">{item.title}:</span>
-          <p className="text-sm text-foreground selectable-text">{item.value}</p>
-        </div>
-      );
-    }
-  };
+  // --- Rendering ---
 
   // Component for the Stats Grid (2 columns on mobile, 2 columns on desktop)
   const StatsGrid = (
     <div className={cn(
       "grid gap-4 text-sm text-muted-foreground",
-      // Desktop: 2 columns
       "md:grid-cols-2 md:w-full"
     )}>
-      {/* Interactions Header (Mobile only: col-span-2, Desktop: col-span-2) */}
       <div className={cn(
         "flex flex-col items-center space-y-1",
         isMobile ? "col-span-2" : "col-span-2",
-        isMobile && "mb-2" // Reduced margin below the main interaction score
+        isMobile && "mb-2"
       )}>
         <TrendingUp className="h-5 w-5 text-hodl-blue" />
         <span className="font-bold font-numeric text-foreground">{stats.interactionScore}</span>
         <span>Interactions</span>
       </div>
       
-      {/* Detailed Stats (Mobile: 2 columns, Desktop: 2 columns) */}
       <div className={cn(
         "grid gap-4 text-sm text-muted-foreground",
-        // On mobile, we want a fixed width container centered, and a 2-column grid inside
         isMobile ? "grid-cols-2 col-span-2 max-w-xs mx-auto" : "grid-cols-2 col-span-2"
       )}>
-        {/* Reviews and Replies on the left column */}
         <div className="flex flex-col items-center space-y-4">
           <div className="flex flex-col items-center space-y-1">
             <FileText className="h-5 w-5 text-hodl-purple" />
@@ -502,7 +395,6 @@ export function ProjectDetailCard({
           </div>
         </div>
         
-        {/* Comments and Likes on the right column */}
         <div className="flex flex-col items-center space-y-4">
           <div className="flex flex-col items-center space-y-1">
             <MessageCircle className="h-5 w-5 text-hodl-purple" />
@@ -519,45 +411,26 @@ export function ProjectDetailCard({
     </div>
   );
 
-  // Component for the Metadata Section Content (excluding header)
+  // Component for the Metadata Section Content (now uses Navigator)
   const MetadataSectionContent = (
     <div className="space-y-4">
-      {/* Project Metadata */}
-      {allRenderableMetadataItems.length > 0 && (
-        <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
-          
-          {/* RENDER ALL ITEMS IN A SINGLE GRID WITH UNIFORM GAP-4 */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            
-            {allRenderableMetadataItems.map((item, index) => renderMetadataItem(item, index))}
-
-            {/* Display Your Holding if present - Rendered as a custom minicard inside the grid */}
-            {currentUserProjectHolding && (
-                <div className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", "w-full", !isMobile && "max-w-[180px] mx-auto")}>
-                    <span className="font-semibold text-muted-foreground text-xs">Your Holding:</span>
-                    {tokenHoldingsLoading || assetUnitNameLoading ? (
-                        <Skeleton className="h-4 w-20" />
-                    ) : currentUserProjectHolding ? (
-                        <div className="flex items-center gap-1 justify-center">
-                            <Gem className="h-4 w-4 text-hodl-blue" />
-                            <span className="font-numeric font-bold text-primary selectable-text">
-                                {currentUserProjectHolding.amount} {assetUnitName || ''}
-                            </span>
-                        </div>
-                    ) : (
-                        <p className="text-xs text-muted-foreground selectable-text">0 (Not held)</p>
-                    )}
-                </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Project Metadata Navigator */}
+      <ProjectMetadataNavigator
+        projectId={projectId}
+        projectMetadata={projectMetadata}
+        currentUserProjectHolding={currentUserProjectHolding}
+        tokenHoldingsLoading={tokenHoldingsLoading}
+        assetUnitName={assetUnitName}
+        projectSourceContext={projectSourceContext}
+        isParentFocused={isFocused} // Pass parent focus state
+        onFocusTransfer={handleFocusTransfer} // Receive internal focus state
+        onFocusReturn={handleFocusReturn} // Handle focus return
+      />
     </div>
   );
 
-  // NEW: Component for Project Notes/Description (moved out of MetadataSectionContent)
+  // NEW: Component for Project Notes/Description
   const ProjectNotesContainer = (
-    // Only render if loading or content exists
     (isLoadingDetails || (currentProjectDescription && currentProjectDescription.trim() !== '')) && (
       <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-black rounded-md shadow-recessed">
         <h3 className="text-lg font-semibold mb-2 text-black">
@@ -582,15 +455,14 @@ export function ProjectDetailCard({
   const MetadataMinicard = (
     <div className="w-full md:w-2/3">
       <Card className="bg-card shadow-deep-md">
-        <CardHeader className="text-center relative px-4 pt-4 pb-4"> {/* Increased pb-1 to pb-4 */}
-          {/* Title, Description, Tags, Claim Button */}
+        <CardHeader className="text-center relative px-4 pt-4 pb-4">
           <CardTitle className="text-4xl font-bold gradient-text">
             {currentProjectName}
           </CardTitle>
           <CardDescription>
             {stats.reviewsCount} {stats.reviewsCount === 1 ? 'review' : 'reviews'} found for this project.
           </CardDescription>
-          {currentProjectTags && ( // Display tags if available
+          {currentProjectTags && (
             <div className="flex flex-wrap justify-center gap-2 mt-1">
               {currentProjectTags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
                 <span key={index} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary-foreground">
@@ -599,21 +471,19 @@ export function ProjectDetailCard({
               ))}
             </div>
           )}
-          {/* NEW: Thank Contributor Button */}
           {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && (
             <div className="mt-2">
               <Button
                 onClick={() => setShowThankContributorDialog(true)}
-                disabled={isClaiming || resolvingCreatorAddress}
+                disabled={isClaiming}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <DollarSign className="h-4 w-4 mr-2" /> Thank Contributor & Claim
               </Button>
             </div>
           )}
-          {/* Display Added By Address */}
           {addedByAddress && (
-            <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1"> {/* Removed mb-8 */}
+            <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1">
               Added by <UserDisplay
                 address={addedByAddress}
                 textSizeClass="text-sm"
@@ -624,9 +494,8 @@ export function ProjectDetailCard({
             </div>
           )}
           
-          {/* MOBILE ONLY: Stats Grid integrated here */}
           {isMobile && (
-            <div className="px-2 pt-8"> {/* Changed mt-8 to pt-8 */}
+            <div className="px-2 pt-8">
               {StatsGrid}
             </div>
           )}
@@ -642,7 +511,16 @@ export function ProjectDetailCard({
     <div className={cn(
       "w-full",
     )}>
-      <Card className="bg-accent mt-8 relative">
+      <Card 
+        className={cn(
+          "bg-accent mt-8 relative border-2 border-transparent transition-all duration-200",
+          isFocused && !isMetadataNavigatorFocused ? "focus-glow-border" : "",
+          !isFocused && "hover:focus-glow-border"
+        )}
+        data-nav-id={project.id} // Register the main card
+        onMouseEnter={() => setLastActiveId(project.id)}
+        onMouseLeave={() => setLastActiveId(null)}
+      >
         {activeAddress && (
             <Button
               variant="ghost"
@@ -654,18 +532,15 @@ export function ProjectDetailCard({
               <Edit className="h-4 w-4" />
             </Button>
           )}
-        {/* Removed CardHeader */}
         <CardContent className={cn("space-y-4 p-4", isMobile && "p-0")}>
           
-          {/* Main Content Area: Stats (Left) + Metadata (Right) on Desktop */}
           <div className={cn(
-            "flex flex-col md:flex-row md:items-stretch", // Use items-stretch to ensure equal height
+            "flex flex-col md:flex-row md:items-stretch",
             "md:space-x-4"
           )}>
-            {/* DESKTOP ONLY: Stats Grid Wrapper */}
             {!isMobile && (
               <div className={cn(
-                  "w-full md:w-1/3 flex flex-col md:justify-center", // Changed justify-end to justify-center
+                  "w-full md:w-1/3 flex flex-col md:justify-center",
                   "pb-4 md:pb-0 md:pr-4"
               )}>
                   {StatsGrid}
@@ -675,10 +550,8 @@ export function ProjectDetailCard({
             {MetadataMinicard}
           </div>
           
-          {/* NEW: Project Notes/Description Container (Moved here) */}
           {ProjectNotesContainer}
 
-          {/* Project Details Form is now conditionally rendered here */}
           {activeAddress && showProjectDetailsForm && (
             <ProjectDetailsForm
               projectId={projectId}
@@ -704,11 +577,10 @@ export function ProjectDetailCard({
               assetUnitName={assetUnitName}
               projectSourceContext={projectSourceContext}
               allCuratorData={allCuratorData}
-              // NEW: Pass keyboard navigation props
               focusedId={focusedId}
               registerItem={registerItem}
-              isActive={isActive} // NEW
-              setLastActiveId={setLastActiveId} // NEW
+              isActive={isActive}
+              setLastActiveId={setLastActiveId}
             />
           ))
         ) : (
@@ -723,7 +595,6 @@ export function ProjectDetailCard({
         )}
       </div>
 
-      {/* NEW: Thank Contributor Dialog */}
       {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && (
         <ThankContributorDialog
           isOpen={showThankContributorDialog}

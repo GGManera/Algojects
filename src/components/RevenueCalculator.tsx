@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useSocialData } from "@/hooks/useSocialData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +16,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext'; // Import useAppContextDisplayMode
+import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
 
 const ClickableStat = ({ id, icon, value, onClick, colorClass }: { id: string, icon: React.ReactNode, value: number, onClick: (id: string) => void, colorClass: string }) => {
   return (
@@ -45,11 +46,16 @@ const statDetails: { [key: string]: { title: string; content: React.ReactNode } 
 interface RevenueCalculatorProps {
   className?: string;
   isInsideCarousel?: boolean;
+  // NEW: Keyboard navigation props
+  focusedId: string | null;
+  registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
+  isActive: boolean;
+  setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId'];
 }
 
-export function RevenueCalculator({ className, isInsideCarousel = false }: RevenueCalculatorProps) {
+export function RevenueCalculator({ className, isInsideCarousel = false, focusedId, registerItem, isActive, setLastActiveId }: RevenueCalculatorProps) {
   const { projects, loading: socialDataLoading, error: socialDataError } = useSocialData();
-  const { isMobile } = useAppContextDisplayMode(); // Use useAppContextDisplayMode
+  const { isMobile } = useAppContextDisplayMode();
   const {
     totalReviews,
     totalComments,
@@ -68,6 +74,9 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
   const [activeStat, setActiveStat] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
+  // NEW: Keyboard navigation state
+  const isFocused = focusedId === 'revenue-calculator';
+
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (activeStat) {
@@ -81,6 +90,16 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
   const handleStatClick = (statId: string) => {
     setActiveStat(current => (current === statId ? null : statId));
   };
+
+  const handleToggleExpand = useCallback(() => {
+    setIsOpen(prev => !prev);
+  }, []);
+
+  // Register item for keyboard navigation
+  useEffect(() => {
+    const cleanup = registerItem('revenue-calculator', handleToggleExpand, isOpen, 'project-summary');
+    return cleanup;
+  }, [handleToggleExpand, isOpen, registerItem, isActive]);
 
   const isLoading = socialDataLoading || analyticsLoading;
   const displayError = socialDataError || analyticsError;
@@ -119,14 +138,27 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
   }
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className={cn(
-      "w-full",
-      !isInsideCarousel && "max-w-3xl mx-auto",
-      className
-    )}>
+    <Collapsible 
+      open={isOpen} 
+      onOpenChange={setIsOpen} 
+      className={cn(
+        "w-full border-2 border-transparent transition-all duration-200 rounded-lg",
+        !isInsideCarousel && "max-w-3xl mx-auto",
+        isFocused ? "focus-glow-border" : "",
+        !isFocused && "hover:focus-glow-border",
+        className
+      )}
+      data-nav-id="revenue-calculator"
+      onMouseEnter={() => setLastActiveId('revenue-calculator')}
+      onMouseLeave={() => setLastActiveId(null)}
+    >
       <Card className="w-full">
         <CollapsibleTrigger asChild>
-          <CardHeader className="flex flex-col items-center justify-center space-y-0 py-4 cursor-pointer relative">
+          <CardHeader 
+            className="flex flex-col items-center justify-center space-y-0 py-4 cursor-pointer relative"
+            // Prevent default spacebar action here, as it's handled by the keyboard hook
+            onKeyDown={(e) => { if (e.key === ' ') e.preventDefault(); }}
+          >
             <CardTitle className="gradient-text">Activity Breakdown</CardTitle>
             <ChevronDown className={cn("h-5 w-5 transition-transform duration-200 absolute right-4 top-1/2 -translate-y-1/2", isOpen ? "rotate-180" : "rotate-0")} />
           </CardHeader>
@@ -197,7 +229,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
                               icon={<FileText className="h-4 w-4" />}
                               value={totalReviews}
                               onClick={handleStatClick}
-                              colorClass="text-gradient-end" // Light Green
+                              colorClass="text-gradient-end"
                             />
                           </div>
                           <div className="text-center font-semibold text-gradient-end">Reviews</div>
@@ -207,7 +239,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
                               icon={<Heart className="h-4 w-4" />}
                               value={totalReviewLikes}
                               onClick={handleStatClick}
-                              colorClass="text-gradient-end" // Light Green
+                              colorClass="text-gradient-end"
                             />
                           </div>
                         </div>
@@ -220,7 +252,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
                               icon={<MessageCircle className="h-4 w-4" />}
                               value={totalComments}
                               onClick={handleStatClick}
-                              colorClass="text-comment-gradient-end" // Red/Orange
+                              colorClass="text-comment-gradient-end"
                             />
                           </div>
                           <div className="text-center font-semibold text-comment-gradient-end">Comments</div>
@@ -230,7 +262,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
                               icon={<Heart className="h-4 w-4" />}
                               value={totalCommentLikes}
                               onClick={handleStatClick}
-                              colorClass="text-comment-gradient-end" // Red/Orange
+                              colorClass="text-comment-gradient-end"
                             />
                           </div>
                         </div>
@@ -243,7 +275,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
                               icon={<MessageSquare className="h-4 w-4" />}
                               value={totalReplies}
                               onClick={handleStatClick}
-                              colorClass="text-notes-gradient-end" // Light Slate/White
+                              colorClass="text-notes-gradient-end"
                             />
                           </div>
                           <div className="text-center font-semibold text-notes-gradient-end">Replies</div>
@@ -253,7 +285,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false }: Reven
                               icon={<Heart className="h-4 w-4" />}
                               value={totalReplyLikes}
                               onClick={handleStatClick}
-                              colorClass="text-notes-gradient-end" // Light Slate/White
+                              colorClass="text-notes-gradient-end"
                             />
                           </div>
                         </div>

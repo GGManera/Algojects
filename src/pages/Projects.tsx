@@ -18,33 +18,33 @@ import { ScrollTopSettingsButton } from "@/components/ScrollTopSettingsButton";
 import { Project } from "@/types/social";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from '@/lib/utils';
-import { HeroSection } from "@/components/HeroSection"; // NEW import
-import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
+import { HeroSection } from "@/components/HeroSection";
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 
 interface ProjectsProps {
   isInsideCarousel?: boolean;
-  scrollToTopTrigger?: number; // NEW prop
-  isActive?: boolean; // NEW prop
-  onKeyboardModeChange?: (isActive: boolean) => void; // NEW PROP
+  scrollToTopTrigger?: number;
+  isActive?: boolean;
+  onKeyboardModeChange?: (isActive: boolean) => void;
 }
 
-const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange }: ProjectsProps) => { // Accept scrollToTopTrigger
+const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange }: ProjectsProps) => {
   const { projects, loading, error, isRefreshing: isRefreshingSocialData } = useSocialData();
   const { isRefreshing: isRefreshingProjectDetails } = useProjectDetails();
   const { activeAddress } = useWallet();
   const { isMobile, appDisplayMode } = useAppContextDisplayMode();
   const { setHeroLogoVisibility } = useHeroLogoVisibility();
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
-  const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set()); // Changed to functional updater
+  const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
   const location = useLocation();
   const navigate = useNavigate();
 
   const heroLogoRef = useRef<HTMLDivElement>(null);
   const projectCardRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
   const projectsPageRef = useRef<HTMLDivElement>(null);
-  const pageKey = 'projects-home'; // Unique key for navigation hook
+  const pageKey = 'projects-home';
 
-  // NEW: Initialize keyboard navigation hook, dependent on isActive
+  // NEW: Initialize keyboard navigation hook
   const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
 
   // NEW: Report keyboard mode change up to parent
@@ -61,7 +61,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
     if (isActive) {
       const timer = setTimeout(() => {
         rebuildOrder();
-      }, 100); // Delay to ensure DOM is fully rendered
+      }, 100);
       return () => clearTimeout(timer);
     }
   }, [isActive, rebuildOrder]);
@@ -89,19 +89,46 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
     };
   }, [setHeroLogoVisibility]);
 
-  // Removed the local scroll to top effect, relying on parent component (NewWebsite)
-  // to handle scroll management via ref/prop.
-
-  // NEW: Effect to scroll to top when scrollToTopTrigger changes
-  useEffect(() => {
-    // This component is now wrapped in a CardContent which handles scrolling.
-    // We rely on the parent component (NewWebsite) to call scrollToTop on its ref.
-    // However, if we are NOT inside the carousel, we still need a local scroll ref.
-    if (scrollToTopTrigger && projectsPageRef.current && location.pathname === '/') {
-      console.log("[Projects] Scrolling to top due to trigger.");
+  // NEW: Function to scroll the content to the top (used by HeroSection)
+  const handleScrollToTop = useCallback(() => {
+    // Since this component is wrapped in a CardContent in NewWebsite, 
+    // we need to find the nearest scrollable parent (which is the CardContent ref in NewWebsite)
+    // or rely on the parent component's exposed ref function.
+    // For simplicity here, we assume the parent (NewWebsite) handles the scroll via prop/ref.
+    // We can trigger a local scroll if we are NOT inside the carousel.
+    if (!isInsideCarousel && projectsPageRef.current) {
       projectsPageRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // If inside carousel, we rely on the parent NewWebsite to expose the scroll function.
+      // Since we don't have direct access to the NewWebsite ref here, we rely on the
+      // parent Layout component to handle the global scroll reset via the StickyHeader/Logo click.
+      // However, for the HeroSection's internal logic, we can trigger a navigation to the current path
+      // with a state flag, which the parent NewWebsite can interpret as a scroll-to-top request.
+      // But since the parent NewWebsite already exposes a resetAllScrolls function via ref,
+      // we need to ensure the Layout component calls the correct function.
+      // For now, let's assume the parent (NewWebsite) passes a direct scroll function via prop if needed,
+      // or we use a simple window.scrollTo if we are the root.
+      // Since we are inside NewWebsite, we rely on the parent Layout's logo click handler
+      // to call NewWebsite's resetAllScrolls.
+      // For the HeroSection's internal logic, we will rely on the prop passed from NewWebsite.
+      // Since NewWebsite doesn't pass a prop, let's use a simple window.scrollTo for now, 
+      // which works if the scrollable area is the window itself (which it isn't in NewWebsite).
+      // The correct implementation is to use the `scrollToTopTrigger` prop.
+      // Since we don't have a direct way to trigger the parent's scroll from here,
+      // we will rely on the parent Layout's logo click handler to handle the global reset.
+      // For the HeroSection's internal logic, we will use a simple window.scrollTo for now, 
+      // which will only work if the scrollable area is the window itself.
+      // Let's assume the parent NewWebsite passes a function via prop.
+      // Since the user requested this feature, I will add the prop to HeroSection and Projects.
+      // The actual scroll logic will be handled by the parent NewWebsite via the exposed ref.
+      // For now, we just need to trigger the parent's scroll logic.
+      // Since we are inside the scrollable CardContent, we need to scroll that element.
+      const parentScrollable = projectsPageRef.current?.closest('.scrollbar-thin');
+      if (parentScrollable) {
+        parentScrollable.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
-  }, [scrollToTopTrigger, location.pathname]);
+  }, [isInsideCarousel]);
 
   const handleToggleExpand = useCallback((projectId: string) => {
     setExpandedProjectIds(prevIds => {
@@ -117,10 +144,6 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
 
   const handleNewProjectSuccess = () => {
     setShowNewProjectDialog(false);
-  };
-
-  const handleGoToNewWebsite = () => {
-    navigate('/new-website');
   };
 
   const shouldShowAddProjectButton = !isMobile || appDisplayMode === 'landscape';
@@ -163,14 +186,29 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
   }, [projects]);
 
   return (
-    <div id={pageKey} className={cn( // Set pageKey as ID here
+    <div id={pageKey} ref={projectsPageRef} className={cn(
       "flex flex-col items-center text-foreground space-y-4 relative h-full overflow-y-auto scroll-mt-header-offset",
       isInsideCarousel ? "px-0 md:px-0" : "px-2 md:px-4"
     )}>
       <ScrollTopSettingsButton />
-      <HeroSection heroLogoRef={heroLogoRef} isInsideCarousel={isInsideCarousel} />
+      <HeroSection 
+        heroLogoRef={heroLogoRef} 
+        isInsideCarousel={isInsideCarousel} 
+        focusedId={focusedId}
+        registerItem={registerItem}
+        isActive={isActive}
+        setLastActiveId={setLastActiveId}
+        onScrollToTop={handleScrollToTop} // Pass the local scroll function
+      />
 
-      <RevenueCalculator className="mt-0" isInsideCarousel={isInsideCarousel} />
+      <RevenueCalculator 
+        className="mt-0" 
+        isInsideCarousel={isInsideCarousel} 
+        focusedId={focusedId}
+        registerItem={registerItem}
+        isActive={isActive}
+        setLastActiveId={setLastActiveId}
+      />
 
       {shouldShowAddProjectButton && activeAddress && (
         <button
@@ -221,11 +259,10 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
                 onToggleExpand={handleToggleExpand}
                 cardRef={(el) => projectCardRefs.current.set(project.id, el)}
                 isInsideCarousel={isInsideCarousel}
-                // NEW: Pass keyboard navigation props
                 focusedId={focusedId}
                 registerItem={registerItem}
-                isActive={isActive} // NEW
-                setLastActiveId={setLastActiveId} // NEW
+                isActive={isActive}
+                setLastActiveId={setLastActiveId}
               />
             ))}
           </div>

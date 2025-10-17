@@ -66,7 +66,8 @@ export function CommentItem({
   useEffect(() => {
     if (isHighlighted && ref.current) {
       setTimeout(() => {
-        ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Use 'start' block to rely on scroll-mt-header-offset
+        ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 300);
     }
   }, [isHighlighted]);

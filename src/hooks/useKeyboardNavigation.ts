@@ -294,14 +294,22 @@ export function useKeyboardNavigation(pageKey: string) {
         nextIndex = Math.max(currentIndex - 1, 0);
       } else if (isActionKey) {
         if (currentFocus) {
-          e.preventDefault();
+          // Always prevent default scroll behavior if an item is focused and space is pressed
+          e.preventDefault(); 
+          
           const item = itemsMap.get(currentFocus);
-          if (item) {
+          
+          // Only execute toggleExpand if the item is designed to be expandable.
+          const isExpandable = item && (item.type === 'review' || item.type === 'comment' || item.type === 'reply');
+
+          if (isExpandable) {
             item.toggleExpand();
             // Update the item's state in the map and rebuild order immediately
             itemsMap.set(currentFocus, { ...item, isExpanded: !item.isExpanded });
             updateOrderedIds(currentKey);
           }
+          // If not expandable (like 'project-summary' / Logo), e.preventDefault() is still called, 
+          // blocking the scroll, and no other action is taken.
         }
         return;
       } else if (isRightKey) {

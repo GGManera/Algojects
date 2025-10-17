@@ -490,11 +490,11 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   // Component for the Stats Grid (2 columns on mobile, 2 columns on desktop)
   const StatsGrid = (
     <div className={cn(
-      "grid gap-4 text-sm text-muted-foreground pb-4",
+      "grid gap-4 text-sm text-muted-foreground", // Removed pb-4
       // Mobile: 2 columns
       "grid-cols-2",
-      // Desktop: 2 columns, fixed width for the stats container
-      "md:grid-cols-2 md:w-1/3 md:pr-4" // Removed md:border-r and md:border-border
+      // Desktop: 2 columns
+      "md:grid-cols-2 md:w-full" // Use w-full inside the 1/3 wrapper
     )}>
       <div className="flex flex-col items-center space-y-1 col-span-2">
         <TrendingUp className="h-5 w-5 text-hodl-blue" />
@@ -524,15 +524,9 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     </div>
   );
 
-  // Component for the Metadata Section
-  const MetadataSection = (
-    <div className={cn(
-      "space-y-4",
-      // Mobile: Full width, border top
-      "border-t border-border pt-4", // Keep border-t for mobile separation
-      // Desktop: Occupy remaining space, no border top
-      "md:border-t-0 md:pt-0 md:pl-4 md:w-2/3"
-    )}>
+  // Component for the Metadata Section Content (excluding header)
+  const MetadataSectionContent = (
+    <div className="space-y-4">
       {/* Project Description/Notes */}
       {(isLoadingDetails || (currentProjectDescription && currentProjectDescription.trim() !== '')) && (
         <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-black rounded-md shadow-recessed">
@@ -617,24 +611,12 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     </div>
   );
 
-  return (
-    <div className={cn(
-      "w-full",
-      // Removed: !isInsideCarousel && "mx-auto min-w-sm"
-    )}>
-      <Card className="bg-accent mt-8">
-        <CardHeader className="text-center relative">
-          {activeAddress && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowProjectDetailsForm(prev => !prev)}
-              className="absolute top-2 left-2 h-8 w-8 text-muted-foreground hover:text-foreground"
-              aria-label="Toggle project details form"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-          )}
+  // The Metadata Minicard wrapper (now includes the header content)
+  const MetadataMinicard = (
+    <div className="w-full md:w-2/3">
+      <Card className="bg-card shadow-deep-md">
+        <CardHeader className="text-center relative p-4">
+          {/* Title, Description, Added By Address */}
           <CardTitle className="text-4xl font-bold gradient-text">
             {currentProjectName}
           </CardTitle>
@@ -662,7 +644,6 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
               </Button>
             </div>
           )}
-          {/* END NEW */}
           {/* Display Added By Address */}
           {addedByAddress && (
             <div className="mt-2 text-sm text-muted-foreground flex items-center justify-center gap-1">
@@ -677,11 +658,45 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
         </CardHeader>
         <CardContent className="space-y-4 p-4">
+          {MetadataSectionContent}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  return (
+    <div className={cn(
+      "w-full",
+    )}>
+      <Card className="bg-accent mt-8 relative">
+        {activeAddress && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowProjectDetailsForm(prev => !prev)}
+              className="absolute top-2 left-2 z-10 h-8 w-8 text-muted-foreground hover:text-foreground"
+              aria-label="Toggle project details form"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+        {/* Removed CardHeader */}
+        <CardContent className="space-y-4 p-4">
           
           {/* Main Content Area: Stats (Left) + Metadata (Right) on Desktop */}
-          <div className="flex flex-col md:flex-row">
-            {StatsGrid}
-            {MetadataSection}
+          <div className={cn(
+            "flex flex-col md:flex-row md:items-stretch", // Use items-stretch to ensure equal height
+            "md:space-x-4"
+          )}>
+            {/* Stats Grid Wrapper: Stretches vertically, content aligned to bottom */}
+            <div className={cn(
+                "w-full md:w-1/3 flex flex-col justify-end", // flex-col and justify-end pushes content to the bottom
+                "pb-4 md:pb-0 md:pr-4" // pb-4 for mobile separation, removed on desktop, added pr-4 for desktop spacing
+            )}>
+                {StatsGrid}
+            </div>
+            
+            {MetadataMinicard}
           </div>
           
           {/* Project Details Form is now conditionally rendered here */}

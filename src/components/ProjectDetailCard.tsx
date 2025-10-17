@@ -461,7 +461,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       <div className={cn(
         "flex flex-col items-center space-y-1",
         isMobile ? "col-span-2" : "col-span-2",
-        isMobile && "mb-4" // Added margin below the main interaction score on mobile
+        isMobile && "mb-6" // Increased margin below the main interaction score from mb-4 to mb-6
       )}>
         <TrendingUp className="h-5 w-5 text-hodl-blue" />
         <span className="font-bold font-numeric text-foreground">{stats.interactionScore}</span>
@@ -588,7 +588,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           )}
           {/* Display Added By Address */}
           {addedByAddress && (
-            <div className="mt-1 text-sm text-muted-foreground flex items-center justify-center gap-1">
+            <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1"> {/* Increased mt-1 to mt-4 */}
               Added by <UserDisplay
                 address={addedByAddress}
                 textSizeClass="text-sm"
@@ -601,7 +601,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
           
           {/* MOBILE ONLY: Stats Grid integrated here */}
           {isMobile && (
-            <div className="mt-6 px-2"> {/* Increased margin from mt-4 to mt-6 */}
+            <div className="mt-8 px-2"> {/* Increased margin from mt-6 to mt-8 */}
               {StatsGrid}
             </div>
           )}
@@ -617,7 +617,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
     <div className={cn(
       "w-full",
     )}>
-      <Card className="bg-accent mt-8 relative"> {/* Added mt-8 for margin from top nav */}
+      <Card className="bg-accent mt-8 relative"> {/* Kept mt-8 */}
         {activeAddress && (
             <Button
               variant="ghost"

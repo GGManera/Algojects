@@ -82,7 +82,7 @@ export function useKeyboardNavigation(pageKey: string) {
     const delayedUpdate = setTimeout(() => {
         updateOrderedIds(currentKey);
         console.log(`[KeyboardNav] Forced delayed update for ${currentKey}. Total items: ${globalOrderedIdsMap.get(currentKey)?.length}`);
-    }, 100); // 100ms delay should be safe after carousel transition/render
+    }, 300); // Increased delay to 300ms
 
     // Cleanup function for when the component unmounts or pageKey changes
     return () => {

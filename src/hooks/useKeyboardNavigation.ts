@@ -10,30 +10,35 @@ interface NavigableItem {
   type: 'review' | 'comment' | 'reply' | 'project-summary';
 }
 
-// Global map to hold all registered items for the current page
-const navigableItemsMap = new Map<string, NavigableItem>();
-let orderedIds: string[] = [];
+// Global map to hold all registered items, scoped by pageKey
+const globalNavigableItemsMap = new Map<string, Map<string, NavigableItem>>();
+// Global map to hold the ordered IDs for each pageKey
+const globalOrderedIdsMap = new Map<string, string[]>();
 
-// Function to update the ordered list of IDs based on DOM order
-const updateOrderedIds = () => {
-  // We target the main content area of the active carousel item
-  const container = document.querySelector('.carousel-item-active'); 
+// Function to update the ordered list of IDs based on DOM order for a specific pageKey
+const updateOrderedIds = (pageKey: string) => {
+  // We target the main content area of the active carousel item using the pageKey ID
+  const container = document.getElementById(pageKey); 
   if (!container) return;
 
   // Find all elements that are registered (have an ID in the map) and are visible
   const elements = Array.from(container.querySelectorAll('[data-nav-id]')) as HTMLElement[];
   
-  // Filter out elements that are hidden (e.g., excluded posts)
-  orderedIds = elements
+  const currentItemsMap = globalNavigableItemsMap.get(pageKey) || new Map();
+
+  // Filter out elements that are hidden (e.g., excluded posts) and map to IDs
+  const orderedIds = elements
     .map(el => el.getAttribute('data-nav-id'))
-    .filter((id): id is string => id !== null && navigableItemsMap.has(id));
+    .filter((id): id is string => id !== null && currentItemsMap.has(id));
+    
+  globalOrderedIdsMap.set(pageKey, orderedIds);
 };
 
 // Debounced function to update IDs
 let updateTimeout: NodeJS.Timeout;
-const debouncedUpdateOrderedIds = () => {
+const debouncedUpdateOrderedIds = (pageKey: string) => {
   clearTimeout(updateTimeout);
-  updateTimeout = setTimeout(updateOrderedIds, 50);
+  updateTimeout = setTimeout(() => updateOrderedIds(pageKey), 50);
 };
 
 
@@ -45,27 +50,61 @@ export function useKeyboardNavigation(pageKey: string) {
 
   // --- Registration Management ---
   const registerItem = useCallback((id: string, toggleExpand: () => void, isExpanded: boolean, type: NavigableItem['type']) => {
-    navigableItemsMap.set(id, { id, toggleExpand, isExpanded, type });
-    debouncedUpdateOrderedIds();
+    const currentKey = pageKeyRef.current;
+    if (currentKey === 'inactive') return () => {};
+
+    if (!globalNavigableItemsMap.has(currentKey)) {
+      globalNavigableItemsMap.set(currentKey, new Map());
+    }
+    const itemsMap = globalNavigableItemsMap.get(currentKey)!;
+    
+    itemsMap.set(id, { id, toggleExpand, isExpanded, type });
+    debouncedUpdateOrderedIds(currentKey);
 
     return () => {
-      navigableItemsMap.delete(id);
-      debouncedUpdateOrderedIds();
+      // Only delete if the pageKey hasn't changed (i.e., we are cleaning up on the same page)
+      if (pageKeyRef.current === currentKey) {
+        itemsMap.delete(id);
+        debouncedUpdateOrderedIds(currentKey);
+      }
     };
   }, []);
 
+  // --- Effect to manage focus state and cleanup when pageKey changes ---
+  useEffect(() => {
+    const currentKey = pageKeyRef.current;
+    
+    if (currentKey === 'inactive') {
+      setFocusedId(null);
+      return;
+    }
+
+    // When a page becomes active, ensure focus is reset and the ordered list is built
+    setFocusedId(null);
+    updateOrderedIds(currentKey);
+
+    // Cleanup function for when the component unmounts or pageKey changes
+    return () => {
+      // When the page becomes inactive, clear its state from the global maps
+      if (currentKey !== 'inactive') {
+        globalNavigableItemsMap.delete(currentKey);
+        globalOrderedIdsMap.delete(currentKey);
+      }
+    };
+  }, [pageKey]);
+
+
   // --- Keyboard Handler ---
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle navigation if we are on the currently active slide
-      const activeSlideElement = document.querySelector('.carousel-item-active');
-      // Check if the active slide contains an element with the pageKey ID (e.g., the main scroll container)
-      if (!activeSlideElement || !activeSlideElement.querySelector(`#${pageKeyRef.current}`)) {
-        return;
-      }
+    const currentKey = pageKeyRef.current;
+    if (currentKey === 'inactive') return;
 
+    const handleKeyDown = (e: KeyboardEvent) => {
       const isInputFocused = (e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA';
       if (isInputFocused) return;
+
+      const orderedIds = globalOrderedIdsMap.get(currentKey) || [];
+      const itemsMap = globalNavigableItemsMap.get(currentKey) || new Map();
 
       const currentIndex = focusedId ? orderedIds.indexOf(focusedId) : -1;
       let nextIndex = currentIndex;
@@ -79,11 +118,11 @@ export function useKeyboardNavigation(pageKey: string) {
       } else if (e.key === ' ') {
         if (focusedId) {
           e.preventDefault();
-          const item = navigableItemsMap.get(focusedId);
+          const item = itemsMap.get(focusedId);
           if (item) {
             item.toggleExpand();
             // Update the map immediately after toggling
-            navigableItemsMap.set(focusedId, { ...item, isExpanded: !item.isExpanded });
+            itemsMap.set(focusedId, { ...item, isExpanded: !item.isExpanded });
           }
         }
         return;
@@ -113,13 +152,11 @@ export function useKeyboardNavigation(pageKey: string) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [focusedId, location.pathname]);
+  }, [focusedId, pageKey]); // Depend on pageKey to re-attach handler when active
 
-  // Reset focus when navigating to a new page
+  // Reset focus when navigating to a new route (even if pageKey remains the same, e.g., project/a to project/b)
   useEffect(() => {
     setFocusedId(null);
-    navigableItemsMap.clear();
-    orderedIds = [];
   }, [location.pathname]);
 
   return { focusedId, registerItem };

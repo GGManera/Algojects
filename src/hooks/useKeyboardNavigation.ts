@@ -40,7 +40,9 @@ export function useKeyboardNavigation(pageKey: string) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [isMouseActive, setIsMouseActive] = useState(false);
   const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false);
+  const [ignoreMouseMovement, setIgnoreMouseMovement] = useState(false); // NEW state
   const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const ignoreMouseTimeoutRef = useRef<NodeJS.Timeout | null>(null); // NEW ref
   const location = useLocation();
   const pageKeyRef = useRef(pageKey);
   pageKeyRef.current = pageKey;
@@ -77,11 +79,7 @@ export function useKeyboardNavigation(pageKey: string) {
   // --- Mouse Activity Detection ---
   useEffect(() => {
     const handleMouseMove = () => {
-      // If keyboard mode is active, ignore mouse movement for the purpose of disabling keyboard mode.
-      // We only track mouse activity to hide the cursor after a timeout if keyboard mode is NOT active.
-      if (isKeyboardModeActive) {
-        return; 
-      }
+      if (ignoreMouseMovement) return; // Ignore if flag is set
 
       if (!isMouseActive) {
         setIsMouseActive(true);
@@ -103,7 +101,7 @@ export function useKeyboardNavigation(pageKey: string) {
         clearTimeout(mouseTimeoutRef.current);
       }
     };
-  }, [isMouseActive, isKeyboardModeActive]); // Added isKeyboardModeActive dependency
+  }, [isMouseActive, ignoreMouseMovement]); // Added ignoreMouseMovement dependency
 
   // --- Cursor Management Effect ---
   useEffect(() => {
@@ -216,6 +214,26 @@ export function useKeyboardNavigation(pageKey: string) {
 
       if (!isNavigationKey) return;
 
+      // If mouse is active, ignore keyboard navigation
+      if (isMouseActive) {
+        // If a movement key is pressed while mouse is active, activate keyboard mode
+        if (isMovementKey) {
+            setIsKeyboardModeActive(true);
+            // If focusedId is null, try to restore it now to start keyboard navigation
+            if (focusedId === null && orderedIds.length > 0) {
+                const cachedId = getCachedActiveId();
+                if (cachedId && orderedIds.includes(cachedId)) {
+                    setFocusedId(cachedId);
+                } else {
+                    setFocusedId(orderedIds[0]);
+                }
+            }
+        } else {
+            e.preventDefault();
+            return;
+        }
+      }
+
       // If keyboard mode is not active, only movement keys can activate it
       if (!isKeyboardModeActive && isMovementKey) {
           setIsKeyboardModeActive(true);
@@ -260,6 +278,16 @@ export function useKeyboardNavigation(pageKey: string) {
         }
         return;
       } else if (isRightKey || isLeftKey) {
+        // If navigation keys are pressed, temporarily ignore mouse movement
+        setIgnoreMouseMovement(true);
+        if (ignoreMouseTimeoutRef.current) {
+            clearTimeout(ignoreMouseTimeoutRef.current);
+        }
+        ignoreMouseTimeoutRef.current = setTimeout(() => {
+            setIgnoreMouseMovement(false);
+            ignoreMouseTimeoutRef.current = null;
+        }, 500); // Ignore mouse for 500ms after slide navigation
+        
         // Let the parent component handle slide navigation (NewWebsite.tsx)
         return;
       } else {
@@ -282,8 +310,11 @@ export function useKeyboardNavigation(pageKey: string) {
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      if (ignoreMouseTimeoutRef.current) {
+          clearTimeout(ignoreMouseTimeoutRef.current);
+      }
     };
-  }, [focusedId, pageKey, isKeyboardModeActive, getCachedActiveId, setCacheActiveId]);
+  }, [focusedId, pageKey, isMouseActive, isKeyboardModeActive, getCachedActiveId, setCacheActiveId]);
 
   // Reset focus when navigating to a new route (even if pageKey remains the same, e.g., project/a to project/b)
   useEffect(() => {

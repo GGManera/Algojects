@@ -82,6 +82,7 @@ export function useKeyboardNavigation(pageKey: string) {
       if (mouseTimeoutRef.current) {
         clearTimeout(mouseTimeoutRef.current);
       }
+      // Keep mouse active for 500ms after last movement
       mouseTimeoutRef.current = setTimeout(() => {
         setIsMouseActive(false);
       }, 500);
@@ -100,18 +101,13 @@ export function useKeyboardNavigation(pageKey: string) {
   // Effect to clear keyboard focus when mouse becomes active
   useEffect(() => {
     if (isMouseActive && focusedId !== null) {
-      // When mouse moves, clear keyboard focus, but keep the ID in cache
+      // When mouse moves, clear keyboard focus. The cache is maintained by setLastActiveId (hover).
       setFocusedId(null);
     }
   }, [isMouseActive, focusedId]);
 
-  // Effect to update cache when focusedId changes (only if it's a keyboard-driven change)
-  useEffect(() => {
-    if (focusedId !== null && !isMouseActive) {
-      setCacheActiveId(focusedId);
-    }
-  }, [focusedId, isMouseActive, setCacheActiveId]);
-
+  // NOTE: Removed the useEffect that automatically saves focusedId to cache when mouse stops moving.
+  // This prevents the highlight from reappearing when the mouse stops moving outside a card.
 
   // --- Registration Management ---
   const registerItem = useCallback((id: string, toggleExpand: () => void, isExpanded: boolean, type: NavigableItem['type']) => {
@@ -157,9 +153,7 @@ export function useKeyboardNavigation(pageKey: string) {
 
   // --- Mouse Hover Tracking (External API) ---
   const setLastActiveId = useCallback((id: string | null) => {
-    // This function is called by components on mouse enter/leave.
-    // It should always update the cache if an ID is provided, regardless of isMouseActive state.
-    // This ensures the last hovered item is the starting point for keyboard navigation.
+    // Always update the cache on hover/mouse leave, as requested.
     setCacheActiveId(id);
   }, [setCacheActiveId]);
 

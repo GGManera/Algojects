@@ -1,179 +1,166 @@
 "use client";
 
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useSocialData } from "@/hooks/useSocialData";
-import { ProjectDetailCard } from "@/components/ProjectDetailCard";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, ArrowLeft } from "lucide-react";
-import { useWallet } from "@txnlab/use-wallet-react";
-import React, { useRef, useEffect, useMemo } from "react";
-import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
+import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
+import { useWallet } from '@txnlab/use-wallet-react';
+import { ArrowLeft, ArrowRight, Repeat2, Loader2, MessageSquare, User, Link as LinkIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
+import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
+import ProjectDetailCard from '@/components/ProjectDetailCard'; // Import the updated component
+import { ProjectReviewList } from '@/components/ProjectReviewList';
+import { ProjectSummaryCard } from '@/components/ProjectSummaryCard';
+import { ProjectMetadataItem } from '@/types/project'; // Assuming this type exists
 
 interface ProjectPageProps {
-  projectId: string | undefined;
+  projectId?: string;
   isInsideCarousel?: boolean;
-  hashToScroll: string | null; // New prop
-  scrollTrigger: number; // New prop
-  scrollToTopTrigger?: number; // NEW prop
-  isActive?: boolean; // NEW prop
+  hashToScroll?: string | null;
+  scrollTrigger?: number;
+  scrollToTopTrigger?: number;
 }
 
-const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger, isActive = false }: ProjectPageProps) => { // Accept scrollToTopTrigger
+const ProjectPage: React.FC<ProjectPageProps> = ({ 
+  projectId: propProjectId, 
+  isInsideCarousel = false,
+  hashToScroll,
+  scrollTrigger,
+  scrollToTopTrigger
+}) => {
+  const { projectId: paramProjectId } = useParams<{ projectId: string }>();
   const location = useLocation();
-  const navigate = useNavigate();
-  const { projects, loading, error, refetch } = useSocialData();
   const { activeAddress } = useWallet();
-  const { peekPreviousEntry } = useNavigationHistory();
-  const previousEntry = peekPreviousEntry();
-  const { projectDetails } = useProjectDetails();
+  const { projectDetails, loading, error, refetchProjectDetails } = useProjectDetails();
+  const { isMobile } = useAppContextDisplayMode();
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const effectiveProjectId = propProjectId || paramProjectId;
+  const project = useMemo(() => projectDetails.find(p => p.projectId === effectiveProjectId), [projectDetails, effectiveProjectId]);
+  
+  // Keyboard Navigation Setup
+  const pageKey = `project-${effectiveProjectId}`;
+  const { focusedId, registerItem, rebuildOrder, setLastActiveId } = useKeyboardNavigation(pageKey);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  const effectiveProjectId = projectId;
-  const pageKey = `project-page-${effectiveProjectId}`; // Unique key for navigation hook
-
-  // NEW: Initialize keyboard navigation hook, dependent on isActive
-  const { focusedId, registerItem, rebuildOrder, setLastActiveId } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
-
-  // NEW: Effect to rebuild order when active
+  // --- Scroll Management ---
   useEffect(() => {
-    if (isActive) {
-      const timer = setTimeout(() => {
-        rebuildOrder();
-      }, 100); // Delay to ensure DOM is fully rendered
-      return () => clearTimeout(timer);
-    }
-  }, [isActive, rebuildOrder]);
+    if (scrollTrigger && hashToScroll && containerRef.current) {
+      const targetElement = document.querySelector(hashToScroll);
+      if (targetElement) {
+        // Calculate offset to account for sticky header/padding
+        const offset = isMobile ? 16 : 24; 
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + containerRef.current.scrollTop - offset;
 
-  // All hooks must be called unconditionally at the top level
-  const currentProjectDetailsEntry = useMemo(() => {
-    return projectDetails.find(pd => pd.projectId === effectiveProjectId);
-  }, [projectDetails, effectiveProjectId]);
-
-  const currentProjectName = useMemo(() => {
-    return currentProjectDetailsEntry?.projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${effectiveProjectId}`;
-  }, [currentProjectDetailsEntry, effectiveProjectId]);
-
-  const project = useMemo(() => {
-    return effectiveProjectId ? projects[effectiveProjectId] : undefined;
-  }, [effectiveProjectId, projects]);
-
-  useEffect(() => {
-    if (location.pathname.startsWith('/project/') && scrollRef.current) {
-      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [location.pathname]);
-
-  // New useEffect to handle scrolling based on props from parent
-  useEffect(() => {
-    if (scrollTrigger > 0 && hashToScroll) { // Only scroll if trigger is active and hash exists
-      const id = hashToScroll.substring(1);
-      const element = document.getElementById(id);
-      if (element) {
-        console.log(`[ProjectPage] Scrolling to element with ID: ${id}`);
-        setTimeout(() => {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          
-          // NEW: Clear the hash from the URL after successful scroll
-          if (location.hash) {
-            // Use replace to avoid adding a new history entry
-            navigate(location.pathname, { replace: true });
-          }
-        }, 300); // Increased delay to 300ms
-      } else {
-        console.warn(`[ProjectPage] Element with ID '${id}' not found for scrolling.`);
+        containerRef.current.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
       }
     }
-  }, [scrollTrigger, hashToScroll, location.pathname, location.hash, navigate]); // Depend on trigger, hash, and navigate
+  }, [scrollTrigger, hashToScroll, isMobile]);
 
-  // NEW: Effect to scroll to top when scrollToTopTrigger changes
   useEffect(() => {
-    if (scrollToTopTrigger && scrollRef.current && location.pathname.startsWith('/project/')) {
-      console.log("[ProjectPage] Scrolling to top due to trigger.");
-      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    if (scrollToTopTrigger) {
+      containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [scrollToTopTrigger, location.pathname]);
+  }, [scrollToTopTrigger]);
 
-  if (!effectiveProjectId) {
-    return (
-      <div className={cn(
-        "w-full h-full flex items-center justify-center",
-        !isInsideCarousel && "max-w-3xl mx-auto",
-        isInsideCarousel ? "px-0 py-0 md:p-0" : "px-2 py-2 md:p-4"
-      )}>
-        <p className="text-muted-foreground">Select a project to view details.</p>
-      </div>
-    );
-  }
+  // --- Keyboard Navigation Rebuild ---
+  useEffect(() => {
+    if (project && !loading) {
+      // Rebuild order after content loads
+      const orderedIds = rebuildOrder();
+      
+      // If this is the initial load of the page, and we have a hash, scroll to it
+      if (isInitialLoad && hashToScroll) {
+        // Scroll logic is handled by the scrollTrigger effect above
+        setIsInitialLoad(false);
+      } else if (isInitialLoad && orderedIds.length > 0) {
+        // If no hash, ensure the first item is focused and visible on initial load
+        const element = document.querySelector(`[data-nav-id="${orderedIds[0]}"]`);
+        if (element) {
+          element.scrollIntoView({ block: 'start' });
+        }
+        setIsInitialLoad(false);
+      }
+    }
+  }, [project, loading, rebuildOrder, isInitialLoad, hashToScroll]);
 
   if (loading) {
     return (
-      <div className={cn(
-        "w-full",
-        !isInsideCarousel && "max-w-3xl mx-auto",
-        isInsideCarousel ? "px-0 py-0 md:p-0" : "px-2 py-2 md:p-4"
-      )}>
-        <Skeleton className="h-8 w-32 mb-4" />
-        <Skeleton className="h-96 w-full" />
+      <div className="flex justify-center items-center h-full min-h-[300px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (error) {
+  if (error || !project) {
     return (
-      <div className={cn(
-        "w-full",
-        !isInsideCarousel && "max-w-3xl mx-auto",
-        isInsideCarousel ? "px-0 py-0 md:p-0" : "px-2 py-2 md:p-4"
-      )}>
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+      <div className="p-4 text-center">
+        <h2 className="text-xl font-semibold text-red-500">Error Loading Project</h2>
+        <p className="text-muted-foreground">Could not find project details for ID: {effectiveProjectId}</p>
+        <Button onClick={refetchProjectDetails} className="mt-4">
+          <Repeat2 className="w-4 h-4 mr-2" /> Try Again
+        </Button>
       </div>
     );
   }
 
-  if (!project) {
-    return (
-      <div className={cn(
-        "w-full text-center",
-        !isInsideCarousel && "max-w-3xl mx-auto",
-        isInsideCarousel ? "px-0 py-0 md:p-0" : "px-2 py-2 md:p-4"
-      )}>
-        <Alert variant="destructive" className="max-w-md mx-auto">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Project Not Found</AlertTitle>
-          <AlertDescription>The project with ID "{effectiveProjectId}" could not be found.</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  const projectDescription = project.projectMetadata.find(item => item.type === 'project-description')?.value || 'No description provided.';
+  const projectMetadata = project.projectMetadata as ProjectMetadataItem[];
 
   return (
-    <div id={pageKey} className={cn( // Set pageKey as ID here
-      "w-full text-foreground h-full overflow-y-auto", // Removed scroll-mt-header-offset
-      !isInsideCarousel && "max-w-3xl mx-auto",
-      isInsideCarousel ? "px-0 py-0 md:p-0" : "px-2 py-2 md:p-4"
-    )}>
-      <ProjectDetailCard
-        project={project}
-        projectsData={projects}
-        activeAddress={activeAddress}
-        onInteractionSuccess={refetch}
-        currentProjectName={currentProjectName} // This prop is now derived internally by ProjectDetailCard
-        isInsideCarousel={isInsideCarousel}
-        // NEW: Pass keyboard navigation props
-        focusedId={focusedId}
-        registerItem={registerItem}
-        isActive={isActive}
-        setLastActiveId={setLastActiveId} // NEW
+    <div 
+      id={pageKey} 
+      ref={containerRef} 
+      className={cn("p-4 md:p-6 space-y-6", {
+        "h-full overflow-y-auto": isInsideCarousel // Only apply scroll classes if inside carousel
+      })}
+    >
+      {/* Project Summary Card (Always first navigable item) */}
+      <ProjectSummaryCard 
+        project={project} 
+        focusedId={focusedId} 
+        registerItem={registerItem} 
+        setLastActiveId={setLastActiveId}
       />
+
+      <Separator />
+
+      {/* Project Details and Metadata */}
+      <ProjectDetailCard 
+        metadata={projectMetadata} 
+        description={projectDescription} 
+      />
+
+      <Separator />
+
+      {/* Reviews Section */}
+      <ProjectReviewList 
+        projectId={effectiveProjectId!} 
+        reviews={project.reviews} 
+        focusedId={focusedId} 
+        registerItem={registerItem} 
+        setLastActiveId={setLastActiveId}
+      />
+      
+      {/* Placeholder for navigation instructions */}
+      {!isMobile && (
+        <div className="flex justify-between text-xs text-muted-foreground pt-4">
+          <div className="flex items-center space-x-1">
+            <ArrowLeft className="w-3 h-3" />
+            <span>Back to Projects</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <span>Navigate items</span>
+            <span className="font-mono">W/S</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

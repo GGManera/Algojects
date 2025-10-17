@@ -314,7 +314,7 @@
       );
     background-origin: border-box;
     background-clip: content-box, border-box;
-    overflow: hidden; /* ADDED: Ensure content is clipped to the button's border-radius */
+    /* REMOVED: overflow: hidden; */
   }
 
   .btn-profile #container-stars {
@@ -322,10 +322,11 @@
     z-index: -1;
     width: 100%;
     height: 100%;
-    overflow: hidden;
+    /* ADDED: overflow: hidden and border-radius to container-stars */
+    overflow: hidden; 
+    border-radius: 5rem;
     transition: 0.5s;
     backdrop-filter: blur(1rem);
-    border-radius: 5rem;
   }
 
   .btn-profile strong {

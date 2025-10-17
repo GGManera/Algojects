@@ -31,7 +31,7 @@ import { thankContributorAndClaimProject } from "@/lib/coda";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { ProjectMetadataNavigator } from "./ProjectMetadataNavigator"; // NEW Import
-import { GlassRadioGroup, GlassRadioItem } from "@/components/GlassRadioGroup"; // Import GlassRadioGroup
+// Removed: import { GlassRadioGroup, GlassRadioItem } from "@/components/GlassRadioGroup"; // Import GlassRadioGroup
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
@@ -108,7 +108,7 @@ export function ProjectDetailCard({
   const [showThankContributorDialog, setShowThankContributorDialog] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   
-  // NEW: State for global view mode
+  // NEW: State for global view mode, default to 'reviews' (collapsed)
   const [viewMode, setViewMode] = useState<'reviews' | 'comments' | 'replies' | 'interactions'>('reviews');
   
   // NEW: State to track if focus is inside the Metadata Navigator
@@ -366,6 +366,11 @@ export function ProjectDetailCard({
     }
   }, [isFocused, isMetadataNavigatorFocused, projectMetadata]);
 
+  // --- View Mode Click Handler ---
+  const handleViewModeClick = useCallback((mode: 'reviews' | 'comments' | 'replies' | 'interactions') => {
+    setViewMode(mode);
+  }, []);
+
   // --- Rendering ---
 
   // Component for the Stats Grid (2 columns on mobile, 2 columns on desktop)
@@ -374,11 +379,15 @@ export function ProjectDetailCard({
       "grid gap-4 text-sm text-muted-foreground",
       "md:grid-cols-2 md:w-full"
     )}>
-      <div className={cn(
-        "flex flex-col items-center space-y-1",
-        isMobile ? "col-span-2" : "col-span-2",
-        isMobile && "mb-2"
-      )}>
+      <div 
+        className={cn(
+          "flex flex-col items-center space-y-1 cursor-pointer transition-colors hover:bg-muted/50 rounded-lg p-2",
+          isMobile ? "col-span-2" : "col-span-2",
+          isMobile && "mb-2",
+          viewMode === 'interactions' && "bg-primary/20 border border-primary"
+        )}
+        onClick={() => handleViewModeClick('interactions')}
+      >
         <TrendingUp className="h-5 w-5 text-hodl-blue" />
         <span className="font-bold font-numeric text-foreground">{stats.interactionScore}</span>
         <span>Interactions</span>
@@ -389,12 +398,24 @@ export function ProjectDetailCard({
         isMobile ? "grid-cols-2 col-span-2 max-w-xs mx-auto" : "grid-cols-2 col-span-2"
       )}>
         <div className="flex flex-col items-center space-y-4">
-          <div className="flex flex-col items-center space-y-1">
+          <div 
+            className={cn(
+              "flex flex-col items-center space-y-1 cursor-pointer transition-colors hover:bg-muted/50 rounded-lg p-2",
+              viewMode === 'reviews' && "bg-primary/20 border border-primary"
+            )}
+            onClick={() => handleViewModeClick('reviews')}
+          >
             <FileText className="h-5 w-5 text-hodl-purple" />
             <span className="font-bold font-numeric text-foreground">{stats.reviewsCount}</span>
             <span>Reviews</span>
           </div>
-          <div className="flex flex-col items-center space-y-1">
+          <div 
+            className={cn(
+              "flex flex-col items-center space-y-1 cursor-pointer transition-colors hover:bg-muted/50 rounded-lg p-2",
+              viewMode === 'replies' && "bg-primary/20 border border-primary"
+            )}
+            onClick={() => handleViewModeClick('replies')}
+          >
             <MessageSquare className="h-5 w-5 text-hodl-purple" />
             <span className="font-bold font-numeric text-foreground">{stats.repliesCount}</span>
             <span>Replies</span>
@@ -402,7 +423,13 @@ export function ProjectDetailCard({
         </div>
         
         <div className="flex flex-col items-center space-y-4">
-          <div className="flex flex-col items-center space-y-1">
+          <div 
+            className={cn(
+              "flex flex-col items-center space-y-1 cursor-pointer transition-colors hover:bg-muted/50 rounded-lg p-2",
+              viewMode === 'comments' && "bg-primary/20 border border-primary"
+            )}
+            onClick={() => handleViewModeClick('comments')}
+          >
             <MessageCircle className="h-5 w-5 text-hodl-purple" />
             <span className="font-bold font-numeric text-foreground">{stats.commentsCount}</span>
             <span>Comments</span>
@@ -571,12 +598,7 @@ export function ProjectDetailCard({
       </Card>
 
       <div className={cn("space-y-6 mt-8", isMobile && "px-2")}>
-        <GlassRadioGroup defaultValue="reviews" onValueChange={(value) => setViewMode(value as any)} className="mb-4">
-            <GlassRadioItem value="reviews" id="view-reviews" label="Reviews" />
-            <GlassRadioItem value="comments" id="view-comments" label="Comments" />
-            <GlassRadioItem value="replies" id="view-replies" label="Replies" />
-            <GlassRadioItem value="interactions" id="view-interactions" label="Interactions" />
-        </GlassRadioGroup>
+        {/* Removed GlassRadioGroup */}
         {sortedReviews.length > 0 ? (
           sortedReviews.map(({ review, score }) => (
             <ReviewItem

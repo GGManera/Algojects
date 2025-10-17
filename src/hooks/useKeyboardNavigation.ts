@@ -326,9 +326,16 @@ export function useKeyboardNavigation(pageKey: string) {
         setFocusedId(nextId);
         
         if (shouldScroll) {
-            const element = document.querySelector(`[data-nav-id="${nextId}"]`);
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Check if we are focusing on the very first item
+            if (nextIndex === 0) {
+                // If it's the first item, scroll to the absolute top of the window
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                // Otherwise, scroll the element into view normally
+                const element = document.querySelector(`[data-nav-id="${nextId}"]`);
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             }
         }
       }

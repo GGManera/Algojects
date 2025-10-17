@@ -307,9 +307,11 @@ export function useKeyboardNavigation(pageKey: string) {
             // Update the item's state in the map and rebuild order immediately
             itemsMap.set(currentFocus, { ...item, isExpanded: !item.isExpanded });
             updateOrderedIds(currentKey);
+          } else {
+            // If the item is not expandable (like the Logo/project-summary), 
+            // and space is pressed, scroll to the top of the page.
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           }
-          // If not expandable (like 'project-summary' / Logo), e.preventDefault() is still called, 
-          // blocking the scroll, and no other action is taken.
         }
         return;
       } else if (isRightKey) {

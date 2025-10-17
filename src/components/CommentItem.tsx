@@ -102,7 +102,7 @@ export function CommentItem({
   }
 
   return (
-    <div ref={ref} className="ml-4" id={comment.id}>
+    <div ref={ref} className={cn("ml-4 scroll-mt-header-offset")} id={comment.id}>
       <div 
         className={cn(
           "block w-full rounded-lg shadow-md overflow-hidden transition-all duration-300 cursor-pointer",

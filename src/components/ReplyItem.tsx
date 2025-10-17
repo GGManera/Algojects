@@ -74,7 +74,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
   }
 
   return (
-    <div ref={ref} id={reply.id}>
+    <div ref={ref} id={reply.id} className="scroll-mt-header-offset">
       <div 
         className={cn(
           "w-full rounded-lg shadow-md overflow-hidden cursor-pointer transition-all duration-300",
@@ -92,7 +92,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             avatarSizeClass="h-8 w-8" 
             projectTokenHoldings={writerTokenHoldings}
             assetUnitName={assetUnitName}
-            sourceContext={projectSourceContext}
+            projectSourceContext={projectSourceContext}
           />
           <div className="flex items-center space-x-2">
             <span className={cn("text-xs font-semibold", isExcluded ? "text-muted-foreground" : "text-black/70")}>{formatTimestamp(reply.timestamp)}</span>

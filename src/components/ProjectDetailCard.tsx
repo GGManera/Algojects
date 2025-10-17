@@ -46,6 +46,7 @@ interface ProjectDetailCardProps {
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
   isActive: boolean;
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId'];
+  setFocusedId: ReturnType<typeof useKeyboardNavigation>['setFocusedId']; // NEW PROP
 }
 
 interface ProjectStats {
@@ -83,7 +84,8 @@ export function ProjectDetailCard({
   focusedId, 
   registerItem,
   isActive,
-  setLastActiveId
+  setLastActiveId,
+  setFocusedId // NEW: Destructure setFocusedId
 }: ProjectDetailCardProps) {
   const projectId = project.id;
   const { isMobile } = useAppContextDisplayMode();
@@ -330,7 +332,7 @@ export function ProjectDetailCard({
         const event = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true });
         document.dispatchEvent(event);
     }
-  }, [project.id, setFocusedId]);
+  }, [project.id, setFocusedId]); // ADDED setFocusedId dependency
 
   // 3. Handle focus transfer status from Metadata Navigator
   const handleFocusTransfer = useCallback((isInternal: boolean) => {
@@ -422,7 +424,7 @@ export function ProjectDetailCard({
         tokenHoldingsLoading={tokenHoldingsLoading}
         assetUnitName={assetUnitName}
         projectSourceContext={projectSourceContext}
-        isParentFocused={isFocused} // Pass parent focus state
+        isParentFocused={isFocused && !isMetadataNavigatorFocused} // Pass parent focus state
         onFocusTransfer={handleFocusTransfer} // Receive internal focus state
         onFocusReturn={handleFocusReturn} // Handle focus return
       />

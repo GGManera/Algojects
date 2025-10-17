@@ -243,18 +243,21 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
     setHashToScroll(location.hash);
 
-    if (location.pathname.startsWith('/project/') && !effectiveProjectId) {
+    // Redirection logic based on dynamic slidesConfig
+    const currentSlideType = slidesConfig[targetSlideIndex]?.type;
+
+    if (location.pathname.startsWith('/project/') && currentSlideType !== 'project') {
       navigate('/');
       return;
     }
-    if (location.pathname.startsWith('/profile/') && !effectiveProfileAddress) {
+    if (location.pathname.startsWith('/profile/') && currentSlideType !== 'profile') {
       navigate('/');
       return;
     }
 
     if (api.selectedScrollSnap() !== targetSlideIndex) {
       api.scrollTo(targetSlideIndex);
-    } else if (targetSlideIndex === 1 && location.pathname.startsWith('/project/') && location.hash) {
+    } else if (targetSlideIndex === slidesConfig.findIndex(s => s.type === 'project') && location.pathname.startsWith('/project/') && location.hash) {
       if (location.hash !== lastScrolledHash) {
         setScrollTrigger(prev => prev + 1);
         setLastScrolledHash(location.hash);

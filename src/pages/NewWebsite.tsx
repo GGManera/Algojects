@@ -339,6 +339,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       }
 
       const currentSlideType = slidesConfig[api.selectedScrollSnap()]?.type;
+      let handled = false;
 
       // 1. Handle navigation from Project Page back to Home (A/ArrowLeft)
       if (currentSlideType === 'project' && isLeftKey && effectiveProjectId) {
@@ -349,7 +350,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           console.error("Failed to cache project ID for home page focus:", error);
         }
         navigate('/');
-        return;
+        handled = true;
       }
 
       // 2. Handle navigation from Home to Project Page (D/ArrowRight)
@@ -359,10 +360,12 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           if (lastProjectPath) {
             e.preventDefault();
             navigate(lastProjectPath.path, { state: { scrollToTop: true } });
+            handled = true;
             return;
           } else {
             // If no last project, do nothing (prevent default carousel scroll)
             e.preventDefault();
+            handled = true;
             return;
           }
         }
@@ -374,16 +377,19 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           if (focusedProjectId && focusedProjectId !== 'hero-logo' && focusedProjectId !== 'revenue-calculator') {
             e.preventDefault();
             navigate(`/project/${focusedProjectId}`, { state: { scrollToTop: true } });
+            handled = true;
             return;
           }
         }
       }
       
-      // 3. Default Carousel Navigation (A/D)
-      if (isRightKey) {
-        api.scrollNext();
-      } else if (isLeftKey) {
-        api.scrollPrev();
+      // 3. Default Carousel Navigation (A/D) - Only if not handled by custom logic
+      if (!handled) {
+        if (isRightKey) {
+          api.scrollNext();
+        } else if (isLeftKey) {
+          api.scrollPrev();
+        }
       }
     };
 

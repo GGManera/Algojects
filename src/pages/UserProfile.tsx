@@ -299,9 +299,10 @@ interface UserProfileProps {
   scrollToTopTrigger?: number; // NEW prop
   isActive?: boolean; // NEW prop
   onKeyboardModeChange?: (isActive: boolean) => void; // NEW PROP
+  onFocusedIdChange: (id: string | null) => void; // NEW PROP
 }
 
-const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange }: UserProfileProps) => { // Accept scrollToTopTrigger
+const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onFocusedIdChange }: UserProfileProps) => { // Accept onFocusedIdChange
   const location = useLocation();
   // Read initialActiveCategory from location.state
   const initialCategoryFromState = (location.state as { initialActiveCategory?: 'writing' | 'curating' })?.initialActiveCategory;
@@ -343,6 +344,15 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
   const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
+
+  // NEW: Report focusedId up to parent
+  useEffect(() => {
+    if (isActive) {
+      onFocusedIdChange(focusedId);
+    } else {
+      onFocusedIdChange(null);
+    }
+  }, [isActive, focusedId, onFocusedIdChange]);
 
   // NEW: Report keyboard mode change up to parent
   useEffect(() => {

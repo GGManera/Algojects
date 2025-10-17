@@ -35,6 +35,7 @@ interface CommentItemProps {
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
   isActive: boolean; // NEW PROP
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
+  globalViewMode: 'reviews' | 'comments' | 'replies' | 'interactions'; // NEW PROP
 }
 
 export function CommentItem({
@@ -54,6 +55,7 @@ export function CommentItem({
   registerItem,
   isActive,
   setLastActiveId,
+  globalViewMode, // NEW PROP
 }: CommentItemProps) {
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
@@ -63,6 +65,33 @@ export function CommentItem({
 
   const isHighlighted = useMemo(() => highlightCommentId === comment.id, [highlightCommentId, comment.id]);
   const isExcluded = comment.isExcluded;
+
+  // NEW: 1. Calculate forced expansion state for replies
+  const repliesCount = Object.keys(comment.replies || {}).length;
+  const forcedRepliesState = useMemo(() => {
+    switch (globalViewMode) {
+      case 'reviews':
+      case 'comments':
+        return false; // Collapse replies
+      case 'interactions':
+        return true; // Expand all replies
+      case 'replies':
+        // Expand only if comment has replies
+        return repliesCount > 0;
+      default:
+        return false;
+    }
+  }, [globalViewMode, repliesCount]);
+
+  // NEW: 2. Synchronize local state with forced state when global mode changes
+  useEffect(() => {
+    if (areRepliesVisible !== forcedRepliesState) {
+        setAreRepliesVisible(forcedRepliesState);
+    }
+  }, [globalViewMode, forcedRepliesState]);
+
+  // NEW: 3. Use local state for rendering and registration
+  const isRepliesVisible = areRepliesVisible;
 
   // NEW: Keyboard navigation state
   const isFocused = focusedId === comment.id;
@@ -84,9 +113,9 @@ export function CommentItem({
   // Register item for keyboard navigation
   useEffect(() => {
     // Use isActive as a dependency to force re-registration when the slide becomes active
-    const cleanup = registerItem(comment.id, handleToggleExpand, areRepliesVisible, 'comment');
+    const cleanup = registerItem(comment.id, handleToggleExpand, isRepliesVisible, 'comment');
     return cleanup;
-  }, [comment.id, handleToggleExpand, areRepliesVisible, registerItem, isActive]); // ADDED isActive
+  }, [comment.id, handleToggleExpand, isRepliesVisible, registerItem, isActive]); // Use isRepliesVisible here
 
   useEffect(() => {
     if (isHighlighted && ref.current) {
@@ -96,8 +125,6 @@ export function CommentItem({
       }, 300);
     }
   }, [isHighlighted]);
-
-  const repliesCount = Object.keys(comment.replies || {}).length;
 
   const toggleReplies = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -218,7 +245,7 @@ export function CommentItem({
             />
           </CollapsibleContent>
 
-          <CollapsibleContent isOpen={areRepliesVisible} className="pl-4 border-l-2 border-gray-700 space-y-2">
+          <CollapsibleContent isOpen={isRepliesVisible} className="pl-4 border-l-2 border-gray-700 space-y-2">
             {Object.values(comment.replies)
               .sort((a, b) => a.timestamp - b.timestamp)
               .filter(reply => !reply.isExcluded || activeAddress === reply.sender) // Filter excluded replies

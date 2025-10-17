@@ -35,6 +35,7 @@ interface ReviewItemProps {
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
   isActive: boolean; // NEW PROP
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
+  globalViewMode: 'reviews' | 'comments' | 'replies' | 'interactions'; // NEW PROP
 }
 
 const CONTENT_TRUNCATE_LENGTH = 280;
@@ -49,7 +50,7 @@ const getCommentInteractionScore = (comment: Comment): number => {
   return score;
 };
 
-export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, focusedId, registerItem, isActive, setLastActiveId }: ReviewItemProps) {
+export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, focusedId, registerItem, isActive, setLastActiveId, globalViewMode }: ReviewItemProps) {
   const location = useLocation();
   const { expandCommentId, highlightReplyId, highlightCommentId } = (location.state as { expandCommentId?: string; highlightReplyId?: string; highlightCommentId?: string; }) || {};
   const { activeAddress } = useWallet(); // Get active address
@@ -65,6 +66,45 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const navigate = useNavigate();
+
+  // NEW: 1. Calculate forced expansion state based on globalViewMode
+  const sortedComments = useMemo(() => {
+    const allComments = Object.values(review.comments || {});
+    // Filter out excluded comments unless the current user is the sender
+    return allComments
+      .filter(comment => !comment.isExcluded || activeAddress === comment.sender)
+      .map(comment => ({
+        comment,
+        score: getCommentInteractionScore(comment),
+      }))
+      .sort((a, b) => b.score - a.score);
+  }, [review.comments, activeAddress]);
+
+  const forcedExpansionState = useMemo(() => {
+    switch (globalViewMode) {
+      case 'reviews':
+        return false;
+      case 'comments':
+      case 'interactions':
+        return true;
+      case 'replies':
+        // Review is expanded if it contains any replies
+        const hasReplies = sortedComments.some(({ comment }) => Object.keys(comment.replies).length > 0);
+        return hasReplies;
+      default:
+        return false;
+    }
+  }, [globalViewMode, sortedComments]);
+
+  // NEW: 2. Synchronize local state with forced state when global mode changes
+  useEffect(() => {
+    if (isExpanded !== forcedExpansionState) {
+        setIsExpanded(forcedExpansionState);
+    }
+  }, [globalViewMode, forcedExpansionState]);
+
+  // NEW: 3. Use local state for rendering and registration
+  const isCommentsVisible = isExpanded; 
 
   // NEW: Keyboard navigation state
   const isFocused = focusedId === review.id;
@@ -86,27 +126,15 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
   // Register item for keyboard navigation
   useEffect(() => {
     // Use isActive as a dependency to force re-registration when the slide becomes active
-    const cleanup = registerItem(review.id, handleToggleExpand, isExpanded, 'review');
+    const cleanup = registerItem(review.id, handleToggleExpand, isCommentsVisible, 'review');
     return cleanup;
-  }, [review.id, handleToggleExpand, isExpanded, registerItem, isActive]); // ADDED isActive
-
-  const sortedComments = useMemo(() => {
-    const allComments = Object.values(review.comments || {});
-    // Filter out excluded comments unless the current user is the sender
-    return allComments
-      .filter(comment => !comment.isExcluded || activeAddress === comment.sender)
-      .map(comment => ({
-        comment,
-        score: getCommentInteractionScore(comment),
-      }))
-      .sort((a, b) => b.score - a.score);
-  }, [review.comments, activeAddress]);
+  }, [review.id, handleToggleExpand, isCommentsVisible, registerItem, isActive]); // Use isCommentsVisible here
 
   const commentsToShow = showAllComments ? sortedComments : sortedComments.slice(0, 3);
   const hasComments = sortedComments.length > 0;
 
   const isLongReview = review.content.length > CONTENT_TRUNCATE_LENGTH;
-  const displayContent = isLongReview && !isExpanded
+  const displayContent = isLongReview && !isCommentsVisible
     ? `${review.content.substring(0, CONTENT_TRUNCATE_LENGTH)}...`
     : review.content;
 
@@ -178,7 +206,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
 
         <div className="px-3 pb-2">
           <p className="whitespace-pre-wrap font-semibold selectable-text">{displayContent}</p>
-          {isLongReview && !isExpanded && (
+          {isLongReview && !isCommentsVisible && (
             <span className="text-blue-200 font-bold mt-2 inline-block">
               Continue reading
             </span>
@@ -201,7 +229,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
             className="flex items-center space-x-2 hover:text-white transition-colors"
             onClick={(e) => {
               e.stopPropagation();
-              if (!isExpanded) setIsExpanded(true);
+              if (!isCommentsVisible) setIsExpanded(true);
               setShowCommentForm(prev => !prev);
             }}
           >
@@ -252,7 +280,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
         />
       </CollapsibleContent>
 
-      <CollapsibleContent isOpen={isExpanded} className="px-4">
+      <CollapsibleContent isOpen={isCommentsVisible} className="px-4">
         {hasComments ? (
           <div className="space-y-4">
             {commentsToShow.map(({ comment }) => (
@@ -275,6 +303,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
                 registerItem={registerItem}
                 isActive={isActive} // NEW
                 setLastActiveId={setLastActiveId} // NEW
+                globalViewMode={globalViewMode} // NEW PROP
               />
             ))}
             {sortedComments.length > 3 && (

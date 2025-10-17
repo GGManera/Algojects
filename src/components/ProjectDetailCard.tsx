@@ -31,6 +31,7 @@ import { thankContributorAndClaimProject } from "@/lib/coda";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { ProjectMetadataNavigator } from "./ProjectMetadataNavigator"; // NEW Import
+import { GlassRadioGroup, GlassRadioItem } from "@/components/GlassRadioGroup"; // Import GlassRadioGroup
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
@@ -106,6 +107,9 @@ export function ProjectDetailCard({
   const [showProjectDetailsForm, setShowProjectDetailsForm] = useState(false);
   const [showThankContributorDialog, setShowThankContributorDialog] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  
+  // NEW: State for global view mode
+  const [viewMode, setViewMode] = useState<'reviews' | 'comments' | 'replies' | 'interactions'>('reviews');
   
   // NEW: State to track if focus is inside the Metadata Navigator
   const [isMetadataNavigatorFocused, setIsMetadataNavigatorFocused] = useState(false);
@@ -427,6 +431,7 @@ export function ProjectDetailCard({
         isParentFocused={isFocused && !isMetadataNavigatorFocused} // Pass parent focus state
         onFocusTransfer={handleFocusTransfer} // Receive internal focus state
         onFocusReturn={handleFocusReturn} // Handle focus return
+        setParentFocusedId={setFocusedId} // NEW: Pass setFocusedId
       />
     </div>
   );
@@ -566,6 +571,12 @@ export function ProjectDetailCard({
       </Card>
 
       <div className={cn("space-y-6 mt-8", isMobile && "px-2")}>
+        <GlassRadioGroup defaultValue="reviews" onValueChange={(value) => setViewMode(value as any)} className="mb-4">
+            <GlassRadioItem value="reviews" id="view-reviews" label="Reviews" />
+            <GlassRadioItem value="comments" id="view-comments" label="Comments" />
+            <GlassRadioItem value="replies" id="view-replies" label="Replies" />
+            <GlassRadioItem value="interactions" id="view-interactions" label="Interactions" />
+        </GlassRadioGroup>
         {sortedReviews.length > 0 ? (
           sortedReviews.map(({ review, score }) => (
             <ReviewItem
@@ -583,6 +594,7 @@ export function ProjectDetailCard({
               registerItem={registerItem}
               isActive={isActive}
               setLastActiveId={setLastActiveId}
+              globalViewMode={viewMode} // NEW PROP
             />
           ))
         ) : (

@@ -507,7 +507,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       )}
 
       {/* Project Metadata */}
-      {hasAnyMetadata && (
+      {allRenderableMetadataItems.length > 0 && (
         <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
           
           {/* RENDER ALL ITEMS IN A SINGLE GRID WITH UNIFORM GAP-4 */}
@@ -543,13 +543,13 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
   const MetadataMinicard = (
     <div className="w-full md:w-2/3">
       <Card className="bg-card shadow-deep-md">
-        <CardHeader className="text-center relative p-4">
+        <CardHeader className="text-center relative px-4 pt-4 pb-2">
           {/* Title, Description, Added By Address */}
           <CardTitle className="text-4xl font-bold gradient-text">
             {currentProjectName}
           </CardTitle>
           <CardDescription>
-            {sortedReviews.length} review(s) found for this project.
+            {stats.reviewsCount} {stats.reviewsCount === 1 ? 'review' : 'reviews'} found for this project.
           </CardDescription>
           {currentProjectTags && ( // Display tags if available
             <div className="flex flex-wrap justify-center gap-2 mt-1">
@@ -585,7 +585,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             </div>
           )}
         </CardHeader>
-        <CardContent className="space-y-4 p-4">
+        <CardContent className="space-y-4 px-4 pb-4 pt-2">
           {MetadataSectionContent}
         </CardContent>
       </Card>

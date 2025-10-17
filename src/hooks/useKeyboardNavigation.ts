@@ -51,6 +51,11 @@ const updateOrderedIds = (pageKey: string) => {
     
     // Check Review Parent (applies to Comment and Reply)
     if (item.type === 'comment' || item.type === 'reply') {
+        // Ensure ID has at least two parts (e.g., reviewId.commentId)
+        if (parts.length < 2) {
+            return;
+        }
+        
         // Review ID is parts[0].parts[1] (e.g., d.a)
         const reviewId = `${parts[0]}.${parts[1]}`;
         const reviewItem = currentItemsMap.get(reviewId);
@@ -63,6 +68,11 @@ const updateOrderedIds = (pageKey: string) => {
     
     // Check Comment Parent (applies only to Reply)
     if (item.type === 'reply') {
+        // Ensure ID has at least three parts (e.g., reviewId.commentId.replyId)
+        if (parts.length < 3) {
+            return;
+        }
+        
         // Comment ID is parts[0].parts[1].parts[2] (e.g., d.a.b)
         const commentId = `${parts[0]}.${parts[1]}.${parts[2]}`;
         const commentItem = currentItemsMap.get(commentId);
@@ -187,7 +197,7 @@ export function useKeyboardNavigation(pageKey: string) {
     const orderedIds = updateOrderedIds(currentKey);
     
     // If no item is currently focused, try to restore from cache
-    if (focusedId === null && orderedIds.length > 0) {
+    if (focusedId === null && orderedIds && orderedIds.length > 0) {
         const cachedId = getCachedActiveId();
         if (cachedId && orderedIds.includes(cachedId)) {
             // Restore focus ID, but DO NOT scroll into view here.

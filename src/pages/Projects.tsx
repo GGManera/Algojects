@@ -24,9 +24,10 @@ import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Im
 interface ProjectsProps {
   isInsideCarousel?: boolean;
   scrollToTopTrigger?: number; // NEW prop
+  isActive?: boolean; // NEW prop
 }
 
-const Projects = ({ isInsideCarousel = false, scrollToTopTrigger }: ProjectsProps) => { // Accept scrollToTopTrigger
+const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = false }: ProjectsProps) => { // Accept scrollToTopTrigger
   const { projects, loading, error, isRefreshing: isRefreshingSocialData } = useSocialData();
   const { isRefreshing: isRefreshingProjectDetails } = useProjectDetails();
   const { activeAddress } = useWallet();
@@ -42,8 +43,8 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger }: ProjectsProp
   const projectsPageRef = useRef<HTMLDivElement>(null);
   const pageKey = 'projects-home'; // Unique key for navigation hook
 
-  // NEW: Initialize keyboard navigation hook
-  const { focusedId, registerItem } = useKeyboardNavigation(pageKey);
+  // NEW: Initialize keyboard navigation hook, dependent on isActive
+  const { focusedId, registerItem } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
 
   const isOverallRefreshing = isRefreshingSocialData || isRefreshingProjectDetails;
 

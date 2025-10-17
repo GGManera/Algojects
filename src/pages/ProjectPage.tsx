@@ -19,9 +19,10 @@ interface ProjectPageProps {
   hashToScroll: string | null; // New prop
   scrollTrigger: number; // New prop
   scrollToTopTrigger?: number; // NEW prop
+  isActive?: boolean; // NEW prop
 }
 
-const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger }: ProjectPageProps) => { // Accept scrollToTopTrigger
+const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger, isActive = false }: ProjectPageProps) => { // Accept scrollToTopTrigger
   const location = useLocation();
   const navigate = useNavigate();
   const { projects, loading, error, refetch } = useSocialData();
@@ -35,8 +36,8 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
   const effectiveProjectId = projectId;
   const pageKey = `project-page-${effectiveProjectId}`; // Unique key for navigation hook
 
-  // NEW: Initialize keyboard navigation hook
-  const { focusedId, registerItem } = useKeyboardNavigation(pageKey);
+  // NEW: Initialize keyboard navigation hook, dependent on isActive
+  const { focusedId, registerItem } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
 
   // All hooks must be called unconditionally at the top level
   const currentProjectDetailsEntry = useMemo(() => {

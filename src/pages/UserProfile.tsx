@@ -284,9 +284,10 @@ interface UserProfileProps {
   address: string | undefined;
   isInsideCarousel?: boolean;
   scrollToTopTrigger?: number; // NEW prop
+  isActive?: boolean; // NEW prop
 }
 
-const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger }: UserProfileProps) => { // Accept scrollToTopTrigger
+const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, isActive = false }: UserProfileProps) => { // Accept scrollToTopTrigger
   const location = useLocation();
   // Read initialActiveCategory from location.state
   const initialCategoryFromState = (location.state as { initialActiveCategory?: 'writing' | 'curating' })?.initialActiveCategory;
@@ -326,8 +327,8 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger }: 
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // NEW: Initialize keyboard navigation hook
-  const { focusedId, registerItem } = useKeyboardNavigation(pageKey);
+  // NEW: Initialize keyboard navigation hook, dependent on isActive
+  const { focusedId, registerItem } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
 
   useEffect(() => {
     if (location.pathname.startsWith('/profile/') && scrollRef.current) {

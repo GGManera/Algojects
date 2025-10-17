@@ -272,33 +272,40 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     <div className="w-full px-0 py-0 md:p-0 text-foreground h-full scroll-mt-header-offset">
       <Carousel setApi={setApi} className="w-full" opts={{ duration: 20 }}>
         <CarouselContent>
-          {slidesConfig.map((slide, index) => (
-            <CarouselItem 
-              key={slide.type} 
-              className={cn(
-                "h-full",
-                index === currentSlideIndex && "carousel-item-active" // <-- FIX: Apply active class here
-              )}
-            >
-              <Card className={cn(
-                "p-0 bg-card",
-                "rounded-none border-none"
-              )}>              
-                <CardContent
-                  ref={el => slideRefs.current.set(slide.type, el)} // NEW: Atribuir a ref ao CardContent
-                  className={cn(
-                    "overflow-y-auto scrollbar-thin",
-                    cardContentMaxHeightClass
-                  )}
-                >
-                  <div className={cn("w-full mx-auto", slide.maxWidth)}>
-                    {slide.component}
-                    <Footer isMobile={isMobile && !isDeviceLandscape} />
-                  </div>
-                </CardContent>
-              </Card>
-            </CarouselItem>
-          ))}
+          {slidesConfig.map((slide, index) => {
+            // Clone the component and inject the isActive prop
+            const slideComponent = React.cloneElement(slide.component, {
+              isActive: index === currentSlideIndex,
+            });
+
+            return (
+              <CarouselItem 
+                key={slide.type} 
+                className={cn(
+                  "h-full",
+                  index === currentSlideIndex && "carousel-item-active"
+                )}
+              >
+                <Card className={cn(
+                  "p-0 bg-card",
+                  "rounded-none border-none"
+                )}>              
+                  <CardContent
+                    ref={el => slideRefs.current.set(slide.type, el)}
+                    className={cn(
+                      "overflow-y-auto scrollbar-thin",
+                      cardContentMaxHeightClass
+                    )}
+                  >
+                    <div className={cn("w-full mx-auto", slide.maxWidth)}>
+                      {slideComponent}
+                      <Footer isMobile={isMobile && !isDeviceLandscape} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            );
+          })}
         </CarouselContent>
       </Carousel>
     </div>

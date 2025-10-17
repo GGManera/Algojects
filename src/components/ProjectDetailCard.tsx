@@ -48,6 +48,7 @@ interface ProjectDetailCardProps {
   isActive: boolean;
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId'];
   setFocusedId: ReturnType<typeof useKeyboardNavigation>['setFocusedId']; // NEW PROP
+  onScrollToTop: () => void; // NEW PROP
 }
 
 interface ProjectStats {
@@ -86,7 +87,8 @@ export function ProjectDetailCard({
   registerItem,
   isActive,
   setLastActiveId,
-  setFocusedId // NEW: Destructure setFocusedId
+  setFocusedId, // NEW: Destructure setFocusedId
+  onScrollToTop, // NEW: Destructure onScrollToTop
 }: ProjectDetailCardProps) {
   const projectId = project.id;
   const { isMobile } = useAppContextDisplayMode();
@@ -313,7 +315,9 @@ export function ProjectDetailCard({
     if (!isMetadataNavigatorFocused) {
       setIsMetadataNavigatorFocused(true);
     }
-  }, [isMetadataNavigatorFocused]);
+    // When W/ArrowUp focuses on index 0, this function is called, triggering scroll to top
+    onScrollToTop();
+  }, [isMetadataNavigatorFocused, onScrollToTop]);
 
   useEffect(() => {
     // Register the main card. It's always expanded.

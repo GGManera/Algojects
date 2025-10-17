@@ -333,10 +333,14 @@ export function useKeyboardNavigation(pageKey: string) {
             const element = document.querySelector(`[data-nav-id="${nextId}"]`);
             
             if (element) {
-                // If moving to the first item (index 0), use 'start' block to ensure it's fully visible below the header.
-                // Otherwise, use 'nearest' for smooth navigation between items.
-                const blockType = nextIndex === 0 ? 'start' : 'nearest';
-                element.scrollIntoView({ behavior: 'smooth', block: blockType });
+                // If moving to the first item (index 0), call toggleExpand (which is onScrollToTop)
+                if (nextIndex === 0) {
+                    const item = itemsMap.get(nextId);
+                    item?.toggleExpand(); // This triggers the scroll to top
+                } else {
+                    // Otherwise, use 'nearest' for smooth navigation between items.
+                    element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
             }
         }
       }

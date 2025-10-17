@@ -23,6 +23,7 @@ export function HeroSection({ heroLogoRef, isInsideCarousel, className, focusedI
 
   const handleToggleExpand = useCallback(() => {
     // When spacebar is pressed on the logo, scroll to top
+    // This function is also called by useKeyboardNavigation when index 0 is focused via W/ArrowUp
     onScrollToTop();
   }, [onScrollToTop]);
 

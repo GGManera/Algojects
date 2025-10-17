@@ -70,10 +70,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return { projectIdFromUrl: pId, addressFromUrl: addr };
   }, [location.pathname]);
 
-  // Determine the effective project ID: URL param first, then last viewed project
-  const lastViewedProjectId = lastProjectPath?.path.split('/')[2];
-  const effectiveProjectId = projectIdFromUrl || lastViewedProjectId;
-  
+  const effectiveProjectId = projectIdFromUrl || lastProjectPath?.path.split('/')[2];
   const effectiveProfileAddress = addressFromUrl || lastProfilePath?.path.split('/')[2] || activeAddress;
 
   const { nfd: effectiveProfileNfd, loading: nfdLoading } = useNfd(effectiveProfileAddress);
@@ -132,7 +129,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       maxWidth: 'max-w-[710px]' 
     });
     
-    // RENDERIZA O SLIDE DO PROJETO APENAS SE HOUVER UM effectiveProjectId
     if (effectiveProjectId) {
       config.push({ 
         type: 'project', 
@@ -311,7 +307,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     }
   }, [location.pathname, projectDetails, pushEntry, effectiveProfileNfd, nfdLoading]);
 
-  // Keyboard navigation for carousel movement (A/D)
   useEffect(() => {
     if (!api || isMobile) return;
 
@@ -350,18 +345,10 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       if (currentSlideType === 'home' && isRightKey) {
         const focusedElement = document.querySelector('#projects-home [data-nav-id].focus-glow-border');
         if (focusedElement) {
-          const focusedId = focusedElement.getAttribute('data-nav-id');
-          
-          // If the focused element is the hero logo, navigate to the last viewed project
-          if (focusedId === 'hero-logo') {
-            if (lastProjectPath) {
-              e.preventDefault();
-              navigate(lastProjectPath.path, { state: { scrollToTop: true } });
-              return;
-            }
-          } else if (focusedId && focusedId.startsWith('p')) { // If it's a project summary card
+          const focusedProjectId = focusedElement.getAttribute('data-nav-id');
+          if (focusedProjectId) {
             e.preventDefault();
-            navigate(`/project/${focusedId}`, { state: { scrollToTop: true } });
+            navigate(`/project/${focusedProjectId}`, { state: { scrollToTop: true } });
             return;
           }
         }
@@ -380,7 +367,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning, lastProjectPath]);
+  }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
   const cardContentMaxHeightClass = useMemo(() => {
     if (isMobile && isDeviceLandscape) {

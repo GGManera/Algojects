@@ -40,11 +40,7 @@ export function useKeyboardNavigation(pageKey: string) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [isMouseActive, setIsMouseActive] = useState(false);
   const [isKeyboardModeActive, setIsKeyboardModeActive] = useState(false);
-  
   const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const keyPressTimeoutRef = useRef<NodeJS.Timeout | null>(null); // NEW: Timeout for keyboard inactivity
-  const actionQueueRef = useRef<string[]>([]); // NEW: Queue for keyboard actions
-  
   const location = useLocation();
   const pageKeyRef = useRef(pageKey);
   pageKeyRef.current = pageKey;
@@ -192,95 +188,8 @@ export function useKeyboardNavigation(pageKey: string) {
     };
   }, [pageKey]);
 
-  // --- Core Action Processing Logic ---
-  const processKeyAction = useCallback((key: string, currentFocus: string | null) => {
-    const currentKey = pageKeyRef.current;
-    const orderedIds = globalOrderedIdsMap.get(currentKey) || [];
-    const itemsMap = globalNavigableItemsMap.get(currentKey) || new Map();
 
-    let nextFocus = currentFocus;
-    let shouldScroll = false;
-
-    const isMovementKey = ['arrowdown', 'arrowup', 's', 'w'].includes(key);
-    const isActionKey = key === ' ';
-    const isRightKey = ['arrowright', 'd'].includes(key);
-
-    if (isMovementKey) {
-      shouldScroll = true;
-      
-      if (nextFocus === null && orderedIds.length > 0) {
-        // If no focus is set, try to restore from cache or default to first item
-        const cachedId = getCachedActiveId();
-        nextFocus = (cachedId && orderedIds.includes(cachedId)) ? cachedId : orderedIds[0];
-      } 
-      
-      const currentIndex = nextFocus ? orderedIds.indexOf(nextFocus) : -1;
-      let nextIndex = currentIndex;
-
-      if (key === 'arrowdown' || key === 's') {
-        nextIndex = Math.min(currentIndex + 1, orderedIds.length - 1);
-      } else if (key === 'arrowup' || key === 'w') {
-        nextIndex = Math.max(currentIndex - 1, 0);
-      }
-      
-      if (orderedIds.length > 0) {
-        nextFocus = orderedIds[nextIndex];
-      }
-
-    } else if (isActionKey) {
-      if (nextFocus) {
-        const item = itemsMap.get(nextFocus);
-        if (item) {
-          item.toggleExpand();
-          // Update the map immediately for subsequent actions in the queue
-          itemsMap.set(nextFocus, { ...item, isExpanded: !item.isExpanded });
-          updateOrderedIds(currentKey);
-        }
-      }
-      // No focus change for action key
-      return { nextFocus: nextFocus, shouldScroll: false, handled: true };
-    } else if (isRightKey) {
-      // Right key is handled by the parent component (NewWebsite.tsx)
-      return { nextFocus: nextFocus, shouldScroll: false, handled: true };
-    } else {
-      return { nextFocus: nextFocus, shouldScroll: false, handled: false };
-    }
-
-    return { nextFocus, shouldScroll, handled: true };
-  }, [getCachedActiveId]);
-
-
-  // --- Interval Effect for Processing Queue ---
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (actionQueueRef.current.length > 0) {
-        // Use the current focusedId state for processing the next action
-        setFocusedId(prevFocusedId => {
-          const key = actionQueueRef.current.shift(); // Dequeue the oldest action
-          if (!key) return prevFocusedId;
-
-          const { nextFocus, shouldScroll, handled } = processKeyAction(key, prevFocusedId);
-          
-          if (handled && nextFocus !== null) {
-            setCacheActiveId(nextFocus); // Update cache on successful action
-            
-            if (shouldScroll) {
-              const element = document.querySelector(`[data-nav-id="${nextFocus}"]`);
-              if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }
-            }
-          }
-          return nextFocus;
-        });
-      }
-    }, 50); // Process one action every 50ms
-
-    return () => clearInterval(interval);
-  }, [processKeyAction, setCacheActiveId]);
-
-
-  // --- Keyboard Handler (Queueing) ---
+  // --- Keyboard Handler ---
   useEffect(() => {
     const currentKey = pageKeyRef.current;
     if (currentKey === 'inactive') return;
@@ -288,6 +197,9 @@ export function useKeyboardNavigation(pageKey: string) {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isInputFocused = (e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA';
       if (isInputFocused) return;
+
+      const orderedIds = globalOrderedIdsMap.get(currentKey) || [];
+      const itemsMap = globalNavigableItemsMap.get(currentKey) || new Map();
 
       const key = e.key.toLowerCase();
       const isMovementKey = ['arrowdown', 'arrowup', 's', 'w'].includes(key);
@@ -297,55 +209,86 @@ export function useKeyboardNavigation(pageKey: string) {
 
       if (!isNavigationKey) return;
 
-      // Prevent default behavior for all navigation keys immediately
-      e.preventDefault();
-
       // If mouse is active, ignore keyboard navigation unless it's a movement key
       if (isMouseActive && !isMovementKey) {
+        e.preventDefault();
         return;
       }
 
       // --- Activation Logic ---
-      if (!isKeyboardModeActive) {
-        setIsKeyboardModeActive(true);
-      }
-      
-      // Reset inactivity timeout
-      if (keyPressTimeoutRef.current) {
-        clearTimeout(keyPressTimeoutRef.current);
-      }
-      keyPressTimeoutRef.current = setTimeout(() => {
-        // If no key is pressed for 500ms, disable keyboard mode
-        setIsKeyboardModeActive(false);
-        keyPressTimeoutRef.current = null;
-      }, 500);
+      let currentFocus = focusedId;
+      let shouldScroll = false;
+      let activateKeyboardMode = false;
 
-      // --- Queue the action ---
-      // Limit queue size to prevent massive backlog if user holds down a key
-      if (actionQueueRef.current.length < 10) {
-        actionQueueRef.current.push(key);
+      if (isMovementKey) {
+        e.preventDefault(); // Prevent default scroll behavior for movement keys
+        
+        if (!isKeyboardModeActive) {
+          activateKeyboardMode = true;
+          setIsKeyboardModeActive(true);
+        }
+
+        if (currentFocus === null && orderedIds.length > 0) {
+          // If no focus is set, try to restore from cache or default to first item
+          const cachedId = getCachedActiveId();
+          currentFocus = (cachedId && orderedIds.includes(cachedId)) ? cachedId : orderedIds[0];
+          shouldScroll = true; // Scroll to the initial focus
+        } else if (currentFocus !== null) {
+          shouldScroll = true;
+        }
+      }
+
+      if (!isKeyboardModeActive && !activateKeyboardMode) return; // Only proceed if active or just activated
+
+      // --- Movement Logic ---
+      const currentIndex = currentFocus ? orderedIds.indexOf(currentFocus) : -1;
+      let nextIndex = currentIndex;
+
+      if (key === 'arrowdown' || key === 's') {
+        nextIndex = Math.min(currentIndex + 1, orderedIds.length - 1);
+      } else if (key === 'arrowup' || key === 'w') {
+        nextIndex = Math.max(currentIndex - 1, 0);
+      } else if (isActionKey) {
+        if (currentFocus) {
+          e.preventDefault();
+          const item = itemsMap.get(currentFocus);
+          if (item) {
+            item.toggleExpand();
+            itemsMap.set(currentFocus, { ...item, isExpanded: !item.isExpanded });
+            updateOrderedIds(currentKey);
+          }
+        }
+        return;
+      } else if (isRightKey) {
+        // Let the parent component handle right navigation (NewWebsite.tsx)
+        return;
+      } else {
+        return;
+      }
+
+      if (orderedIds.length > 0) {
+        const nextId = orderedIds[nextIndex];
+        setFocusedId(nextId);
+        
+        if (shouldScroll) {
+            const element = document.querySelector(`[data-nav-id="${nextId}"]`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      if (keyPressTimeoutRef.current) {
-        clearTimeout(keyPressTimeoutRef.current);
-      }
     };
-  }, [isMouseActive, isKeyboardModeActive]);
+  }, [focusedId, pageKey, isMouseActive, isKeyboardModeActive, getCachedActiveId, setCacheActiveId]);
 
   // Reset focus when navigating to a new route (even if pageKey remains the same, e.g., project/a to project/b)
   useEffect(() => {
     setFocusedId(null);
     setIsKeyboardModeActive(false);
-    // Clear queue and timeout on route change
-    actionQueueRef.current = [];
-    if (keyPressTimeoutRef.current) {
-        clearTimeout(keyPressTimeoutRef.current);
-        keyPressTimeoutRef.current = null;
-    }
   }, [location.pathname]);
 
   return { focusedId, registerItem, rebuildOrder, setLastActiveId };

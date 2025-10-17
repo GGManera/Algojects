@@ -459,7 +459,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
       );
     } else if (item.type === 'address' || item.value.length === 58) {
       return (
-        <div key={index} className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+        <div key={index} className="flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center">
           <span className="font-semibold text-muted-foreground text-xs">{item.title || 'Address'}:</span>
           <UserDisplay
             address={item.value}
@@ -467,12 +467,13 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
             avatarSizeClass="h-5 w-5"
             linkTo={`/profile/${item.value}`}
             sourceContext={projectSourceContext}
+            className="justify-center" // Center UserDisplay content
           />
         </div>
       );
     } else {
       return (
-        <div key={index} className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+        <div key={index} className="flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center">
           <span className="font-semibold text-muted-foreground text-xs">{item.title}:</span>
           <p className="text-sm text-foreground selectable-text">{item.value}</p>
         </div>
@@ -603,7 +604,7 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
 
                 {/* THEN RENDER FIXED WALLET ADDRESSES */}
                 {creatorWalletMetadata && (
-                    <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+                    <div className="flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center">
                         <span className="font-semibold text-muted-foreground text-xs">Creator Wallet:</span>
                         <UserDisplay
                             address={creatorWalletMetadata}
@@ -611,11 +612,12 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
                             avatarSizeClass="h-5 w-5"
                             linkTo={`/profile/${creatorWalletMetadata}`}
                             sourceContext={projectSourceContext}
+                            className="justify-center"
                         />
                     </div>
                 )}
                 {projectWalletMetadata && (
-                    <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+                    <div className="flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center">
                         <span className="font-semibold text-muted-foreground text-xs">Project Wallet:</span>
                         <UserDisplay
                             address={projectWalletMetadata}
@@ -623,18 +625,19 @@ export function ProjectDetailCard({ project, projectsData, activeAddress, onInte
                             avatarSizeClass="h-5 w-5"
                             linkTo={`/profile/${projectWalletMetadata}`}
                             sourceContext={projectSourceContext}
+                            className="justify-center"
                         />
                     </div>
                 )}
                 
                 {/* Display Your Holding if present (this should remain at the end) */}
                 {currentUserProjectHolding && (
-                  <div className="flex flex-col p-2 rounded-md bg-background/50 border border-border">
+                  <div className="flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center">
                     <span className="font-semibold text-muted-foreground text-xs">Your Holding:</span>
                     {tokenHoldingsLoading || assetUnitNameLoading ? (
                       <Skeleton className="h-4 w-20" />
                     ) : currentUserProjectHolding ? (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 justify-center">
                         <Gem className="h-4 w-4 text-hodl-blue" />
                         <span className="font-numeric font-bold text-primary selectable-text">
                           {currentUserProjectHolding.amount} {assetUnitName || ''}

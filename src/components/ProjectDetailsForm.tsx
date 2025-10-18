@@ -44,7 +44,7 @@ export function ProjectDetailsForm({
   const [projectTags, setProjectTags] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { activeAddress } = useWallet();
-  const { updateProjectDetails, loading: detailsLoadingState, isRefreshing: detailsRefreshingState } = useProjectDetails();
+  const { updateProjectDetails, loading: detailsLoadingState, isRefreshing: detailsRefreshingState } = useProjectDetails(); // NEW: Destructure updateProjectDetails
   const isProjectDetailsFetching = detailsLoadingState || detailsRefreshingState;
 
   // Helper to find a metadata item by type OR title (for non-standard fields like 'Creator Wallet')
@@ -270,10 +270,10 @@ export function ProjectDetailsForm({
       // 3. Combine all items, filtering out any fixed items that are empty (except boolean flags)
       const finalMetadata: ProjectMetadata = [...fixedItems, ...dynamicItemsToSend];
 
-      await updateProjectDetails(
+      await updateProjectDetails({
         projectId,
-        finalMetadata
-      );
+        newProjectMetadata: finalMetadata
+      });
       dismissToast(toastId);
       showSuccess("Project details updated successfully!");
       onProjectDetailsUpdated();

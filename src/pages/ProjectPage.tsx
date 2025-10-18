@@ -27,11 +27,11 @@ interface ProjectPageProps {
 const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop = () => {} }: ProjectPageProps) => { // Provide fallback
   const location = useLocation();
   const navigate = useNavigate();
-  const { projects, loading, error, refetch } = useSocialData();
+  const { projects, loading: socialDataLoading, error: socialDataError, refetch } = useSocialData(); // NEW: Destructure loading and error
   const { activeAddress } = useWallet();
   const { peekPreviousEntry } = useNavigationHistory();
   const previousEntry = peekPreviousEntry();
-  const { projectDetails } = useProjectDetails();
+  const { projectDetails, loading: projectDetailsLoading, error: projectDetailsError } = useProjectDetails(); // NEW: Destructure loading and error
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -119,7 +119,8 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
     );
   }
 
-  if (loading) {
+  // NEW: Combine loading states
+  if (socialDataLoading || projectDetailsLoading) {
     return (
       <div className={cn(
         "w-full",
@@ -132,7 +133,8 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
     );
   }
 
-  if (error) {
+  // NEW: Combine error states
+  if (socialDataError || projectDetailsError) {
     return (
       <div className={cn(
         "w-full",
@@ -142,7 +144,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{socialDataError || projectDetailsError}</AlertDescription>
         </Alert>
       </div>
     );

@@ -140,7 +140,7 @@ export function ProjectDetailCard({
   const projectId = project.id;
   const { transactionSigner, algodClient } = useWallet();
 
-  const { projectDetails, loading, isRefreshing, error: detailsError, refetch: refetchProjectDetails } = useProjectDetails();
+  const { projectDetails, loading, isRefreshing, error: detailsError, refetch: refetchProjectDetails, updateProjectDetails, acceptProposedNoteEdit } = useProjectDetails(); // NEW: Destructure updateProjectDetails and acceptProposedNoteEdit
   const isLoadingDetails = loading || isRefreshing;
   const [copiedMetadata, setCopiedMetadata] = useState(false);
 
@@ -216,8 +216,9 @@ export function ProjectDetailCard({
   const effectiveCreatorAddress = creatorWalletMetadata || project.creatorWallet;
 
   const handleProjectDetailsUpdated = () => {
-    refetchProjectDetails();
-    onInteractionSuccess();
+    // When details are updated via form, the mutation invalidates the query, triggering a refetch.
+    // We only need to call the parent's onInteractionSuccess if it affects social data (which it doesn't here).
+    // We rely on React Query's automatic refetching.
   };
 
   const isAuthorizedToClaim = activeAddress && effectiveCreatorAddress && activeAddress === effectiveCreatorAddress && !isClaimed && addedByAddress && activeAddress !== addedByAddress;
@@ -251,7 +252,10 @@ export function ProjectDetailCard({
       dismissToast(toastId);
       showSuccess("Project claimed and contributor rewarded successfully!");
       setShowThankContributorDialog(false);
-      refetchProjectDetails();
+      // The mutation in thankContributorAndClaimProject handles the Coda update,
+      // which internally calls updateProjectDetailsClient, which is now wrapped by React Query mutation.
+      // We need to manually invalidate the query here since thankContributorAndClaimProject is a custom function.
+      refetchProjectDetails(); 
       onInteractionSuccess();
     } catch (err) {
       dismissToast(toastId);

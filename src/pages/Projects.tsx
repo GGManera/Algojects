@@ -30,8 +30,8 @@ interface ProjectsProps {
 }
 
 const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop }: ProjectsProps) => {
-  const { projects, loading, error, isRefreshing: isRefreshingSocialData } = useSocialData();
-  const { isRefreshing: isRefreshingProjectDetails } = useProjectDetails();
+  const { projects, loading: socialDataLoading, error: socialDataError, isRefreshing: isRefreshingSocialData } = useSocialData(); // NEW: Destructure loading and error
+  const { isRefreshing: isRefreshingProjectDetails, loading: projectDetailsLoading, error: projectDetailsError } = useProjectDetails(); // NEW: Destructure loading and error
   const { activeAddress } = useWallet();
   const { isMobile, appDisplayMode } = useAppContextDisplayMode();
   const { setHeroLogoVisibility } = useHeroLogoVisibility();
@@ -56,6 +56,8 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
   }, [isActive, isKeyboardModeActive, onKeyboardModeChange]);
 
   const isOverallRefreshing = isRefreshingSocialData || isRefreshingProjectDetails;
+  const isOverallLoading = socialDataLoading || projectDetailsLoading; // NEW: Combine loading states
+  const isOverallError = socialDataError || projectDetailsError; // NEW: Combine error states
 
   // NEW: Effect to rebuild order when active
   useEffect(() => {
@@ -193,7 +195,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         "w-full flex flex-col items-center",
         !isInsideCarousel && "max-w-4xl"
       )}>
-        {(loading || isOverallRefreshing) && (
+        {(isOverallLoading || isOverallRefreshing) && ( // NEW: Use combined loading state
           <div className={cn(
             "space-y-4 w-full",
             !isInsideCarousel && "max-w-3xl"
@@ -203,14 +205,14 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
             <Skeleton className="h-32 w-full" />
           </div>
         )}
-        {error && (
+        {isOverallError && ( // NEW: Use combined error state
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Error Fetching Data</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{isOverallError}</AlertDescription>
           </Alert>
         )}
-        {!loading && !error && !isOverallRefreshing && (
+        {!isOverallLoading && !isOverallError && !isOverallRefreshing && ( // NEW: Use combined loading and error states
           <div className="w-full space-y-4 flex flex-col items-center">
             {sortedProjects.map(project => (
               <ProjectSummaryCard

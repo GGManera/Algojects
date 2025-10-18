@@ -39,7 +39,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   const navigate = useNavigate();
   const { pushEntry, lastProjectPath, lastProfilePath, profile1, profile2, currentProfileSlot } = useNavigationHistory();
   const { activeAddress } = useWallet();
-  const { projectDetails } = useProjectDetails();
+  const { projectDetails, loading: projectDetailsLoading } = useProjectDetails(); // NEW: Use loading from useProjectDetails
   const { isMobile, isDeviceLandscape } = useAppContextDisplayMode();
   
   const [api, setApi] = useState<CarouselApi>();
@@ -295,8 +295,13 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
     if (path.startsWith('/project/')) {
       const currentProjectId = path.split('/')[2];
-      const project = projectDetails.find(pd => pd.projectId === currentProjectId);
-      label = project?.projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${currentProjectId}`;
+      // NEW: Check if projectDetails is loading before trying to find project name
+      if (!projectDetailsLoading) {
+        const project = projectDetails.find(pd => pd.projectId === currentProjectId);
+        label = project?.projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${currentProjectId}`;
+      } else {
+        label = `Project ${currentProjectId}`; // Fallback while loading
+      }
     } else if (path.startsWith('/profile/')) {
       const currentProfileAddress = path.split('/')[2];
       label = effectiveProfileNfd?.name || `${currentProfileAddress.substring(0, 8)}... Profile`;
@@ -305,7 +310,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     if (!path.startsWith('/profile/') || !nfdLoading) {
       pushEntry({ path, label, activeCategory: undefined });
     }
-  }, [location.pathname, projectDetails, pushEntry, effectiveProfileNfd, nfdLoading]);
+  }, [location.pathname, projectDetails, pushEntry, effectiveProfileNfd, nfdLoading, projectDetailsLoading]); // NEW: Add projectDetailsLoading dependency
 
   useEffect(() => {
     if (!api || isMobile) return;

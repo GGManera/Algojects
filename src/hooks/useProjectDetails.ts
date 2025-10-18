@@ -1,154 +1,86 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'; // NEW: Import useQuery, useMutation, useQueryClient
 import { fetchProjectDetailsClient, updateProjectDetailsClient } from '@/lib/coda';
 import { ProjectDetailsEntry } from '../../api/project-details';
-import { useWallet } from '@txnlab/use-wallet-react'; // NEW: Import useWallet
-import { ProjectMetadata, MetadataItem } from '@/types/project'; // NEW: Import ProjectMetadata
+import { useWallet } from '@txnlab/use-wallet-react';
+import { ProjectMetadata } from '@/types/project';
 
-
-// Define as constantes do cache
-const CACHE_KEY = 'codaProjectDetailsCache';
-const CACHE_DURATION = 1 * 60 * 1000; // 1 minuto em milissegundos
-
-interface CachedData {
-  timestamp: number;
-  data: ProjectDetailsEntry[];
-}
+// NEW: Define a chave de query para o React Query
+const PROJECT_DETAILS_QUERY_KEY = ['projectDetails'];
 
 export function useProjectDetails() {
-  const [projectDetails, setProjectDetails] = useState<ProjectDetailsEntry[]>([]);
-  const [loading, setLoading] = useState(true); // True for initial load when no data is available
-  const [isRefreshing, setIsRefreshing] = useState(false); // True when background refresh is happening
-  const [error, setError] = useState<string | null>(null);
-  const [refetchTrigger, setRefetchTrigger] = useState(0);
+  const queryClient = useQueryClient(); // NEW: Hook para acessar o cliente de query
+  const { activeAddress, transactionSigner, algodClient } = useWallet();
 
-  const { activeAddress, transactionSigner, algodClient } = useWallet(); // NEW: Get wallet details
+  // NEW: Usar useQuery para buscar os detalhes do projeto
+  const {
+    data: projectDetails = [], // Default para array vazio
+    isLoading,
+    isFetching, // isFetching indica se está buscando (incluindo em background)
+    isError,
+    error,
+    refetch,
+  } = useQuery<ProjectDetailsEntry[], Error>({
+    queryKey: PROJECT_DETAILS_QUERY_KEY,
+    queryFn: fetchProjectDetailsClient,
+    staleTime: 1 * 60 * 1000, // Dados considerados "fresh" por 1 minuto (não re-buscam em mounts)
+    gcTime: 5 * 60 * 1000, // Dados permanecem no cache por 5 minutos (para re-uso rápido)
+    refetchOnWindowFocus: false, // Desabilitar refetch automático no foco da janela para evitar chamadas excessivas
+    refetchOnMount: true, // Re-busca no mount se estiver stale
+  });
 
-  const refetch = useCallback(() => {
-    // When refetch is called, we want to show a loading state immediately.
-    // If there's existing data, it will be a refresh. If not, it's a full load.
-    setLoading(true); // Assume full loading until cache check
-    setIsRefreshing(true); // Assume refreshing in background
-    localStorage.removeItem(CACHE_KEY); // Clear cache to force fresh fetch
-    setRefetchTrigger(prev => prev + 1); // Trigger useEffect
-  }, []);
-
-  useEffect(() => {
-    const loadProjectDetails = async () => {
-      setError(null);
-      let cacheUsed = false;
-      let isCacheStale = true; // Assume stale until proven fresh
-
-      const cachedItem = localStorage.getItem(CACHE_KEY);
-      if (cachedItem) {
-        try {
-          const cachedData: CachedData = JSON.parse(cachedItem);
-          isCacheStale = Date.now() - cachedData.timestamp > CACHE_DURATION;
-
-          setProjectDetails(cachedData.data); // Display cached data immediately
-          cacheUsed = true;
-          setLoading(false); // Data is available, so not "loading" in the sense of no data
-          
-          if (!isCacheStale) {
-            // Cache is fresh, no need to fetch from API
-            setIsRefreshing(false); // If cache is fresh, no background refresh needed
-            return; // Exit early, no API call needed
-          }
-          // Cache is stale, proceed to fetch in background. isRefreshing is already true from refetch or will be set below.
-        } catch (e) {
-          console.error("Failed to parse cache, fetching new data.", e);
-          localStorage.removeItem(CACHE_KEY); // Clear invalid cache
-          // Fall through to fetch new data, setLoading will be true below
-        }
+  // NEW: Usar useMutation para atualizar os detalhes do projeto
+  const updateProjectDetailsMutation = useMutation<void, Error, { projectId: string; newProjectMetadata: ProjectMetadata }>({
+    mutationFn: async ({ projectId, newProjectMetadata }) => {
+      if (!activeAddress || !transactionSigner || !algodClient) {
+        throw new Error("Wallet not connected. Cannot update project details.");
       }
-
-      // If no cache was used, or cache was invalid, or cache was stale, we need to fetch
-      if (!cacheUsed || isCacheStale) {
-        if (!cacheUsed) { // Only show full loading spinner if no data is available at all
-          setLoading(true);
-        }
-        setIsRefreshing(true); // Always set refreshing to true if a fetch is initiated
-        try {
-          const data = await fetchProjectDetailsClient();
-          setProjectDetails(data);
-          const newCache: CachedData = {
-            timestamp: Date.now(),
-            data: data,
-          };
-          localStorage.setItem(CACHE_KEY, JSON.stringify(newCache));
-        } catch (err) {
-          console.error("Failed to load project details:", err);
-          setError(err instanceof Error ? err.message : "An unknown error occurred.");
-          // If fetch fails, and we had stale data, we keep showing stale data.
-          // If fetch fails and we had no data, error will be displayed.
-        } finally {
-          setLoading(false); // Ensure loading is false after fetch attempt
-          setIsRefreshing(false); // Ensure refreshing is false after fetch attempt
-        }
-      }
-    };
-
-    loadProjectDetails();
-  }, [refetchTrigger]);
-
-  const updateProjectDetails = useCallback(async (
-    projectId: string, 
-    newProjectMetadata: ProjectMetadata // Now takes the full metadata array
-  ) => {
-    if (!activeAddress || !transactionSigner || !algodClient) { // NEW: Check for wallet connection
-      throw new Error("Wallet not connected. Cannot update project details.");
-    }
-    try {
       await updateProjectDetailsClient(
-        projectId, 
-        newProjectMetadata, // Pass the full metadata array
-        activeAddress, // NEW
-        transactionSigner, // NEW
-        algodClient // NEW
+        projectId,
+        newProjectMetadata,
+        activeAddress,
+        transactionSigner,
+        algodClient
       );
-      // After successful update, force a refetch to get the latest data
-      refetch();
-    } catch (err) {
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PROJECT_DETAILS_QUERY_KEY }); // Invalida o cache para re-buscar
+    },
+    onError: (err) => {
       console.error("Failed to update project details:", err);
-      setError(err instanceof Error ? err.message : "An unknown error occurred.");
-      throw err;
-    }
-  }, [activeAddress, transactionSigner, algodClient, refetch]); // NEW: Add wallet dependencies
+      throw err; // Re-throw para que o componente possa lidar com o erro
+    },
+  });
 
-  const acceptProposedNoteEdit = useCallback(async (
-    projectId: string,
-    acceptedContent: string,
-    acceptedByAddress: string, // The address of the user who proposed this edit
-  ) => {
-    if (!activeAddress || !transactionSigner || !algodClient) { // NEW: Check for wallet connection
-      throw new Error("Wallet not connected. Cannot accept proposed note edit.");
-    }
-    try {
+  // NEW: Usar useMutation para aceitar edições de notas propostas
+  const acceptProposedNoteEditMutation = useMutation<void, Error, { projectId: string; acceptedContent: string; acceptedByAddress: string }>({
+    mutationFn: async ({ projectId, acceptedContent, acceptedByAddress }) => {
+      if (!activeAddress || !transactionSigner || !algodClient) {
+        throw new Error("Wallet not connected. Cannot accept proposed note edit.");
+      }
       const currentDetails = projectDetails.find(pd => pd.projectId === projectId);
       if (!currentDetails) {
         throw new Error(`Project details for ${projectId} not found.`);
       }
 
-      // Find and update the project-description item
       const updatedMetadata = currentDetails.projectMetadata.map(item => {
         if (item.type === 'project-description') {
           return { ...item, value: acceptedContent };
         }
-        // Also update is-community-notes and added-by-address
         if (item.type === 'is-community-notes') {
           return { ...item, value: 'true' };
         }
         if (item.type === 'added-by-address') {
           return { ...item, value: acceptedByAddress };
         }
-        if (item.type === 'is-creator-added') { // Ensure this is set to false
+        if (item.type === 'is-creator-added') {
           return { ...item, value: 'false' };
         }
         return item;
       });
 
-      // Ensure is-community-notes, added-by-address, is-creator-added exist if they don't
       if (!updatedMetadata.some(item => item.type === 'is-community-notes')) {
         updatedMetadata.push({ title: 'Is Community Notes', value: 'true', type: 'is-community-notes' });
       }
@@ -159,21 +91,30 @@ export function useProjectDetails() {
         updatedMetadata.push({ title: 'Is Creator Added', value: 'false', type: 'is-creator-added' });
       }
 
-
       await updateProjectDetailsClient(
         projectId,
-        updatedMetadata, // Pass the updated metadata array
-        activeAddress, // NEW
-        transactionSigner, // NEW
-        algodClient // NEW
+        updatedMetadata,
+        activeAddress,
+        transactionSigner,
+        algodClient
       );
-      refetch(); // Refetch to get the latest Coda data
-    } catch (err) {
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PROJECT_DETAILS_QUERY_KEY }); // Invalida o cache para re-buscar
+    },
+    onError: (err) => {
       console.error("Failed to accept proposed note edit:", err);
-      setError(err instanceof Error ? err.message : "An unknown error occurred.");
       throw err;
-    }
-  }, [projectDetails, activeAddress, transactionSigner, algodClient, refetch]); // NEW: Add wallet dependencies
+    },
+  });
 
-  return { projectDetails, loading, isRefreshing, error, refetch, updateProjectDetails, acceptProposedNoteEdit };
+  return {
+    projectDetails,
+    loading: isLoading,
+    isRefreshing: isFetching, // isFetching é mais preciso para "refreshing"
+    error: isError ? error.message : null,
+    refetch,
+    updateProjectDetails: updateProjectDetailsMutation.mutateAsync, // Retorna a função de mutação
+    acceptProposedNoteEdit: acceptProposedNoteEditMutation.mutateAsync, // Retorna a função de mutação
+  };
 }

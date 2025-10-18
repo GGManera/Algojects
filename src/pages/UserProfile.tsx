@@ -307,7 +307,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   const initialCategoryFromState = (location.state as { initialActiveCategory?: 'writing' | 'curating' })?.initialActiveCategory;
 
   const { projects, loading: socialDataLoading, error: socialDataError } = useSocialData();
-  const { projectDetails, loading: detailsLoadingState, isRefreshing: detailsRefreshingState } = useProjectDetails();
+  const { projectDetails, loading: projectDetailsLoading, error: projectDetailsError } = useProjectDetails(); // NEW: Destructure loading and error
   const { userEarnings, loading: earningsLoading } = useUserEarnings(address, projects);
   
   // Use the new useCuratorIndex hook
@@ -379,15 +379,20 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   useEffect(() => {
     if (effectiveAddress) {
       const path = location.pathname;
-      const label = userProfileNfd?.name || `${effectiveAddress.substring(0, 8)}... Profile`;
+      let label = `${effectiveAddress.substring(0, 8)}... Profile`;
+      // NEW: Check if projectDetails is loading before trying to find project name
+      if (!projectDetailsLoading) {
+        label = userProfileNfd?.name || label;
+      }
       // Only push if the path is a profile path, and the NFD is loaded (or not loading)
       if (path.startsWith('/profile/') && !nfdLoading) {
         pushEntry({ path, label, activeCategory }); // Push with current activeCategory
       }
     }
-  }, [effectiveAddress, location.pathname, userProfileNfd, pushEntry, activeCategory, nfdLoading]);
+  }, [effectiveAddress, location.pathname, userProfileNfd, pushEntry, activeCategory, nfdLoading, projectDetailsLoading]); // NEW: Add projectDetailsLoading dependency
 
-  const isContentLoading = socialDataLoading || detailsLoadingState || detailsRefreshingState || curatorIndexLoading || analyticsLoading;
+  const isContentLoading = socialDataLoading || projectDetailsLoading || curatorIndexLoading || analyticsLoading; // NEW: Use projectDetailsLoading in combined loading state
+  const isContentError = socialDataError || projectDetailsError || curatorIndexError || analyticsError; // NEW: Use projectDetailsError in combined error state
 
   const tabOrder = {
     "reviews": 0,
@@ -510,7 +515,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
     );
   }
 
-  if (socialDataError || tokenHoldingsError || curatorIndexError || analyticsError) {
+  if (isContentError) { // NEW: Use combined error state
     return (
       <div className={cn(
         "w-full",
@@ -520,7 +525,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{socialDataError || tokenHoldingsError || curatorIndexError || analyticsError}</AlertDescription>
+          <AlertDescription>{isContentError}</AlertDescription>
         </Alert>
       </div>
     );

@@ -6,11 +6,12 @@ import { ProjectDetailsEntry } from '../../api/project-details';
 import { fetchAccountAssetHoldings } from '@/utils/algorand';
 import { ProjectMetadata } from '@/types/project'; // Import ProjectMetadata
 
-interface UserProjectTokenHolding {
+export interface UserProjectTokenHolding {
   projectId: string;
   projectName: string;
   assetId: number;
   amount: number;
+  assetUnitName: string; // NEW: Add assetUnitName
 }
 
 export function useUserProjectTokenHoldings(
@@ -23,7 +24,7 @@ export function useUserProjectTokenHoldings(
   const [error, setError] = useState<string | null>(null);
 
   const relevantProjectAssetIds = useMemo(() => {
-    const projectAssetMap = new Map<string, { assetId: number; projectName: string }>();
+    const projectAssetMap = new Map<string, { assetId: number; projectName: string; assetUnitName: string }>();
     if (!userAddress || !projectsData || !projectDetails.length) {
       return projectAssetMap;
     }
@@ -40,7 +41,7 @@ export function useUserProjectTokenHoldings(
           if (comment.sender === userAddress) {
             userInteractedProjectIds.add(project.id);
           }
-          Object.values(comment.replies).forEach(reply => {
+          Object.values(review.replies).forEach(reply => {
             if (reply.sender === userAddress) {
               userInteractedProjectIds.add(project.id);
             }
@@ -55,11 +56,16 @@ export function useUserProjectTokenHoldings(
       if (details && details.projectMetadata) {
         const assetIdItem = details.projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
         const projectNameItem = details.projectMetadata.find(item => item.type === 'project-name');
+        const assetUnitNameItem = details.projectMetadata.find(item => item.type === 'asset-unit-name'); // NEW: Get asset unit name
 
         if (assetIdItem?.value && projectNameItem?.value) {
           const assetIdNum = parseInt(assetIdItem.value, 10);
           if (!isNaN(assetIdNum) && assetIdNum > 0) {
-            projectAssetMap.set(projectId, { assetId: assetIdNum, projectName: projectNameItem.value });
+            projectAssetMap.set(projectId, { 
+              assetId: assetIdNum, 
+              projectName: projectNameItem.value,
+              assetUnitName: assetUnitNameItem?.value || '' // Use found unit name or empty string
+            });
           }
         }
       }
@@ -90,6 +96,7 @@ export function useUserProjectTokenHoldings(
             projectName: projectAssetInfo.projectName,
             assetId: projectAssetInfo.assetId,
             amount,
+            assetUnitName: projectAssetInfo.assetUnitName, // Include assetUnitName
           });
         });
         setTokenHoldings(results);

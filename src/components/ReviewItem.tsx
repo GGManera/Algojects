@@ -27,7 +27,6 @@ interface ReviewItemProps {
   interactionScore: number;
   writerTokenHoldings: Map<string, number>;
   writerHoldingsLoading: boolean;
-  assetUnitName: string | null;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
   // NEW: Keyboard navigation props
@@ -50,7 +49,7 @@ const getCommentInteractionScore = (comment: Comment): number => {
   return score;
 };
 
-export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, focusedId, registerItem, isActive, setLastActiveId, globalViewMode }: ReviewItemProps) {
+export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, focusedId, registerItem, isActive, setLastActiveId, globalViewMode }: ReviewItemProps) {
   const location = useLocation();
   const { expandCommentId, highlightReplyId, highlightCommentId } = (location.state as { expandCommentId?: string; highlightReplyId?: string; highlightCommentId?: string; }) || {};
   const { activeAddress } = useWallet(); // Get active address
@@ -191,7 +190,6 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
             textSizeClass="text-base" 
             avatarSizeClass="h-10 w-10" 
             projectTokenHoldings={writerTokenHoldings}
-            assetUnitName={assetUnitName}
             projectSourceContext={projectSourceContext}
           />
           <div className="flex items-center space-x-2">
@@ -292,7 +290,6 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
                 onInteractionSuccess={onInteractionSuccess} 
                 writerTokenHoldings={writerTokenHoldings}
                 writerHoldingsLoading={writerHoldingsLoading}
-                assetUnitName={assetUnitName}
                 projectSourceContext={projectSourceContext}
                 allCuratorData={allCuratorData}
                 expandCommentId={expandCommentId}

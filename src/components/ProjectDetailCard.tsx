@@ -21,9 +21,6 @@ import { Button } from "./ui/button";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { parseProjectMetadata, extractDomainFromUrl, extractXHandleFromUrl } from '@/lib/utils';
 import { useUserProjectTokenHoldings } from '@/hooks/useUserProjectTokenHoldings';
-import { useAssetHoldingsForUsers } from '@/hooks/useAssetHoldingsForUsers';
-import { cn } from '@/lib/utils';
-import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { useCuratorIndex } from '@/hooks/useCuratorIndex';
 import { MetadataItem } from '@/types/project';
 import { ThankContributorDialog } from "./ThankContributorDialog";
@@ -31,7 +28,7 @@ import { thankContributorAndClaimProject } from "@/lib/coda";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { ProjectMetadataNavigator } from "./ProjectMetadataNavigator"; // NEW Import
-// Removed: import { GlassRadioGroup, GlassRadioItem } from "@/components/GlassRadioGroup"; // Import GlassRadioGroup
+import { cn } from '@/lib/utils'; // Import cn
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
@@ -91,20 +88,11 @@ export function ProjectDetailCard({
   onScrollToTop = () => {}, // Provide fallback
 }: ProjectDetailCardProps) {
   const projectId = project.id;
-  const { isMobile } = useAppContextDisplayMode();
   const { transactionSigner, algodClient } = useWallet();
 
   const { projectDetails, loading, isRefreshing, error: detailsError, refetch: refetchProjectDetails } = useProjectDetails();
   const isLoadingDetails = loading || isRefreshing;
   const [copiedMetadata, setCopiedMetadata] = useState(false);
-
-  const [assetUnitName, setAssetUnitName] = useState<string | null>(null);
-  const [assetUnitNameLoading, setAssetUnitNameLoading] = useState(false);
-  const [assetUnitNameError, setAssetUnitNameError] = useState<string | null>(null);
-
-  const [showAssetIdValue, setShowAssetIdValue] = useState(false);
-  const [copiedAssetIdMessage, setCopiedAssetIdMessage] = useState<string | null>(null);
-  const [isAssetIdHovered, setIsAssetIdHovered] = useState(false);
 
   const [showProjectDetailsForm, setShowProjectDetailsForm] = useState(false);
   const [showThankContributorDialog, setShowThankContributorDialog] = useState(false);
@@ -168,7 +156,6 @@ export function ProjectDetailCard({
   const currentProjectTags = projectMetadata.find(item => item.type === 'tags')?.value;
   const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
   const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value;
-  const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true';
   const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true';
   
   const creatorWalletItem = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet');
@@ -239,43 +226,10 @@ export function ProjectDetailCard({
     }
   };
 
-  const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
-
-  useEffect(() => {
-    const fetchAssetUnitName = async () => {
-      if (!assetIdItem?.value) {
-        setAssetUnitName(null);
-        return;
-      }
-
-      setAssetUnitNameLoading(true);
-      setAssetUnitNameError(null);
-
-      try {
-        const response = await fetch(`${INDEXER_URL}/v2/assets/${assetIdItem.value}`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch asset details for ID ${assetIdItem.value}: ${response.statusText}`);
-        }
-        const data = await response.json();
-        setAssetUnitName(data.asset.params['unit-name'] || null);
-      } catch (err) {
-        console.error(`Error fetching asset unit name for ${assetIdItem.value}:`, err);
-        setAssetUnitNameError(err instanceof Error ? err.message : "Failed to fetch asset unit name.");
-        setAssetUnitName(null);
-      } finally {
-        setAssetUnitNameLoading(false);
-      }
-    };
-
-    fetchAssetUnitName();
-  }, [assetIdItem?.value]);
-
   const currentUserProjectHolding = useMemo(() => {
-    if (!activeAddress || !assetIdItem?.value || tokenHoldingsLoading) return null;
-    const assetIdNum = parseInt(assetIdItem.value, 10);
-    if (isNaN(assetIdNum)) return null;
-    return tokenHoldings.find(holding => holding.projectId === projectId && holding.assetId === assetIdNum);
-  }, [activeAddress, assetIdItem?.value, tokenHoldings, tokenHoldingsLoading, projectId]);
+    if (!activeAddress || tokenHoldingsLoading) return null;
+    return tokenHoldings.find(holding => holding.projectId === projectId);
+  }, [activeAddress, tokenHoldings, tokenHoldingsLoading, projectId]);
 
   const allWriterAddresses = useMemo(() => {
     const addresses = new Set<string>();
@@ -293,12 +247,6 @@ export function ProjectDetailCard({
     });
     return Array.from(addresses);
   }, [project, addedByAddress]);
-
-  const projectAssetIdNum = assetIdItem?.value ? parseInt(assetIdItem.value, 10) : undefined;
-  const { holdingsMap: writerTokenHoldings, loading: writerHoldingsLoading } = useAssetHoldingsForUsers(
-    allWriterAddresses,
-    projectAssetIdNum
-  );
 
   const projectSourceContext = useMemo(() => ({
     path: `/project/${projectId}`,
@@ -386,8 +334,7 @@ export function ProjectDetailCard({
       <div 
         className={cn(
           "flex flex-col items-center space-y-1 cursor-pointer transition-colors hover:bg-muted/50 rounded-lg p-2",
-          isMobile ? "col-span-2" : "col-span-2",
-          isMobile && "mb-2",
+          "col-span-2", // Always span 2 columns
           viewMode === 'interactions' && "bg-primary/20 border border-primary"
         )}
         onClick={() => handleViewModeClick('interactions')}
@@ -399,7 +346,7 @@ export function ProjectDetailCard({
       
       <div className={cn(
         "grid gap-4 text-sm text-muted-foreground",
-        isMobile ? "grid-cols-2 col-span-2 max-w-xs mx-auto" : "grid-cols-2 col-span-2"
+        "grid-cols-2 col-span-2" // Always span 2 columns
       )}>
         <div className="flex flex-col items-center space-y-4">
           <div 
@@ -457,7 +404,6 @@ export function ProjectDetailCard({
         projectMetadata={projectMetadata}
         currentUserProjectHolding={currentUserProjectHolding}
         tokenHoldingsLoading={tokenHoldingsLoading}
-        assetUnitName={assetUnitName}
         projectSourceContext={projectSourceContext}
         isParentFocused={isFocused && !isMetadataNavigatorFocused} // Pass parent focus state
         onFocusTransfer={handleFocusTransfer} // Receive internal focus state
@@ -532,11 +478,10 @@ export function ProjectDetailCard({
             </div>
           )}
           
-          {isMobile && (
-            <div className="px-2 pt-8">
-              {StatsGrid}
-            </div>
-          )}
+          {/* Stats Grid for Mobile */}
+          <div className="px-2 pt-8 md:hidden">
+            {StatsGrid}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4 px-4 pb-4 pt-2">
           {MetadataSectionContent}
@@ -570,20 +515,19 @@ export function ProjectDetailCard({
               <Edit className="h-4 w-4" />
             </Button>
           )}
-        <CardContent className={cn("space-y-4 p-4", isMobile && "p-0")}>
+        <CardContent className="space-y-4 p-4">
           
           <div className={cn(
             "flex flex-col md:flex-row md:items-stretch",
             "md:space-x-4"
           )}>
-            {!isMobile && (
-              <div className={cn(
-                  "w-full md:w-1/3 flex flex-col md:justify-center",
-                  "pb-4 md:pb-0 md:pr-4"
-              )}>
-                  {StatsGrid}
-              </div>
-            )}
+            {/* Stats Grid for Desktop */}
+            <div className={cn(
+                "w-full md:w-1/3 flex flex-col md:justify-center",
+                "pb-4 md:pb-0 md:pr-4 hidden md:flex" // Hide on mobile, show on desktop
+            )}>
+                {StatsGrid}
+            </div>
             
             {MetadataMinicard}
           </div>
@@ -601,8 +545,7 @@ export function ProjectDetailCard({
         </CardContent>
       </Card>
 
-      <div className={cn("space-y-6 mt-8", isMobile && "px-2")}>
-        {/* Removed GlassRadioGroup */}
+      <div className="space-y-6 mt-8">
         {sortedReviews.length > 0 ? (
           sortedReviews.map(({ review, score }) => (
             <ReviewItem
@@ -611,9 +554,8 @@ export function ProjectDetailCard({
               project={project}
               onInteractionSuccess={onInteractionSuccess}
               interactionScore={score}
-              writerTokenHoldings={writerTokenHoldings}
-              writerHoldingsLoading={writerHoldingsLoading}
-              assetUnitName={assetUnitName}
+              writerTokenHoldings={tokenHoldings.reduce((map, holding) => map.set(holding.projectId, holding.amount), new Map())} // Pass all token holdings
+              writerHoldingsLoading={tokenHoldingsLoading}
               projectSourceContext={projectSourceContext}
               allCuratorData={allCuratorData}
               focusedId={focusedId}

@@ -2,12 +2,12 @@ import { defineConfig, loadEnv } from "vite";
 import dyadComponentTagger from "@dyad-sh/react-vite-component-tagger";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { fetchCreatedAssets } from "./api/getCreatedAssets";
+// Removed: import { fetchCreatedAssets } from "./api/getCreatedAssets";
 import projectDetailsHandler from "./api/project-details"; // Import the new handler
 import type { VercelRequest, VercelResponse } from '@vercel/node'; // Import Vercel types for emulation
 
-// Regex for the new asset snapshot endpoint
-const assetSnapshotRegex = /^\/api\/v1\/asset\/([^\/]+)\/snapshot\/([^\/]+)$/;
+// Removed: Regex for the new asset snapshot endpoint
+// const assetSnapshotRegex = /^\/api\/v1\/asset\/([^\/]+)\/snapshot\/([^\/]+)$/;
 
 export default defineConfig(({ mode }) => {
   // Carrega as variáveis de ambiente do arquivo .env apropriado (ex: .env.local)
@@ -27,21 +27,22 @@ export default defineConfig(({ mode }) => {
         name: 'vite-plugin-vercel-api-emulator',
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
-            if (req.url === '/api/getCreatedAssets') {
-              try {
-                const data = await fetchCreatedAssets();
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify(data));
-              } catch (error) {
-                console.error("Error in API emulator for /api/getCreatedAssets:", error);
-                const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: errorMessage }));
-              }
-              return; // End the middleware chain here
-            }
+            // Removed: Emulate /api/getCreatedAssets
+            // if (req.url === '/api/getCreatedAssets') {
+            //   try {
+            //     const data = await fetchCreatedAssets();
+            //     res.statusCode = 200;
+            //     res.setHeader('Content-Type', 'application/json');
+            //     res.end(JSON.stringify(data));
+            //   } catch (error) {
+            //     console.error("Error in API emulator for /api/getCreatedAssets:", error);
+            //     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+            //     res.statusCode = 500;
+            //     res.setHeader('Content-Type', 'application/json');
+            //     res.end(JSON.stringify({ error: errorMessage }));
+            //   }
+            //   return; // End the middleware chain here
+            // }
             // --- Emulate /api/project-details ---
             if (req.url === '/api/project-details') {
               const mockRequest: VercelRequest = {
@@ -84,53 +85,53 @@ export default defineConfig(({ mode }) => {
               }
               return;
             }
-            // --- NEW: Emulate /api/v1/asset/[assetId]/snapshot/[round] ---
-            const assetSnapshotMatch = req.url?.match(assetSnapshotRegex);
-            if (assetSnapshotMatch) {
-              const assetId = assetSnapshotMatch[1];
-              const round = assetSnapshotMatch[2];
+            // --- Removed: Emulate /api/v1/asset/[assetId]/snapshot/[round] ---
+            // const assetSnapshotMatch = req.url?.match(assetSnapshotRegex);
+            // if (assetSnapshotMatch) {
+            //   const assetId = assetSnapshotMatch[1];
+            //   const round = assetSnapshotMatch[2];
 
-              const mockRequest: VercelRequest = {
-                ...req,
-                query: { assetId, round }, // Populate query with path params
-                cookies: {},
-                body: await getRequestBody(req),
-              } as VercelRequest;
+            //   const mockRequest: VercelRequest = {
+            //     ...req,
+            //     query: { assetId, round }, // Populate query with path params
+            //     cookies: {},
+            //     body: await getRequestBody(req),
+            //   } as VercelRequest;
 
-              const mockResponse: VercelResponse = {
-                ...res,
-                status: (statusCode: number) => {
-                  res.statusCode = statusCode;
-                  return mockResponse;
-                },
-                json: (data: any) => {
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify(data));
-                },
-                send: (data: string) => {
-                  res.end(data);
-                },
-                setHeader: (name: string, value: string | string[]) => {
-                  res.setHeader(name, value);
-                },
-              } as VercelResponse;
+            //   const mockResponse: VercelResponse = {
+            //     ...res,
+            //     status: (statusCode: number) => {
+            //       res.statusCode = statusCode;
+            //       return mockResponse;
+            //     },
+            //     json: (data: any) => {
+            //       res.setHeader('Content-Type', 'application/json');
+            //       res.end(JSON.stringify(data));
+            //     },
+            //     send: (data: string) => {
+            //       res.end(data);
+            //     },
+            //     setHeader: (name: string, value: string | string[]) => {
+            //       res.setHeader(name, value);
+            //     },
+            //   } as VercelResponse;
 
-              try {
-                // Dynamically import the handler to avoid circular dependencies if it were a direct import
-                const { default: assetSnapshotHandler } = await import('./api/v1/asset/[assetId]/snapshot/[round]');
-                await assetSnapshotHandler(mockRequest, mockResponse);
-              } catch (error) {
-                console.error("Error in API emulator for /api/v1/asset/[assetId]/snapshot/[round]:", error);
-                const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-                if (!res.headersSent) {
-                  res.statusCode = 500;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ error: errorMessage }));
-                }
-              }
-              return;
-            }
-            // --- END NEW ---
+            //   try {
+            //     // Dynamically import the handler to avoid circular dependencies if it were a direct import
+            //     const { default: assetSnapshotHandler } = await import('./api/v1/asset/[assetId]/snapshot/[round]');
+            //     await assetSnapshotHandler(mockRequest, mockResponse);
+            //   } catch (error) {
+            //     console.error("Error in API emulator for /api/v1/asset/[assetId]/snapshot/[round]:", error);
+            //     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+            //     if (!res.headersSent) {
+            //       res.statusCode = 500;
+            //       res.setHeader('Content-Type', 'application/json');
+            //       res.end(JSON.stringify({ error: errorMessage }));
+            //     }
+            //   }
+            //   return;
+            // }
+            // --- END Removed ---
             next(); // Pass to the next middleware if the URL doesn't match
           });
         }

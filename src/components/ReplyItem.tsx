@@ -25,7 +25,6 @@ interface ReplyItemProps {
   comment: Comment;
   writerTokenHoldings: Map<string, number>;
   writerHoldingsLoading: boolean;
-  assetUnitName: string | null;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
   isHighlighted?: boolean;
@@ -38,7 +37,7 @@ interface ReplyItemProps {
 
 const CONTENT_TRUNCATE_LENGTH = 150;
 
-export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, assetUnitName, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive, setLastActiveId }: ReplyItemProps) {
+export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive, setLastActiveId }: ReplyItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -119,7 +118,6 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             avatarSizeClass="h-8 w-8" 
             projectTokenHoldings={writerTokenHoldings}
             writerHoldingsLoading={writerHoldingsLoading}
-            assetUnitName={assetUnitName}
             projectSourceContext={projectSourceContext}
           />
           <div className="flex items-center space-x-2">

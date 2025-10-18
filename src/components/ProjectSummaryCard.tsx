@@ -67,9 +67,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
   const { projectDetails, loading: detailsLoading, isRefreshing: detailsRefreshing } = useProjectDetails();
   const isLoadingDetails = detailsLoading || detailsRefreshing;
 
-  const [showAssetIdValue, setShowAssetIdValue] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
-  const [isHovered, setIsHovered] = useState(false);
 
   // NEW: Keyboard navigation state
   const isFocused = focusedId === project.id;
@@ -181,49 +179,17 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
     label: displayName,
   }), [project.id, displayName]);
 
-  const handleAssetIdClick = async (e: React.MouseEvent, assetIdValue: string) => {
+  const handleCopyClick = async (e: React.MouseEvent, value: string) => {
     e.stopPropagation();
-
-    if (isMobile) {
-      if (showAssetIdValue) {
-        if (assetIdValue) {
-          try {
-            await navigator.clipboard.writeText(assetIdValue);
-            setCopiedMessage("Copied!");
-            setTimeout(() => {
-              setCopiedMessage(null);
-              setShowAssetIdValue(false);
-            }, 2000);
-          } catch (err) {
-            showError("Failed to copy Asset ID.");
-          }
-        }
-      } else {
-        setShowAssetIdValue(true);
-        setTimeout(() => {
-          if (!copiedMessage) setShowAssetIdValue(false);
-        }, 3000);
-      }
-    } else {
-      if (assetIdValue) {
-        try {
-          await navigator.clipboard.writeText(assetIdValue);
-          setCopiedMessage("Copied!");
-          setTimeout(() => setCopiedMessage(null), 2000);
-        } catch (err) {
-          showError("Failed to copy Asset ID.");
-        }
+    if (value) {
+      try {
+        await navigator.clipboard.writeText(value);
+        setCopiedMessage("Copied!");
+        setTimeout(() => setCopiedMessage(null), 2000);
+      } catch (err) {
+        showError("Failed to copy.");
       }
     }
-  };
-
-  // Modified to accept defaultTitle and prioritize dynamic states
-  const displayAssetIdText = (assetIdValue: string, defaultTitle: string | undefined) => {
-    if (copiedMessage) return copiedMessage;
-    if (isMobile) {
-      return showAssetIdValue ? assetIdValue : (defaultTitle || "Asset ID");
-    }
-    return isHovered ? assetIdValue : (defaultTitle || "Asset ID");
   };
 
   const renderMetadataItem = (item: MetadataItem, index: number) => {
@@ -269,16 +235,14 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
           </div>
         </div>
       );
-    } else if (item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0)) {
+    } else if (item.type === 'asset-id') { // Keep asset-id type, but simplify display
       return (
         <div
           key={index}
           className={cn("btn-profile", baseItemClasses)}
-          onClick={(e) => handleAssetIdClick(e, item.value)}
-          onMouseEnter={() => !isMobile && setIsHovered(true)}
-          onMouseLeave={() => !isMobile && setIsHovered(false)}
+          onClick={(e) => handleCopyClick(e, item.value)}
         >
-          <strong className="uppercase">{displayAssetIdText(item.value, item.title)}</strong>
+          <strong className="uppercase">{copiedMessage || item.title || "Asset ID"}</strong>
           <div id="container-stars">
             <div id="stars"></div>
           </div>

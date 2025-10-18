@@ -16,8 +16,7 @@ interface UserDisplayProps {
   avatarSizeClass?: string;
   textSizeClass?: string;
   linkTo?: string | null; // Can be null to make it a non-link div
-  projectTokenHoldings?: Map<string, number>;
-  assetUnitName?: string | null;
+  // Removed projectTokenHoldings and assetUnitName props
   // New prop to allow parent to explicitly pass an onClick handler
   // This will override the default copy behavior on own profile if provided.
   onClick?: (e: React.MouseEvent) => void;
@@ -26,24 +25,18 @@ interface UserDisplayProps {
   currentProfileActiveCategory?: 'writing' | 'curating'; // NEW
 }
 
-export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", textSizeClass = "text-sm", linkTo = `/profile/${address}`, projectTokenHoldings, assetUnitName, onClick, sourceContext, currentProfileActiveCategory }: UserDisplayProps) {
+export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", textSizeClass = "text-sm", linkTo = `/profile/${address}`, onClick, sourceContext, currentProfileActiveCategory }: UserDisplayProps) {
   const { nfd, loading } = useNfd(address);
   const location = useLocation();
   const [lastCopied, setLastCopied] = useState<'nfd' | 'address' | null>(null);
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
   const { pushEntry } = useNavigationHistory(); // NEW: Use pushEntry
 
-  const rawTokenAmount = projectTokenHoldings?.get(address);
-  const tokenAmountInAlgos = rawTokenAmount !== undefined ? rawTokenAmount / 1_000_000 : undefined;
-
   if (loading) {
     return (
       <div className={cn("flex items-center space-x-2", className)}>
         <Skeleton className={cn("rounded-full", avatarSizeClass)} />
         <Skeleton className={cn("h-4", textSizeClass === "text-2xl text-center" ? "w-32" : "w-24")} />
-        {rawTokenAmount !== undefined && (
-          <Skeleton className="h-4 w-12" />
-        )}
       </div>
     );
   }
@@ -171,12 +164,6 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
             </motion.p>
           )}
         </AnimatePresence>
-        {tokenAmountInAlgos !== undefined && tokenAmountInAlgos > 0 && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Gem className="h-3 w-3 text-hodl-blue" />
-            <span className="font-numeric font-bold text-blue-400">{formatLargeNumber(tokenAmountInAlgos)} {assetUnitName ? `$${assetUnitName}` : ''}</span>
-          </div>
-        )}
       </div>
     </Wrapper>
   );

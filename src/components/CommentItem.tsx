@@ -24,7 +24,6 @@ interface CommentItemProps {
   onInteractionSuccess: () => void;
   writerTokenHoldings: Map<string, number>;
   writerHoldingsLoading: boolean;
-  assetUnitName: string | null;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
   expandCommentId?: string;
@@ -45,7 +44,6 @@ export function CommentItem({
   onInteractionSuccess,
   writerTokenHoldings,
   writerHoldingsLoading,
-  assetUnitName,
   projectSourceContext,
   allCuratorData,
   expandCommentId,
@@ -179,8 +177,7 @@ export function CommentItem({
               textSizeClass="text-base"
               avatarSizeClass="h-9 w-9"
               projectTokenHoldings={writerTokenHoldings}
-              assetUnitName={assetUnitName}
-              sourceContext={projectSourceContext}
+              projectSourceContext={projectSourceContext}
             />
             <div className="flex items-center space-x-2">
               <span className={cn("text-xs font-semibold", isExcluded ? "text-muted-foreground" : "text-white/70")}>{formatTimestamp(comment.timestamp)}</span>
@@ -259,7 +256,6 @@ export function CommentItem({
                   onInteractionSuccess={onInteractionSuccess}
                   writerTokenHoldings={writerTokenHoldings}
                   writerHoldingsLoading={writerHoldingsLoading}
-                  assetUnitName={assetUnitName}
                   projectSourceContext={projectSourceContext}
                   allCuratorData={allCuratorData}
                   isHighlighted={highlightReplyId === reply.id}

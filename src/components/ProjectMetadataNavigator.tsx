@@ -12,13 +12,13 @@ import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { Skeleton } from './ui/skeleton';
 import { showError, showSuccess } from '@/utils/toast';
 import { formatLargeNumber, extractDomainFromUrl, extractXHandleFromUrl } from '@/lib/utils';
+import { UserProjectTokenHolding } from '@/hooks/useUserProjectTokenHoldings'; // Import UserProjectTokenHolding
 
 interface ProjectMetadataNavigatorProps {
   projectId: string;
   projectMetadata: MetadataItem[];
-  currentUserProjectHolding: { amount: number; assetId: number; projectName: string; projectId: string } | null;
+  currentUserProjectHolding: UserProjectTokenHolding | null;
   tokenHoldingsLoading: boolean;
-  assetUnitName: string | null;
   projectSourceContext: { path: string; label: string };
   isInsideCarousel?: boolean;
   
@@ -34,10 +34,8 @@ const renderMetadataItem = (
   item: MetadataItem, 
   index: number, 
   isMobile: boolean, 
-  isHovered: boolean, 
   copiedMessage: string | null, 
-  handleAssetIdClick: (e: React.MouseEvent, assetIdValue: string) => void,
-  setIsHovered: (hovered: boolean) => void,
+  handleCopyClick: (e: React.MouseEvent, value: string) => void,
   projectSourceContext: { path: string; label: string }
 ) => {
   // Base classes for centering and max width
@@ -50,12 +48,6 @@ const renderMetadataItem = (
   if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'].includes(item.type || '') || (item.type === 'address' && item.title === 'Creator Wallet')) {
     return null;
   }
-
-  const displayAssetIdText = (assetIdValue: string, defaultTitle: string | undefined) => {
-    if (copiedMessage) return copiedMessage;
-    // Simplified logic for navigator: always show title unless hovered/focused
-    return isHovered ? assetIdValue : (defaultTitle || "Asset ID");
-  };
 
   if (item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com'))) {
     return (
@@ -93,17 +85,15 @@ const renderMetadataItem = (
         </div>
       </div>
     );
-  } else if (item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0)) {
+  } else if (item.type === 'asset-id') { // Keep asset-id type, but simplify display
     return (
       <div
         key={index}
         className={cn("btn-profile", baseItemClasses)}
-        onClick={(e) => handleAssetIdClick(e, item.value)}
-        onMouseEnter={() => !isMobile && setIsHovered(true)}
-        onMouseLeave={() => !isMobile && setIsHovered(false)}
+        onClick={(e) => handleCopyClick(e, item.value)}
         data-nav-id={`meta-${item.title}-${index}`}
       >
-        <strong className="uppercase">{displayAssetIdText(item.value, item.title)}</strong>
+        <strong className="uppercase">{copiedMessage || item.title || "Asset ID"}</strong>
         <div id="container-stars">
           <div id="stars"></div>
         </div>
@@ -142,7 +132,6 @@ export function ProjectMetadataNavigator({
   projectMetadata,
   currentUserProjectHolding,
   tokenHoldingsLoading,
-  assetUnitName,
   projectSourceContext,
   isParentFocused,
   onFocusTransfer,
@@ -156,7 +145,6 @@ export function ProjectMetadataNavigator({
   const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive, setFocusedId } = useKeyboardNavigation(isParentFocused ? pageKey : 'inactive');
   
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
-  const [isHovered, setIsHovered] = useState(false); // Used for desktop asset ID hover
 
   // Filter and prepare items for navigation
   const allRenderableMetadataItems = useMemo(() => {
@@ -178,10 +166,10 @@ export function ProjectMetadataNavigator({
     if (!currentUserProjectHolding) return null;
     return {
       title: 'Your Holding',
-      value: `${currentUserProjectHolding.amount} ${assetUnitName || ''}`,
+      value: `${currentUserProjectHolding.amount} ${currentUserProjectHolding.assetUnitName || ''}`,
       type: 'holding' as const,
     };
-  }, [currentUserProjectHolding, assetUnitName]);
+  }, [currentUserProjectHolding]);
 
   const navigableItems = useMemo(() => {
     return [...allRenderableMetadataItems, ...(holdingItem ? [holdingItem] : [])];
@@ -274,15 +262,15 @@ export function ProjectMetadataNavigator({
   }, [isParentFocused, isKeyboardModeActive, focusedId, onFocusReturn, onFocusTransfer, pageKey, setFocusedId, setParentFocusedId, projectId]);
 
   // --- Asset ID Click Handler (for keyboard action) ---
-  const handleAssetIdClick = async (e: React.MouseEvent, assetIdValue: string) => {
+  const handleCopyClick = async (e: React.MouseEvent, value: string) => {
     e.stopPropagation();
-    if (assetIdValue) {
+    if (value) {
       try {
-        await navigator.clipboard.writeText(assetIdValue);
+        await navigator.clipboard.writeText(value);
         setCopiedMessage("Copied!");
         setTimeout(() => setCopiedMessage(null), 2000);
       } catch (err) {
-        showError("Failed to copy Asset ID.");
+        showError("Failed to copy.");
       }
     }
   };
@@ -313,7 +301,7 @@ export function ProjectMetadataNavigator({
           <div className="flex items-center gap-1 justify-center">
             <Gem className="h-4 w-4 text-hodl-blue" />
             <span className="font-numeric font-bold text-primary selectable-text">
-              {formatLargeNumber(currentUserProjectHolding?.amount || 0)} {assetUnitName || ''}
+              {formatLargeNumber(currentUserProjectHolding?.amount || 0)} {currentUserProjectHolding?.assetUnitName || ''}
             </span>
           </div>
         )}
@@ -333,10 +321,8 @@ export function ProjectMetadataNavigator({
             item, 
             index, 
             isMobile, 
-            isHovered, 
             copiedMessage, 
-            handleAssetIdClick, 
-            setIsHovered,
+            handleCopyClick, 
             projectSourceContext
           );
 

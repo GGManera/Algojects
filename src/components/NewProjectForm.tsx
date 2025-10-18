@@ -212,6 +212,26 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
         }))
       ];
 
+      // NEW: If an asset-id is present in dynamic metadata, try to fetch its unit-name
+      const assetIdItem = fullProjectMetadata.find(item => item.type === 'asset-id');
+      if (assetIdItem && assetIdItem.value) {
+        try {
+          const assetIdNum = parseInt(assetIdItem.value, 10);
+          if (!isNaN(assetIdNum) && assetIdNum > 0) {
+            const response = await fetch(`${INDEXER_URL}/v2/assets/${assetIdNum}`);
+            if (response.ok) {
+              const data = await response.json();
+              const unitName = data.asset.params['unit-name'];
+              if (unitName) {
+                fullProjectMetadata.push({ title: 'Asset Unit Name', value: unitName, type: 'asset-unit-name' });
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Failed to fetch asset unit name for new project:", e);
+        }
+      }
+
       await updateProjectDetails(newProjectId, fullProjectMetadata);
       toast.success("Your new project has been added!", { id: loadingToastIdRef.current });
       setProjectName("");
@@ -423,6 +443,7 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
                     <SelectItem value="x-url" className="hover:bg-muted/50">X (Twitter) URL</SelectItem>
                     <SelectItem value="asset-id" className="hover:bg-muted/50">Asset ID</SelectItem>
                     <SelectItem value="address" className="hover:bg-muted/50">Address</SelectItem>
+                    <SelectItem value="asset-unit-name" className="hover:bg-muted/50">Asset Unit Name</SelectItem> {/* NEW */}
                   </SelectContent>
                 </Select>
               </div>

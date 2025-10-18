@@ -90,7 +90,7 @@ export function UserProjectTokensCard({ tokenHoldings, isLoading, error, isInsid
                 </Link>
                 <div className="text-right">
                   <p className="font-bold text-primary font-numeric">
-                    {formatLargeNumber(amountInAlgos)}
+                    {formatLargeNumber(amountInAlgos)} {holding.assetUnitName ? `$${holding.assetUnitName}` : ''}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Owned

@@ -23,6 +23,7 @@ import {
 import { UserDisplay } from "./UserDisplay";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
+import { fetchAccountAssetHoldings } from '@/utils/algorand'; // NEW: Import fetchAccountAssetHoldings
 
 const DESCRIPTION_MAX_LENGTH = 2048;
 
@@ -78,10 +79,12 @@ export function ProjectDetailsForm({
   const isClaimed = findMetadataItem('is-claimed')?.value === 'true';
   const creatorWalletContent = findMetadataItem('address', 'Creator Wallet')?.value || ''; // Look for type 'address' AND title 'Creator Wallet'
   const projectWalletContent = findMetadataItem('project-wallet')?.value || ''; // NEW: Project Wallet
+  const assetIdContent = findMetadataItem('asset-id')?.value || ''; // NEW: Asset ID
+  const assetUnitNameContent = findMetadataItem('asset-unit-name')?.value || ''; // NEW: Asset Unit Name
 
   // Filter out the "fixed" metadata items from the dynamic list for rendering
   const fixedTypesAndTitles = useMemo(() => new Set([
-    'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'Creator Wallet', 'project-wallet'
+    'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'Creator Wallet', 'project-wallet', 'asset-id', 'asset-unit-name'
   ]), []);
 
   const dynamicMetadataItems = useMemo(() => {
@@ -197,6 +200,14 @@ export function ProjectDetailsForm({
       showError("Project Wallet must be a valid 58-character Algorand address.");
       return;
     }
+    // NEW: Validation for Asset ID: must be empty or a valid positive integer
+    if (assetIdContent.trim()) {
+      const assetIdNum = parseInt(assetIdContent, 10);
+      if (isNaN(assetIdNum) || assetIdNum <= 0) {
+        showError("Asset ID must be a positive integer.");
+        return;
+      }
+    }
 
     setIsLoading(true);
     const toastId = showLoading("Updating project details...");
@@ -210,6 +221,33 @@ export function ProjectDetailsForm({
       // 2. Define all fixed metadata items based on current local state
       const finalCreatorWalletValue = creatorWalletContent.trim();
       const finalProjectWalletValue = projectWalletContent.trim(); // NEW: Project Wallet value
+      const finalAssetIdValue = assetIdContent.trim(); // NEW: Asset ID value
+      let finalAssetUnitNameValue = assetUnitNameContent.trim(); // NEW: Asset Unit Name value
+
+      // NEW: If Asset ID is provided, try to fetch its unit-name if not already set or if assetId changed
+      if (finalAssetIdValue) {
+        const assetIdNum = parseInt(finalAssetIdValue, 10);
+        const currentAssetIdInMetadata = initialProjectMetadata.find(item => item.type === 'asset-id')?.value;
+        const currentAssetUnitNameInMetadata = initialProjectMetadata.find(item => item.type === 'asset-unit-name')?.value;
+
+        if (assetIdNum > 0 && (finalAssetIdValue !== currentAssetIdInMetadata || !finalAssetUnitNameValue || finalAssetUnitNameValue !== currentAssetUnitNameInMetadata)) {
+          try {
+            const response = await fetch(`https://mainnet-idx.algonode.cloud/v2/assets/${assetIdNum}`);
+            if (response.ok) {
+              const data = await response.json();
+              finalAssetUnitNameValue = data.asset.params['unit-name'] || '';
+            } else {
+              console.warn(`Failed to fetch unit-name for asset ID ${assetIdNum}. Status: ${response.status}`);
+              finalAssetUnitNameValue = ''; // Clear if fetch fails
+            }
+          } catch (e) {
+            console.error(`Error fetching unit-name for asset ID ${assetIdNum}:`, e);
+            finalAssetUnitNameValue = ''; // Clear on error
+          }
+        }
+      } else {
+        finalAssetUnitNameValue = ''; // Clear unit name if asset ID is removed
+      }
       
       const fixedItems: ProjectMetadata = [
         { title: 'Project Name', value: projectNameContent, type: 'project-name' },
@@ -224,6 +262,9 @@ export function ProjectDetailsForm({
         ...(finalCreatorWalletValue ? [{ title: 'Creator Wallet', value: finalCreatorWalletValue, type: 'address' as const }] : []),
         // NEW: Project Wallet
         ...(finalProjectWalletValue ? [{ title: 'Project Wallet', value: finalProjectWalletValue, type: 'project-wallet' as const }] : []),
+        // NEW: Asset ID and Asset Unit Name
+        ...(finalAssetIdValue ? [{ title: 'Asset ID', value: finalAssetIdValue, type: 'asset-id' as const }] : []),
+        ...(finalAssetUnitNameValue ? [{ title: 'Asset Unit Name', value: finalAssetUnitNameValue, type: 'asset-unit-name' as const }] : []),
       ].filter(item => item.value.trim() || ['is-creator-added', 'is-community-notes', 'is-claimed'].includes(item.type || ''));
 
       // 3. Combine all items, filtering out any fixed items that are empty (except boolean flags)
@@ -247,8 +288,9 @@ export function ProjectDetailsForm({
 
   const isProjectWalletValid = !projectWalletContent.trim() || isValidAlgorandAddress(projectWalletContent); // NEW validation
   const isCreatorWalletValid = !creatorWalletContent.trim() || isValidAlgorandAddress(creatorWalletContent); // Existing validation
+  const isAssetIdValid = !assetIdContent.trim() || (parseInt(assetIdContent, 10) > 0); // NEW validation
 
-  const canSubmit = !activeAddress || isLoading || !isAuthorized() || resolvingAuthNfds || isProjectDetailsFetching || !isCreatorWalletValid || !isProjectWalletValid;
+  const canSubmit = !activeAddress || isLoading || !isAuthorized() || resolvingAuthNfds || isProjectDetailsFetching || !isCreatorWalletValid || !isProjectWalletValid || !isAssetIdValid;
   const inputDisabled = !activeAddress || isLoading || resolvingAuthNfds || isProjectDetailsFetching;
 
   if (!activeAddress) {
@@ -391,6 +433,27 @@ export function ProjectDetailsForm({
         </div>
         {/* END NEW */}
 
+        {/* NEW Fixed Field: Asset ID */}
+        <div className="relative">
+          <Label htmlFor="assetId" className="text-white text-xs absolute top-[-20px] left-0 bg-hodl-darker px-1">Associated Asset ID (Optional)</Label>
+          <Input
+            id="assetId"
+            type="number"
+            placeholder="e.g., 123456789"
+            value={assetIdContent}
+            onChange={(e) => updateOrCreateMetadataItem('asset-id', 'Asset ID', e.target.value)}
+            disabled={inputDisabled}
+            className={cn("bg-muted/50 pr-4", {
+              "border-red-500": assetIdContent.trim() && (!isAssetIdValid || parseInt(assetIdContent, 10) <= 0),
+              "border-green-500": assetIdContent.trim() && isAssetIdValid && parseInt(assetIdContent, 10) > 0,
+            })}
+          />
+          {assetIdContent.trim() && (!isAssetIdValid || parseInt(assetIdContent, 10) <= 0) && (
+            <p className="text-xs text-red-500 mt-1">Asset ID must be a positive integer.</p>
+          )}
+        </div>
+        {/* END NEW */}
+
         {/* Dynamic Metadata Fields */}
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">Additional Metadata</h3>
@@ -434,6 +497,7 @@ export function ProjectDetailsForm({
                     <SelectItem value="x-url">X (Twitter) URL</SelectItem>
                     <SelectItem value="asset-id">Asset ID</SelectItem>
                     <SelectItem value="address">Address</SelectItem>
+                    <SelectItem value="asset-unit-name">Asset Unit Name</SelectItem> {/* NEW */}
                   </SelectContent>
                 </Select>
               </div>

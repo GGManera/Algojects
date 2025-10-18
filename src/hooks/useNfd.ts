@@ -3,23 +3,21 @@
 import { useState, useEffect } from 'react';
 
 // Cache simples na memória para armazenar dados de NFD e evitar chamadas repetidas
-// Modified to store timestamp
-const nfdCache = new Map<string, (NfdData & { timestamp: number }) | null>();
-const rawDataCache = new Map<string, any>(); // Cache for raw data
+// Import the shared cache map from useNfdResolver
+import { nfdLookupCache } from './useNfdResolver';
 
 interface NfdData {
   name: string | null;
   avatar: string | null;
 }
 
+const NFD_API_URL = "https://api.nf.domains";
 const NFD_CACHE_DURATION_MS = 15 * 1000; // 15 seconds for NFD cache
 
 const ipfsToGateway = (url: string | undefined): string | null => {
   if (!url) return null;
 
   // If it's already a direct HTTP/HTTPS URL, use it as is.
-  // This includes imageproxy.nf.domains and other direct image links,
-  // as well as NFD's own IPFS gateways like ipfsfgw.nf.domains.
   if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
@@ -34,16 +32,29 @@ const ipfsToGateway = (url: string | undefined): string | null => {
   return null;
 };
 
-export function useNfd(address: string | undefined) {
-  // Initialize state based on cache immediately for the first render
-  const initialNfd = address && nfdCache.has(address) ? nfdCache.get(address)! : null;
-  const initialRawData = address && rawDataCache.has(address) ? rawDataCache.get(address)! : null;
-  // Loading should be true only if an address is provided AND it's NOT in cache
-  const initialLoadingState = !!address && (!nfdCache.has(address) || !rawDataCache.has(address));
+// Helper function to process raw NFD data into NfdData structure
+const processNfdData = (data: any, address: string): NfdData => {
+    const nfdData = data[address] || data; // Handle both batched (keyed by address) and single lookups
+    
+    const rawAvatarUrl = nfdData?.properties?.userDefined?.avatar || nfdData?.properties?.verified?.avatar;
+    const avatarUrl = ipfsToGateway(rawAvatarUrl);
 
-  const [nfd, setNfd] = useState<NfdData | null>(initialNfd);
-  const [loading, setLoading] = useState(initialLoadingState);
-  const [rawData, setRawData] = useState<any>(initialRawData);
+    let nfdName = nfdData?.name || null;
+    if (nfdName && !nfdName.endsWith(".algo")) {
+      nfdName = `${nfdName}.algo`;
+    }
+
+    return {
+      name: nfdName,
+      avatar: avatarUrl,
+    };
+};
+
+
+export function useNfd(address: string | undefined) {
+  const [nfd, setNfd] = useState<NfdData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [rawData, setRawData] = useState<any>(null);
 
   useEffect(() => {
     if (!address) {
@@ -52,39 +63,38 @@ export function useNfd(address: string | undefined) {
       setLoading(false);
       return;
     }
+    
+    const trimmedAddress = address.trim();
 
-    // Check cache first. If found and fresh, update state and return early.
-    const cachedNfdEntry = nfdCache.get(address);
-    const cachedRawEntry = rawDataCache.get(address);
+    // Check shared cache first. If found and fresh, update state and return early.
+    const cachedNfdEntry = nfdLookupCache.get(trimmedAddress);
+    const isFresh = cachedNfdEntry && (Date.now() - cachedNfdEntry.timestamp < NFD_CACHE_DURATION_MS);
 
-    if (cachedNfdEntry && cachedRawEntry && (Date.now() - cachedNfdEntry.timestamp < NFD_CACHE_DURATION_MS)) {
+    if (isFresh) {
       setNfd(cachedNfdEntry);
-      setRawData(cachedRawEntry);
-      setLoading(false); // Ensure loading is false
-      console.log(`[useNfd] Cache HIT (fresh) para o endereço: ${address}.`);
-      return; // Exit early, no fetch needed
+      setRawData(cachedNfdEntry); // Use cached entry as raw data placeholder
+      setLoading(false);
+      console.log(`[useNfd] Shared Cache HIT (fresh) para o endereço: ${trimmedAddress}.`);
+      return;
     }
 
-    // If not in cache, or cache is stale, then proceed to fetch
-    setLoading(true); // Set loading to true before fetch
-    setNfd(null); // Clear previous NFD data to show skeleton for new fetch
-    setRawData(null); // Clear previous raw data
+    // If not in cache, or cache is stale, proceed to fetch
+    setLoading(true);
+    setNfd(null);
+    setRawData(null);
 
-    console.log(`[useNfd] Cache MISS ou STALE para o endereço: ${address}. Iniciando busca.`);
+    console.log(`[useNfd] Cache MISS ou STALE para o endereço: ${trimmedAddress}. Iniciando busca individual.`);
 
     const fetchNfd = async () => {
       try {
-        console.log(`[useNfd] Buscando NFD para o endereço: ${address}`);
-        const response = await fetch(`https://api.nf.domains/nfd/lookup?address=${address}&view=full`);
+        const response = await fetch(`${NFD_API_URL}/nfd/lookup?address=${trimmedAddress}&view=full`);
         
         if (response.status === 404) {
-          console.log(`[useNfd] NFD não encontrado (404) para o endereço: ${address}`);
-          const data = { name: null, avatar: null, timestamp: Date.now() }; // Store error with timestamp
-          nfdCache.set(address, data);
+          console.log(`[useNfd] NFD não encontrado (404) para o endereço: ${trimmedAddress}`);
+          const data = { name: null, avatar: null, address: trimmedAddress, timestamp: Date.now() };
+          nfdLookupCache.set(trimmedAddress, data);
           setNfd(data);
-          const errorData = { error: "NFD not found (404)" };
-          setRawData(errorData);
-          rawDataCache.set(address, errorData);
+          setRawData({ error: "NFD not found (404)" });
           return;
         }
 
@@ -93,52 +103,27 @@ export function useNfd(address: string | undefined) {
         }
 
         const data = await response.json();
-        setRawData(data); // Define os dados brutos
-        rawDataCache.set(address, data); // Armazena em cache os dados brutos
-        console.log(`[useNfd] Dados brutos da API para ${address}:`, data);
+        setRawData(data);
 
-        const nfdData = data[address]; // A API NFD retorna um objeto com chave pelo endereço
+        const result: NfdData = processNfdData(data, trimmedAddress);
         
-        // Verifica o avatar primeiro em 'userDefined', depois em 'verified'
-        const rawAvatarUrl = nfdData?.properties?.userDefined?.avatar || nfdData?.properties?.verified?.avatar;
-        console.log(`[useNfd] URL do avatar bruto para ${address}:`, rawAvatarUrl);
-        const avatarUrl = ipfsToGateway(rawAvatarUrl);
-        console.log(`[useNfd] URL do avatar processado para ${address}:`, avatarUrl);
-
-        let nfdName = nfdData?.name || null;
-        console.log(`[useNfd] Nome NFD da API (antes da verificação de sufixo): '${nfdName}'`);
-        // Garante que o sufixo .algo esteja presente para nomes NFD se ainda não estiver lá
-        if (nfdName && !nfdName.endsWith(".algo")) {
-          nfdName = `${nfdName}.algo`;
-          console.log(`[useNfd] Nome NFD após adicionar '.algo': '${nfdName}'`);
-        } else if (nfdName) {
-          console.log(`[useNfd] Nome NFD já possui '.algo': '${nfdName}'`);
-        }
-
-        const result: NfdData = {
-          name: nfdName,
-          avatar: avatarUrl,
-        };
-        
-        const cachedResult = { ...result, timestamp: Date.now() }; // Add timestamp
-        console.log(`[useNfd] Dados NFD finais sendo definidos/armazenados em cache para ${address}:`, cachedResult);
-        nfdCache.set(address, cachedResult); // Store with timestamp
+        const cachedResult = { ...result, address: trimmedAddress, timestamp: Date.now() };
+        console.log(`[useNfd] Dados NFD finais sendo definidos/armazenados em cache para ${trimmedAddress}:`, cachedResult);
+        nfdLookupCache.set(trimmedAddress, cachedResult);
         setNfd(result);
       } catch (err) {
-        console.error(`[useNfd] Falha ao buscar NFD para ${address}:`, err);
-        const data = { name: null, avatar: null, timestamp: Date.now() }; // Store error with timestamp
-        nfdCache.set(address, data);
+        console.error(`[useNfd] Falha ao buscar NFD para ${trimmedAddress}:`, err);
+        const data = { name: null, avatar: null, address: trimmedAddress, timestamp: Date.now() };
+        nfdLookupCache.set(trimmedAddress, data);
         setNfd(data);
-        const errorData = { error: err instanceof Error ? err.message : "Unknown error" };
-        setRawData(errorData);
-        rawDataCache.set(address, errorData);
+        setRawData({ error: err instanceof Error ? err.message : "Unknown error" });
       } finally {
         setLoading(false);
       }
     };
 
     fetchNfd();
-  }, [address]); // Dependência do useEffect é o endereço
+  }, [address]);
 
   return { nfd, loading, rawData };
 }

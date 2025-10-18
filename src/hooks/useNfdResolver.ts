@@ -9,7 +9,7 @@ interface NfdData {
 }
 
 // Modified to store timestamp
-const nfdLookupCache = new Map<string, (NfdData & { timestamp: number }) | null>();
+export const nfdLookupCache = new Map<string, (NfdData & { timestamp: number }) | null>(); // EXPORTED
 
 const NFD_RESOLVER_CACHE_DURATION_MS = 15 * 1000; // 15 seconds for NFD resolver cache
 const NFD_API_URL = "https://api.nf.domains";
@@ -88,6 +88,7 @@ export function useNfdResolver(inputs: string[] | undefined) {
         
         fetchPromises.push((async () => {
           try {
+            // Using 'view=full' to get all necessary data (name, avatar properties, owner)
             const apiUrl = `${NFD_API_URL}/nfd/lookup?address=${batchString}&view=full`;
             console.log(`[useNfdResolver] Fetching address batch (${batch.length}): ${apiUrl}`);
             const response = await fetch(apiUrl);
@@ -103,11 +104,16 @@ export function useNfdResolver(inputs: string[] | undefined) {
               const resolvedNfdObject = data[address];
               
               if (resolvedNfdObject && resolvedNfdObject.owner) {
-                const rawAvatarUrl = resolvedNfdObject.properties?.verified?.avatar;
+                const rawAvatarUrl = resolvedNfdObject.properties?.userDefined?.avatar || resolvedNfdObject.properties?.verified?.avatar;
                 const avatarUrl = ipfsToGateway(rawAvatarUrl);
                 
+                let nfdName = resolvedNfdObject.name || null;
+                if (nfdName && !nfdName.endsWith(".algo")) {
+                  nfdName = `${nfdName}.algo`;
+                }
+
                 nfdLookupCache.set(address, {
-                  name: resolvedNfdObject.name || null,
+                  name: nfdName,
                   avatar: avatarUrl,
                   address: resolvedNfdObject.owner,
                   timestamp: Date.now(),
@@ -144,19 +150,24 @@ export function useNfdResolver(inputs: string[] | undefined) {
             
             if (data && data.owner) {
               const resolvedAddress = data.owner;
-              const rawAvatarUrl = data.properties?.verified?.avatar;
+              const rawAvatarUrl = data.properties?.userDefined?.avatar || data.properties?.verified?.avatar;
               const avatarUrl = ipfsToGateway(rawAvatarUrl);
               
+              let nfdName = data.name || null;
+              if (nfdName && !nfdName.endsWith(".algo")) {
+                nfdName = `${nfdName}.algo`;
+              }
+
               newResolvedAddresses.add(resolvedAddress);
               nfdLookupCache.set(name, {
-                name: data.name || null,
+                name: nfdName,
                 avatar: avatarUrl,
                 address: resolvedAddress,
                 timestamp: Date.now(),
               });
               // Also cache by resolved address for consistency
               nfdLookupCache.set(resolvedAddress, {
-                name: data.name || null,
+                name: nfdName,
                 avatar: avatarUrl,
                 address: resolvedAddress,
                 timestamp: Date.now(),

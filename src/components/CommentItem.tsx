@@ -158,7 +158,7 @@ export function CommentItem({
     <div ref={ref} className={cn("ml-4 scroll-mt-header-offset")} id={comment.id}>
       <div 
         className={cn(
-          "block w-full rounded-lg shadow-none overflow-hidden transition-all duration-300 cursor-pointer border-2 border-transparent pl-px", // ADDED pl-px
+          "block w-full rounded-lg shadow-none overflow-hidden transition-all duration-300 cursor-pointer border-2 border-transparent", // Removed pl-px
           "rounded-lg", // ADDED rounded-lg here
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight

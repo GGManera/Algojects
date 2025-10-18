@@ -158,7 +158,7 @@ export function CommentItem({
     <div ref={ref} className={cn("ml-4 scroll-mt-header-offset")} id={comment.id}>
       <div 
         className={cn(
-          "block w-full rounded-lg shadow-none overflow-hidden transition-all duration-300 cursor-pointer border-2 border-transparent", // Added shadow-none
+          "block w-full rounded-lg shadow-none overflow-hidden transition-all duration-300 cursor-pointer border-2 border-transparent pl-px", // ADDED pl-px
           "rounded-lg", // ADDED rounded-lg here
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
@@ -245,7 +245,7 @@ export function CommentItem({
             />
           </CollapsibleContent>
 
-          <CollapsibleContent isOpen={isRepliesVisible} className="pl-4 border-l-2 border-gray-700 space-y-2">
+          <CollapsibleContent isOpen={isRepliesVisible} className="pl-4 space-y-2">
             {Object.values(comment.replies)
               .sort((a, b) => a.timestamp - b.timestamp)
               .filter(reply => !reply.isExcluded || activeAddress === reply.sender) // Filter excluded replies

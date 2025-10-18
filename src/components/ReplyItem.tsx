@@ -98,7 +98,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
     <div ref={ref} id={reply.id} className="scroll-mt-header-offset">
       <div 
         className={cn(
-          "w-full rounded-lg shadow-none overflow-hidden cursor-pointer transition-all duration-300 border-2 border-transparent", // Added shadow-none
+          "w-full rounded-lg shadow-none overflow-hidden cursor-pointer transition-all duration-300 border-2 border-transparent pl-px", // ADDED pl-px
           "rounded-lg", // ADDED rounded-lg here
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight

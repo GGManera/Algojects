@@ -175,7 +175,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
     >
       <div 
         className={cn(
-          "w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg overflow-hidden cursor-pointer transition-all duration-200 border-2 border-transparent shadow-none", // ADDED shadow-none
+          "w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg overflow-hidden cursor-pointer transition-all duration-200 border-2 border-transparent shadow-none pl-px", // ADDED pl-px
           "rounded-lg", // ADDED rounded-lg here
           isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
           !isFocused && "hover:focus-glow-border" // Apply hover focus highlight only if not already focused

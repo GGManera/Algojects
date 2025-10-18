@@ -74,6 +74,56 @@ const getReviewInteractionScore = (review: Review): number => {
   return score;
 };
 
+// NEW: Subcomponent for Project Notes/Description
+const ProjectNotesDisplay = ({
+  isLoadingDetails,
+  detailsError,
+  currentProjectDescription,
+  isCommunityNotes,
+  isCreatorAdded,
+  addedByAddress,
+}: {
+  isLoadingDetails: boolean;
+  detailsError: string | null;
+  currentProjectDescription: string | undefined;
+  isCommunityNotes: boolean;
+  isCreatorAdded: boolean;
+  addedByAddress: string | undefined;
+}) => {
+  if (!isLoadingDetails && (!currentProjectDescription || currentProjectDescription.trim() === '')) {
+    return null; // Don't render if no description and not loading
+  }
+
+  let notesLabel = "Notes";
+  if (isCommunityNotes) {
+    notesLabel = "Community Notes";
+  } else if (isCreatorAdded) {
+    notesLabel = "Creator Notes";
+  } else if (addedByAddress) {
+    notesLabel = "Contributor Notes";
+  }
+
+  return (
+    <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-black rounded-md shadow-recessed">
+      <h3 className="text-lg font-semibold mb-2 text-black">
+        {notesLabel}:
+      </h3>
+      {isLoadingDetails ? (
+        <Skeleton className="h-20 w-full" />
+      ) : detailsError ? (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{detailsError}</AlertDescription>
+        </Alert>
+      ) : (
+        <p className="text-black/90 whitespace-pre-wrap selectable-text">{currentProjectDescription}</p>
+      )}
+    </div>
+  );
+};
+
+
 export function ProjectDetailCard({ 
   project, 
   projectsData, 
@@ -157,6 +207,7 @@ export function ProjectDetailCard({
   const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
   const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value;
   const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true';
+  const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true'; // Defined here
   
   const creatorWalletItem = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet');
   const creatorWalletMetadata = creatorWalletItem?.value;
@@ -413,83 +464,6 @@ export function ProjectDetailCard({
     </div>
   );
 
-  // NEW: Component for Project Notes/Description
-  const ProjectNotesContainer = (
-    (isLoadingDetails || (currentProjectDescription && currentProjectDescription.trim() !== '')) && (
-      <div className="py-4 px-4 bg-gradient-to-r from-notes-gradient-start to-notes-gradient-end text-black rounded-md shadow-recessed">
-        <h3 className="text-lg font-semibold mb-2 text-black">
-          {isCommunityNotes ? "Community Notes:" : (isCreatorAdded ? "Creator Notes:" : "Contributor Notes:")}
-        </h3>
-        {isLoadingDetails ? (
-          <Skeleton className="h-20 w-full" />
-        ) : detailsError ? (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{detailsError}</AlertDescription>
-          </Alert>
-        ) : (
-          <p className="text-black/90 whitespace-pre-wrap selectable-text">{currentProjectDescription}</p>
-        )}
-      </div>
-    )
-  );
-
-  // The Metadata Minicard wrapper (now includes the header content)
-  const MetadataMinicard = (
-    <div className="w-full md:w-2/3">
-      <Card className="bg-card shadow-deep-md">
-        <CardHeader className="text-center relative px-4 pt-4 pb-4">
-          <CardTitle className="text-4xl font-bold gradient-text">
-            {currentProjectName}
-          </CardTitle>
-          <CardDescription>
-            {stats.reviewsCount} {stats.reviewsCount === 1 ? 'review' : 'reviews'} found for this project.
-          </CardDescription>
-          {currentProjectTags && (
-            <div className="flex flex-wrap justify-center gap-2 mt-1">
-              {currentProjectTags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
-                <span key={index} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary-foreground">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-          {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && (
-            <div className="mt-2">
-              <Button
-                onClick={() => setShowThankContributorDialog(true)}
-                disabled={isClaiming}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <DollarSign className="h-4 w-4 mr-2" /> Thank Contributor & Claim
-              </Button>
-            </div>
-          )}
-          {addedByAddress && (
-            <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1">
-              Added by <UserDisplay
-                address={addedByAddress}
-                textSizeClass="text-sm"
-                avatarSizeClass="h-6 w-6"
-                linkTo={`/profile/${addedByAddress}`}
-                sourceContext={projectSourceContext}
-              />
-            </div>
-          )}
-          
-          {/* Stats Grid for Mobile */}
-          <div className="px-2 pt-8 md:hidden">
-            {StatsGrid}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4 px-4 pb-4 pt-2">
-          {MetadataSectionContent}
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   return (
     <div className={cn(
       "w-full",
@@ -529,10 +503,68 @@ export function ProjectDetailCard({
                 {StatsGrid}
             </div>
             
-            {MetadataMinicard}
+            <div className="w-full md:w-2/3">
+              <Card className="bg-card shadow-deep-md">
+                <CardHeader className="text-center relative px-4 pt-4 pb-4">
+                  <CardTitle className="text-4xl font-bold gradient-text">
+                    {currentProjectName}
+                  </CardTitle>
+                  <CardDescription>
+                    {stats.reviewsCount} {stats.reviewsCount === 1 ? 'review' : 'reviews'} found for this project.
+                  </CardDescription>
+                  {currentProjectTags && (
+                    <div className="flex flex-wrap justify-center gap-2 mt-1">
+                      {currentProjectTags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
+                        <span key={index} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary-foreground">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && (
+                    <div className="mt-2">
+                      <Button
+                        onClick={() => setShowThankContributorDialog(true)}
+                        disabled={isClaiming}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <DollarSign className="h-4 w-4 mr-2" /> Thank Contributor & Claim
+                      </Button>
+                    </div>
+                  )}
+                  {addedByAddress && (
+                    <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1">
+                      Added by <UserDisplay
+                        address={addedByAddress}
+                        textSizeClass="text-sm"
+                        avatarSizeClass="h-6 w-6"
+                        linkTo={`/profile/${addedByAddress}`}
+                        sourceContext={projectSourceContext}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Stats Grid for Mobile */}
+                  <div className="px-2 pt-8 md:hidden">
+                    {StatsGrid}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4 px-4 pb-4 pt-2">
+                  {MetadataSectionContent}
+                </CardContent>
+              </Card>
+            </div>
           </div>
           
-          {ProjectNotesContainer}
+          {/* Render the new ProjectNotesDisplay component */}
+          <ProjectNotesDisplay
+            isLoadingDetails={isLoadingDetails}
+            detailsError={detailsError}
+            currentProjectDescription={currentProjectDescription}
+            isCommunityNotes={isCommunityNotes}
+            isCreatorAdded={isCreatorAdded}
+            addedByAddress={addedByAddress}
+          />
 
           {activeAddress && showProjectDetailsForm && (
             <ProjectDetailsForm

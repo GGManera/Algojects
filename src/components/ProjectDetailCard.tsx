@@ -48,7 +48,7 @@ interface ProjectDetailCardProps {
   isActive: boolean;
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId'];
   setFocusedId: ReturnType<typeof useKeyboardNavigation>['setFocusedId']; // NEW PROP
-  onScrollToTop: () => void; // NEW PROP
+  onScrollToTop?: () => void; // Made optional
 }
 
 interface ProjectStats {
@@ -88,7 +88,7 @@ export function ProjectDetailCard({
   isActive,
   setLastActiveId,
   setFocusedId, // NEW: Destructure setFocusedId
-  onScrollToTop, // NEW: Destructure onScrollToTop
+  onScrollToTop = () => {}, // Provide fallback
 }: ProjectDetailCardProps) {
   const projectId = project.id;
   const { isMobile } = useAppContextDisplayMode();

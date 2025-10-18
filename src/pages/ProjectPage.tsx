@@ -21,10 +21,10 @@ interface ProjectPageProps {
   scrollToTopTrigger?: number; // NEW prop
   isActive?: boolean; // NEW prop
   onKeyboardModeChange?: (isActive: boolean) => void; // NEW PROP
-  onScrollToTop: () => void; // Added prop
+  onScrollToTop?: () => void; // Made optional
 }
 
-const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop }: ProjectPageProps) => { // Accept onScrollToTop
+const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop = () => {} }: ProjectPageProps) => { // Provide fallback
   const location = useLocation();
   const navigate = useNavigate();
   const { projects, loading, error, refetch } = useSocialData();
@@ -183,6 +183,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
         isActive={isActive}
         setLastActiveId={setLastActiveId} // NEW
         setFocusedId={setFocusedId} // NEW: Pass setFocusedId
+        onScrollToTop={onScrollToTop}
       />
     </div>
   );

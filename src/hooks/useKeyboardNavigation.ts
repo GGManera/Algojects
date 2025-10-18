@@ -142,6 +142,11 @@ export function useKeyboardNavigation(pageKey: string) {
       mouseTimeoutRef.current = setTimeout(() => {
         setIsMouseActive(false);
       }, 500);
+      
+      // NEW: If mouse moves, disable keyboard mode immediately.
+      if (isKeyboardModeActive) {
+          setIsKeyboardModeActive(false);
+      }
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -152,7 +157,7 @@ export function useKeyboardNavigation(pageKey: string) {
         clearTimeout(mouseTimeoutRef.current);
       }
     };
-  }, [isMouseActive]);
+  }, [isMouseActive, isKeyboardModeActive]); // Added isKeyboardModeActive dependency
 
   // --- Mouse Hover Tracking (External API) ---
   const setLastActiveId = useCallback((id: string | null) => {
@@ -163,9 +168,18 @@ export function useKeyboardNavigation(pageKey: string) {
     // clear the keyboard focus (focusedId) to transfer control to the mouse.
     if (id !== null && focusedId !== null && id !== focusedId) {
         setFocusedId(null);
-        setIsKeyboardModeActive(false); // Disable keyboard mode when mouse takes over
+        // Note: isKeyboardModeActive is already set to false by handleMouseMove if the mouse moved.
     }
   }, [setCacheActiveId, focusedId]);
+
+  // --- Enforce Focus/Mode Relationship ---
+  useEffect(() => {
+    // If keyboard mode is off, no item should be persistently focused.
+    if (!isKeyboardModeActive && focusedId !== null) {
+      setFocusedId(null);
+    }
+  }, [isKeyboardModeActive, focusedId]);
+
 
   // --- Registration Management ---
   const registerItem = useCallback((id: string, toggleExpand: () => void, isExpanded: boolean, type: NavigableItem['type']) => {

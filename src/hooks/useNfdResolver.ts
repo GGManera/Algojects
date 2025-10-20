@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { queueNfdResolutionV2 } from './useNfdBatcher'; // NEW: Import the batcher
 
 interface NfdData {
   name: string | null;
@@ -19,8 +20,6 @@ const ipfsToGateway = (url: string | undefined): string | null => {
   if (!url) return null;
 
   // If it's already a direct HTTP/HTTPS URL, use it as is.
-  // This includes imageproxy.nf.domains and other direct image links,
-  // as well as NFD's own IPFS gateways like ipfsfgw.nf.domains.
   if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
@@ -51,7 +50,7 @@ export function useNfdResolver(inputs: string[] | undefined) {
     const fetchResolutions = async () => {
       setLoading(true);
       const newResolvedAddresses = new Set<string>();
-      const addressesToBatch = new Set<string>();
+      const addressesToQueue: string[] = [];
       const nameLookups: string[] = [];
 
       // --- Phase 1: Check cache and categorize inputs ---
@@ -71,7 +70,7 @@ export function useNfdResolver(inputs: string[] | undefined) {
 
         // If stale or missing, determine type and add to fetch list
         if (trimmedInput.length === 58) {
-          addressesToBatch.add(trimmedInput);
+          addressesToQueue.push(trimmedInput);
           newResolvedAddresses.add(trimmedInput); // Assume address is valid until proven otherwise
         } else {
           nameLookups.push(trimmedInput);
@@ -80,60 +79,22 @@ export function useNfdResolver(inputs: string[] | undefined) {
 
       const fetchPromises: Promise<void>[] = [];
 
-      // --- Phase 2: Batch Address Lookups ---
-      const addressArray = Array.from(addressesToBatch);
-      for (let i = 0; i < addressArray.length; i += BATCH_SIZE) {
-        const batch = addressArray.slice(i, i + BATCH_SIZE);
-        const batchString = batch.join(',');
-        
-        fetchPromises.push((async () => {
-          try {
-            // Using 'view=full' to get all necessary data (name, avatar properties, owner)
-            const apiUrl = `${NFD_API_URL}/nfd/lookup?address=${batchString}&view=full`;
-            console.log(`[useNfdResolver] Fetching address batch (${batch.length}): ${apiUrl}`);
-            const response = await fetch(apiUrl);
-            
-            if (!response.ok) {
-              console.warn(`[useNfdResolver] NFD batch lookup failed: HTTP status ${response.status}.`);
-              return;
-            }
-            const data = await response.json();
-            
-            // Process batched results (data is an object keyed by address)
-            for (const address of batch) {
-              const resolvedNfdObject = data[address];
-              
-              if (resolvedNfdObject && resolvedNfdObject.owner) {
-                const rawAvatarUrl = resolvedNfdObject.properties?.userDefined?.avatar || resolvedNfdObject.properties?.verified?.avatar;
-                const avatarUrl = ipfsToGateway(rawAvatarUrl);
-                
-                let nfdName = resolvedNfdObject.name || null;
-                if (nfdName && !nfdName.endsWith(".algo")) {
-                  nfdName = `${nfdName}.algo`;
-                }
-
-                nfdLookupCache.set(address, {
-                  name: nfdName,
-                  avatar: avatarUrl,
-                  address: resolvedNfdObject.owner,
-                  timestamp: Date.now(),
-                });
-              } else {
-                // Cache the address even if no NFD is found for it
-                nfdLookupCache.set(address, { name: null, avatar: null, address: address, timestamp: Date.now() });
+      // --- Phase 2: Queue Address Lookups via Batcher ---
+      // This ensures that even if useNfdResolver is called with a list of addresses, 
+      // they are pooled with any concurrent calls from useNfd.
+      const addressResolutionPromises = addressesToQueue.map(address => queueNfdResolutionV2(address));
+      
+      fetchPromises.push((async () => {
+          const results = await Promise.all(addressResolutionPromises);
+          results.forEach(result => {
+              if (result?.address) {
+                  newResolvedAddresses.add(result.address);
               }
-            }
-          } catch (err) {
-            console.error(`[useNfdResolver] Exception during NFD batch fetch:`, err);
-            // On error, mark all addresses in the batch as failed/stale in cache
-            batch.forEach(address => {
-                nfdLookupCache.set(address, { name: null, avatar: null, address: address, timestamp: Date.now() });
-            });
-          }
-        })());
-      }
+          });
+      })());
 
-      // --- Phase 3: Individual Name Lookups ---
+
+      // --- Phase 3: Individual Name Lookups (cannot be batched by address) ---
       nameLookups.forEach(name => {
         fetchPromises.push((async () => {
           try {
@@ -159,19 +120,14 @@ export function useNfdResolver(inputs: string[] | undefined) {
               }
 
               newResolvedAddresses.add(resolvedAddress);
-              nfdLookupCache.set(name, {
+              const cachedResult = {
                 name: nfdName,
                 avatar: avatarUrl,
                 address: resolvedAddress,
                 timestamp: Date.now(),
-              });
-              // Also cache by resolved address for consistency
-              nfdLookupCache.set(resolvedAddress, {
-                name: nfdName,
-                avatar: avatarUrl,
-                address: resolvedAddress,
-                timestamp: Date.now(),
-              });
+              };
+              nfdLookupCache.set(name, cachedResult);
+              nfdLookupCache.set(resolvedAddress, cachedResult);
             } else {
                 nfdLookupCache.set(name, { name: null, avatar: null, address: null, timestamp: Date.now() });
             }

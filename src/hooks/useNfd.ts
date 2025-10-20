@@ -14,6 +14,9 @@ interface NfdData {
 const NFD_API_URL = "https://api.nf.domains";
 const NFD_CACHE_DURATION_MS = 15 * 1000; // 15 seconds for NFD cache
 
+// NEW: Global map to hold pending fetch promises for deduplication
+const pendingRequests = new Map<string, Promise<any>>();
+
 const ipfsToGateway = (url: string | undefined): string | null => {
   if (!url) return null;
 
@@ -36,7 +39,8 @@ const ipfsToGateway = (url: string | undefined): string | null => {
 const processNfdData = (data: any, address: string): NfdData => {
     const nfdData = data[address] || data; // Handle both batched (keyed by address) and single lookups
     
-    const rawAvatarUrl = nfdData?.properties?.userDefined?.avatar || nfdData?.properties?.verified?.avatar;
+    // Prioritize verified avatar if available, otherwise use userDefined
+    const rawAvatarUrl = nfdData?.properties?.verified?.avatar || nfdData?.properties?.userDefined?.avatar;
     const avatarUrl = ipfsToGateway(rawAvatarUrl);
 
     let nfdName = nfdData?.name || null;
@@ -66,36 +70,47 @@ export function useNfd(address: string | undefined) {
     
     const trimmedAddress = address.trim();
 
-    // Check shared cache first. If found and fresh, update state and return early.
+    // 1. Check shared cache first. If found and fresh, update state and return early.
     const cachedNfdEntry = nfdLookupCache.get(trimmedAddress);
     const isFresh = cachedNfdEntry && (Date.now() - cachedNfdEntry.timestamp < NFD_CACHE_DURATION_MS);
 
     if (isFresh) {
       setNfd(cachedNfdEntry);
-      setRawData(cachedNfdEntry); // Use cached entry as raw data placeholder
+      setRawData(cachedNfdEntry);
       setLoading(false);
-      console.log(`[useNfd] Shared Cache HIT (fresh) para o endereço: ${trimmedAddress}.`);
       return;
     }
 
-    // If not in cache, or cache is stale, proceed to fetch
+    // 2. Check if a request is already pending for this address
+    if (pendingRequests.has(trimmedAddress)) {
+        setLoading(true);
+        // Wait for the existing request to complete
+        pendingRequests.get(trimmedAddress)!.then((result) => {
+            setNfd(result);
+            setRawData(result);
+            setLoading(false);
+        }).catch((err) => {
+            console.error(`[useNfd] Pending request failed for ${trimmedAddress}:`, err);
+            setNfd({ name: null, avatar: null });
+            setRawData({ error: err instanceof Error ? err.message : "Unknown error" });
+            setLoading(false);
+        });
+        return;
+    }
+
+    // 3. Initiate a new fetch
     setLoading(true);
     setNfd(null);
     setRawData(null);
-
-    console.log(`[useNfd] Cache MISS ou STALE para o endereço: ${trimmedAddress}. Iniciando busca individual.`);
 
     const fetchNfd = async () => {
       try {
         const response = await fetch(`${NFD_API_URL}/nfd/lookup?address=${trimmedAddress}&view=full`);
         
         if (response.status === 404) {
-          console.log(`[useNfd] NFD não encontrado (404) para o endereço: ${trimmedAddress}`);
           const data = { name: null, avatar: null, address: trimmedAddress, timestamp: Date.now() };
           nfdLookupCache.set(trimmedAddress, data);
-          setNfd(data);
-          setRawData({ error: "NFD not found (404)" });
-          return;
+          return data;
         }
 
         if (!response.ok) {
@@ -103,26 +118,34 @@ export function useNfd(address: string | undefined) {
         }
 
         const data = await response.json();
-        setRawData(data);
-
         const result: NfdData = processNfdData(data, trimmedAddress);
         
         const cachedResult = { ...result, address: trimmedAddress, timestamp: Date.now() };
-        console.log(`[useNfd] Dados NFD finais sendo definidos/armazenados em cache para ${trimmedAddress}:`, cachedResult);
         nfdLookupCache.set(trimmedAddress, cachedResult);
-        setNfd(result);
+        return cachedResult;
       } catch (err) {
         console.error(`[useNfd] Falha ao buscar NFD para ${trimmedAddress}:`, err);
         const data = { name: null, avatar: null, address: trimmedAddress, timestamp: Date.now() };
         nfdLookupCache.set(trimmedAddress, data);
-        setNfd(data);
-        setRawData({ error: err instanceof Error ? err.message : "Unknown error" });
+        throw err; // Re-throw the error to be caught by the promise chain
       } finally {
-        setLoading(false);
+        pendingRequests.delete(trimmedAddress); // Remove from pending map regardless of success/failure
       }
     };
 
-    fetchNfd();
+    const requestPromise = fetchNfd();
+    pendingRequests.set(trimmedAddress, requestPromise);
+
+    requestPromise.then((result) => {
+        setNfd(result);
+        setRawData(result);
+    }).catch((err) => {
+        setNfd({ name: null, avatar: null });
+        setRawData({ error: err instanceof Error ? err.message : "Unknown error" });
+    }).finally(() => {
+        setLoading(false);
+    });
+
   }, [address]);
 
   return { nfd, loading, rawData };

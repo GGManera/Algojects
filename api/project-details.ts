@@ -1,4 +1,4 @@
-import { ProjectMetadata, MetadataItem } from '../src/types/project.ts'; // Import ProjectMetadata and MetadataItem
+import { ProjectMetadata } from '../src/types/project.ts'; // Import ProjectMetadata
 
 // Mapeamento dos IDs internos do Coda para as colunas
 const CODA_COLUMN_PROJECT_ID = 'c-ftTZjCuByP';

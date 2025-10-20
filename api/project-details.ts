@@ -1,5 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ProjectMetadata, MetadataItem } from '../src/types/project'; // Import ProjectMetadata and MetadataItem
+import { ProjectMetadata, MetadataItem } from '../src/types/project.ts'; // Import ProjectMetadata and MetadataItem
 
 // Mapeamento dos IDs internos do Coda para as colunas
 const CODA_COLUMN_PROJECT_ID = 'c-ftTZjCuByP';
@@ -137,9 +136,10 @@ async function updateProjectDetailsInCoda(
   }
 }
 
+// We use generic Request/Response types here since Vercel types are not available
 export default async function handler(
-  request: VercelRequest,
-  response: VercelResponse,
+  request: { method?: string; body: any },
+  response: { status: (code: number) => any; json: (data: any) => void },
 ) {
   console.log("[Vercel API Handler] Incoming request body:", request.body);
   try {

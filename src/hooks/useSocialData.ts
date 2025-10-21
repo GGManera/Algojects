@@ -74,6 +74,11 @@ const parseTransactions = (transactions: any[]): ProjectsData => {
     const multiPartContent: { [key: string]: { [order: number]: string } } = {};
     const projectFirstReviewSender: { [projectId: string]: { sender: string, timestamp: number } } = {};
     const itemLikeEvents: { [itemId: string]: Array<{ sender: string; action: 'LIKE' | 'UNLIKE'; timestamp: number; txId: string }> } = {};
+    
+    // Determine the latest confirmed round from all transactions
+    const latestConfirmedRound = transactions.reduce((maxRound, tx) => {
+        return Math.max(maxRound, tx['confirmed-round'] || 0);
+    }, 0);
 
     console.log("[useSocialData] Starting parseTransactions with total transactions:", transactions.length);
 
@@ -230,10 +235,8 @@ const parseTransactions = (transactions: any[]): ProjectsData => {
     Object.values(parsedProjects).forEach(proj => {
         if (projectFirstReviewSender[proj.id]) proj.creatorWallet = projectFirstReviewSender[proj.id].sender;
         
-        // NEW: Add a fixed round number for testing if txs are available
-        // This is a temporary fallback round for testing Allo API integration.
-        // In a real scenario, this should be derived from the latest transaction round or a specific governance round.
-        (proj as any).round = transactions.length > 0 ? transactions[0]['confirmed-round'] : 30000000; 
+        // Set the round number for the project
+        proj.round = latestConfirmedRound || 30000000; 
 
         const filteredReviews: { [reviewId: string]: Review } = {};
         Object.values(proj.reviews).forEach(review => {
@@ -247,7 +250,7 @@ const parseTransactions = (transactions: any[]): ProjectsData => {
         proj.reviews = filteredReviews;
     });
 
-    console.log("[useSocialData] Finished parseTransactions. Resulting projects:", parsedProjects);
+    console.log("[useSocialData] Finished parseTransactions. Latest Confirmed Round:", latestConfirmedRound, "Resulting projects:", parsedProjects);
     return parsedProjects;
 };
 

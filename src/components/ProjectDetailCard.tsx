@@ -29,8 +29,10 @@ import { useWallet } from "@txnlab/use-wallet-react";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { ProjectMetadataNavigator } from "./ProjectMetadataNavigator"; // NEW Import
 import { cn } from '@/lib/utils'; // Import cn
+import { useProjectAssetSnapshot } from "@/hooks/useProjectAssetSnapshot"; // NEW Import
+import { retryFetch } from "@/utils/api"; // Import retryFetch
 
-const INDEXER_URL = "https://mainnet-idx.algode.cloud";
+const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 
 interface ProjectDetailCardProps {
   project: Project;
@@ -147,24 +149,87 @@ export function ProjectDetailCard({
   const [showProjectDetailsForm, setShowProjectDetailsForm] = useState(false);
   const [showThankContributorDialog, setShowThankContributorDialog] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
-  
+  const [lastRound, setLastRound] = useState(0); // State to hold the last round
+
   // NEW: State for global view mode, default to 'reviews' (collapsed)
   const [viewMode, setViewMode] = useState<'reviews' | 'comments' | 'replies' | 'interactions'>('reviews');
   
   // NEW: State to track if focus is inside the Metadata Navigator
   const [isMetadataNavigatorFocused, setIsMetadataNavigatorFocused] = useState(false);
 
-  const { tokenHoldings, loading: tokenHoldingsLoading } = useUserProjectTokenHoldings(activeAddress, projectsData, projectDetails);
+  // Removed useUserProjectTokenHoldings for ProjectPage, keeping it for ProfilePage only
   const { allCuratorData, loading: curatorIndexLoading } = useCuratorIndex(undefined, projectsData);
 
-  // NEW: Create the WriterTokenHoldingsMap for passing down
-  const writerTokenHoldingsMap: WriterTokenHoldingsMap = useMemo(() => {
-    return tokenHoldings.reduce((map, holding) => {
-      map.set(holding.projectId, { amount: holding.amount, unitName: holding.assetUnitName });
-      return map;
-    }, new Map());
-  }, [tokenHoldings]);
+  // --- Project Metadata Extraction ---
+  const currentProjectDetailsEntry = projectDetails.find(entry => entry.projectId === projectId);
+  const projectMetadata: MetadataItem[] = currentProjectDetailsEntry?.projectMetadata || [];
 
+  const currentProjectName = projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${projectId}`;
+  const currentProjectDescription = projectMetadata.find(item => item.type === 'project-description')?.value;
+  const currentProjectTags = projectMetadata.find(item => item.type === 'tags')?.value;
+  const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
+  const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value;
+  const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true';
+  const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true';
+  
+  const creatorWalletItem = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet');
+  const creatorWalletMetadata = creatorWalletItem?.value;
+  
+  const addedByAddress = addedByAddressCoda || project.creatorWallet;
+  const effectiveCreatorAddress = creatorWalletMetadata || project.creatorWallet;
+
+  // Determine project asset info
+  const projectAssetInfo = useMemo(() => {
+    const assetIdItem = projectMetadata.find(item => item.type === 'asset-id');
+    const assetUnitNameItem = projectMetadata.find(item => item.type === 'asset-unit-name');
+    const assetId = assetIdItem ? parseInt(assetIdItem.value, 10) : undefined;
+    const assetUnitName = assetUnitNameItem?.value;
+
+    if (assetId && !isNaN(assetId) && assetId > 0 && assetUnitName) {
+      return { assetId, assetUnitName };
+    }
+    return undefined;
+  }, [projectMetadata]);
+
+  // --- Fetch Last Round ---
+  useEffect(() => {
+    const fetchLastRound = async () => {
+      try {
+        const indexerStatusResponse = await retryFetch(`${INDEXER_URL}/v2/transactions?limit=1`);
+        if (!indexerStatusResponse.ok) throw new Error("Could not fetch network status from Indexer.");
+        const indexerStatusData = await indexerStatusResponse.json();
+        const round = indexerStatusData['current-round'];
+        if (typeof round === 'number') {
+          setLastRound(round);
+        }
+      } catch (e) {
+        console.error("Failed to fetch last round:", e);
+      }
+    };
+    fetchLastRound();
+  }, [projectId]); // Fetch once when project loads
+
+  // --- Fetch Asset Snapshot ---
+  const { 
+    assetHoldingsMap: snapshotHoldingsMap, 
+    loading: snapshotHoldingsLoading, 
+    error: snapshotHoldingsError 
+  } = useProjectAssetSnapshot(projectAssetInfo?.assetId, lastRound);
+
+  // --- Consolidate Holdings Map for Writers ---
+  const writerTokenHoldingsMap: WriterTokenHoldingsMap = useMemo(() => {
+    if (!projectAssetInfo || snapshotHoldingsLoading || snapshotHoldingsError) {
+      return new Map();
+    }
+    
+    const map = new Map<string, ProjectHoldingInfo>();
+    snapshotHoldingsMap.forEach((amount, address) => {
+      map.set(address, { amount, unitName: projectAssetInfo.assetUnitName });
+    });
+    return map;
+  }, [snapshotHoldingsMap, snapshotHoldingsLoading, snapshotHoldingsError, projectAssetInfo]);
+
+  // --- Stats Calculation ---
   const stats: ProjectStats = useMemo(() => {
     let reviewsCount = 0;
     let commentsCount = 0;
@@ -205,41 +270,8 @@ export function ProjectDetailCard({
       .sort((a, b) => b.score - a.score);
   }, [project.reviews]);
 
-  const currentProjectDetailsEntry = projectDetails.find(entry => entry.projectId === projectId);
-  const projectMetadata: MetadataItem[] = currentProjectDetailsEntry?.projectMetadata || [];
-
-  // Extract "fixed" fields from projectMetadata
-  const currentProjectName = projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${projectId}`;
-  const currentProjectDescription = projectMetadata.find(item => item.type === 'project-description')?.value;
-  const currentProjectTags = projectMetadata.find(item => item.type === 'tags')?.value;
-  const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
-  const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value;
-  const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true';
-  const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true'; // Defined here
-  
-  const creatorWalletItem = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet');
-  const creatorWalletMetadata = creatorWalletItem?.value;
-  
-  const addedByAddress = addedByAddressCoda || project.creatorWallet;
-  const effectiveCreatorAddress = creatorWalletMetadata || project.creatorWallet;
-
-  // NEW: Determine project asset info to pass down for user holdings lookup
-  const projectAssetInfo = useMemo(() => {
-    const assetIdItem = projectMetadata.find(item => item.type === 'asset-id');
-    const assetUnitNameItem = projectMetadata.find(item => item.type === 'asset-unit-name');
-    const assetId = assetIdItem ? parseInt(assetIdItem.value, 10) : undefined;
-    const assetUnitName = assetUnitNameItem?.value;
-
-    if (assetId && !isNaN(assetId) && assetUnitName) {
-      return { assetId, assetUnitName };
-    }
-    return undefined;
-  }, [projectMetadata]);
-
   const handleProjectDetailsUpdated = () => {
-    // When details are updated via form, the mutation invalidates the query, triggering a refetch.
-    // We only need to call the parent's onInteractionSuccess if it affects social data (which it doesn't here).
-    // We rely on React Query's automatic refetching.
+    // Logic remains the same
   };
 
   const isAuthorizedToClaim = activeAddress && effectiveCreatorAddress && activeAddress === effectiveCreatorAddress && !isClaimed && addedByAddress && activeAddress !== addedByAddress;
@@ -273,9 +305,6 @@ export function ProjectDetailCard({
       dismissToast(toastId);
       showSuccess("Project claimed and contributor rewarded successfully!");
       setShowThankContributorDialog(false);
-      // The mutation in thankContributorAndClaimProject handles the Coda update,
-      // which internally calls updateProjectDetailsClient, which is now wrapped by React Query mutation.
-      // We need to manually invalidate the query here since thankContributorAndClaimProject is a custom function.
       refetchProjectDetails(); 
       onInteractionSuccess();
     } catch (err) {
@@ -302,27 +331,7 @@ export function ProjectDetailCard({
     }
   };
 
-  const currentUserProjectHolding = useMemo(() => {
-    if (!activeAddress || tokenHoldingsLoading) return null;
-    return tokenHoldings.find(holding => holding.projectId === projectId);
-  }, [activeAddress, tokenHoldings, tokenHoldingsLoading, projectId]);
-
-  const allWriterAddresses = useMemo(() => {
-    const addresses = new Set<string>();
-    if (project.creatorWallet) addresses.add(project.creatorWallet);
-    if (addedByAddress) addresses.add(addedByAddress);
-
-    Object.values(project.reviews).forEach(review => {
-      addresses.add(review.sender);
-      Object.values(review.comments).forEach(comment => {
-        addresses.add(comment.sender);
-        Object.values(comment.replies).forEach(reply => {
-          addresses.add(reply.sender);
-        });
-      });
-    });
-    return Array.from(addresses);
-  }, [project, addedByAddress]);
+  // Removed currentUserProjectHolding logic as it's now handled by the snapshot
 
   const projectSourceContext = useMemo(() => ({
     path: `/project/${projectId}`,
@@ -478,8 +487,8 @@ export function ProjectDetailCard({
       <ProjectMetadataNavigator
         projectId={projectId}
         projectMetadata={projectMetadata}
-        currentUserProjectHolding={currentUserProjectHolding}
-        tokenHoldingsLoading={tokenHoldingsLoading}
+        currentUserProjectHolding={undefined} // Removed individual holding lookup
+        tokenHoldingsLoading={snapshotHoldingsLoading} // Use snapshot loading state
         projectSourceContext={projectSourceContext}
         isParentFocused={isFocused && !isMetadataNavigatorFocused} // Pass parent focus state
         onFocusTransfer={handleFocusTransfer} // Receive internal focus state
@@ -612,7 +621,7 @@ export function ProjectDetailCard({
               onInteractionSuccess={onInteractionSuccess}
               interactionScore={score}
               writerTokenHoldings={writerTokenHoldingsMap}
-              writerHoldingsLoading={tokenHoldingsLoading}
+              writerHoldingsLoading={snapshotHoldingsLoading} // Use snapshot loading state
               projectSourceContext={projectSourceContext}
               allCuratorData={allCuratorData}
               focusedId={focusedId}

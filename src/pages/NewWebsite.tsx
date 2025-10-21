@@ -56,6 +56,11 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
   const slideRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
+  // NEW: Refs and constants for touchpad navigation
+  const lastSwipeTimeRef = useRef(0);
+  const SWIPE_DEBOUNCE_MS = 500;
+  const SWIPE_THRESHOLD = 50;
+
   const { projectIdFromUrl, addressFromUrl } = useMemo(() => {
     const pathParts = location.pathname.split('/').filter(Boolean);
     let pId: string | undefined;
@@ -367,10 +372,41 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       }
     };
 
+    // NEW: Handle touchpad horizontal scroll/swipe
+    const handleWheel = (e: WheelEvent) => {
+      // Only intercept if there is significant horizontal movement AND it dominates vertical movement
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > SWIPE_THRESHOLD) {
+        
+        // Prevent default browser navigation/scroll
+        e.preventDefault(); 
+        
+        if (isTransitioning) {
+          return;
+        }
+
+        const now = Date.now();
+        if (now - lastSwipeTimeRef.current < SWIPE_DEBOUNCE_MS) {
+          return;
+        }
+
+        lastSwipeTimeRef.current = now;
+
+        if (e.deltaX > 0) {
+          // Swiping left (deltaX positive) -> Go to next slide (right)
+          api.scrollNext();
+        } else {
+          // Swiping right (deltaX negative) -> Go to previous slide (left)
+          api.scrollPrev();
+        }
+      }
+    };
+
     document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('wheel', handleWheel);
     };
   }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 

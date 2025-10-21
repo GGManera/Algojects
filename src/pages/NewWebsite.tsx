@@ -422,7 +422,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
   return (
     <div className="w-full px-0 py-0 md:p-0 text-foreground h-full scroll-mt-header-offset">
-      <Carousel setApi={setApi} className="w-full" opts={{ duration: 5, baseFriction: 0.99 }}>
+      <Carousel setApi={setApi} className="w-full" opts={{ duration: 20, baseFriction: 0.99 }}>
         <CarouselContent>
           {slidesConfig.map((slide, index) => {
             const slideComponent = React.cloneElement(slide.component, {

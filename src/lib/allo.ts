@@ -13,7 +13,7 @@ export interface AssetHoldersResponse {
   };
 }
 
-// Simple in-memory cache
+// Simple in-memory cache for different types of responses
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
@@ -59,7 +59,7 @@ export async function fetchAssetHolders(assetId: number, round: number): Promise
   }
 }
 
-// --- NEW FUNCTION FOR USER ASSETS ---
+// --- CORRECTED FUNCTION FOR USER ASSETS ---
 
 export interface UserAsset {
   'asset-id': number;
@@ -68,13 +68,12 @@ export interface UserAsset {
 }
 
 export interface UserAssetsResponse {
-    // This is a guess based on allo.info's other endpoint.
-    // Please update with the actual response structure.
-    data: UserAsset[];
+  meta: { name: string; type: string }[];
+  data: [number, number, string][];
+  rows: number;
 }
 
 export async function fetchUserAssets(address: string, round: number): Promise<UserAsset[]> {
-    // NOTE: The endpoint URL is a placeholder. Please provide the correct one.
     const ALLO_USER_ASSETS_URL = `https://analytics-api.allo.info/v1/address/${address}/assets/${round}`;
 
     if (!round) {
@@ -94,7 +93,12 @@ export async function fetchUserAssets(address: string, round: number): Promise<U
             throw new Error(`Failed to fetch assets for address ${address}`);
         }
         const result: UserAssetsResponse = await response.json();
-        const assets = result.data || [];
+        
+        const assets: UserAsset[] = (result.data || []).map(item => ({
+            'asset-id': item[0],
+            amount: item[1],
+            'unit-name': item[2]
+        }));
         
         cache.set(cacheKey, { data: assets, timestamp: now });
         return assets;

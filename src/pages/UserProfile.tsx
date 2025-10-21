@@ -459,7 +459,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
         };
       }
 
-      Object.values(project.reviews).forEach(review => {
+      Object.values(project.reviews || {}).forEach(review => { // ADDED || {}
         if (!(review.id.endsWith('.a') && review.content === "")) {
             if (activeCategory === "writing" && review.sender === effectiveAddress) {
               grouped[projectId].reviews.push(review);
@@ -467,13 +467,13 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
               grouped[projectId].reviews.push(review);
             }
           }
-        Object.values(review.comments).forEach(comment => {
+        Object.values(review.comments || {}).forEach(comment => { // ADDED || {}
           if (activeCategory === "writing" && comment.sender === effectiveAddress) {
             grouped[projectId].comments.push({ comment, review });
           } else if (activeCategory === "curating" && comment.likes.has(effectiveAddress)) {
             grouped[projectId].comments.push({ comment, review });
           }
-          Object.values(comment.replies).forEach(reply => {
+          Object.values(comment.replies || {}).forEach(reply => { // ADDED || {}
             if (activeCategory === "writing" && reply.sender === effectiveAddress) {
               grouped[projectId].replies.push({ reply, comment, review });
             } else if (activeCategory === "curating" && reply.likes.has(effectiveAddress)) {
@@ -496,7 +496,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
 
   const sortedProjectIds = useMemo(() => {
     return Object.keys(groupedUserInteractions).sort((a, b) => {
-      const nameA = groupedUserInteractions[a].projectName.toLowerCase();
+      const nameA = groupedUserinteractions[a].projectName.toLowerCase();
       const nameB = groupedUserInteractions[b].projectName.toLowerCase();
       return nameA.localeCompare(nameB);
     });

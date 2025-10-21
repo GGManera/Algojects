@@ -50,13 +50,13 @@ const recursivelyConvertLikes = (data: ProjectsData): ProjectsData => {
   for (const projectId in data) {
     const project = { ...data[projectId] };
     project.reviews = {};
-    for (const reviewId in data[projectId].reviews) {
+    for (const reviewId in data[projectId].reviews || {}) { // ADDED || {}
       const review = ensureInteractionDataTypes({ ...data[projectId].reviews[reviewId] });
       review.comments = {};
-      for (const commentId in data[projectId].reviews[reviewId].comments) {
+      for (const commentId in data[projectId].reviews[reviewId].comments || {}) { // ADDED || {}
         const comment = ensureInteractionDataTypes({ ...data[projectId].reviews[reviewId].comments[commentId] });
         comment.replies = {};
-        for (const replyId in data[projectId].reviews[reviewId].comments[commentId].replies) {
+        for (const replyId in data[projectId].reviews[reviewId].comments[commentId].replies || {}) { // ADDED || {}
           const reply = ensureInteractionDataTypes({ ...data[projectId].reviews[reviewId].comments[commentId].replies[replyId] });
           comment.replies[replyId] = reply;
         }

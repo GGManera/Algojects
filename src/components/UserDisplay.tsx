@@ -27,22 +27,15 @@ interface UserDisplayProps {
 }
 
 export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", textSizeClass = "text-sm", linkTo = `/profile/${address}`, onClick, sourceContext, currentProfileActiveCategory, projectTokenHoldings, writerHoldingsLoading }: UserDisplayProps) {
+  // --- Hooks called unconditionally at the top level ---
   const { nfd, loading } = useNfd(address);
   const location = useLocation();
+  const { pushEntry } = useNavigationHistory();
+  
   const [lastCopied, setLastCopied] = useState<'nfd' | 'address' | null>(null);
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
-  const { pushEntry } = useNavigationHistory();
 
-  if (loading) {
-    return (
-      <div className={cn("flex items-center space-x-2", className)}>
-        <Skeleton className={cn("rounded-full", avatarSizeClass)} />
-        <Skeleton className={cn("h-4", textSizeClass === "text-2xl text-center" ? "w-32" : "w-24")} />
-      </div>
-    );
-  }
-
-  // --- LOGIC FOR TOKEN HOLDING ---
+  // --- LOGIC FOR TOKEN HOLDING (useMemo must be unconditional) ---
   const currentProjectId = useMemo(() => {
     if (sourceContext?.path.startsWith('/project/')) {
         return sourceContext.path.split('/')[2];
@@ -57,6 +50,15 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
     return (amount || 0) > 0;
   }, [currentProjectId, projectTokenHoldings]);
   // --- END LOGIC ---
+
+  if (loading) {
+    return (
+      <div className={cn("flex items-center space-x-2", className)}>
+        <Skeleton className={cn("rounded-full", avatarSizeClass)} />
+        <Skeleton className={cn("h-4", textSizeClass === "text-2xl text-center" ? "w-32" : "w-24")} />
+      </div>
+    );
+  }
 
   let displayName: string;
   let fullDisplayName: string;

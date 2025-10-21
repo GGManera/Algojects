@@ -163,7 +163,7 @@ export function ProjectMetadataNavigator({
 
   // Add the holding card as a virtual item if it exists (only if currentUserProjectHolding is provided, e.g., on Profile Page)
   const holdingItem = useMemo(() => {
-    if (!currentUserProjectHolding) return null;
+    if (!currentUserProjectHolding || currentUserProjectHolding.amount === 0) return null;
     return {
       title: 'Your Holding',
       value: `${currentUserProjectHolding.amount} ${currentUserProjectHolding.assetUnitName || ''}`,

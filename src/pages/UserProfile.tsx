@@ -24,6 +24,7 @@ import { useAppContextDisplayMode } from "@/contexts/AppDisplayModeContext";
 import { cn } from '@/lib/utils';
 import { usePlatformAnalytics } from "@/hooks/usePlatformAnalytics";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
+import { ProjectMetadataNavigator } from "@/components/ProjectMetadataNavigator"; // Import ProjectMetadataNavigator
 
 // Helper function to calculate interaction score for a review
 const getReviewInteractionScore = (review: Review): number => {
@@ -459,7 +460,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
         };
       }
 
-      Object.values(project.reviews || {}).forEach(review => { // ADDED || {}
+      Object.values(project.reviews || {}).forEach(review => { // Added || {}
         if (!(review.id.endsWith('.a') && review.content === "")) {
             if (activeCategory === "writing" && review.sender === effectiveAddress) {
               grouped[projectId].reviews.push(review);
@@ -467,13 +468,13 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
               grouped[projectId].reviews.push(review);
             }
           }
-        Object.values(review.comments || {}).forEach(comment => { // ADDED || {}
+        Object.values(review.comments || {}).forEach(comment => { // Added || {}
           if (activeCategory === "writing" && comment.sender === effectiveAddress) {
             grouped[projectId].comments.push({ comment, review });
           } else if (activeCategory === "curating" && comment.likes.has(effectiveAddress)) {
             grouped[projectId].comments.push({ comment, review });
           }
-          Object.values(comment.replies || {}).forEach(reply => { // ADDED || {}
+          Object.values(comment.replies || {}).forEach(reply => { // Added || {}
             if (activeCategory === "writing" && reply.sender === effectiveAddress) {
               grouped[projectId].replies.push({ reply, comment, review });
             } else if (activeCategory === "curating" && reply.likes.has(effectiveAddress)) {
@@ -623,11 +624,29 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                                   sortedProjectIds.map(projectId => {
                                     const projectGroup = groupedUserInteractions[projectId];
                                     if (projectGroup.reviews.length === 0) return null;
+                                    
+                                    // Find the specific holding for this project
+                                    const currentHolding = tokenHoldings.find(h => h.projectId === projectId);
+                                    
                                     return (
                                       <div key={projectId} className="mb-6">
                                         <Link to={`/project/${projectId}`} className="block hover:underline">
                                           <h3 className="text-xl font-bold gradient-text mb-4">{projectGroup.projectName}</h3>
                                         </Link>
+                                        
+                                        {/* Project Metadata Navigator for the current user's holding */}
+                                        <ProjectMetadataNavigator
+                                            projectId={projectId}
+                                            projectMetadata={projectDetails.find(pd => pd.projectId === projectId)?.projectMetadata || []}
+                                            currentUserProjectHolding={currentHolding}
+                                            tokenHoldingsLoading={tokenHoldingsLoading}
+                                            projectSourceContext={{ path: location.pathname, label: userProfileNfd?.name || effectiveAddress }}
+                                            isParentFocused={false} // Always false here, as it's not the main focus area
+                                            onFocusTransfer={() => {}}
+                                            onFocusReturn={() => {}}
+                                            setParentFocusedId={() => {}}
+                                        />
+
                                         {projectGroup.reviews.map(review => (
                                           <ReviewItemPreview
                                             key={review.id}
@@ -665,11 +684,29 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                                   sortedProjectIds.map(projectId => {
                                     const projectGroup = groupedUserInteractions[projectId];
                                     if (projectGroup.comments.length === 0) return null;
+                                    
+                                    // Find the specific holding for this project
+                                    const currentHolding = tokenHoldings.find(h => h.projectId === projectId);
+
                                     return (
                                       <div key={projectId} className="mb-6">
                                         <Link to={`/project/${projectId}`} className="block hover:underline">
                                           <h3 className="text-xl font-bold gradient-text mb-4">{projectGroup.projectName}</h3>
                                         </Link>
+                                        
+                                        {/* Project Metadata Navigator for the current user's holding */}
+                                        <ProjectMetadataNavigator
+                                            projectId={projectId}
+                                            projectMetadata={projectDetails.find(pd => pd.projectId === projectId)?.projectMetadata || []}
+                                            currentUserProjectHolding={currentHolding}
+                                            tokenHoldingsLoading={tokenHoldingsLoading}
+                                            projectSourceContext={{ path: location.pathname, label: userProfileNfd?.name || effectiveAddress }}
+                                            isParentFocused={false}
+                                            onFocusTransfer={() => {}}
+                                            onFocusReturn={() => {}}
+                                            setParentFocusedId={() => {}}
+                                        />
+
                                         {projectGroup.comments.map(({ comment, review }) => (
                                           <CommentItemPreview
                                             key={comment.id}
@@ -708,11 +745,29 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                                   sortedProjectIds.map(projectId => {
                                     const projectGroup = groupedUserInteractions[projectId];
                                     if (projectGroup.replies.length === 0) return null;
+                                    
+                                    // Find the specific holding for this project
+                                    const currentHolding = tokenHoldings.find(h => h.projectId === projectId);
+
                                     return (
                                       <div key={projectId} className="mb-6">
                                         <Link to={`/project/${projectId}`} className="block hover:underline">
                                           <h3 className="text-xl font-bold gradient-text mb-4">{projectGroup.projectName}</h3>
                                         </Link>
+                                        
+                                        {/* Project Metadata Navigator for the current user's holding */}
+                                        <ProjectMetadataNavigator
+                                            projectId={projectId}
+                                            projectMetadata={projectDetails.find(pd => pd.projectId === projectId)?.projectMetadata || []}
+                                            currentUserProjectHolding={currentHolding}
+                                            tokenHoldingsLoading={tokenHoldingsLoading}
+                                            projectSourceContext={{ path: location.pathname, label: userProfileNfd?.name || effectiveAddress }}
+                                            isParentFocused={false}
+                                            onFocusTransfer={() => {}}
+                                            onFocusReturn={() => {}}
+                                            setParentFocusedId={() => {}}
+                                        />
+
                                         {projectGroup.replies.map(({ reply, comment, review }) => (
                                           <ReplyItemPreview
                                             key={reply.id}

@@ -16,14 +16,15 @@ interface AssetSnapshotData {
 
 const ASSET_SNAPSHOT_CACHE_KEY = 'assetSnapshotCache';
 const ASSET_SNAPSHOT_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const ALLO_INFO_API_URL = "https://analytics-api.allo.info"; // NEW: Define Allo.info URL
 
 const fetchAssetSnapshot = async (assetId: number, round: number): Promise<AssetSnapshotData> => {
   if (assetId <= 0 || round <= 0) {
     return { holders: [], round };
   }
 
-  // NOTE: This URL is currently emulated by a custom Vite plugin in development.
-  const url = `/api/v1/asset/${assetId}/snapshot/${round}`;
+  // NEW: Use the real Allo.info endpoint
+  const url = `${ALLO_INFO_API_URL}/v1/asset/${assetId}/snapshot/${round}`;
   
   const response = await retryFetch(url);
 

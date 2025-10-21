@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ProjectsData } from '@/types/social';
 import { ProjectDetailsEntry } from '../../api/project-details';
-import { fetchUserAssetBalance } from '@/lib/allo'; // UPDATED IMPORT
+import { fetchUserAssets, UserAsset } from '@/lib/allo';
 import { ProjectMetadata } from '@/types/project';
 
 export interface UserProjectTokenHolding {
@@ -89,25 +89,23 @@ export function useProfileProjectTokenHoldings(
       setLoading(true);
       setError(null);
       try {
-        const fetchPromises: Promise<UserProjectTokenHolding>[] = [];
+        console.log(`[useProfileProjectTokenHoldings] Initiating fetchUserAssets for ${userAddress} at round ${effectiveRound}`);
+        const allUserAssets = await fetchUserAssets(userAddress, effectiveRound);
 
+        const results: UserProjectTokenHolding[] = [];
         relevantProjectAssetIds.forEach((projectAssetInfo, projectId) => {
-          fetchPromises.push((async () => {
-            console.log(`[useProfileProjectTokenHoldings] Fetching balance for asset ${projectAssetInfo.assetId} on project ${projectId}`);
-            const { amount, unitName } = await fetchUserAssetBalance(userAddress, projectAssetInfo.assetId, effectiveRound);
-            
-            return {
-              projectId,
-              projectName: projectAssetInfo.projectName,
-              assetId: projectAssetInfo.assetId,
-              amount,
-              assetUnitName: unitName || projectAssetInfo.assetUnitName,
-            };
-          })());
-        });
+          const userAsset = allUserAssets.find(asset => asset['asset-id'] === projectAssetInfo.assetId);
+          const amount = userAsset ? userAsset.amount : 0;
 
-        const results = await Promise.all(fetchPromises);
-        setTokenHoldings(results.filter(h => h.amount > 0)); // Only show holdings > 0
+          results.push({
+            projectId,
+            projectName: projectAssetInfo.projectName,
+            assetId: projectAssetInfo.assetId,
+            amount,
+            assetUnitName: projectAssetInfo.assetUnitName,
+          });
+        });
+        setTokenHoldings(results);
       } catch (err) {
         console.error("Error fetching user project token holdings:", err);
         setError(err instanceof Error ? err.message : "An unknown error occurred.");

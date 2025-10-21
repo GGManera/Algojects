@@ -20,37 +20,26 @@ export default async function handler(
   try {
     console.log(`[Allo Proxy] Forwarding request to: ${targetUrl}`);
     
-    // Determine headers to forward
-    const headers: HeadersInit = {};
-    const contentType = request.headers['content-type'];
-    if (contentType) {
-        headers['Content-Type'] = contentType;
-    } else {
-        // Default to application/json if not present, as Allo API expects it
-        headers['Content-Type'] = 'application/json';
-    }
-
-    // Determine body to forward
-    let bodyToSend: string | undefined = undefined;
-    if (request.method === 'POST' || request.method === 'PUT' || request.method === 'PATCH') {
-        // If the body is already parsed (object), stringify it. If it's raw string, use it.
-        bodyToSend = typeof request.body === 'object' && request.body !== null ? JSON.stringify(request.body) : request.body;
-    }
+    // Acessa os cabeçalhos de forma segura, usando um objeto vazio como fallback
+    const headers = request.headers || {};
     
     // Forward the request from server to server
     const proxyResponse = await fetch(targetUrl, {
       method: request.method,
-      headers: headers,
-      body: bodyToSend,
+      headers: {
+        // Forward necessary headers, but exclude host/origin headers
+        'Content-Type': headers['content-type'] || 'application/json',
+      },
+      body: request.body ? JSON.stringify(request.body) : undefined,
     });
 
     // Forward the status code and headers
     response.status(proxyResponse.status);
     
     // Forward content type header
-    const responseContentType = proxyResponse.headers.get('content-type');
-    if (responseContentType) {
-        response.setHeader('Content-Type', responseContentType);
+    const contentType = proxyResponse.headers.get('content-type');
+    if (contentType) {
+        response.setHeader('Content-Type', contentType);
     }
 
     // Stream the response body back to the client

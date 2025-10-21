@@ -20,12 +20,15 @@ export default async function handler(
   try {
     console.log(`[Allo Proxy] Forwarding request to: ${targetUrl}`);
     
+    // Acessa os cabeçalhos de forma segura, usando um objeto vazio como fallback
+    const headers = request.headers || {};
+    
     // Forward the request from server to server
     const proxyResponse = await fetch(targetUrl, {
       method: request.method,
       headers: {
         // Forward necessary headers, but exclude host/origin headers
-        'Content-Type': request.headers['content-type'] || 'application/json',
+        'Content-Type': headers['content-type'] || 'application/json',
       },
       body: request.body ? JSON.stringify(request.body) : undefined,
     });

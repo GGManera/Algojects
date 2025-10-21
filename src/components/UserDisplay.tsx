@@ -59,8 +59,14 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
     if (!userHoldsProjectToken || !holdingInfo) return null;
     // Convert micro-units (assuming 6 decimals) to display units
     const amountInAlgos = holdingInfo.amount / 1_000_000;
-    // Use formatLargeNumber for the amount, and append the unit name
-    return `${formatLargeNumber(amountInAlgos)} ${holdingInfo.unitName}`;
+    // Use formatLargeNumber for the amount
+    const formattedAmount = formatLargeNumber(amountInAlgos);
+    
+    // Return an object containing both the display string and the full title string
+    return {
+        display: formattedAmount,
+        title: `${formattedAmount} ${holdingInfo.unitName}`,
+    };
   }, [userHoldsProjectToken, holdingInfo]);
   // --- END LOGIC ---
 
@@ -196,8 +202,15 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
             {writerHoldingsLoading && currentProjectId ? (
                 <Skeleton className={cn("h-4 w-12 ml-2", textSizeClass === "text-2xl text-center" && "h-6 w-20")} />
             ) : displayAmount ? (
-                <span className={cn("font-numeric text-hodl-blue ml-2", textSizeClass === "text-2xl text-center" ? "text-lg" : "text-sm")} title={`Holds ${displayAmount}`}>
-                    {displayAmount}
+                <span 
+                    className={cn(
+                        "font-numeric text-hodl-blue ml-2 flex items-center gap-1", 
+                        textSizeClass === "text-2xl text-center" ? "text-lg" : "text-sm"
+                    )} 
+                    title={`Holds ${displayAmount.title}`}
+                >
+                    <Gem className={cn("h-4 w-4 text-hodl-blue", textSizeClass === "text-2xl text-center" ? "h-6 w-6" : "h-4 w-4")} />
+                    {displayAmount.display}
                 </span>
             ) : null}
         </div>

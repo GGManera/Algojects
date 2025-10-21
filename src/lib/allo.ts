@@ -69,63 +69,67 @@ export async function fetchAssetHolders(assetId: number, round: number): Promise
   }
 }
 
-// --- CORRECTED FUNCTION FOR USER ASSETS ---
+// --- NEW FUNCTION FOR INDIVIDUAL ASSET BALANCE ---
 
-export interface UserAsset {
-  'asset-id': number;
-  amount: number;
-  'unit-name'?: string;
-}
-
-export interface UserAssetsResponse {
+export interface AssetBalanceResponse {
   meta: { name: string; type: string }[];
-  data: [number, number, string][];
+  data: [number, number, string][]; // [asset-id, amount, unit-name]
   rows: number;
 }
 
-export async function fetchUserAssets(address: string, round: number): Promise<UserAsset[]> {
-    if (!round) {
-        console.error("[Allo API] fetchUserAssets failed: Round number is missing.");
-        throw new Error("Round number must be provided to fetch user assets.");
+/**
+ * Fetches the balance of a specific asset for an address at a given round.
+ * Returns the amount held (in display units) or 0 if not found/held.
+ */
+export async function fetchAssetBalanceAtRound(address: string, assetId: number, round: number): Promise<{ amount: number; unitName: string }> {
+    if (!round || !address || !assetId) {
+        console.error("[Allo API] fetchAssetBalanceAtRound failed: Missing parameters.");
+        return { amount: 0, unitName: '' };
     }
 
     const now = Date.now();
-    const cacheKey = `user-${address}-${round}`;
+    const cacheKey = `balance-${address}-${assetId}-${round}`;
     const cachedEntry = cache.get(cacheKey);
     if (cachedEntry && now - cachedEntry.timestamp < CACHE_DURATION) {
-        console.log(`[Allo API] Using fresh cache for user ${address} assets at round ${round}.`);
+        console.log(`[Allo API] Using fresh cache for balance of asset ${assetId} for user ${address} at round ${round}.`);
         return cachedEntry.data;
     }
 
     try {
-        const targetUrl = `${ALLO_API_URL}/v1/address/${address}/assets/${round}`;
+        const targetUrl = `${ALLO_API_URL}/v1/address/${address}/assetround/${assetId}/${round}`;
         const proxyUrl = `${PROXY_ENDPOINT}?url=${encodeURIComponent(targetUrl)}`;
 
-        console.log(`[Allo API] Initiating PROXY fetch for user assets: ${targetUrl}`);
+        console.log(`[Allo API] Initiating PROXY fetch for asset balance: ${targetUrl}`);
         
         const response = await fetch(proxyUrl);
         
         if (!response.ok) {
             const errorData = await response.json();
             console.error("Allo API Proxy Error:", errorData);
-            throw new Error(errorData.error || `Failed to fetch assets via proxy: ${response.status}`);
+            throw new Error(errorData.error || `Failed to fetch asset balance via proxy: ${response.status}`);
         }
         
-        const result: UserAssetsResponse = await response.json();
+        const result: AssetBalanceResponse = await response.json();
         
-        const assets: UserAsset[] = (result.data || []).map(item => ({
-            'asset-id': item[0],
-            amount: item[1],
-            'unit-name': item[2]
-        }));
+        // The response data array should contain one entry: [asset-id, amount, unit-name]
+        const assetData = result.data?.[0];
         
-        cache.set(cacheKey, { data: assets, timestamp: now });
-        return assets;
+        let amount = 0;
+        let unitName = '';
+
+        if (assetData && assetData[0] === assetId) {
+            amount = assetData[1];
+            unitName = assetData[2] || '';
+        }
+        
+        const finalResult = { amount, unitName };
+        cache.set(cacheKey, { data: finalResult, timestamp: now });
+        return finalResult;
     } catch (error) {
-        console.error(`[Allo API] Error fetching assets for address ${address}:`, error);
+        console.error(`[Allo API] Error fetching balance for asset ${assetId} for address ${address}:`, error);
         if (cachedEntry) {
             return cachedEntry.data;
         }
-        throw error;
+        return { amount: 0, unitName: '' };
     }
 }

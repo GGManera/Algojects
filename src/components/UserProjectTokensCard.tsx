@@ -81,7 +81,8 @@ export function UserProjectTokensCard({ tokenHoldings, isLoading, error, isInsid
       <CardContent className="space-y-2">
         <ul className="space-y-2 text-sm">
           {tokenHoldings.map((holding) => {
-            const amountInAlgos = holding.amount / 1_000_000;
+            // NOTE: Allo API returns amount in display units, no division by 1M needed.
+            const amount = holding.amount; 
             return (
               <li key={holding.projectId} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
                 <Link to={`/project/${holding.projectId}`} className="flex-grow hover:underline">
@@ -90,7 +91,7 @@ export function UserProjectTokensCard({ tokenHoldings, isLoading, error, isInsid
                 </Link>
                 <div className="text-right">
                   <p className="font-bold text-primary font-numeric">
-                    {formatLargeNumber(amountInAlgos)} {holding.assetUnitName ? `$${holding.assetUnitName}` : ''}
+                    {formatLargeNumber(amount)} {holding.assetUnitName ? `$${holding.assetUnitName}` : ''}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Owned

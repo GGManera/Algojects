@@ -62,7 +62,7 @@ export function UserDisplay({
   const isProjectPage = !!projectAssetInfo;
   
   // If on Project Page, use the new hook to fetch the displayed user's holding for the specific asset
-  const { amount: fetchedAmount, loading: fetchedLoading } = useUserAssetHolding(
+  const { amount: fetchedAmount, loading: fetchedLoading, error: fetchedError } = useUserAssetHolding(
     isProjectPage ? address : undefined, 
     isProjectPage ? projectAssetInfo.assetId : undefined
   );
@@ -75,6 +75,7 @@ export function UserDisplay({
         amount: fetchedAmount,
         unitName: projectAssetInfo.assetUnitName,
         loading: fetchedLoading,
+        error: fetchedError,
       };
     }
     
@@ -83,27 +84,32 @@ export function UserDisplay({
     const holdingInfoFromMap = currentProjectId && projectTokenHoldings ? projectTokenHoldings.get(currentProjectId) : undefined;
 
     return {
-      amount: holdingInfoFromMap?.amount || 0,
-      unitName: holdingInfoFromMap?.unitName || '',
-      loading: writerHoldingsLoading || false,
+        amount: holdingInfoFromMap?.amount || 0,
+        unitName: holdingInfoFromMap?.unitName || '',
+        loading: writerHoldingsLoading || false,
+        error: null,
     };
-  }, [isProjectPage, projectAssetInfo, fetchedAmount, fetchedLoading, sourceContext, projectTokenHoldings, writerHoldingsLoading]);
+  }, [isProjectPage, projectAssetInfo, fetchedAmount, fetchedLoading, fetchedError, sourceContext, projectTokenHoldings, writerHoldingsLoading]);
 
   const userHoldsProjectToken = (consolidatedHolding.amount || 0) > 0;
   
   const displayAmount = useMemo(() => {
-    if (!userHoldsProjectToken || consolidatedHolding.loading) return null;
+    if (!userHoldsProjectToken || consolidatedHolding.loading || consolidatedHolding.error) return null;
     
+    // Convert micro-units (assuming 6 decimals) to display units
     const amountInAlgos = consolidatedHolding.amount / 1_000_000;
+    // Use formatLargeNumber for the amount
     const formattedAmount = formatLargeNumber(amountInAlgos);
     
+    // Return an object containing both the display string and the full title string
     return {
         display: formattedAmount,
         title: `Holds ${formattedAmount} ${consolidatedHolding.unitName}`,
     };
-  }, [userHoldsProjectToken, consolidatedHolding.amount, consolidatedHolding.loading, consolidatedHolding.unitName]);
+  }, [userHoldsProjectToken, consolidatedHolding.amount, consolidatedHolding.loading, consolidatedHolding.unitName, consolidatedHolding.error]);
   
   const isHoldingLoading = consolidatedHolding.loading;
+  const isHoldingError = consolidatedHolding.error;
   // --- END LOGIC ---
 
   if (loading) {
@@ -237,13 +243,15 @@ export function UserDisplay({
             {/* Display holding amount if available and not loading */}
             {isHoldingLoading && isProjectPage ? (
                 <Skeleton className={cn("h-4 w-12 ml-2", textSizeClass === "text-2xl text-center" && "h-6 w-20")} />
+            ) : isHoldingError ? (
+                <span className={cn("text-xs text-destructive ml-2")} title={isHoldingError}>!</span>
             ) : displayAmount ? (
                 <span 
                     className={cn(
                         "font-numeric text-hodl-blue ml-2 flex items-center gap-1", 
                         textSizeClass === "text-2xl text-center" ? "text-lg" : "text-sm"
                     )} 
-                    title={displayAmount.title}
+                    title={`Holds ${displayAmount.title}`}
                 >
                     <Gem className={cn("h-4 w-4 text-hodl-blue", textSizeClass === "text-2xl text-center" ? "h-6 w-6" : "h-4 w-4")} />
                     {displayAmount.display}

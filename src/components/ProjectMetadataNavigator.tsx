@@ -281,9 +281,8 @@ export function ProjectMetadataNavigator({
     
     const isHoldingFocused = focusedId === `meta-${holdingItem.title}-${allRenderableMetadataItems.length}`;
     
-    // NEW: Convert raw amount (assumed to be in micro-units, 6 decimals) to display units
-    const rawAmount = currentUserProjectHolding?.amount || 0;
-    const displayAmount = rawAmount / 1_000_000; // Assuming 6 decimals for scaling
+    // NOTE: Allo API returns amount in display units, so no division by 1M needed.
+    const displayAmount = currentUserProjectHolding?.amount || 0; 
 
     return (
       <div 

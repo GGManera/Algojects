@@ -46,6 +46,7 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
   const userHoldsProjectToken = useMemo(() => {
     if (!currentProjectId || !projectTokenHoldings) return false;
     // Check if the user holds any amount of the project token (amount > 0)
+    // NOTE: Allo API returns amount in display units (not microAlgos), so we check directly.
     const amount = projectTokenHoldings.get(currentProjectId);
     return (amount || 0) > 0;
   }, [currentProjectId, projectTokenHoldings]);
@@ -179,6 +180,7 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
                 </motion.p>
             )}
             </AnimatePresence>
+            {/* Only show the Gem icon if the user holds the project token */}
             {userHoldsProjectToken && (
                 <Gem className={cn("h-4 w-4 text-hodl-blue ml-1", textSizeClass === "text-2xl text-center" && "h-6 w-6")} title="Project Token Holder" />
             )}

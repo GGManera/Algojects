@@ -15,7 +15,8 @@ export interface UserProjectTokenHolding {
   assetUnitName: string;
 }
 
-export function useUserProjectTokenHoldings(
+// Renamed hook to reflect its purpose (used only on UserProfile page)
+export function useProfileProjectTokenHoldings(
   userAddress: string | undefined,
   projectsData: ProjectsData,
   projectDetails: ProjectDetailsEntry[],
@@ -28,10 +29,13 @@ export function useUserProjectTokenHoldings(
 
   // Fallback round for testing if the actual round is missing
   const effectiveRound = round || 30000000;
+  const isProfilePage = location.pathname.startsWith('/profile/'); // Check if we are on the profile page
 
   const relevantProjectAssetIds = useMemo(() => {
     const projectAssetMap = new Map<string, { assetId: number; projectName: string; assetUnitName: string }>();
-    if (!userAddress || !projectsData || !projectDetails.length) {
+    
+    // Only calculate if we are on the profile page and have an address
+    if (!userAddress || !projectsData || !projectDetails.length || !isProfilePage) {
       return projectAssetMap;
     }
 
@@ -70,12 +74,10 @@ export function useUserProjectTokenHoldings(
     });
 
     return projectAssetMap;
-  }, [userAddress, projectsData, projectDetails]);
+  }, [userAddress, projectsData, projectDetails, isProfilePage]);
 
   useEffect(() => {
-    const isProfilePage = location.pathname.startsWith('/profile/');
-
-    console.log(`[useUserProjectTokenHoldings] Check: userAddress=${userAddress}, effectiveRound=${effectiveRound}, isProfilePage=${isProfilePage}, relevantAssets=${relevantProjectAssetIds.size}`);
+    console.log(`[useProfileProjectTokenHoldings] Check: userAddress=${userAddress}, effectiveRound=${effectiveRound}, isProfilePage=${isProfilePage}, relevantAssets=${relevantProjectAssetIds.size}`);
 
     if (!userAddress || !effectiveRound || !isProfilePage || relevantProjectAssetIds.size === 0) {
       setTokenHoldings([]);
@@ -87,7 +89,7 @@ export function useUserProjectTokenHoldings(
       setLoading(true);
       setError(null);
       try {
-        console.log(`[useUserProjectTokenHoldings] Initiating fetchUserAssets for ${userAddress} at round ${effectiveRound}`);
+        console.log(`[useProfileProjectTokenHoldings] Initiating fetchUserAssets for ${userAddress} at round ${effectiveRound}`);
         const allUserAssets = await fetchUserAssets(userAddress, effectiveRound);
 
         const results: UserProjectTokenHolding[] = [];
@@ -113,7 +115,7 @@ export function useUserProjectTokenHoldings(
     };
 
     fetchHoldings();
-  }, [userAddress, relevantProjectAssetIds, location.pathname, effectiveRound]);
+  }, [userAddress, relevantProjectAssetIds, isProfilePage, effectiveRound]);
 
   return { tokenHoldings, loading, error };
 }

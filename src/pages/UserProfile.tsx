@@ -14,7 +14,7 @@ import { formatTimestamp } from "@/lib/utils";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { useUserEarnings } from "@/hooks/useUserEarnings";
 import { useCuratorIndex } from "@/hooks/useCuratorIndex";
-import { useUserProjectTokenHoldings } from "@/hooks/useUserProjectTokenHoldings";
+import { useProfileProjectTokenHoldings } from "@/hooks/useUserProjectTokenHoldings"; // UPDATED IMPORT
 import { UserStatsCard } from "@/components/UserStatsCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
@@ -326,7 +326,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   const firstProject = Object.values(projects)[0];
   const round = firstProject?.round;
 
-  const { tokenHoldings, loading: tokenHoldingsLoading, error: tokenHoldingsError } = useUserProjectTokenHoldings(address, projects, projectDetails, round);
+  const { tokenHoldings, loading: tokenHoldingsLoading, error: tokenHoldingsError } = useProfileProjectTokenHoldings(address, projects, projectDetails, round); // UPDATED HOOK NAME
   const [activeCategory, setActiveCategory] = useState<'writing' | 'curating'>(initialCategoryFromState || "writing");
   const [activeTab, setActiveTab] = useState("reviews");
   const [tabDirection, setTabDirection] = useState(0);

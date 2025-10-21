@@ -75,7 +75,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
     };
 
     Object.values(projectsData).forEach(project => {
-      Object.values(project.reviews).forEach(review => {
+      Object.values(project.reviews || {}).forEach(review => { // Added || {}
         if (!(review.id.endsWith('.a') && review.content === "")) {
           numReviews++;
         }
@@ -84,7 +84,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
         initializeUserMaps(review.sender);
         // Calculate earnings for review creator
         userEarningsMap.set(review.sender, (userEarningsMap.get(review.sender) || 0) + (review.likeCount * LIKE_REVIEW_COST)); // Each like on their review: +1 ALGO
-        userEarningsMap.set(review.sender, (userEarningsMap.get(review.sender) || 0) + (Object.values(review.comments).length * 0.25)); // Each comment on their review: +0.25 ALGO
+        userEarningsMap.set(review.sender, (userEarningsMap.get(review.sender) || 0) + (Object.values(review.comments || {}).length * 0.25)); // Each comment on their review: +0.25 ALGO // Added || {}
 
         // Calculate amount spent on likes for users who liked this review
         review.likeHistory.filter(event => event.action === 'LIKE').forEach(likeEvent => {
@@ -94,13 +94,13 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
           userAmountSpentOnLikesMap.set(curatorAddress, (userAmountSpentOnLikesMap.get(curatorAddress) || 0) + LIKE_REVIEW_COST);
         });
 
-        Object.values(review.comments).forEach(comment => {
+        Object.values(review.comments || {}).forEach(comment => { // Added || {}
           numComments++;
           numCommentLikes += comment.likeCount;
 
           initializeUserMaps(comment.sender);
           // Earnings from comments created by this user
-          userEarningsMap.set(comment.sender, (userEarningsMap.get(comment.sender) || 0) + (Object.values(comment.replies).length * 0.1)); // Each reply on their comment: +0.1 ALGO
+          userEarningsMap.set(comment.sender, (userEarningsMap.get(comment.sender) || 0) + (Object.values(comment.replies || {}).length * 0.1)); // Each reply on their comment: +0.1 ALGO // Added || {}
           userEarningsMap.set(comment.sender, (userEarningsMap.get(comment.sender) || 0) + (comment.likeCount * 0.25)); // Each like on their comment: +0.25 ALGO
 
           // Earnings for review creator from likes on comments
@@ -115,7 +115,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
             userAmountSpentOnLikesMap.set(curatorAddress, (userAmountSpentOnLikesMap.get(curatorAddress) || 0) + LIKE_COMMENT_COST);
           });
 
-          Object.values(comment.replies).forEach(reply => {
+          Object.values(comment.replies || {}).forEach(reply => { // Added || {}
             numReplies++;
             numReplyLikes += reply.likeCount;
 

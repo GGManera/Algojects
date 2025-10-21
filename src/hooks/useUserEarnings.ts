@@ -18,20 +18,20 @@ export function useUserEarnings(userAddress: string | undefined, projectsData: P
     let totalEarnings = 0;
 
     Object.values(projectsData).forEach(project => {
-      Object.values(project.reviews).forEach(review => {
+      Object.values(project.reviews || {}).forEach(review => { // Added || {}
         // Earnings from reviews created by this user
         if (review.sender === userAddress) {
           // Each comment on their review: +0.25 ALGO
-          totalEarnings += Object.values(review.comments).length * 0.25;
+          totalEarnings += Object.values(review.comments || {}).length * 0.25; // Added || {}
           // Each like on their review: +1 ALGO
           totalEarnings += review.likeCount * 1; // Corrected: use likeCount
         }
 
-        Object.values(review.comments).forEach(comment => {
+        Object.values(review.comments || {}).forEach(comment => { // Added || {}
           // Earnings from comments created by this user
           if (comment.sender === userAddress) {
             // Each reply on their comment: +0.1 ALGO
-            totalEarnings += Object.values(comment.replies).length * 0.1;
+            totalEarnings += Object.values(comment.replies || {}).length * 0.1; // Added || {}
             // Each like on their comment: +0.25 ALGO
             totalEarnings += comment.likeCount * 0.25; // Corrected: use likeCount
           }
@@ -42,7 +42,7 @@ export function useUserEarnings(userAddress: string | undefined, projectsData: P
             totalEarnings += comment.likeCount * 0.25; // Corrected: use likeCount
           }
 
-          Object.values(comment.replies).forEach(reply => {
+          Object.values(comment.replies || {}).forEach(reply => { // Added || {}
             // Earnings from replies created by this user
             if (reply.sender === userAddress) {
               // Each like on their reply: +0.1 ALGO

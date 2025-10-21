@@ -84,19 +84,19 @@ export function useCuratorIndex(userAddress: string | undefined, projectsData: P
 
     // --- Phase 0: Collect all raw like events and initialize curator data ---
     Object.values(projectsData).forEach(project => {
-      Object.values(project.reviews).forEach(review => {
+      Object.values(project.reviews || {}).forEach(review => { // Added || {}
         // Store writer and project ID for reviews
         writerAddressesByItem.set(review.id, review.sender);
         projectIdsByItem.set(review.id, project.id);
         likesByItem.set(review.id, review.likeHistory);
 
-        Object.values(review.comments).forEach(comment => {
+        Object.values(review.comments || {}).forEach(comment => { // Added || {}
           // Store writer and project ID for comments
           writerAddressesByItem.set(comment.id, comment.sender);
           projectIdsByItem.set(comment.id, project.id);
           likesByItem.set(comment.id, comment.likeHistory);
 
-          Object.values(comment.replies).forEach(reply => {
+          Object.values(comment.replies || {}).forEach(reply => { // Added || {}
             // Store writer and project ID for replies
             writerAddressesByItem.set(reply.id, reply.sender);
             projectIdsByItem.set(reply.id, project.id);

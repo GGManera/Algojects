@@ -496,7 +496,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
 
   const sortedProjectIds = useMemo(() => {
     return Object.keys(groupedUserInteractions).sort((a, b) => {
-      const nameA = groupedUserinteractions[a].projectName.toLowerCase();
+      const nameA = groupedUserInteractions[a].projectName.toLowerCase();
       const nameB = groupedUserInteractions[b].projectName.toLowerCase();
       return nameA.localeCompare(nameB);
     });

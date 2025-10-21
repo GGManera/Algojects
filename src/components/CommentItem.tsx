@@ -41,6 +41,7 @@ interface CommentItemProps {
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
   globalViewMode: 'reviews' | 'comments' | 'replies' | 'interactions'; // NEW PROP
   projectAssetInfo?: ProjectAssetInfo; // NEW PROP
+  latestRound: number | null; // NEW PROP
 }
 
 export function CommentItem({
@@ -61,6 +62,7 @@ export function CommentItem({
   setLastActiveId,
   globalViewMode, // NEW PROP
   projectAssetInfo, // NEW PROP
+  latestRound, // NEW PROP
 }: CommentItemProps) {
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
@@ -187,6 +189,7 @@ export function CommentItem({
               projectSourceContext={projectSourceContext}
               writerHoldingsLoading={writerHoldingsLoading}
               projectAssetInfo={projectAssetInfo} // NEW PROP
+              latestRound={latestRound} // NEW PROP
             />
             <div className="flex items-center space-x-2">
               <span className={cn("text-xs font-semibold", isExcluded ? "text-muted-foreground" : "text-white/70")}>{formatTimestamp(comment.timestamp)}</span>
@@ -274,6 +277,7 @@ export function CommentItem({
                   isActive={isActive} // NEW
                   setLastActiveId={setLastActiveId} // NEW
                   projectAssetInfo={projectAssetInfo} // NEW PROP
+                  latestRound={latestRound} // NEW PROP
                 />
               ))}
             {showReplyForm && (

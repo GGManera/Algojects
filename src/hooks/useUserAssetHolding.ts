@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { fetchAccountAssetHoldings } from '@/utils/algorand';
+import { useAssetSnapshot } from './useAssetSnapshot'; // Import the new snapshot hook
 
 interface AssetHoldingData {
   amount: number;
@@ -12,19 +13,36 @@ interface AssetHoldingData {
 const ASSET_HOLDING_CACHE_KEY_PREFIX = 'assetHoldingCache_';
 const ASSET_HOLDING_CACHE_DURATION = 30 * 1000; // 30 seconds
 
-export function useUserAssetHolding(address: string | undefined, assetId: number | undefined): AssetHoldingData {
+export function useUserAssetHolding(address: string | undefined, assetId: number | undefined, round: number | null = null): AssetHoldingData {
   const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Use the snapshot hook if a round is provided
+  const { 
+    amount: snapshotAmount, 
+    loading: snapshotLoading, 
+    error: snapshotError 
+  } = useAssetSnapshot(address, assetId, round);
+
   const cacheKey = useMemo(() => {
-    if (address && assetId) {
+    // Cache key only for live data fetches (when round is null)
+    if (address && assetId && round === null) {
       return `${ASSET_HOLDING_CACHE_KEY_PREFIX}${address}_${assetId}`;
     }
     return null;
-  }, [address, assetId]);
+  }, [address, assetId, round]);
 
   useEffect(() => {
+    // If round is provided, we rely entirely on the snapshot hook
+    if (round !== null) {
+      setAmount(snapshotAmount);
+      setLoading(snapshotLoading);
+      setError(snapshotError);
+      return;
+    }
+
+    // --- Fallback to Live Indexer Data (Original Logic) ---
     if (!address || !assetId || isNaN(assetId) || assetId <= 0) {
       setAmount(0);
       setLoading(false);
@@ -75,7 +93,11 @@ export function useUserAssetHolding(address: string | undefined, assetId: number
     };
 
     fetchData();
-  }, [address, assetId, cacheKey]);
+  }, [address, assetId, cacheKey, round, snapshotAmount, snapshotLoading, snapshotError]);
 
+  // Return the state based on whether snapshot is active or live data is being used
+  if (round !== null) {
+    return { amount: snapshotAmount, loading: snapshotLoading, error: snapshotError };
+  }
   return { amount, loading, error };
 }

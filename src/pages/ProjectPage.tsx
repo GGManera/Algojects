@@ -12,6 +12,7 @@ import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { cn } from '@/lib/utils';
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
+import { useLatestRound } from "@/hooks/useLatestRound"; // NEW Import
 
 interface ProjectPageProps {
   projectId: string | undefined;
@@ -32,6 +33,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
   const { peekPreviousEntry } = useNavigationHistory();
   const previousEntry = peekPreviousEntry();
   const { projectDetails, loading: projectDetailsLoading, error: projectDetailsError } = useProjectDetails(); // NEW: Destructure loading and error
+  const { round: latestRound, loading: roundLoading, error: roundError } = useLatestRound(); // NEW: Fetch latest round
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -107,20 +109,8 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
     }
   }, [scrollToTopTrigger, location.pathname, onScrollToTop]);
 
-  if (!effectiveProjectId) {
-    return (
-      <div className={cn(
-        "w-full h-full flex items-center justify-center",
-        !isInsideCarousel && "max-w-3xl mx-auto",
-        isInsideCarousel ? "px-0 py-0 md:p-0" : "px-2 py-2 md:p-4"
-      )}>
-        <p className="text-muted-foreground">Select a project to view details.</p>
-      </div>
-    );
-  }
-
   // NEW: Combine loading states
-  if (socialDataLoading || projectDetailsLoading) {
+  if (socialDataLoading || projectDetailsLoading || roundLoading) {
     return (
       <div className={cn(
         "w-full",
@@ -134,7 +124,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
   }
 
   // NEW: Combine error states
-  if (socialDataError || projectDetailsError) {
+  if (socialDataError || projectDetailsError || roundError) {
     return (
       <div className={cn(
         "w-full",
@@ -144,7 +134,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{socialDataError || projectDetailsError}</AlertDescription>
+          <AlertDescription>{socialDataError || projectDetailsError || roundError}</AlertDescription>
         </Alert>
       </div>
     );
@@ -186,6 +176,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
         setLastActiveId={setLastActiveId} // NEW
         setFocusedId={setFocusedId} // NEW: Pass setFocusedId
         onScrollToTop={onScrollToTop}
+        latestRound={latestRound} // NEW: Pass latest round
       />
     </div>
   );

@@ -41,6 +41,7 @@ interface ReviewItemProps {
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
   globalViewMode: 'reviews' | 'comments' | 'replies' | 'interactions'; // NEW PROP
   projectAssetInfo?: ProjectAssetInfo; // NEW PROP
+  latestRound: number | null; // NEW PROP
 }
 
 const CONTENT_TRUNCATE_LENGTH = 280;
@@ -55,7 +56,7 @@ const getCommentInteractionScore = (comment: Comment): number => {
   return score;
 };
 
-export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, focusedId, registerItem, isActive, setLastActiveId, globalViewMode, projectAssetInfo }: ReviewItemProps) {
+export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, focusedId, registerItem, isActive, setLastActiveId, globalViewMode, projectAssetInfo, latestRound }: ReviewItemProps) {
   const location = useLocation();
   const { expandCommentId, highlightReplyId, highlightCommentId } = (location.state as { expandCommentId?: string; highlightReplyId?: string; highlightCommentId?: string; }) || {};
   const { activeAddress } = useWallet(); // Get active address
@@ -199,6 +200,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
             projectSourceContext={projectSourceContext}
             writerHoldingsLoading={writerHoldingsLoading}
             projectAssetInfo={projectAssetInfo} // NEW PROP
+            latestRound={latestRound} // NEW PROP
           />
           <div className="flex items-center space-x-2">
             <span className="text-xs text-white/70 font-semibold">{formatTimestamp(review.timestamp)}</span>
@@ -310,6 +312,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
                 setLastActiveId={setLastActiveId} // NEW
                 globalViewMode={globalViewMode} // NEW PROP
                 projectAssetInfo={projectAssetInfo} // NEW PROP
+                latestRound={latestRound} // NEW PROP
               />
             ))}
             {sortedComments.length > 3 && (

@@ -33,6 +33,7 @@ interface UserDisplayProps {
   writerHoldingsLoading?: boolean;
   // NEW PROP for Project Page (to fetch any user's holding):
   projectAssetInfo?: ProjectAssetInfo;
+  latestRound?: number | null; // NEW PROP
 }
 
 export function UserDisplay({ 
@@ -47,6 +48,7 @@ export function UserDisplay({
   projectTokenHoldings, 
   writerHoldingsLoading,
   projectAssetInfo, // NEW PROP
+  latestRound = null, // NEW PROP
 }: UserDisplayProps) {
   // --- Hooks called unconditionally at the top level ---
   const { nfd, loading } = useNfd(address);
@@ -62,15 +64,17 @@ export function UserDisplay({
   const isProjectPage = !!projectAssetInfo;
   
   // If on Project Page, use the new hook to fetch the displayed user's holding for the specific asset
+  // Pass the latestRound to trigger snapshot fetching
   const { amount: fetchedAmount, loading: fetchedLoading, error: fetchedError } = useUserAssetHolding(
     isProjectPage ? address : undefined, 
-    isProjectPage ? projectAssetInfo.assetId : undefined
+    isProjectPage ? projectAssetInfo.assetId : undefined,
+    isProjectPage ? latestRound : null // Pass round only if on project page
   );
 
   // 2. Consolidate holding info:
   const consolidatedHolding = useMemo(() => {
     if (isProjectPage && projectAssetInfo) {
-      // Source A: Data fetched specifically for this user/asset
+      // Source A: Data fetched specifically for this user/asset (snapshot or live)
       return {
         amount: fetchedAmount,
         unitName: projectAssetInfo.assetUnitName,

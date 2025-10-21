@@ -46,6 +46,7 @@ interface ProjectDetailCardProps {
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId'];
   setFocusedId: ReturnType<typeof useKeyboardNavigation>['setFocusedId']; // NEW PROP
   onScrollToTop?: () => void; // Made optional
+  latestRound: number | null; // NEW PROP
 }
 
 interface ProjectStats {
@@ -136,6 +137,7 @@ export function ProjectDetailCard({
   setLastActiveId,
   setFocusedId, // NEW: Destructure setFocusedId
   onScrollToTop = () => {}, // Provide fallback
+  latestRound, // NEW PROP
 }: ProjectDetailCardProps) {
   const projectId = project.id;
   const { transactionSigner, algodClient } = useWallet();
@@ -620,7 +622,8 @@ export function ProjectDetailCard({
               isActive={isActive}
               setLastActiveId={setLastActiveId}
               globalViewMode={viewMode}
-              projectAssetInfo={projectAssetInfo} // NEW PROP
+              projectAssetInfo={projectAssetInfo}
+              latestRound={latestRound} // NEW PROP
             />
           ))
         ) : (

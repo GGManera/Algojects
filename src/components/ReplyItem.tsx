@@ -39,11 +39,12 @@ interface ReplyItemProps {
   isActive: boolean; // NEW PROP
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
   projectAssetInfo?: ProjectAssetInfo; // NEW PROP
+  latestRound: number | null; // NEW PROP
 }
 
 const CONTENT_TRUNCATE_LENGTH = 150;
 
-export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive, setLastActiveId, projectAssetInfo }: ReplyItemProps) {
+export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive, setLastActiveId, projectAssetInfo, latestRound }: ReplyItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -123,6 +124,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             writerHoldingsLoading={writerHoldingsLoading}
             projectSourceContext={projectSourceContext}
             projectAssetInfo={projectAssetInfo} // NEW PROP
+            latestRound={latestRound} // NEW PROP
           />
           <div className="flex items-center space-x-2">
             <span className={cn("text-xs font-semibold", isExcluded ? "text-muted-foreground" : "text-black/70")}>{formatTimestamp(reply.timestamp)}</span>

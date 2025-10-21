@@ -201,7 +201,7 @@ export function ProjectDetailCard({
 
   const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
   const assetId = assetIdItem?.value ? parseInt(assetIdItem.value, 10) : undefined;
-  const { holdings: assetHolders, loading: tokenHoldingsLoading, error: assetHoldersError } = useProjectAssetHolders(assetId, (project as any).round);
+  const { holdings: assetHolders, loading: tokenHoldingsLoading, error: assetHoldersError } = useProjectAssetHolders(assetId);
 
   // Extract "fixed" fields from projectMetadata
   const currentProjectName = projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${projectId}`;

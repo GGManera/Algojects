@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useWallet } from '@txnlab/use-wallet-react';
 import { fetchAssetHolders } from '@/lib/allo';
 
-export function useProjectAssetHolders(assetId: number | undefined, round: number | undefined) {
+export function useProjectAssetHolders(assetId: number | undefined) {
   const [holdings, setHoldings] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { algodClient } = useWallet();
 
   useEffect(() => {
-    if (!assetId || !round) {
+    if (!assetId || !algodClient) {
       setHoldings(new Map());
       setLoading(false);
       return;
@@ -23,7 +25,7 @@ export function useProjectAssetHolders(assetId: number | undefined, round: numbe
         setError(null);
       }
       try {
-        const holdersMap = await fetchAssetHolders(assetId, round);
+        const holdersMap = await fetchAssetHolders(assetId, algodClient);
         if (isMounted) {
           setHoldings(holdersMap);
         }
@@ -44,7 +46,7 @@ export function useProjectAssetHolders(assetId: number | undefined, round: numbe
     return () => {
       isMounted = false;
     };
-  }, [assetId, round]);
+  }, [assetId, algodClient]);
 
   return { holdings, loading, error };
 }

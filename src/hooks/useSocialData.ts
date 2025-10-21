@@ -50,13 +50,13 @@ const recursivelyConvertLikes = (data: ProjectsData): ProjectsData => {
   for (const projectId in data) {
     const project = { ...data[projectId] };
     project.reviews = {};
-    for (const reviewId in data[projectId].reviews || {}) { // ADDED || {}
+    for (const reviewId in data[projectId].reviews || {}) { // Added || {}
       const review = ensureInteractionDataTypes({ ...data[projectId].reviews[reviewId] });
       review.comments = {};
-      for (const commentId in data[projectId].reviews[reviewId].comments || {}) { // ADDED || {}
+      for (const commentId in data[projectId].reviews[reviewId].comments || {}) { // Added || {}
         const comment = ensureInteractionDataTypes({ ...data[projectId].reviews[reviewId].comments[commentId] });
         comment.replies = {};
-        for (const replyId in data[projectId].reviews[reviewId].comments[commentId].replies || {}) { // ADDED || {}
+        for (const replyId in data[projectId].reviews[reviewId].comments[commentId].replies || {}) { // Added || {}
           const reply = ensureInteractionDataTypes({ ...data[projectId].reviews[reviewId].comments[commentId].replies[replyId] });
           comment.replies[replyId] = reply;
         }
@@ -229,6 +229,12 @@ const parseTransactions = (transactions: any[]): ProjectsData => {
 
     Object.values(parsedProjects).forEach(proj => {
         if (projectFirstReviewSender[proj.id]) proj.creatorWallet = projectFirstReviewSender[proj.id].sender;
+        
+        // NEW: Add a fixed round number for testing if txs are available
+        // This is a temporary fallback round for testing Allo API integration.
+        // In a real scenario, this should be derived from the latest transaction round or a specific governance round.
+        (proj as any).round = transactions.length > 0 ? transactions[0]['confirmed-round'] : 30000000; 
+
         const filteredReviews: { [reviewId: string]: Review } = {};
         Object.values(proj.reviews).forEach(review => {
             // Keep the review ONLY if its content is not empty or whitespace-only AND it is NOT excluded.

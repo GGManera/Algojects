@@ -37,7 +37,6 @@ interface ProjectDetailCardProps {
   projectsData: ProjectsData;
   activeAddress: string | undefined;
   onInteractionSuccess: () => void;
-  currentProjectName: string;
   isInsideCarousel?: boolean;
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
@@ -167,15 +166,18 @@ export function ProjectDetailCard({
 
   const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
   const assetId = assetIdItem?.value ? parseInt(assetIdItem.value, 10) : undefined;
-  const round = (project as any).round;
+  const round = project.round; // Use round directly from project
 
   const [assetHolders, setAssetHolders] = useState<Map<string, number>>(new Map());
   const [tokenHoldingsLoading, setTokenHoldingsLoading] = useState(true);
   const [assetHoldersError, setAssetHoldersError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log(`[ProjectDetailCard] Checking Allo API fetch condition: assetId=${assetId}, round=${round}`);
+    console.log(`[ProjectDetailCard] Checking Allo API fetch condition for Project ${projectId}:`);
+    console.log(`[ProjectDetailCard] assetId: ${assetId}, round: ${round}`);
+
     if (!assetId || !round) {
+      console.log(`[ProjectDetailCard] Skipping Allo API fetch: Missing assetId or round.`);
       setTokenHoldingsLoading(false);
       setAssetHolders(new Map());
       return;
@@ -201,8 +203,6 @@ export function ProjectDetailCard({
     getHolders();
     return () => { isMounted = false; };
   }, [assetId, round]);
-
-  const [copiedMetadata, setCopiedMetadata] = useState(false);
 
   const currentProjectName = projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${projectId}`;
   const currentProjectDescription = projectMetadata.find(item => item.type === 'project-description')?.value;

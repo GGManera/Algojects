@@ -16,7 +16,7 @@ export interface Reply extends BaseInteraction {
 }
 
 export interface Comment extends BaseInteraction {
-  replies: { [replyId: string]: Reply };
+  replies: { [commentId: string]: Comment };
 }
 
 export interface Review extends BaseInteraction {
@@ -33,6 +33,7 @@ export interface Project {
   reviews: { [reviewId: string]: Review };
   creatorWallet?: string; // The sender of the first review (review 'a')
   proposedNoteEdits: { [editId: string]: ProposedNoteEdit }; // NEW: Store proposed note edits
+  round?: number; // NEW: The round number of the latest transaction for this project (used for Allo API snapshots)
 }
 
 export type ProjectsData = {

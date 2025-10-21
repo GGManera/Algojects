@@ -24,6 +24,7 @@ import { useAppContextDisplayMode } from "@/contexts/AppDisplayModeContext";
 import { cn } from '@/lib/utils';
 import { usePlatformAnalytics } from "@/hooks/usePlatformAnalytics";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
+import { UserProjectTokensCard } from "@/components/UserProjectTokensCard"; // Import UserProjectTokensCard
 
 // Helper function to calculate interaction score for a review
 const getReviewInteractionScore = (review: Review): number => {
@@ -321,8 +322,11 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   }, [address, analyticsLoading, topWriters, topCurators]);
   const userAmountSpentOnLikes = userAnalytics?.amountSpentOnLikes || 0;
 
+  // NEW: Get the round number from the first project (or fallback)
+  const firstProject = Object.values(projects)[0];
+  const round = firstProject?.round;
 
-  const { tokenHoldings, loading: tokenHoldingsLoading, error: tokenHoldingsError } = useUserProjectTokenHoldings(address, projects, projectDetails);
+  const { tokenHoldings, loading: tokenHoldingsLoading, error: tokenHoldingsError } = useUserProjectTokenHoldings(address, projects, projectDetails, round);
   const [activeCategory, setActiveCategory] = useState<'writing' | 'curating'>(initialCategoryFromState || "writing");
   const [activeTab, setActiveTab] = useState("reviews");
   const [tabDirection, setTabDirection] = useState(0);
@@ -570,6 +574,13 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                 d3Recency={userCuratorData.d3Recency}
                 amountSpentOnLikes={userAmountSpentOnLikes}
                 isLoading={earningsLoading || curatorIndexLoading || analyticsLoading}
+                isInsideCarousel={isInsideCarousel}
+              />
+
+              <UserProjectTokensCard
+                tokenHoldings={tokenHoldings}
+                isLoading={tokenHoldingsLoading}
+                error={tokenHoldingsError}
                 isInsideCarousel={isInsideCarousel}
               />
 

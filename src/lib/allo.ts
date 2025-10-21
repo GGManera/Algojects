@@ -1,6 +1,7 @@
 "use client";
 
 const ALLO_API_URL = "https://analytics-api.allo.info";
+const PROXY_ENDPOINT = "/api/allo-proxy"; // New proxy endpoint
 
 export interface AssetHoldersResponse {
   meta: { name: string; type: string }[];
@@ -32,14 +33,19 @@ export async function fetchAssetHolders(assetId: number, round: number): Promise
   }
 
   try {
-    const url = `${ALLO_API_URL}/v1/asset/${assetId}/snapshot/${round}`;
-    console.log(`[Allo API] Initiating fetch for asset holders: ${url}`);
-    const response = await fetch(url);
+    const targetUrl = `${ALLO_API_URL}/v1/asset/${assetId}/snapshot/${round}`;
+    const proxyUrl = `${PROXY_ENDPOINT}?url=${encodeURIComponent(targetUrl)}`;
+    
+    console.log(`[Allo API] Initiating PROXY fetch for asset holders: ${targetUrl}`);
+    
+    const response = await fetch(proxyUrl);
+    
     if (!response.ok) {
-      const errorBody = await response.text();
-      console.error("Allo API Error:", errorBody);
-      throw new Error(`Failed to fetch asset holders: ${response.statusText}`);
+      const errorData = await response.json();
+      console.error("Allo API Proxy Error:", errorData);
+      throw new Error(errorData.error || `Failed to fetch asset holders via proxy: ${response.status}`);
     }
+    
     const result: AssetHoldersResponse = await response.json();
 
     const holdingsMap = new Map<string, number>();
@@ -78,8 +84,6 @@ export interface UserAssetsResponse {
 }
 
 export async function fetchUserAssets(address: string, round: number): Promise<UserAsset[]> {
-    const ALLO_USER_ASSETS_URL = `https://analytics-api.allo.info/v1/address/${address}/assets/${round}`;
-
     if (!round) {
         console.error("[Allo API] fetchUserAssets failed: Round number is missing.");
         throw new Error("Round number must be provided to fetch user assets.");
@@ -94,11 +98,19 @@ export async function fetchUserAssets(address: string, round: number): Promise<U
     }
 
     try {
-        console.log(`[Allo API] Initiating fetch for user assets: ${ALLO_USER_ASSETS_URL}`);
-        const response = await fetch(ALLO_USER_ASSETS_URL);
+        const targetUrl = `${ALLO_API_URL}/v1/address/${address}/assets/${round}`;
+        const proxyUrl = `${PROXY_ENDPOINT}?url=${encodeURIComponent(targetUrl)}`;
+
+        console.log(`[Allo API] Initiating PROXY fetch for user assets: ${targetUrl}`);
+        
+        const response = await fetch(proxyUrl);
+        
         if (!response.ok) {
-            throw new Error(`Failed to fetch assets for address ${address}`);
+            const errorData = await response.json();
+            console.error("Allo API Proxy Error:", errorData);
+            throw new Error(errorData.error || `Failed to fetch assets via proxy: ${response.status}`);
         }
+        
         const result: UserAssetsResponse = await response.json();
         
         const assets: UserAsset[] = (result.data || []).map(item => ({

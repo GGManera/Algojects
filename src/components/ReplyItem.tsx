@@ -17,6 +17,11 @@ import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
 import { useWallet } from "@txnlab/use-wallet-react"; // Import useWallet
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
 
+interface ProjectAssetInfo {
+  assetId: number;
+  assetUnitName: string;
+}
+
 interface ReplyItemProps {
   reply: Reply;
   project: Project;
@@ -33,11 +38,12 @@ interface ReplyItemProps {
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
   isActive: boolean; // NEW PROP
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
+  projectAssetInfo?: ProjectAssetInfo; // NEW PROP
 }
 
 const CONTENT_TRUNCATE_LENGTH = 150;
 
-export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive, setLastActiveId }: ReplyItemProps) {
+export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive, setLastActiveId, projectAssetInfo }: ReplyItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -101,10 +107,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
           "rounded-lg", // ADDED rounded-lg here
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
-          !isFocused && "hover:focus-glow-border", // Apply hover focus highlight only if not already focused
-          isExcluded 
-            ? "bg-muted/30 border border-destructive/50 pointer-events-none" // Muted style for excluded
-            : "bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black" // Normal style
+          !isFocused && "hover:focus-glow-border" // Apply hover focus highlight only if not already focused
         )}
         onClick={handleCardClick}
         onMouseEnter={() => setLastActiveId(reply.id)} // NEW: Set active ID on mouse enter
@@ -119,6 +122,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             projectTokenHoldings={writerTokenHoldings}
             writerHoldingsLoading={writerHoldingsLoading}
             projectSourceContext={projectSourceContext}
+            projectAssetInfo={projectAssetInfo} // NEW PROP
           />
           <div className="flex items-center space-x-2">
             <span className={cn("text-xs font-semibold", isExcluded ? "text-muted-foreground" : "text-black/70")}>{formatTimestamp(reply.timestamp)}</span>

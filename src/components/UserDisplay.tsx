@@ -10,6 +10,12 @@ import { cn, formatLargeNumber } from '@/lib/utils';
 import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WriterTokenHoldingsMap, ProjectHoldingInfo } from '@/types/social';
+import { useUserAssetHolding } from '@/hooks/useUserAssetHolding'; // NEW Import
+
+interface ProjectAssetInfo {
+  assetId: number;
+  assetUnitName: string;
+}
 
 interface UserDisplayProps {
   address: string;
@@ -22,12 +28,26 @@ interface UserDisplayProps {
   // NEW: Context of the page this UserDisplay is on, to be pushed to history
   sourceContext?: { path: string; label: string } | null;
   currentProfileActiveCategory?: 'writing' | 'curating'; // NEW
-  // ADDED PROPS for token holding check:
+  // ADDED PROPS for token holding check (used primarily for Profile Page/Active User):
   projectTokenHoldings?: WriterTokenHoldingsMap;
   writerHoldingsLoading?: boolean;
+  // NEW PROP for Project Page (to fetch any user's holding):
+  projectAssetInfo?: ProjectAssetInfo;
 }
 
-export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", textSizeClass = "text-sm", linkTo = `/profile/${address}`, onClick, sourceContext, currentProfileActiveCategory, projectTokenHoldings, writerHoldingsLoading }: UserDisplayProps) {
+export function UserDisplay({ 
+  address, 
+  className, 
+  avatarSizeClass = "h-8 w-8", 
+  textSizeClass = "text-sm", 
+  linkTo = `/profile/${address}`, 
+  onClick, 
+  sourceContext, 
+  currentProfileActiveCategory, 
+  projectTokenHoldings, 
+  writerHoldingsLoading,
+  projectAssetInfo, // NEW PROP
+}: UserDisplayProps) {
   // --- Hooks called unconditionally at the top level ---
   const { nfd, loading } = useNfd(address);
   const location = useLocation();
@@ -36,38 +56,54 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
   const [lastCopied, setLastCopied] = useState<'nfd' | 'address' | null>(null);
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
 
-  // --- LOGIC FOR TOKEN HOLDING (useMemo must be unconditional) ---
-  const currentProjectId = useMemo(() => {
-    if (sourceContext?.path.startsWith('/project/')) {
-        return sourceContext.path.split('/')[2];
+  // --- LOGIC FOR TOKEN HOLDING ---
+  
+  // 1. Determine which holding data source to use:
+  const isProjectPage = !!projectAssetInfo;
+  
+  // If on Project Page, use the new hook to fetch the displayed user's holding for the specific asset
+  const { amount: fetchedAmount, loading: fetchedLoading } = useUserAssetHolding(
+    isProjectPage ? address : undefined, 
+    isProjectPage ? projectAssetInfo.assetId : undefined
+  );
+
+  // 2. Consolidate holding info:
+  const consolidatedHolding = useMemo(() => {
+    if (isProjectPage && projectAssetInfo) {
+      // Source A: Data fetched specifically for this user/asset
+      return {
+        amount: fetchedAmount,
+        unitName: projectAssetInfo.assetUnitName,
+        loading: fetchedLoading,
+      };
     }
-    return null;
-  }, [sourceContext]);
+    
+    // Source B: Fallback to active user's pre-fetched map (used on Profile Page/Metadata Navigator)
+    const currentProjectId = sourceContext?.path.startsWith('/project/') ? sourceContext.path.split('/')[2] : null;
+    const holdingInfoFromMap = currentProjectId && projectTokenHoldings ? projectTokenHoldings.get(currentProjectId) : undefined;
 
-  // NEW: Get the full holding info
-  const holdingInfo: ProjectHoldingInfo | undefined = useMemo(() => {
-    if (!currentProjectId || !projectTokenHoldings) return undefined;
-    return projectTokenHoldings.get(currentProjectId);
-  }, [currentProjectId, projectTokenHoldings]);
+    return {
+      amount: holdingInfoFromMap?.amount || 0,
+      unitName: holdingInfoFromMap?.unitName || '',
+      loading: writerHoldingsLoading || false,
+    };
+  }, [isProjectPage, projectAssetInfo, fetchedAmount, fetchedLoading, sourceContext, projectTokenHoldings, writerHoldingsLoading]);
 
-  const userHoldsProjectToken = useMemo(() => {
-    // Check if the user holds any amount of the project token (amount > 0)
-    return (holdingInfo?.amount || 0) > 0;
-  }, [holdingInfo]);
+  const userHoldsProjectToken = (consolidatedHolding.amount || 0) > 0;
   
   const displayAmount = useMemo(() => {
-    if (!userHoldsProjectToken || !holdingInfo) return null;
-    // Convert micro-units (assuming 6 decimals) to display units
-    const amountInAlgos = holdingInfo.amount / 1_000_000;
-    // Use formatLargeNumber for the amount
+    if (!userHoldsProjectToken || consolidatedHolding.loading) return null;
+    
+    const amountInAlgos = consolidatedHolding.amount / 1_000_000;
     const formattedAmount = formatLargeNumber(amountInAlgos);
     
-    // Return an object containing both the display string and the full title string
     return {
         display: formattedAmount,
-        title: `${formattedAmount} ${holdingInfo.unitName}`,
+        title: `Holds ${formattedAmount} ${consolidatedHolding.unitName}`,
     };
-  }, [userHoldsProjectToken, holdingInfo]);
+  }, [userHoldsProjectToken, consolidatedHolding.amount, consolidatedHolding.loading, consolidatedHolding.unitName]);
+  
+  const isHoldingLoading = consolidatedHolding.loading;
   // --- END LOGIC ---
 
   if (loading) {
@@ -199,7 +235,7 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
             )}
             </AnimatePresence>
             {/* Display holding amount if available and not loading */}
-            {writerHoldingsLoading && currentProjectId ? (
+            {isHoldingLoading && isProjectPage ? (
                 <Skeleton className={cn("h-4 w-12 ml-2", textSizeClass === "text-2xl text-center" && "h-6 w-20")} />
             ) : displayAmount ? (
                 <span 
@@ -207,7 +243,7 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
                         "font-numeric text-hodl-blue ml-2 flex items-center gap-1", 
                         textSizeClass === "text-2xl text-center" ? "text-lg" : "text-sm"
                     )} 
-                    title={`Holds ${displayAmount.title}`}
+                    title={displayAmount.title}
                 >
                     <Gem className={cn("h-4 w-4 text-hodl-blue", textSizeClass === "text-2xl text-center" ? "h-6 w-6" : "h-4 w-4")} />
                     {displayAmount.display}

@@ -20,6 +20,11 @@ import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
 import { cn } from "@/lib/utils";
 
+interface ProjectAssetInfo {
+  assetId: number;
+  assetUnitName: string;
+}
+
 interface ReviewItemProps {
   review: Review;
   project: Project;
@@ -35,6 +40,7 @@ interface ReviewItemProps {
   isActive: boolean; // NEW PROP
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
   globalViewMode: 'reviews' | 'comments' | 'replies' | 'interactions'; // NEW PROP
+  projectAssetInfo?: ProjectAssetInfo; // NEW PROP
 }
 
 const CONTENT_TRUNCATE_LENGTH = 280;
@@ -49,7 +55,7 @@ const getCommentInteractionScore = (comment: Comment): number => {
   return score;
 };
 
-export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, focusedId, registerItem, isActive, setLastActiveId, globalViewMode }: ReviewItemProps) {
+export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, focusedId, registerItem, isActive, setLastActiveId, globalViewMode, projectAssetInfo }: ReviewItemProps) {
   const location = useLocation();
   const { expandCommentId, highlightReplyId, highlightCommentId } = (location.state as { expandCommentId?: string; highlightReplyId?: string; highlightCommentId?: string; }) || {};
   const { activeAddress } = useWallet(); // Get active address
@@ -192,6 +198,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
             projectTokenHoldings={writerTokenHoldings}
             projectSourceContext={projectSourceContext}
             writerHoldingsLoading={writerHoldingsLoading}
+            projectAssetInfo={projectAssetInfo} // NEW PROP
           />
           <div className="flex items-center space-x-2">
             <span className="text-xs text-white/70 font-semibold">{formatTimestamp(review.timestamp)}</span>
@@ -302,6 +309,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
                 isActive={isActive} // NEW
                 setLastActiveId={setLastActiveId} // NEW
                 globalViewMode={globalViewMode} // NEW PROP
+                projectAssetInfo={projectAssetInfo} // NEW PROP
               />
             ))}
             {sortedComments.length > 3 && (

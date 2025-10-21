@@ -223,6 +223,19 @@ export function ProjectDetailCard({
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
   const effectiveCreatorAddress = creatorWalletMetadata || project.creatorWallet;
 
+  // NEW: Determine project asset info to pass down for user holdings lookup
+  const projectAssetInfo = useMemo(() => {
+    const assetIdItem = projectMetadata.find(item => item.type === 'asset-id');
+    const assetUnitNameItem = projectMetadata.find(item => item.type === 'asset-unit-name');
+    const assetId = assetIdItem ? parseInt(assetIdItem.value, 10) : undefined;
+    const assetUnitName = assetUnitNameItem?.value;
+
+    if (assetId && !isNaN(assetId) && assetUnitName) {
+      return { assetId, assetUnitName };
+    }
+    return undefined;
+  }, [projectMetadata]);
+
   const handleProjectDetailsUpdated = () => {
     // When details are updated via form, the mutation invalidates the query, triggering a refetch.
     // We only need to call the parent's onInteractionSuccess if it affects social data (which it doesn't here).
@@ -598,7 +611,7 @@ export function ProjectDetailCard({
               project={project}
               onInteractionSuccess={onInteractionSuccess}
               interactionScore={score}
-              writerTokenHoldings={writerTokenHoldingsMap} // UPDATED to use the new map
+              writerTokenHoldings={writerTokenHoldingsMap}
               writerHoldingsLoading={tokenHoldingsLoading}
               projectSourceContext={projectSourceContext}
               allCuratorData={allCuratorData}
@@ -606,7 +619,8 @@ export function ProjectDetailCard({
               registerItem={registerItem}
               isActive={isActive}
               setLastActiveId={setLastActiveId}
-              globalViewMode={viewMode} // NEW PROP
+              globalViewMode={viewMode}
+              projectAssetInfo={projectAssetInfo} // NEW PROP
             />
           ))
         ) : (

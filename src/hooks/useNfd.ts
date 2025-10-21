@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 // Cache simples na memória para armazenar dados de NFD e evitar chamadas repetidas
 // Import the shared cache map from useNfdResolver
-import { nfdLookupCache } from './useNfdResolver';
+import { nfdLookupCache, NFD_RESOLVER_CACHE_DURATION_MS } from './useNfdResolver'; // NEW: Import NFD_RESOLVER_CACHE_DURATION_MS
 import { queueNfdResolutionV2 } from './useNfdBatcher'; // NEW: Import the batcher
 
 interface NfdData {
@@ -12,7 +12,7 @@ interface NfdData {
   avatar: string | null;
 }
 
-const NFD_CACHE_DURATION_MS = 15 * 1000; // 15 seconds for NFD cache
+// Removed NFD_CACHE_DURATION_MS definition as it now uses NFD_RESOLVER_CACHE_DURATION_MS
 
 export function useNfd(address: string | undefined) {
   const [nfd, setNfd] = useState<NfdData | null>(null);
@@ -31,7 +31,7 @@ export function useNfd(address: string | undefined) {
 
     // 1. Check shared cache first. If found and fresh, update state and return early.
     const cachedNfdEntry = nfdLookupCache.get(trimmedAddress);
-    const isFresh = cachedNfdEntry && (Date.now() - cachedNfdEntry.timestamp < NFD_CACHE_DURATION_MS);
+    const isFresh = cachedNfdEntry && (Date.now() - cachedNfdEntry.timestamp < NFD_RESOLVER_CACHE_DURATION_MS); // Use imported constant
 
     if (isFresh) {
       setNfd(cachedNfdEntry);

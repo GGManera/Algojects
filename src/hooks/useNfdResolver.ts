@@ -12,11 +12,11 @@ interface NfdData {
 // Modified to store timestamp
 export const nfdLookupCache = new Map<string, (NfdData & { timestamp: number }) | null>(); // EXPORTED
 
-const NFD_RESOLVER_CACHE_DURATION_MS = 15 * 1000; // 15 seconds for NFD resolver cache
+export const NFD_RESOLVER_CACHE_DURATION_MS = 15 * 1000; // 15 seconds for NFD resolver cache
 const NFD_API_URL = "https://api.nf.domains";
 const BATCH_SIZE = 20; // Max addresses per batch
 
-const ipfsToGateway = (url: string | undefined): string | null => {
+export const ipfsToGateway = (url: string | undefined): string | null => {
   if (!url) return null;
 
   // If it's already a direct HTTP/HTTPS URL, use it as is.

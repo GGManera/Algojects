@@ -33,15 +33,15 @@ export function useUserProjectTokenHoldings(
 
     // Identify projects where the user has written content
     Object.values(projectsData).forEach(project => {
-      Object.values(project.reviews).forEach(review => {
+      Object.values(project.reviews || {}).forEach(review => { // ADDED || {}
         if (review.sender === userAddress) {
           userInteractedProjectIds.add(project.id);
         }
-        Object.values(review.comments).forEach(comment => {
+        Object.values(review.comments || {}).forEach(comment => { // ADDED || {}
           if (comment.sender === userAddress) {
             userInteractedProjectIds.add(project.id);
           }
-          Object.values(review.replies).forEach(reply => {
+          Object.values(comment.replies || {}).forEach(reply => { // ADDED || {}
             if (reply.sender === userAddress) {
               userInteractedProjectIds.add(project.id);
             }

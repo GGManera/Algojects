@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from 'react';
-import { nfdLookupCache } from './useNfdResolver'; // Import shared cache
+import { nfdLookupCache, NFD_RESOLVER_CACHE_DURATION_MS, ipfsToGateway } from './useNfdResolver'; // Import shared cache, constant, and ipfsToGateway
 
 interface NfdData {
   name: string | null;
@@ -36,7 +36,7 @@ async function executeBatchLookup(addresses: string[]): Promise<Map<string, NfdD
     
     // Prioritize verified avatar if available, otherwise use userDefined
     const rawAvatarUrl = nfdData?.properties?.verified?.avatar || nfdData?.properties?.userDefined?.avatar;
-    const avatarUrl = nfdData?.properties?.userDefined?.avatar || nfdData?.properties?.verified?.avatar; // Simplified IPFS handling for now, relying on NFD API to return direct URLs if possible
+    const avatarUrl = ipfsToGateway(rawAvatarUrl); // Use ipfsToGateway here
 
     let nfdName = nfdData?.name || null;
     if (nfdName && !nfdName.endsWith(".algo")) {

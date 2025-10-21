@@ -280,6 +280,10 @@ export function ProjectMetadataNavigator({
     if (!holdingItem) return null;
     
     const isHoldingFocused = focusedId === `meta-${holdingItem.title}-${allRenderableMetadataItems.length}`;
+    
+    // NEW: Convert raw amount (assumed to be in micro-units, 6 decimals) to display units
+    const rawAmount = currentUserProjectHolding?.amount || 0;
+    const displayAmount = rawAmount / 1_000_000; // Assuming 6 decimals for scaling
 
     return (
       <div 
@@ -301,7 +305,7 @@ export function ProjectMetadataNavigator({
           <div className="flex items-center gap-1 justify-center">
             <Gem className="h-4 w-4 text-hodl-blue" />
             <span className="font-numeric font-bold text-primary selectable-text">
-              {formatLargeNumber(currentUserProjectHolding?.amount || 0)} {currentUserProjectHolding?.assetUnitName || ''}
+              {formatLargeNumber(displayAmount)} {currentUserProjectHolding?.assetUnitName || ''}
             </span>
           </div>
         )}

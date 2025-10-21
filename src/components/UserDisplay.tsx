@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNfd } from '@/hooks/useNfd';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserCircle, Gem } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn, formatLargeNumber } from '@/lib/utils';
-import { useNavigationHistory } from '@/contexts/NavigationHistoryContext'; // NEW: Import useNavigationHistory
-import { motion, AnimatePresence } from 'framer-motion'; // NEW: Import motion and AnimatePresence
+import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface UserDisplayProps {
   address: string;
@@ -16,21 +16,22 @@ interface UserDisplayProps {
   avatarSizeClass?: string;
   textSizeClass?: string;
   linkTo?: string | null; // Can be null to make it a non-link div
-  // Removed projectTokenHoldings and assetUnitName props
   // New prop to allow parent to explicitly pass an onClick handler
-  // This will override the default copy behavior on own profile if provided.
   onClick?: (e: React.MouseEvent) => void;
   // NEW: Context of the page this UserDisplay is on, to be pushed to history
   sourceContext?: { path: string; label: string } | null;
   currentProfileActiveCategory?: 'writing' | 'curating'; // NEW
+  // ADDED PROPS for token holding check:
+  projectTokenHoldings?: Map<string, number>;
+  writerHoldingsLoading?: boolean;
 }
 
-export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", textSizeClass = "text-sm", linkTo = `/profile/${address}`, onClick, sourceContext, currentProfileActiveCategory }: UserDisplayProps) {
+export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", textSizeClass = "text-sm", linkTo = `/profile/${address}`, onClick, sourceContext, currentProfileActiveCategory, projectTokenHoldings, writerHoldingsLoading }: UserDisplayProps) {
   const { nfd, loading } = useNfd(address);
   const location = useLocation();
   const [lastCopied, setLastCopied] = useState<'nfd' | 'address' | null>(null);
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
-  const { pushEntry } = useNavigationHistory(); // NEW: Use pushEntry
+  const { pushEntry } = useNavigationHistory();
 
   if (loading) {
     return (
@@ -40,6 +41,22 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
       </div>
     );
   }
+
+  // --- LOGIC FOR TOKEN HOLDING ---
+  const currentProjectId = useMemo(() => {
+    if (sourceContext?.path.startsWith('/project/')) {
+        return sourceContext.path.split('/')[2];
+    }
+    return null;
+  }, [sourceContext]);
+
+  const userHoldsProjectToken = useMemo(() => {
+    if (!currentProjectId || !projectTokenHoldings) return false;
+    // Check if the user holds any amount of the project token (amount > 0)
+    const amount = projectTokenHoldings.get(currentProjectId);
+    return (amount || 0) > 0;
+  }, [currentProjectId, projectTokenHoldings]);
+  // --- END LOGIC ---
 
   let displayName: string;
   let fullDisplayName: string;
@@ -58,8 +75,8 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
   const isLink = !!linkTo;
 
   const handleInternalCopyClick = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent default navigation if this handler is attached to a Link
-    e.stopPropagation(); // Prevent parent Link/div from triggering
+    e.preventDefault();
+    e.stopPropagation();
 
     let textToCopy: string;
     let messageToShow: string;
@@ -88,18 +105,14 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
     }
   };
 
-  // NEW: Handle navigation and history push
   const handleNavigation = (e: React.MouseEvent) => {
     if (onClick) {
-      onClick(e); // Prioritize external onClick
+      onClick(e);
     } else if (isLink && linkTo && !isOwnProfilePage) {
-      // Only push to history if it's a link and not navigating to the current profile page
       if (sourceContext) {
         pushEntry(sourceContext);
       }
-      // The Link component will handle the actual navigation
     } else if (isOwnProfilePage) {
-      // If on own profile page, and no external onClick, default to copy
       handleInternalCopyClick(e);
     }
   };
@@ -111,8 +124,7 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
 
   if (isLink) {
     wrapperProps.to = linkTo!;
-    wrapperProps.onClick = handleNavigation; // Use the new combined handler
-    // NEW: Pass state to the Link for initialActiveCategory
+    wrapperProps.onClick = handleNavigation;
     if (linkTo.startsWith('/profile/') && currentProfileActiveCategory) {
       wrapperProps.state = { initialActiveCategory: currentProfileActiveCategory };
     }
@@ -139,31 +151,36 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
         </AvatarFallback>
       </Avatar>
       <div className="flex flex-col items-start">
-        <AnimatePresence mode="wait"> {/* NEW: AnimatePresence for smooth text switching */}
-          {copiedMessage ? (
-            <motion.p
-              key="copied-message"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className={cn(`${textSizeClass} font-semibold truncate`, (isLink || isOwnProfilePage) && "group-hover:underline")}
-            >
-              {copiedMessage}
-            </motion.p>
-          ) : (
-            <motion.p
-              key="display-name"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className={cn(`${textSizeClass} font-semibold truncate`, (isLink || isOwnProfilePage) && "group-hover:underline")}
-            >
-              {displayName}
-            </motion.p>
-          )}
-        </AnimatePresence>
+        <div className="flex items-center">
+            <AnimatePresence mode="wait">
+            {copiedMessage ? (
+                <motion.p
+                key="copied-message"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className={cn(`${textSizeClass} font-semibold truncate`, (isLink || isOwnProfilePage) && "group-hover:underline")}
+                >
+                {copiedMessage}
+                </motion.p>
+            ) : (
+                <motion.p
+                key="display-name"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className={cn(`${textSizeClass} font-semibold truncate`, (isLink || isOwnProfilePage) && "group-hover:underline")}
+                >
+                {displayName}
+                </motion.p>
+            )}
+            </AnimatePresence>
+            {userHoldsProjectToken && (
+                <Gem className={cn("h-4 w-4 text-hodl-blue ml-1", textSizeClass === "text-2xl text-center" && "h-6 w-6")} title="Project Token Holder" />
+            )}
+        </div>
       </div>
     </Wrapper>
   );

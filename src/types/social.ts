@@ -11,13 +11,6 @@ export interface BaseInteraction {
   isExcluded: boolean; // NEW: Flag if the post has been excluded/deleted
 }
 
-export interface ProjectHoldingInfo {
-  amount: number; // In micro-units
-  unitName: string;
-}
-
-export type WriterTokenHoldingsMap = Map<string, ProjectHoldingInfo>;
-
 export interface Reply extends BaseInteraction {
   replies?: never;
 }

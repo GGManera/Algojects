@@ -1,6 +1,6 @@
 "use client";
 
-import { Review, Project, Comment, WriterTokenHoldingsMap } from "@/types/social";
+import { Review, Project, Comment } from "@/types/social";
 import { CommentItem } from "./CommentItem";
 import { LikeButton } from "./LikeButton";
 import { InteractionForm } from "./InteractionForm";
@@ -20,17 +20,12 @@ import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
 import { cn } from "@/lib/utils";
 
-interface ProjectAssetInfo {
-  assetId: number;
-  assetUnitName: string;
-}
-
 interface ReviewItemProps {
   review: Review;
   project: Project;
   onInteractionSuccess: () => void;
   interactionScore: number;
-  writerTokenHoldings: WriterTokenHoldingsMap; // UPDATED TYPE
+  writerTokenHoldings: Map<string, number>;
   writerHoldingsLoading: boolean;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
@@ -40,8 +35,6 @@ interface ReviewItemProps {
   isActive: boolean; // NEW PROP
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
   globalViewMode: 'reviews' | 'comments' | 'replies' | 'interactions'; // NEW PROP
-  projectAssetInfo?: ProjectAssetInfo; // NEW PROP
-  latestRound: number | null; // NEW PROP
 }
 
 const CONTENT_TRUNCATE_LENGTH = 280;
@@ -51,12 +44,12 @@ const getCommentInteractionScore = (comment: Comment): number => {
   const replies = Object.values(comment.replies || {});
   score += replies.length;
   replies.forEach(reply => {
-      score += reply.likeCount || 0;
+    score += reply.likeCount || 0;
   });
   return score;
 };
 
-export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, focusedId, registerItem, isActive, setLastActiveId, globalViewMode, projectAssetInfo, latestRound }: ReviewItemProps) {
+export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, focusedId, registerItem, isActive, setLastActiveId, globalViewMode }: ReviewItemProps) {
   const location = useLocation();
   const { expandCommentId, highlightReplyId, highlightCommentId } = (location.state as { expandCommentId?: string; highlightReplyId?: string; highlightCommentId?: string; }) || {};
   const { activeAddress } = useWallet(); // Get active address
@@ -198,9 +191,6 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
             avatarSizeClass="h-10 w-10" 
             projectTokenHoldings={writerTokenHoldings}
             projectSourceContext={projectSourceContext}
-            writerHoldingsLoading={writerHoldingsLoading}
-            projectAssetInfo={projectAssetInfo} // NEW PROP
-            latestRound={latestRound} // NEW PROP
           />
           <div className="flex items-center space-x-2">
             <span className="text-xs text-white/70 font-semibold">{formatTimestamp(review.timestamp)}</span>
@@ -311,8 +301,6 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
                 isActive={isActive} // NEW
                 setLastActiveId={setLastActiveId} // NEW
                 globalViewMode={globalViewMode} // NEW PROP
-                projectAssetInfo={projectAssetInfo} // NEW PROP
-                latestRound={latestRound} // NEW PROP
               />
             ))}
             {sortedComments.length > 3 && (

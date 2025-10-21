@@ -1,6 +1,6 @@
 "use client";
 
-import { Reply, Project, Review, Comment, WriterTokenHoldingsMap } from "@/types/social";
+import { Reply, Project, Review, Comment } from "@/types/social";
 import { LikeButton } from "./LikeButton";
 import { UserDisplay } from "./UserDisplay";
 import { formatTimestamp, getCuratorWeightedLikeScore } from "@/lib/utils";
@@ -17,18 +17,13 @@ import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
 import { useWallet } from "@txnlab/use-wallet-react"; // Import useWallet
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
 
-interface ProjectAssetInfo {
-  assetId: number;
-  assetUnitName: string;
-}
-
 interface ReplyItemProps {
   reply: Reply;
   project: Project;
   onInteractionSuccess: () => void;
   review: Review;
   comment: Comment;
-  writerTokenHoldings: WriterTokenHoldingsMap; // UPDATED TYPE
+  writerTokenHoldings: Map<string, number>;
   writerHoldingsLoading: boolean;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
@@ -38,13 +33,11 @@ interface ReplyItemProps {
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
   isActive: boolean; // NEW PROP
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
-  projectAssetInfo?: ProjectAssetInfo; // NEW PROP
-  latestRound: number | null; // NEW PROP
 }
 
 const CONTENT_TRUNCATE_LENGTH = 150;
 
-export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive, setLastActiveId, projectAssetInfo, latestRound }: ReplyItemProps) {
+export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive, setLastActiveId }: ReplyItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -108,7 +101,10 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
           "rounded-lg", // ADDED rounded-lg here
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
-          !isFocused && "hover:focus-glow-border" // Apply hover focus highlight only if not already focused
+          !isFocused && "hover:focus-glow-border", // Apply hover focus highlight only if not already focused
+          isExcluded 
+            ? "bg-muted/30 border border-destructive/50 pointer-events-none" // Muted style for excluded
+            : "bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black" // Normal style
         )}
         onClick={handleCardClick}
         onMouseEnter={() => setLastActiveId(reply.id)} // NEW: Set active ID on mouse enter
@@ -123,8 +119,6 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             projectTokenHoldings={writerTokenHoldings}
             writerHoldingsLoading={writerHoldingsLoading}
             projectSourceContext={projectSourceContext}
-            projectAssetInfo={projectAssetInfo} // NEW PROP
-            latestRound={latestRound} // NEW PROP
           />
           <div className="flex items-center space-x-2">
             <span className={cn("text-xs font-semibold", isExcluded ? "text-muted-foreground" : "text-black/70")}>{formatTimestamp(reply.timestamp)}</span>
@@ -166,7 +160,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             <div className="flex items-center space-x-2">
               <Star className="h-4 w-4 text-yellow-500" />
               <span className="font-numeric">{curatorWeightedLikeScore.toFixed(1)}</span>
-            </div >
+            </div>
             <Button
               variant="ghost"
               size="sm"

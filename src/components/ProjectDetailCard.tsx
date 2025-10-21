@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { Project, ProjectsData, Review, WriterTokenHoldingsMap } from "@/types/social";
+import { Project, ProjectsData, Review } from "@/types/social";
 import {
   Card,
   CardContent,
@@ -46,7 +46,6 @@ interface ProjectDetailCardProps {
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId'];
   setFocusedId: ReturnType<typeof useKeyboardNavigation>['setFocusedId']; // NEW PROP
   onScrollToTop?: () => void; // Made optional
-  latestRound: number | null; // NEW PROP
 }
 
 interface ProjectStats {
@@ -137,7 +136,6 @@ export function ProjectDetailCard({
   setLastActiveId,
   setFocusedId, // NEW: Destructure setFocusedId
   onScrollToTop = () => {}, // Provide fallback
-  latestRound, // NEW PROP
 }: ProjectDetailCardProps) {
   const projectId = project.id;
   const { transactionSigner, algodClient } = useWallet();
@@ -158,14 +156,6 @@ export function ProjectDetailCard({
 
   const { tokenHoldings, loading: tokenHoldingsLoading } = useUserProjectTokenHoldings(activeAddress, projectsData, projectDetails);
   const { allCuratorData, loading: curatorIndexLoading } = useCuratorIndex(undefined, projectsData);
-
-  // NEW: Create the WriterTokenHoldingsMap for passing down
-  const writerTokenHoldingsMap: WriterTokenHoldingsMap = useMemo(() => {
-    return tokenHoldings.reduce((map, holding) => {
-      map.set(holding.projectId, { amount: holding.amount, unitName: holding.assetUnitName });
-      return map;
-    }, new Map());
-  }, [tokenHoldings]);
 
   const stats: ProjectStats = useMemo(() => {
     let reviewsCount = 0;
@@ -224,19 +214,6 @@ export function ProjectDetailCard({
   
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
   const effectiveCreatorAddress = creatorWalletMetadata || project.creatorWallet;
-
-  // NEW: Determine project asset info to pass down for user holdings lookup
-  const projectAssetInfo = useMemo(() => {
-    const assetIdItem = projectMetadata.find(item => item.type === 'asset-id');
-    const assetUnitNameItem = projectMetadata.find(item => item.type === 'asset-unit-name');
-    const assetId = assetIdItem ? parseInt(assetIdItem.value, 10) : undefined;
-    const assetUnitName = assetUnitNameItem?.value;
-
-    if (assetId && !isNaN(assetId) && assetUnitName) {
-      return { assetId, assetUnitName };
-    }
-    return undefined;
-  }, [projectMetadata]);
 
   const handleProjectDetailsUpdated = () => {
     // When details are updated via form, the mutation invalidates the query, triggering a refetch.
@@ -613,7 +590,7 @@ export function ProjectDetailCard({
               project={project}
               onInteractionSuccess={onInteractionSuccess}
               interactionScore={score}
-              writerTokenHoldings={writerTokenHoldingsMap}
+              writerTokenHoldings={tokenHoldings.reduce((map, holding) => map.set(holding.projectId, holding.amount), new Map())} // Pass all token holdings
               writerHoldingsLoading={tokenHoldingsLoading}
               projectSourceContext={projectSourceContext}
               allCuratorData={allCuratorData}
@@ -621,9 +598,7 @@ export function ProjectDetailCard({
               registerItem={registerItem}
               isActive={isActive}
               setLastActiveId={setLastActiveId}
-              globalViewMode={viewMode}
-              projectAssetInfo={projectAssetInfo}
-              latestRound={latestRound} // NEW PROP
+              globalViewMode={viewMode} // NEW PROP
             />
           ))
         ) : (

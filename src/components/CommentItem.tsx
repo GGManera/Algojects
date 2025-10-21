@@ -1,6 +1,6 @@
 "use client";
 
-import { Comment, Project, Review, Reply, WriterTokenHoldingsMap } from "@/types/social";
+import { Comment, Project, Review, Reply } from "@/types/social";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { UserDisplay } from "./UserDisplay";
 import { LikeButton } from "./LikeButton";
@@ -17,17 +17,12 @@ import { InteractionForm } from "./InteractionForm"; // NEW Import for reply for
 import { useWallet } from "@txnlab/use-wallet-react"; // Import useWallet
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
 
-interface ProjectAssetInfo {
-  assetId: number;
-  assetUnitName: string;
-}
-
 interface CommentItemProps {
   comment: Comment;
   project: Project;
   review: Review;
   onInteractionSuccess: () => void;
-  writerTokenHoldings: WriterTokenHoldingsMap; // UPDATED TYPE
+  writerTokenHoldings: Map<string, number>;
   writerHoldingsLoading: boolean;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
@@ -40,8 +35,6 @@ interface CommentItemProps {
   isActive: boolean; // NEW PROP
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
   globalViewMode: 'reviews' | 'comments' | 'replies' | 'interactions'; // NEW PROP
-  projectAssetInfo?: ProjectAssetInfo; // NEW PROP
-  latestRound: number | null; // NEW PROP
 }
 
 export function CommentItem({
@@ -61,8 +54,6 @@ export function CommentItem({
   isActive,
   setLastActiveId,
   globalViewMode, // NEW PROP
-  projectAssetInfo, // NEW PROP
-  latestRound, // NEW PROP
 }: CommentItemProps) {
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
@@ -187,9 +178,6 @@ export function CommentItem({
               avatarSizeClass="h-9 w-9"
               projectTokenHoldings={writerTokenHoldings}
               projectSourceContext={projectSourceContext}
-              writerHoldingsLoading={writerHoldingsLoading}
-              projectAssetInfo={projectAssetInfo} // NEW PROP
-              latestRound={latestRound} // NEW PROP
             />
             <div className="flex items-center space-x-2">
               <span className={cn("text-xs font-semibold", isExcluded ? "text-muted-foreground" : "text-white/70")}>{formatTimestamp(comment.timestamp)}</span>
@@ -276,8 +264,6 @@ export function CommentItem({
                   registerItem={registerItem}
                   isActive={isActive} // NEW
                   setLastActiveId={setLastActiveId} // NEW
-                  projectAssetInfo={projectAssetInfo} // NEW PROP
-                  latestRound={latestRound} // NEW PROP
                 />
               ))}
             {showReplyForm && (

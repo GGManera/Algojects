@@ -10,7 +10,7 @@ import { cn, formatLargeNumber } from '@/lib/utils';
 import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WriterTokenHoldingsMap, ProjectHoldingInfo } from '@/types/social';
-// Removed: import { useUserAssetHolding } from '@/hooks/useUserAssetHolding'; 
+import { useUserAssetHolding } from '@/hooks/useUserAssetHolding'; // NEW Import
 
 interface ProjectAssetInfo {
   assetId: number;
@@ -28,7 +28,7 @@ interface UserDisplayProps {
   // NEW: Context of the page this UserDisplay is on, to be pushed to history
   sourceContext?: { path: string; label: string } | null;
   currentProfileActiveCategory?: 'writing' | 'curating'; // NEW
-  // ADDED PROPS for token holding check (used primarily for Project Page):
+  // ADDED PROPS for token holding check (used primarily for Profile Page/Active User):
   projectTokenHoldings?: WriterTokenHoldingsMap;
   writerHoldingsLoading?: boolean;
   // NEW PROP for Project Page (to fetch any user's holding):
@@ -56,33 +56,40 @@ export function UserDisplay({
   const [lastCopied, setLastCopied] = useState<'nfd' | 'address' | null>(null);
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
 
-  // --- LOGIC FOR TOKEN HOLDING (Simplified to use the passed map) ---
+  // --- LOGIC FOR TOKEN HOLDING ---
   
+  // 1. Determine which holding data source to use:
   const isProjectPage = !!projectAssetInfo;
   
+  // If on Project Page, use the new hook to fetch the displayed user's holding for the specific asset
+  const { amount: fetchedAmount, loading: fetchedLoading, error: fetchedError } = useUserAssetHolding(
+    isProjectPage ? address : undefined, 
+    isProjectPage ? projectAssetInfo.assetId : undefined
+  );
+
+  // 2. Consolidate holding info:
   const consolidatedHolding = useMemo(() => {
-    if (isProjectPage && projectAssetInfo && projectTokenHoldings) {
-      // Source A: Data passed down from ProjectDetailCard (Asset Snapshot)
-      const holdingInfo = projectTokenHoldings.get(address);
+    if (isProjectPage && projectAssetInfo) {
+      // Source A: Data fetched specifically for this user/asset
       return {
-        amount: holdingInfo?.amount || 0,
+        amount: fetchedAmount,
         unitName: projectAssetInfo.assetUnitName,
-        loading: writerHoldingsLoading || false,
-        error: null,
+        loading: fetchedLoading,
+        error: fetchedError,
       };
     }
     
-    // Source B: Fallback for Profile Page (using the old map structure)
+    // Source B: Fallback to active user's pre-fetched map (used on Profile Page/Metadata Navigator)
     const currentProjectId = sourceContext?.path.startsWith('/project/') ? sourceContext.path.split('/')[2] : null;
     const holdingInfoFromMap = currentProjectId && projectTokenHoldings ? projectTokenHoldings.get(currentProjectId) : undefined;
 
     return {
-      amount: holdingInfoFromMap?.amount || 0,
-      unitName: holdingInfoFromMap?.unitName || '',
-      loading: writerHoldingsLoading || false,
-      error: null,
+        amount: holdingInfoFromMap?.amount || 0,
+        unitName: holdingInfoFromMap?.unitName || '',
+        loading: writerHoldingsLoading || false,
+        error: null,
     };
-  }, [isProjectPage, projectAssetInfo, projectTokenHoldings, address, writerHoldingsLoading, sourceContext]);
+  }, [isProjectPage, projectAssetInfo, fetchedAmount, fetchedLoading, fetchedError, sourceContext, projectTokenHoldings, writerHoldingsLoading]);
 
   const userHoldsProjectToken = (consolidatedHolding.amount || 0) > 0;
   
@@ -244,7 +251,7 @@ export function UserDisplay({
                         "font-numeric text-hodl-blue ml-2 flex items-center gap-1", 
                         textSizeClass === "text-2xl text-center" ? "text-lg" : "text-sm"
                     )} 
-                    title={displayAmount.title}
+                    title={`Holds ${displayAmount.title}`}
                 >
                     <Gem className={cn("h-4 w-4 text-hodl-blue", textSizeClass === "text-2xl text-center" ? "h-6 w-6" : "h-4 w-4")} />
                     {displayAmount.display}

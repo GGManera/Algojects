@@ -17,7 +17,7 @@ import { UserProjectTokenHolding } from '@/hooks/useUserProjectTokenHoldings'; /
 interface ProjectMetadataNavigatorProps {
   projectId: string;
   projectMetadata: MetadataItem[];
-  currentUserProjectHolding: UserProjectTokenHolding | null | undefined; // Changed to optional/null
+  currentUserProjectHolding: UserProjectTokenHolding | null;
   tokenHoldingsLoading: boolean;
   projectSourceContext: { path: string; label: string };
   isInsideCarousel?: boolean;
@@ -130,7 +130,7 @@ const renderMetadataItem = (
 export function ProjectMetadataNavigator({
   projectId,
   projectMetadata,
-  currentUserProjectHolding, // This is now optional/unused in ProjectPage context
+  currentUserProjectHolding,
   tokenHoldingsLoading,
   projectSourceContext,
   isParentFocused,
@@ -150,18 +150,18 @@ export function ProjectMetadataNavigator({
   const allRenderableMetadataItems = useMemo(() => {
     const items: MetadataItem[] = [];
     const excludedFixedTypes = new Set([
-        'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'
+        'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed'
     ]);
 
     projectMetadata.forEach(item => {
-        if (!excludedFixedTypes.has(item.type || '') && !(item.type === 'address' && item.title === 'Creator Wallet')) {
+        if (!excludedFixedTypes.has(item.type || '')) {
             items.push(item);
         }
     });
     return items;
   }, [projectMetadata]);
 
-  // Add the holding card as a virtual item if it exists (only if currentUserProjectHolding is provided, e.g., on Profile Page)
+  // Add the holding card as a virtual item if it exists
   const holdingItem = useMemo(() => {
     if (!currentUserProjectHolding) return null;
     return {

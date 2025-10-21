@@ -1,7 +1,5 @@
 "use client";
 
-import { Algodv2 } from 'algosdk';
-
 const ALLO_API_URL = "https://analytics-api.allo.info";
 
 export interface AssetHoldersResponse {
@@ -19,18 +17,20 @@ export interface AssetHoldersResponse {
 const cache = new Map<number, { data: Map<string, number>; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-export async function fetchAssetHolders(assetId: number, algodClient: Algodv2): Promise<Map<string, number>> {
+export async function fetchAssetHolders(assetId: number, round: number): Promise<Map<string, number>> {
   const now = Date.now();
   const cachedEntry = cache.get(assetId);
   if (cachedEntry && now - cachedEntry.timestamp < CACHE_DURATION) {
     return cachedEntry.data;
   }
 
-  try {
-    const status = await algodClient.status().do();
-    const latestRound = status['last-round'];
+  if (!round) {
+    console.error("Round number is required to fetch asset holders.");
+    return new Map<string, number>();
+  }
 
-    const response = await fetch(`${ALLO_API_URL}/v1/asset/${assetId}/snapshot/${latestRound}`);
+  try {
+    const response = await fetch(`${ALLO_API_URL}/v1/asset/${assetId}/snapshot/${round}`);
     if (!response.ok) {
       const errorBody = await response.text();
       console.error("Allo API Error:", errorBody);

@@ -14,7 +14,7 @@ export interface AssetHoldersResponse {
 }
 
 // Simple in-memory cache
-const cache = new Map<string, { data: Map<string, number>; timestamp: number }>();
+const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export async function fetchAssetHolders(assetId: number, round: number): Promise<Map<string, number>> {
@@ -23,7 +23,7 @@ export async function fetchAssetHolders(assetId: number, round: number): Promise
   }
 
   const now = Date.now();
-  const cacheKey = `${assetId}-${round}`;
+  const cacheKey = `asset-${assetId}-${round}`;
   const cachedEntry = cache.get(cacheKey);
   if (cachedEntry && now - cachedEntry.timestamp < CACHE_DURATION) {
     return cachedEntry.data;
@@ -52,10 +52,57 @@ export async function fetchAssetHolders(assetId: number, round: number): Promise
     return holdingsMap;
   } catch (error) {
     console.error(`Error fetching holders for asset ${assetId} at round ${round}:`, error);
-    // If fetch fails, try to return stale cache data if available
     if (cachedEntry) {
       return cachedEntry.data;
     }
     throw error;
   }
+}
+
+// --- NEW FUNCTION FOR USER ASSETS ---
+
+export interface UserAsset {
+  'asset-id': number;
+  amount: number;
+  'unit-name'?: string;
+}
+
+export interface UserAssetsResponse {
+    // This is a guess based on allo.info's other endpoint.
+    // Please update with the actual response structure.
+    data: UserAsset[];
+}
+
+export async function fetchUserAssets(address: string, round: number): Promise<UserAsset[]> {
+    // NOTE: The endpoint URL is a placeholder. Please provide the correct one.
+    const ALLO_USER_ASSETS_URL = `https://analytics-api.allo.info/v1/address/${address}/assets/${round}`;
+
+    if (!round) {
+        throw new Error("Round number must be provided to fetch user assets.");
+    }
+
+    const now = Date.now();
+    const cacheKey = `user-${address}-${round}`;
+    const cachedEntry = cache.get(cacheKey);
+    if (cachedEntry && now - cachedEntry.timestamp < CACHE_DURATION) {
+        return cachedEntry.data;
+    }
+
+    try {
+        const response = await fetch(ALLO_USER_ASSETS_URL);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch assets for address ${address}`);
+        }
+        const result: UserAssetsResponse = await response.json();
+        const assets = result.data || [];
+        
+        cache.set(cacheKey, { data: assets, timestamp: now });
+        return assets;
+    } catch (error) {
+        console.error(`Error fetching assets for address ${address}:`, error);
+        if (cachedEntry) {
+            return cachedEntry.data;
+        }
+        throw error;
+    }
 }

@@ -196,7 +196,8 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
             {writerHoldingsLoading && currentProjectId ? (
                 <Skeleton className={cn("h-4 w-12 ml-2", textSizeClass === "text-2xl text-center" && "h-6 w-20")} />
             ) : displayAmount ? (
-                <span className={cn("font-numeric text-hodl-blue ml-2", textSizeClass === "text-2xl text-center" ? "text-lg" : "text-sm")} title={`Holds ${displayAmount}`}>
+                <span className={cn("flex items-center font-numeric text-hodl-blue ml-2", textSizeClass === "text-2xl text-center" ? "text-lg" : "text-sm")} title={`Holds ${displayAmount}`}>
+                    <Gem className={cn("h-4 w-4 mr-1 text-hodl-blue", textSizeClass === "text-2xl text-center" && "h-5 w-5")} />
                     {displayAmount}
                 </span>
             ) : null}

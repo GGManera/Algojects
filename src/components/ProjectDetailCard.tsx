@@ -174,6 +174,7 @@ export function ProjectDetailCard({
   const [assetHoldersError, setAssetHoldersError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log(`[ProjectDetailCard] Checking Allo API fetch condition: assetId=${assetId}, round=${round}`);
     if (!assetId || !round) {
       setTokenHoldingsLoading(false);
       setAssetHolders(new Map());
@@ -201,6 +202,8 @@ export function ProjectDetailCard({
     return () => { isMounted = false; };
   }, [assetId, round]);
 
+  const [copiedMetadata, setCopiedMetadata] = useState(false);
+
   const currentProjectName = projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${projectId}`;
   const currentProjectDescription = projectMetadata.find(item => item.type === 'project-description')?.value;
   const currentProjectTags = projectMetadata.find(item => item.type === 'tags')?.value;
@@ -212,6 +215,10 @@ export function ProjectDetailCard({
   const creatorWalletMetadata = creatorWalletItem?.value;
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
   const effectiveCreatorAddress = creatorWalletMetadata || project.creatorWallet;
+
+  const handleProjectDetailsUpdated = () => {
+    // Logic remains the same
+  };
 
   const isAuthorizedToClaim = activeAddress && effectiveCreatorAddress && activeAddress === effectiveCreatorAddress && !isClaimed && addedByAddress && activeAddress !== addedByAddress;
 
@@ -354,7 +361,7 @@ export function ProjectDetailCard({
             </div>
           </div>
           <ProjectNotesDisplay isLoadingDetails={isLoadingDetails} detailsError={detailsError} currentProjectDescription={currentProjectDescription} isCommunityNotes={isCommunityNotes} isCreatorAdded={isCreatorAdded} addedByAddress={addedByAddress} />
-          {activeAddress && showProjectDetailsForm && <ProjectDetailsForm projectId={projectId} initialProjectMetadata={projectMetadata} projectCreatorAddress={effectiveCreatorAddress} onProjectDetailsUpdated={() => {}} />}
+          {activeAddress && showProjectDetailsForm && <ProjectDetailsForm projectId={projectId} initialProjectMetadata={projectMetadata} projectCreatorAddress={effectiveCreatorAddress} onProjectDetailsUpdated={handleProjectDetailsUpdated} />}
         </CardContent>
       </Card>
       <div className="space-y-6 mt-8">

@@ -9,6 +9,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn, formatLargeNumber } from '@/lib/utils';
 import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { WriterTokenHoldingsMap, ProjectHoldingInfo } from '@/types/social';
 
 interface UserDisplayProps {
   address: string;
@@ -22,7 +23,7 @@ interface UserDisplayProps {
   sourceContext?: { path: string; label: string } | null;
   currentProfileActiveCategory?: 'writing' | 'curating'; // NEW
   // ADDED PROPS for token holding check:
-  projectTokenHoldings?: Map<string, number>;
+  projectTokenHoldings?: WriterTokenHoldingsMap;
   writerHoldingsLoading?: boolean;
 }
 
@@ -43,12 +44,24 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
     return null;
   }, [sourceContext]);
 
-  const userHoldsProjectToken = useMemo(() => {
-    if (!currentProjectId || !projectTokenHoldings) return false;
-    // Check if the user holds any amount of the project token (amount > 0)
-    const amount = projectTokenHoldings.get(currentProjectId);
-    return (amount || 0) > 0;
+  // NEW: Get the full holding info
+  const holdingInfo: ProjectHoldingInfo | undefined = useMemo(() => {
+    if (!currentProjectId || !projectTokenHoldings) return undefined;
+    return projectTokenHoldings.get(currentProjectId);
   }, [currentProjectId, projectTokenHoldings]);
+
+  const userHoldsProjectToken = useMemo(() => {
+    // Check if the user holds any amount of the project token (amount > 0)
+    return (holdingInfo?.amount || 0) > 0;
+  }, [holdingInfo]);
+  
+  const displayAmount = useMemo(() => {
+    if (!userHoldsProjectToken || !holdingInfo) return null;
+    // Convert micro-units (assuming 6 decimals) to display units
+    const amountInAlgos = holdingInfo.amount / 1_000_000;
+    // Use formatLargeNumber for the amount, and append the unit name
+    return `${formatLargeNumber(amountInAlgos)} ${holdingInfo.unitName}`;
+  }, [userHoldsProjectToken, holdingInfo]);
   // --- END LOGIC ---
 
   if (loading) {
@@ -179,9 +192,14 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
                 </motion.p>
             )}
             </AnimatePresence>
-            {userHoldsProjectToken && (
-                <Gem className={cn("h-4 w-4 text-hodl-blue ml-1", textSizeClass === "text-2xl text-center" && "h-6 w-6")} title="Project Token Holder" />
-            )}
+            {/* Display holding amount if available and not loading */}
+            {writerHoldingsLoading && currentProjectId ? (
+                <Skeleton className={cn("h-4 w-12 ml-2", textSizeClass === "text-2xl text-center" && "h-6 w-20")} />
+            ) : displayAmount ? (
+                <span className={cn("font-numeric text-hodl-blue ml-2", textSizeClass === "text-2xl text-center" ? "text-lg" : "text-sm")} title={`Holds ${displayAmount}`}>
+                    {displayAmount}
+                </span>
+            ) : null}
         </div>
       </div>
     </Wrapper>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Reply, Project, Review, Comment } from "@/types/social";
+import { Reply, Project, Review, Comment, WriterTokenHoldingsMap } from "@/types/social";
 import { LikeButton } from "./LikeButton";
 import { UserDisplay } from "./UserDisplay";
 import { formatTimestamp, getCuratorWeightedLikeScore } from "@/lib/utils";
@@ -23,7 +23,7 @@ interface ReplyItemProps {
   onInteractionSuccess: () => void;
   review: Review;
   comment: Comment;
-  writerTokenHoldings: Map<string, number>;
+  writerTokenHoldings: WriterTokenHoldingsMap; // UPDATED TYPE
   writerHoldingsLoading: boolean;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
@@ -160,7 +160,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             <div className="flex items-center space-x-2">
               <Star className="h-4 w-4 text-yellow-500" />
               <span className="font-numeric">{curatorWeightedLikeScore.toFixed(1)}</span>
-            </div>
+            </div >
             <Button
               variant="ghost"
               size="sm"

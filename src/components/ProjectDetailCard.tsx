@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { Project, ProjectsData, Review } from "@/types/social";
+import { Project, ProjectsData, Review, WriterTokenHoldingsMap } from "@/types/social";
 import {
   Card,
   CardContent,
@@ -156,6 +156,14 @@ export function ProjectDetailCard({
 
   const { tokenHoldings, loading: tokenHoldingsLoading } = useUserProjectTokenHoldings(activeAddress, projectsData, projectDetails);
   const { allCuratorData, loading: curatorIndexLoading } = useCuratorIndex(undefined, projectsData);
+
+  // NEW: Create the WriterTokenHoldingsMap for passing down
+  const writerTokenHoldingsMap: WriterTokenHoldingsMap = useMemo(() => {
+    return tokenHoldings.reduce((map, holding) => {
+      map.set(holding.projectId, { amount: holding.amount, unitName: holding.assetUnitName });
+      return map;
+    }, new Map());
+  }, [tokenHoldings]);
 
   const stats: ProjectStats = useMemo(() => {
     let reviewsCount = 0;
@@ -590,7 +598,7 @@ export function ProjectDetailCard({
               project={project}
               onInteractionSuccess={onInteractionSuccess}
               interactionScore={score}
-              writerTokenHoldings={tokenHoldings.reduce((map, holding) => map.set(holding.projectId, holding.amount), new Map())} // Pass all token holdings
+              writerTokenHoldings={writerTokenHoldingsMap} // UPDATED to use the new map
               writerHoldingsLoading={tokenHoldingsLoading}
               projectSourceContext={projectSourceContext}
               allCuratorData={allCuratorData}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Comment, Project, Review, Reply } from "@/types/social";
+import { Comment, Project, Review, Reply, WriterTokenHoldingsMap } from "@/types/social";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { UserDisplay } from "./UserDisplay";
 import { LikeButton } from "./LikeButton";
@@ -22,7 +22,7 @@ interface CommentItemProps {
   project: Project;
   review: Review;
   onInteractionSuccess: () => void;
-  writerTokenHoldings: Map<string, number>;
+  writerTokenHoldings: WriterTokenHoldingsMap; // UPDATED TYPE
   writerHoldingsLoading: boolean;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
@@ -178,6 +178,7 @@ export function CommentItem({
               avatarSizeClass="h-9 w-9"
               projectTokenHoldings={writerTokenHoldings}
               projectSourceContext={projectSourceContext}
+              writerHoldingsLoading={writerHoldingsLoading}
             />
             <div className="flex items-center space-x-2">
               <span className={cn("text-xs font-semibold", isExcluded ? "text-muted-foreground" : "text-white/70")}>{formatTimestamp(comment.timestamp)}</span>

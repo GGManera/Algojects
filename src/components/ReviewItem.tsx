@@ -1,6 +1,6 @@
 "use client";
 
-import { Review, Project, Comment } from "@/types/social";
+import { Review, Project, Comment, WriterTokenHoldingsMap } from "@/types/social";
 import { CommentItem } from "./CommentItem";
 import { LikeButton } from "./LikeButton";
 import { InteractionForm } from "./InteractionForm";
@@ -25,7 +25,7 @@ interface ReviewItemProps {
   project: Project;
   onInteractionSuccess: () => void;
   interactionScore: number;
-  writerTokenHoldings: Map<string, number>;
+  writerTokenHoldings: WriterTokenHoldingsMap; // UPDATED TYPE
   writerHoldingsLoading: boolean;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
@@ -44,7 +44,7 @@ const getCommentInteractionScore = (comment: Comment): number => {
   const replies = Object.values(comment.replies || {});
   score += replies.length;
   replies.forEach(reply => {
-    score += reply.likeCount || 0;
+      score += reply.likeCount || 0;
   });
   return score;
 };
@@ -191,6 +191,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
             avatarSizeClass="h-10 w-10" 
             projectTokenHoldings={writerTokenHoldings}
             projectSourceContext={projectSourceContext}
+            writerHoldingsLoading={writerHoldingsLoading}
           />
           <div className="flex items-center space-x-2">
             <span className="text-xs text-white/70 font-semibold">{formatTimestamp(review.timestamp)}</span>

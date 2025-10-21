@@ -1,7 +1,5 @@
 "use client";
 
-import { Algodv2 } from 'algosdk';
-
 const ALLO_API_URL = "https://analytics-api.allo.info";
 
 export interface AssetHoldersResponse {
@@ -16,21 +14,23 @@ export interface AssetHoldersResponse {
 }
 
 // Simple in-memory cache
-const cache = new Map<number, { data: Map<string, number>; timestamp: number }>();
+const cache = new Map<string, { data: Map<string, number>; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-export async function fetchAssetHolders(assetId: number, algodClient: Algodv2): Promise<Map<string, number>> {
+export async function fetchAssetHolders(assetId: number, round: number): Promise<Map<string, number>> {
+  if (!round) {
+    throw new Error("Round number must be provided to fetch asset holders.");
+  }
+
   const now = Date.now();
-  const cachedEntry = cache.get(assetId);
+  const cacheKey = `${assetId}-${round}`;
+  const cachedEntry = cache.get(cacheKey);
   if (cachedEntry && now - cachedEntry.timestamp < CACHE_DURATION) {
     return cachedEntry.data;
   }
 
   try {
-    const status = await algodClient.status().do();
-    const latestRound = status['last-round'];
-
-    const response = await fetch(`${ALLO_API_URL}/v1/asset/${assetId}/snapshot/${latestRound}`);
+    const response = await fetch(`${ALLO_API_URL}/v1/asset/${assetId}/snapshot/${round}`);
     if (!response.ok) {
       const errorBody = await response.text();
       console.error("Allo API Error:", errorBody);
@@ -47,11 +47,11 @@ export async function fetchAssetHolders(assetId: number, algodClient: Algodv2): 
       }
     }
     
-    cache.set(assetId, { data: holdingsMap, timestamp: now });
+    cache.set(cacheKey, { data: holdingsMap, timestamp: now });
 
     return holdingsMap;
   } catch (error) {
-    console.error(`Error fetching holders for asset ${assetId}:`, error);
+    console.error(`Error fetching holders for asset ${assetId} at round ${round}:`, error);
     // If fetch fails, try to return stale cache data if available
     if (cachedEntry) {
       return cachedEntry.data;

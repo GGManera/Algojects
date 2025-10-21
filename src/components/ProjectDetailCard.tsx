@@ -20,7 +20,7 @@ import { UserDisplay } from "./UserDisplay";
 import { Button } from "./ui/button";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { parseProjectMetadata, extractDomainFromUrl, extractXHandleFromUrl } from '@/lib/utils';
-import { useUserProjectTokenHoldings } from '@/hooks/useUserProjectTokenHoldings';
+import { useProjectAssetHolders } from '@/hooks/useProjectAssetHolders';
 import { useCuratorIndex } from '@/hooks/useCuratorIndex';
 import { MetadataItem } from '@/types/project';
 import { ThankContributorDialog } from "./ThankContributorDialog";
@@ -154,7 +154,6 @@ export function ProjectDetailCard({
   // NEW: State to track if focus is inside the Metadata Navigator
   const [isMetadataNavigatorFocused, setIsMetadataNavigatorFocused] = useState(false);
 
-  const { tokenHoldings, loading: tokenHoldingsLoading } = useUserProjectTokenHoldings(activeAddress, projectsData, projectDetails);
   const { allCuratorData, loading: curatorIndexLoading } = useCuratorIndex(undefined, projectsData);
 
   const stats: ProjectStats = useMemo(() => {
@@ -199,6 +198,10 @@ export function ProjectDetailCard({
 
   const currentProjectDetailsEntry = projectDetails.find(entry => entry.projectId === projectId);
   const projectMetadata: MetadataItem[] = currentProjectDetailsEntry?.projectMetadata || [];
+
+  const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
+  const assetId = assetIdItem?.value ? parseInt(assetIdItem.value, 10) : undefined;
+  const { holdings: assetHolders, loading: tokenHoldingsLoading, error: assetHoldersError } = useProjectAssetHolders(assetId);
 
   // Extract "fixed" fields from projectMetadata
   const currentProjectName = projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${projectId}`;
@@ -282,9 +285,19 @@ export function ProjectDetailCard({
   };
 
   const currentUserProjectHolding = useMemo(() => {
-    if (!activeAddress || tokenHoldingsLoading) return null;
-    return tokenHoldings.find(holding => holding.projectId === projectId);
-  }, [activeAddress, tokenHoldings, tokenHoldingsLoading, projectId]);
+    if (!activeAddress || !assetId || tokenHoldingsLoading || !assetHolders) return null;
+    
+    const amount = assetHolders.get(activeAddress) || 0;
+    const assetUnitNameItem = projectMetadata.find(item => item.type === 'asset-unit-name');
+    
+    return {
+      projectId,
+      projectName: currentProjectName,
+      assetId: assetId,
+      amount: amount,
+      assetUnitName: assetUnitNameItem?.value || '',
+    };
+  }, [activeAddress, assetId, tokenHoldingsLoading, assetHolders, projectId, currentProjectName, projectMetadata]);
 
   const allWriterAddresses = useMemo(() => {
     const addresses = new Set<string>();
@@ -307,6 +320,18 @@ export function ProjectDetailCard({
     path: `/project/${projectId}`,
     label: currentProjectName,
   }), [projectId, currentProjectName]);
+
+  const addedByAddressHoldings = useMemo(() => {
+    if (!addedByAddress || !assetId || !assetHolders) return new Map<string, number>();
+    const balance = assetHolders.get(addedByAddress) || 0;
+    return new Map<string, number>().set(projectId, balance);
+  }, [addedByAddress, assetId, assetHolders, projectId]);
+
+  const currentUserHoldingsForProject = useMemo(() => {
+    if (!activeAddress || !assetId || !assetHolders) return new Map<string, number>();
+    const balance = assetHolders.get(activeAddress) || 0;
+    return new Map<string, number>().set(projectId, balance);
+  }, [activeAddress, assetId, assetHolders, projectId]);
 
   // --- Keyboard Navigation Logic for ProjectDetailCard ---
   const isFocused = focusedId === project.id;
@@ -544,6 +569,8 @@ export function ProjectDetailCard({
                         avatarSizeClass="h-6 w-6"
                         linkTo={`/profile/${addedByAddress}`}
                         sourceContext={projectSourceContext}
+                        projectTokenHoldings={addedByAddressHoldings}
+                        writerHoldingsLoading={tokenHoldingsLoading}
                       />
                     </div>
                   )}
@@ -590,7 +617,7 @@ export function ProjectDetailCard({
               project={project}
               onInteractionSuccess={onInteractionSuccess}
               interactionScore={score}
-              writerTokenHoldings={tokenHoldings.reduce((map, holding) => map.set(holding.projectId, holding.amount), new Map())} // Pass all token holdings
+              writerTokenHoldings={currentUserHoldingsForProject}
               writerHoldingsLoading={tokenHoldingsLoading}
               projectSourceContext={projectSourceContext}
               allCuratorData={allCuratorData}

@@ -26,7 +26,7 @@ interface CachedAccountData {
 }
 
 const ACCOUNT_DATA_CACHE_KEY_PREFIX = 'accountDataCache_'; // Prefix to store per-address
-const ACCOUNT_DATA_CACHE_DURATION = 15 * 1000; // 15 seconds
+const ACCOUNT_DATA_CACHE_DURATION = 3600 * 1000; // 1 hour
 
 export function useAccountData(activeAddress: string | undefined) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);

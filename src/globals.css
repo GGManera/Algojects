@@ -337,7 +337,7 @@
 
   .btn-profile strong {
     z-index: 2;
-    @apply font-sans;
+    /* REMOVED: @apply font-sans; */
     font-size: 8px; /* Adjusted font size */
     letter-spacing: 2px; /* Adjusted letter spacing */
     color: #ffffff;

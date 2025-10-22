@@ -130,7 +130,7 @@ export function ProjectDetailsForm({
   }, [dynamicMetadataItems]);
 
   // Determine the effective list of inputs for NFD resolution for authorization
-  // We stabilize the inputs by using JSON.stringify on the relevant parts.
+  // We still need NFD resolution for whitelisted editors
   const effectiveAuthInputs = useMemo(() => {
     const authAddresses: string[] = [];
     
@@ -150,9 +150,7 @@ export function ProjectDetailsForm({
       authAddresses.push(addedByAddress);
     }
     
-    // Use a stable representation of whitelisted addresses
-    const whitelisted = whitelistedAddressesContent.split(',').map(addr => addr.trim()).filter(Boolean);
-    whitelisted.forEach(addr => authAddresses.push(addr));
+    whitelistedAddressesContent.split(',').map(addr => addr.trim()).filter(Boolean).forEach(addr => authAddresses.push(addr));
     
     return Array.from(new Set(authAddresses));
   }, [projectCreatorAddress, addedByAddress, whitelistedAddressesContent, creatorWalletContent, projectWalletContent]);
@@ -499,7 +497,7 @@ export function ProjectDetailsForm({
                     <SelectItem value="x-url">X (Twitter) URL</SelectItem>
                     <SelectItem value="asset-id">Asset ID</SelectItem>
                     <SelectItem value="address">Address</SelectItem>
-                    <SelectItem value="asset-unit-name">Asset Unit Name</SelectItem>
+                    <SelectItem value="asset-unit-name">Asset Unit Name</SelectItem> {/* NEW */}
                   </SelectContent>
                 </Select>
               </div>

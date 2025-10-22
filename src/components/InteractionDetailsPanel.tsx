@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { UserDisplay } from './UserDisplay';
 import { BaseInteraction, Review, Comment, Project } from '@/types/social';
 import { formatTimestamp } from '@/lib/utils';
@@ -40,55 +40,27 @@ export function InteractionDetailsPanel({ item, project, review, comment, onInte
   const itemType = idParts.length === 2 ? 'review' : idParts.length === 3 ? 'comment' : 'reply';
 
   // Collect all unique addresses involved in likes, comments, and replies for NFD resolution
-  // We stabilize the dependencies by using JSON.stringify on the relevant parts of the item.
-  // This is a common pattern when dealing with complex, nested objects from a global store (like projectsData)
-  // to ensure the memoization only breaks when the content actually changes.
-  const itemDependencies = useMemo(() => {
-    const deps: any = {
-      likeHistory: item.likeHistory,
-    };
-    if (itemType === 'review') {
-      deps.comments = Object.values((item as Review).comments || {}).map(c => ({
-        sender: c.sender,
-        likeHistory: c.likeHistory,
-        replies: Object.values(c.replies || {}).map(r => ({
-          sender: r.sender,
-          likeHistory: r.likeHistory,
-        })),
-      }));
-    } else if (itemType === 'comment') {
-      deps.replies = Object.values((item as Comment).replies || {}).map(r => ({
-        sender: r.sender,
-        likeHistory: r.likeHistory,
-      }));
-    }
-    return JSON.stringify(deps);
-  }, [item, itemType]);
-
-
   const allAddressesToResolve = useMemo(() => {
     const addresses = new Set<string>();
-    const parsedDeps = JSON.parse(itemDependencies);
+    item.likeHistory.forEach(like => addresses.add(like.sender));
 
-    parsedDeps.likeHistory.forEach((like: any) => addresses.add(like.sender));
-
-    if (itemType === 'review' && parsedDeps.comments) {
-      parsedDeps.comments.forEach((c: any) => {
+    if (itemType === 'review' && (item as Review).comments) {
+      Object.values((item as Review).comments).forEach(c => {
         addresses.add(c.sender);
-        c.likeHistory.forEach((like: any) => addresses.add(like.sender));
-        c.replies.forEach((r: any) => {
+        c.likeHistory.forEach(like => addresses.add(like.sender));
+        Object.values(c.replies).forEach(r => {
           addresses.add(r.sender);
-          r.likeHistory.forEach((like: any) => addresses.add(like.sender));
+          r.likeHistory.forEach(like => addresses.add(like.sender));
         });
       });
-    } else if (itemType === 'comment' && parsedDeps.replies) {
-      parsedDeps.replies.forEach((r: any) => {
+    } else if (itemType === 'comment' && (item as Comment).replies) {
+      Object.values((item as Comment).replies).forEach(r => {
         addresses.add(r.sender);
-        r.likeHistory.forEach((like: any) => addresses.add(like.sender));
+        r.likeHistory.forEach(like => addresses.add(like.sender));
       });
     }
     return Array.from(addresses);
-  }, [itemDependencies, itemType]);
+  }, [item, itemType]);
 
   const { resolvedAddresses, loading: nfdResolving } = useNfdResolver(allAddressesToResolve);
 
@@ -97,9 +69,9 @@ export function InteractionDetailsPanel({ item, project, review, comment, onInte
     if (itemType !== 'review') return { comments: 0, replies: 0 };
     let commentLikes = 0;
     let replyLikes = 0;
-    Object.values((item as Review).comments || {}).forEach(c => {
+    Object.values((item as Review).comments).forEach(c => {
       commentLikes += c.likeCount;
-      Object.values(c.replies || {}).forEach(r => {
+      Object.values(c.replies).forEach(r => {
         replyLikes += r.likeCount;
       });
     });
@@ -114,15 +86,15 @@ export function InteractionDetailsPanel({ item, project, review, comment, onInte
 
   const sortedComments = useMemo(() => {
     if (itemType !== 'review') return [];
-    return Object.values((item as Review).comments || {}).sort((a, b) => a.timestamp - b.timestamp);
+    return Object.values((item as Review).comments).sort((a, b) => a.timestamp - b.timestamp);
   }, [item, itemType]);
 
   // Collect and sort all replies for a review
   const allRepliesForReview = useMemo(() => {
     if (itemType !== 'review') return [];
     const replies: (BaseInteraction & { parentCommentId: string })[] = [];
-    Object.values((item as Review).comments || {}).forEach(c => {
-      Object.values(c.replies || {}).forEach(r => {
+    Object.values((item as Review).comments).forEach(c => {
+      Object.values(c.replies).forEach(r => {
         replies.push({ ...r, parentCommentId: c.id }); // Add parent comment ID for context if needed
       });
     });
@@ -193,7 +165,7 @@ export function InteractionDetailsPanel({ item, project, review, comment, onInte
         <>
           <div className="mb-4">
             <h5 className="text-md font-semibold text-muted-foreground flex items-center gap-1 mb-2">
-              <MessageCircle className="h-4 w-4" /> Comments ({Object.keys((item as Review).comments || {}).length})
+              <MessageCircle className="h-4 w-4" /> Comments ({Object.keys((item as Review).comments).length})
             </h5>
             {nfdResolving ? (
               <Skeleton className="h-24 w-full" />
@@ -207,14 +179,14 @@ export function InteractionDetailsPanel({ item, project, review, comment, onInte
                         <UserDisplay address={c.sender} avatarSizeClass="h-6 w-6" textSizeClass="text-sm" />
                       </div>
                       <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); toggleReplies(c.id); }} className="h-auto p-1 text-xs text-muted-foreground">
-                        {Object.keys(c.replies || {}).length} Replies {showRepliesForComment[c.id] ? <ChevronUp className="h-3 w-3 ml-1" /> : <ChevronDown className="h-3 w-3 ml-1" />}
+                        {Object.keys(c.replies).length} Replies {showRepliesForComment[c.id] ? <ChevronUp className="h-3 w-3 ml-1" /> : <ChevronDown className="h-3 w-3 ml-1" />}
                       </Button>
                     </div>
                     <CollapsibleContent isOpen={showRepliesForComment[c.id]} className="pl-4 pt-2 mt-2 border-t border-muted">
                           <h6 className="text-sm font-semibold text-muted-foreground mb-1">Replies:</h6>
-                          {Object.values(c.replies || {}).length > 0 ? (
+                          {Object.values(c.replies).length > 0 ? (
                             <ul className="space-y-1">
-                              {Object.values(c.replies || {}).sort((a, b) => a.timestamp - b.timestamp).map((r, replyIndex) => (
+                              {Object.values(c.replies).sort((a, b) => a.timestamp - b.timestamp).map((r, replyIndex) => (
                                 <li key={r.id} className="flex items-center gap-2 text-sm">
                                   <div className="flex items-center gap-1"> {/* Group ordinal and UserDisplay */}
                                     <span className="text-xs text-muted-foreground font-semibold w-6 text-right">{getOrdinalSuffix(replyIndex + 1)}</span>
@@ -279,13 +251,13 @@ export function InteractionDetailsPanel({ item, project, review, comment, onInte
       {itemType === 'comment' && (
         <div className="mb-4">
           <h5 className="text-md font-semibold text-muted-foreground flex items-center gap-1 mb-2">
-            <MessageSquare className="h-4 w-4" /> Replies ({Object.keys((item as Comment).replies || {}).length})
+            <MessageSquare className="h-4 w-4" /> Replies ({Object.keys((item as Comment).replies).length})
           </h5>
           {nfdResolving ? (
             <Skeleton className="h-16 w-full" />
-          ) : Object.values((item as Comment).replies || {}).length > 0 ? (
+          ) : Object.values((item as Comment).replies).length > 0 ? (
             <ul className="space-y-1 max-h-40 overflow-y-auto scrollbar-thin">
-              {Object.values((item as Comment).replies || {}).sort((a, b) => a.timestamp - b.timestamp).map((r, index) => (
+              {Object.values((item as Comment).replies).sort((a, b) => a.timestamp - b.timestamp).map((r, index) => (
                 <li key={r.id} className="flex items-center gap-2 text-sm p-1 rounded-md bg-muted/20">
                   <div className="flex items-center gap-2"> {/* Group ordinal and UserDisplay */}
                     <span className="text-xs text-muted-foreground font-semibold w-8 text-right">{getOrdinalSuffix(index + 1)}</span>

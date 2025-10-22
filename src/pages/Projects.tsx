@@ -169,6 +169,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         registerItem={registerItem}
         isActive={isActive}
         setLastActiveId={setLastActiveId}
+        rebuildOrder={rebuildOrder} // NEW: Pass rebuildOrder
       />
 
       {shouldShowAddProjectButton && activeAddress && (
@@ -222,6 +223,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
                 isInsideCarousel={isInsideCarousel}
                 focusedId={focusedId}
                 registerItem={registerItem}
+                rebuildOrder={rebuildOrder} // NEW: Pass rebuildOrder
                 isActive={isActive}
                 setLastActiveId={setLastActiveId}
               />

@@ -193,12 +193,12 @@ export function useKeyboardNavigation(pageKey: string) {
     
     // Store or update the item with its current expansion state
     itemsMap.set(id, { id, toggleExpand, isExpanded, type });
-    updateOrderedIds(currentKey); // Rebuild order immediately upon registration/update
+    // Removed: updateOrderedIds(currentKey); // <--- REMOVED IMMEDIATE REBUILD
 
     return () => {
       if (pageKeyRef.current === currentKey) {
         itemsMap.delete(id);
-        updateOrderedIds(currentKey);
+        // Rely on explicit rebuild on unmount/update in consuming components
       }
     };
   }, []);

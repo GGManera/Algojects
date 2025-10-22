@@ -28,6 +28,7 @@ interface ProjectSummaryCardProps {
   // NEW: Keyboard navigation props
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
+  rebuildOrder: ReturnType<typeof useKeyboardNavigation>['rebuildOrder']; // NEW PROP
   isActive: boolean; // NEW PROP
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
 }
@@ -59,7 +60,7 @@ const getReviewInteractionScore = (review: Review): number => {
   return score;
 };
 
-export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRef, isInsideCarousel = false, focusedId, registerItem, isActive, setLastActiveId }: ProjectSummaryCardProps) {
+export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRef, isInsideCarousel = false, focusedId, registerItem, rebuildOrder, isActive, setLastActiveId }: ProjectSummaryCardProps) {
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
   const { isMobile } = useAppContextDisplayMode();
@@ -80,8 +81,12 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
   useEffect(() => {
     // Use isActive as a dependency to force re-registration when the slide becomes active
     const cleanup = registerItem(project.id, handleToggleExpand, isExpanded, 'project-summary');
+    
+    // NEW: Trigger rebuild when expansion state changes
+    rebuildOrder(); 
+    
     return cleanup;
-  }, [project.id, handleToggleExpand, isExpanded, registerItem, isActive]); // ADDED isActive
+  }, [project.id, handleToggleExpand, isExpanded, registerItem, isActive, rebuildOrder]); // ADDED rebuildOrder dependency
 
   const stats: ProjectStats = useMemo(() => {
     let reviewsCount = 0;
@@ -207,6 +212,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
           key={index}
           className={cn("btn-profile", baseItemClasses)}
           onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
+          data-nav-id={`meta-${item.title}-${index}`}
         >
           <strong className="uppercase">{item.title || extractDomainFromUrl(item.value)}</strong>
           <div id="container-stars">
@@ -224,6 +230,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
           key={index}
           className={cn("btn-profile", baseItemClasses)}
           onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
+          data-nav-id={`meta-${item.title}-${index}`}
         >
           <strong className="uppercase">{item.title || extractXHandleFromUrl(item.value)}</strong>
           <div id="container-stars">
@@ -241,6 +248,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
           key={index}
           className={cn("btn-profile", baseItemClasses)}
           onClick={(e) => handleCopyClick(e, item.value)}
+          data-nav-id={`meta-${item.title}-${index}`}
         >
           <strong className="uppercase">{copiedMessage || item.title || "Asset ID"}</strong>
           <div id="container-stars">
@@ -254,14 +262,14 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
       );
     } else if (item.type === 'address' || item.value.length === 58) {
       return (
-        <div key={index} className={cn("inline-flex flex-col p-2 rounded-md bg-background/50 border border-border text-center", baseItemClasses)}>
+        <div key={index} className={cn("inline-flex flex-col p-2 rounded-md bg-background/50 border border-border text-center", baseItemClasses)} data-nav-id={`meta-${item.title}-${index}`}>
           <span className="font-semibold text-muted-foreground text-xs">{item.title || 'Address'}:</span>
           <UserDisplay address={item.value} textSizeClass="text-xs" avatarSizeClass="h-5 w-5" linkTo={`/profile/${item.value}`} sourceContext={projectSourceContext} className="justify-center" />
         </div>
       );
     } else {
       return (
-        <div key={index} className={cn("inline-flex flex-col p-2 rounded-md bg-background/50 border border-border text-center", baseItemClasses)}>
+        <div key={index} className={cn("inline-flex flex-col p-2 rounded-md bg-background/50 border border-border text-center", baseItemClasses)} data-nav-id={`meta-${item.title}-${index}`}>
           <span className="font-semibold text-muted-foreground text-xs">{item.title}:</span>
           <p className="text-sm text-foreground selectable-text">{item.value}</p>
         </div>
@@ -406,7 +414,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
                         }}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <UserDisplay address={r.sender} textSizeClass="text-sm" avatarSizeClass="h-7 w-7" sourceContext={projectSourceContext} linkTo={null} />
+                          <UserDisplay address={r.sender} textSizeClass="text-sm" avatarSizeClass="h-7 w-7" linkTo={null} />
                           <span className="text-xs text-white/70">{formatTimestamp(r.timestamp)}</span>
                         </div>
                         <p className="whitespace-pre-wrap line-clamp-2">{r.content}</p>

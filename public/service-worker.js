@@ -2,11 +2,9 @@ const CACHE_NAME = 'algojects-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  // Removed '/src/main.tsx' and '/src/globals.css' as they are source files
-  '/placeholder.svg', // Corrected path
-  'https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&family=Inter:wght@400;500;600;700&display=swap',
-  'https://fonts.gstatic.com/s/raleway/v22/1Ptxg8zSys_Uf5vYQJycxus.woff2',
-  'https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMw.woff2'
+  '/placeholder.svg',
+  '/algojects-logo.png', // Ensure logo is cached
+  '/logo.png', // Ensure logo is cached
 ];
 
 self.addEventListener('install', (event) => {
@@ -15,6 +13,10 @@ self.addEventListener('install', (event) => {
       .then((cache) => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
+      })
+      .catch(error => {
+        console.error('Service Worker cache.addAll failed:', error);
+        // Allow installation to proceed even if some files fail
       })
   );
 });

@@ -49,11 +49,12 @@ interface RevenueCalculatorProps {
   // NEW: Keyboard navigation props
   focusedId: string | null;
   registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
+  rebuildOrder: ReturnType<typeof useKeyboardNavigation>['rebuildOrder']; // NEW PROP
   isActive: boolean;
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId'];
 }
 
-export function RevenueCalculator({ className, isInsideCarousel = false, focusedId, registerItem, isActive, setLastActiveId }: RevenueCalculatorProps) {
+export function RevenueCalculator({ className, isInsideCarousel = false, focusedId, registerItem, rebuildOrder, isActive, setLastActiveId }: RevenueCalculatorProps) {
   const { projects, loading: socialDataLoading, error: socialDataError } = useSocialData();
   const { isMobile } = useAppContextDisplayMode();
   const {
@@ -98,8 +99,12 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
   // Register item for keyboard navigation
   useEffect(() => {
     const cleanup = registerItem('revenue-calculator', handleToggleExpand, isOpen, 'project-summary');
+    
+    // NEW: Trigger rebuild when expansion state changes
+    rebuildOrder(); 
+    
     return cleanup;
-  }, [handleToggleExpand, isOpen, registerItem, isActive]);
+  }, [handleToggleExpand, isOpen, registerItem, isActive, rebuildOrder]); // ADDED rebuildOrder dependency
 
   const isLoading = socialDataLoading || analyticsLoading;
   const displayError = socialDataError || analyticsError;

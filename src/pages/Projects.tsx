@@ -14,7 +14,6 @@ import { NewProjectDialog } from "@/components/NewProjectDialog";
 import { useAppContextDisplayMode } from "@/contexts/AppDisplayModeContext";
 import { useHeroLogoVisibility } from "@/contexts/HeroLogoVisibilityContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { ScrollTopSettingsButton } from "@/components/ScrollTopSettingsButton";
 import { Project } from "@/types/social";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from '@/lib/utils';
@@ -153,7 +152,6 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
       "flex flex-col items-center text-foreground space-y-4 relative scroll-mt-header-offset", // Removed h-full and overflow-y-auto
       isInsideCarousel ? "px-0 md:px-0" : "px-2 md:px-4"
     )}>
-      <ScrollTopSettingsButton />
       <HeroSection 
         heroLogoRef={heroLogoRef} 
         isInsideCarousel={isInsideCarousel} 

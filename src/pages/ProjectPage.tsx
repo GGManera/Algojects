@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { useWallet } from "@txnlab/use-wallet-react";
 import React, { useRef, useEffect, useMemo } from "react";
-import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
+import { useNavigationHistory } '@/contexts/NavigationHistoryContext';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { cn } from '@/lib/utils';
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
@@ -63,9 +63,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
     return projectDetails.find(pd => pd.projectId === effectiveProjectId);
   }, [projectDetails, effectiveProjectId]);
 
-  const currentProjectName = useMemo(() => {
-    return currentProjectDetailsEntry?.projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${effectiveProjectId}`;
-  }, [currentProjectDetailsEntry, effectiveProjectId]);
+  // Removed currentProjectName derivation as it's not needed here anymore
 
   const project = useMemo(() => {
     return effectiveProjectId ? projects[effectiveProjectId] : undefined;
@@ -177,7 +175,6 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
         projectsData={projects}
         activeAddress={activeAddress}
         onInteractionSuccess={refetch}
-        currentProjectName={currentProjectName} // This prop is now derived internally by ProjectDetailCard
         isInsideCarousel={isInsideCarousel}
         // NEW: Pass keyboard navigation props
         focusedId={focusedId}

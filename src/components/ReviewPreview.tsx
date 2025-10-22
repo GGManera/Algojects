@@ -1,9 +1,7 @@
 "use client";
 
-import React from 'react'; // Removed useState, useEffect
+import React from 'react';
 import { cn } from '@/lib/utils';
-import { Smartphone, Tablet } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext'; // Import the context hook
 
 interface ReviewPreviewProps {
@@ -40,7 +38,7 @@ export function ReviewPreview({ content, type, className }: ReviewPreviewProps) 
       portraitContentClasses = "text-xs";
       landscapeContentClasses = "text-[0.6rem]"; // Ainda menor para landscape
       gradientClasses = "from-notes-gradient-start to-notes-gradient-end";
-      textColorClass = "text-white";
+      textColorClass = "text-black"; // Text color for light background
       fontWeightClass = "font-semibold"; // Bolder for replies
       break;
     case 'notes':
@@ -48,7 +46,7 @@ export function ReviewPreview({ content, type, className }: ReviewPreviewProps) 
       portraitContentClasses = "text-sm"; // Definido um tamanho para notes em portrait
       landscapeContentClasses = "text-xs"; // Definido um tamanho para notes em landscape
       gradientClasses = "from-notes-gradient-start to-notes-gradient-end";
-      textColorClass = "text-white";
+      textColorClass = "text-black"; // Text color for light background
       fontWeightClass = "font-semibold"; // Bolder for notes
       break;
     default:

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { SettingsDialog } from './SettingsDialog';
 import { WalletButton } from '@txnlab/use-wallet-ui-react';
 import { useHeroLogoVisibility } from '@/contexts/HeroLogoVisibilityContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { ProfileButton } from './ProfileButton';
 
@@ -17,7 +17,6 @@ interface StickyHeaderProps {
 export function StickyHeader({ onLogoClick }: StickyHeaderProps) {
   const { isHeroLogoVisible } = useHeroLogoVisibility();
   const { isMobile } = useAppContextDisplayMode();
-  // const navigate = useNavigate(); // Removed useNavigate as navigation is handled by onLogoClick
 
   return (
     <AnimatePresence>

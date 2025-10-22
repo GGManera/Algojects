@@ -92,7 +92,9 @@ const renderMetadataItem = (
     e.stopPropagation();
     if (isAssetIdItem) {
       handleCopyClick(e, item.value, true);
-    } else if (item.type === 'url' || item.type === 'x-url' || item.value.startsWith('http')) {
+    } else if (item.type === 'url' || item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com')) {
+      window.open(item.value, '_blank');
+    } else if (item.type === 'x-url' || item.value.includes('x.com') || item.value.includes('twitter.com')) {
       window.open(item.value, '_blank');
     } else if (item.type === 'address' || item.value.length === 58) {
       // For addresses, clicking navigates to profile
@@ -147,7 +149,8 @@ const renderMetadataItem = (
         onClick={clickHandler}
         data-nav-id={`meta-${item.title}-${index}`}
       >
-        <strong className={cn("uppercase", isNumericDisplay && "font-numeric !text-base !tracking-normal")}>{buttonText}</strong>
+        {/* Removed font-numeric and added font-bold and larger text size */}
+        <strong className={cn("uppercase", isNumericDisplay && "font-bold !text-base !tracking-normal")}>{buttonText}</strong>
         <div id="container-stars">
           <div id="stars"></div>
         </div>

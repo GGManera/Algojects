@@ -102,6 +102,20 @@ const ProjectNotesDisplay = ({
   );
 };
 
+interface ProjectDetailCardProps {
+  project: Project;
+  projectsData: ProjectsData;
+  activeAddress: string | undefined;
+  onInteractionSuccess: () => void;
+  isInsideCarousel?: boolean;
+  focusedId: string | null;
+  registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
+  isActive: boolean;
+  setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId'];
+  setFocusedId: ReturnType<typeof useKeyboardNavigation>['setFocusedId'];
+  onScrollToTop?: () => void;
+}
+
 export function ProjectDetailCard({ 
   project, 
   projectsData, 
@@ -259,7 +273,7 @@ export function ProjectDetailCard({
       projectName: currentProjectName,
       assetId: currentUserHolding.assetId,
       amount: currentUserHolding.amount,
-      assetUnitName: currentUserHolding.assetUnitName,
+      assetUnitName: currentUserProjectHolding.assetUnitName,
     };
   }, [currentUserHolding, projectId, currentProjectName]);
 
@@ -348,7 +362,7 @@ export function ProjectDetailCard({
 
   return (
     <div className="w-full">
-      <Card className={cn("bg-accent mt-8 relative border-2 border-transparent transition-all duration-200", isFocused && !isMetadataNavigatorFocused ? "focus-glow-border" : "", !isFocused && "hover:focus-glow-border")} data-nav-id={project.id} onMouseEnter={() => setLastActiveId(project.id)} onMouseLeave={() => setLastActiveId(null)}>
+      <Card className={cn("bg-accent mt-8 relative transition-all duration-200", isFocused && !isMetadataNavigatorFocused ? "focus-glow-border" : "", !isFocused && "hover:focus-glow-border")} data-nav-id={project.id} onMouseEnter={() => setLastActiveId(project.id)} onMouseLeave={() => setLastActiveId(null)}>
         {activeAddress && <Button variant="ghost" size="icon" onClick={() => setShowProjectDetailsForm(prev => !prev)} className="absolute top-2 left-2 z-10 h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Toggle project details form"><Edit className="h-4 w-4" /></Button>}
         <CardContent className="space-y-4 p-4">
           <div className="flex flex-col md:flex-row md:items-stretch md:space-x-4">

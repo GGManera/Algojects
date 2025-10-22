@@ -12,7 +12,7 @@ interface NfdData {
 // Modified to store timestamp
 export const nfdLookupCache = new Map<string, (NfdData & { timestamp: number }) | null>(); // EXPORTED
 
-export const NFD_RESOLVER_CACHE_DURATION_MS = 15 * 1000; // 15 seconds for NFD resolver cache
+export const NFD_RESOLVER_CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes for NFD resolver cache
 const NFD_API_URL = "https://api.nf.domains";
 const BATCH_SIZE = 20; // Max addresses per batch
 

@@ -151,7 +151,7 @@ const renderMetadataItem = (
       >
         <strong className={cn(
           !isNumericDisplay && "uppercase", // Only uppercase if displaying title/link text
-          isNumericDisplay && "font-numeric font-bold !text-base !tracking-normal" // Apply numeric font if displaying the value
+          isNumericDisplay && "font-numeric font-bold !text-base !tracking-normal !font-sans !font-heading" // Apply numeric font and override defaults
         )}>{buttonText}</strong>
         <div id="container-stars">
           <div id="stars"></div>

@@ -299,7 +299,6 @@ export function ProjectMetadataNavigator({
           "w-full", 
           !isMobile && "max-w-[180px] mx-auto",
           isHoldingFocused ? "focus-glow-border" : "",
-          !isHoldingFocused && "hover:focus-glow-border"
         )}
         data-nav-id={`meta-${holdingItem.title}-${allRenderableMetadataItems.length}`}
         onMouseEnter={() => setLastActiveId(`meta-${holdingItem.title}-${allRenderableMetadataItems.length}`)}
@@ -343,7 +342,6 @@ export function ProjectMetadataNavigator({
             className: cn(
               (renderedItem as React.ReactElement).props.className,
               isItemFocused ? "focus-glow-border" : "",
-              !isItemFocused && "hover:focus-glow-border"
             ),
             onMouseEnter: () => setLastActiveId(id),
             onMouseLeave: () => setLastActiveId(null),

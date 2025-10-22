@@ -21,12 +21,11 @@ interface UserDisplayProps {
   // NEW: Context of the page this UserDisplay is on, to be pushed to history
   sourceContext?: { path: string; label: string } | null;
   currentProfileActiveCategory?: 'writing' | 'curating'; // NEW
-  // ADDED PROPS for token holding check:
-  projectTokenHoldings?: Map<string, number>;
-  writerHoldingsLoading?: boolean;
+  // UPDATED PROPS for token holding check:
+  isTokenHolder?: boolean; // Pass true if this specific address holds the token
 }
 
-export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", textSizeClass = "text-sm", linkTo = `/profile/${address}`, onClick, sourceContext, currentProfileActiveCategory, projectTokenHoldings, writerHoldingsLoading }: UserDisplayProps) {
+export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", textSizeClass = "text-sm", linkTo = `/profile/${address}`, onClick, sourceContext, currentProfileActiveCategory, isTokenHolder = false }: UserDisplayProps) {
   // --- Hooks called unconditionally at the top level ---
   const { nfd, loading } = useNfd(address);
   const location = useLocation();
@@ -35,21 +34,8 @@ export function UserDisplay({ address, className, avatarSizeClass = "h-8 w-8", t
   const [lastCopied, setLastCopied] = useState<'nfd' | 'address' | null>(null);
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
 
-  // --- LOGIC FOR TOKEN HOLDING (useMemo must be unconditional) ---
-  const currentProjectId = useMemo(() => {
-    if (sourceContext?.path.startsWith('/project/')) {
-        return sourceContext.path.split('/')[2];
-    }
-    return null;
-  }, [sourceContext]);
-
-  const userHoldsProjectToken = useMemo(() => {
-    if (!currentProjectId || !projectTokenHoldings) return false;
-    // Check if the user holds any amount of the project token (amount > 0)
-    // NOTE: Allo API returns amount in display units (not microAlgos), so we check directly.
-    const amount = projectTokenHoldings.get(currentProjectId);
-    return (amount || 0) > 0;
-  }, [currentProjectId, projectTokenHoldings]);
+  // --- LOGIC FOR TOKEN HOLDING ---
+  const userHoldsProjectToken = isTokenHolder;
   // --- END LOGIC ---
 
   if (loading) {

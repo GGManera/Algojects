@@ -25,8 +25,8 @@ interface ReviewItemProps {
   project: Project;
   onInteractionSuccess: () => void;
   interactionScore: number;
-  writerTokenHoldings: Map<string, number>;
-  writerHoldingsLoading: boolean;
+  // REMOVED: writerTokenHoldings: Map<string, number>;
+  // REMOVED: writerHoldingsLoading: boolean;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
   // NEW: Keyboard navigation props
@@ -49,7 +49,7 @@ const getCommentInteractionScore = (comment: Comment): number => {
   return score;
 };
 
-export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, writerTokenHoldings, writerHoldingsLoading, projectSourceContext, allCuratorData, focusedId, registerItem, isActive, setLastActiveId, globalViewMode }: ReviewItemProps) {
+export function ReviewItem({ review, project, onInteractionSuccess, interactionScore, projectSourceContext, allCuratorData, focusedId, registerItem, isActive, setLastActiveId, globalViewMode }: ReviewItemProps) {
   const location = useLocation();
   const { expandCommentId, highlightReplyId, highlightCommentId } = (location.state as { expandCommentId?: string; highlightReplyId?: string; highlightCommentId?: string; }) || {};
   const { activeAddress } = useWallet(); // Get active address
@@ -189,7 +189,8 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
             address={review.sender} 
             textSizeClass="text-base" 
             avatarSizeClass="h-10 w-10" 
-            projectTokenHoldings={writerTokenHoldings}
+            // REMOVED: projectTokenHoldings={writerTokenHoldings}
+            // REMOVED: writerHoldingsLoading={writerHoldingsLoading}
             projectSourceContext={projectSourceContext}
           />
           <div className="flex items-center space-x-2">
@@ -288,8 +289,8 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
                 review={review} 
                 project={project} 
                 onInteractionSuccess={onInteractionSuccess} 
-                writerTokenHoldings={writerTokenHoldings}
-                writerHoldingsLoading={writerHoldingsLoading}
+                // REMOVED: writerTokenHoldings={writerTokenHoldings}
+                // REMOVED: writerHoldingsLoading={writerHoldingsLoading}
                 projectSourceContext={projectSourceContext}
                 allCuratorData={allCuratorData}
                 expandCommentId={expandCommentId}

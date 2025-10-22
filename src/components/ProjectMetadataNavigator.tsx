@@ -12,12 +12,20 @@ import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { Skeleton } from './ui/skeleton';
 import { showError, showSuccess } from '@/utils/toast';
 import { formatLargeNumber, extractDomainFromUrl, extractXHandleFromUrl } from '@/lib/utils';
-import { UserProjectTokenHolding } from '@/hooks/useUserProjectTokenHoldings'; // Import UserProjectTokenHolding
+
+// Define local interface for the holding data passed from ProjectDetailCard
+interface CurrentUserProjectHolding {
+  projectId: string;
+  projectName: string;
+  assetId: number;
+  amount: number;
+  assetUnitName: string;
+}
 
 interface ProjectMetadataNavigatorProps {
   projectId: string;
   projectMetadata: MetadataItem[];
-  currentUserProjectHolding: UserProjectTokenHolding | null;
+  currentUserProjectHolding: CurrentUserProjectHolding | null;
   tokenHoldingsLoading: boolean;
   projectSourceContext: { path: string; label: string };
   isInsideCarousel?: boolean;
@@ -221,10 +229,10 @@ export function ProjectMetadataNavigator({
   useEffect(() => {
     if (!isParentFocused || !isKeyboardModeActive) return;
 
-    const handleInternalMovement = (e: KeyboardEvent) => {
-      const orderedIds = globalOrderedIdsMap.get(pageKey) || [];
-      if (orderedIds.length === 0) return;
+    const orderedIds = globalOrderedIdsMap.get(pageKey) || [];
+    if (orderedIds.length === 0) return;
 
+    const handleInternalMovement = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
       const currentIndex = focusedId ? orderedIds.indexOf(focusedId) : -1;
 

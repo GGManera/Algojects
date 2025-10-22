@@ -22,8 +22,8 @@ interface CommentItemProps {
   project: Project;
   review: Review;
   onInteractionSuccess: () => void;
-  writerTokenHoldings: Map<string, number>;
-  writerHoldingsLoading: boolean;
+  // REMOVED: writerTokenHoldings: Map<string, number>;
+  // REMOVED: writerHoldingsLoading: boolean;
   projectSourceContext: { path: string; label: string };
   allCuratorData: AllCuratorCalculationsMap;
   expandCommentId?: string;
@@ -42,8 +42,6 @@ export function CommentItem({
   project,
   review,
   onInteractionSuccess,
-  writerTokenHoldings,
-  writerHoldingsLoading,
   projectSourceContext,
   allCuratorData,
   expandCommentId,
@@ -176,7 +174,8 @@ export function CommentItem({
               address={comment.sender}
               textSizeClass="text-base"
               avatarSizeClass="h-9 w-9"
-              projectTokenHoldings={writerTokenHoldings}
+              // REMOVED: projectTokenHoldings={writerTokenHoldings}
+              // REMOVED: writerHoldingsLoading={writerHoldingsLoading}
               projectSourceContext={projectSourceContext}
             />
             <div className="flex items-center space-x-2">
@@ -254,8 +253,8 @@ export function CommentItem({
                   review={review}
                   comment={comment}
                   onInteractionSuccess={onInteractionSuccess}
-                  writerTokenHoldings={writerTokenHoldings}
-                  writerHoldingsLoading={writerHoldingsLoading}
+                  // REMOVED: writerTokenHoldings={writerTokenHoldings}
+                  // REMOVED: writerHoldingsLoading={writerHoldingsLoading}
                   projectSourceContext={projectSourceContext}
                   allCuratorData={allCuratorData}
                   isHighlighted={highlightReplyId === reply.id}

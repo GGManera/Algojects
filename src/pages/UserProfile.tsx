@@ -14,7 +14,6 @@ import { formatTimestamp } from "@/lib/utils";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { useUserEarnings } from "@/hooks/useUserEarnings";
 import { useCuratorIndex } from "@/hooks/useCuratorIndex";
-import { useProfileProjectTokenHoldings } from "@/hooks/useUserProjectTokenHoldings"; // UPDATED IMPORT
 import { UserStatsCard } from "@/components/UserStatsCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
@@ -24,7 +23,6 @@ import { useAppContextDisplayMode } from "@/contexts/AppDisplayModeContext";
 import { cn } from '@/lib/utils';
 import { usePlatformAnalytics } from "@/hooks/usePlatformAnalytics";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
-import { UserProjectTokensCard } from "@/components/UserProjectTokensCard"; // Import UserProjectTokensCard
 
 // Helper function to calculate interaction score for a review
 const getReviewInteractionScore = (review: Review): number => {
@@ -326,7 +324,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   const firstProject = Object.values(projects)[0];
   const round = firstProject?.round;
 
-  const { tokenHoldings, loading: tokenHoldingsLoading, error: tokenHoldingsError } = useProfileProjectTokenHoldings(address, projects, projectDetails, round); // UPDATED HOOK NAME
+  // REMOVED: const { tokenHoldings, loading: tokenHoldingsLoading, error: tokenHoldingsError } = useProfileProjectTokenHoldings(address, projects, projectDetails, round); // UPDATED HOOK NAME
   const [activeCategory, setActiveCategory] = useState<'writing' | 'curating'>(initialCategoryFromState || "writing");
   const [activeTab, setActiveTab] = useState("reviews");
   const [tabDirection, setTabDirection] = useState(0);
@@ -577,12 +575,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                 isInsideCarousel={isInsideCarousel}
               />
 
-              <UserProjectTokensCard
-                tokenHoldings={tokenHoldings}
-                isLoading={tokenHoldingsLoading}
-                error={tokenHoldingsError}
-                isInsideCarousel={isInsideCarousel}
-              />
+              {/* REMOVED UserProjectTokensCard */}
 
               <GlassRadioGroupTwoItems defaultValue={activeCategory} onValueChange={handleCategoryChange} className="mb-4">
                   <GlassRadioItemTwoItems value="writing" id="glass-category-writing" label="Writing" />

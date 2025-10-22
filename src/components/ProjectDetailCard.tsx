@@ -20,7 +20,7 @@ import { UserDisplay } from "./UserDisplay";
 import { Button } from "./ui/button";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { parseProjectMetadata, extractDomainFromUrl, extractXHandleFromUrl } from '@/lib/utils';
-import { fetchAssetHolders } from '@/lib/allo';
+import { fetchAssetBalanceAtRound } from '@/lib/allo'; // UPDATED: Import fetchAssetBalanceAtRound
 import { useCuratorIndex } from '@/hooks/useCuratorIndex';
 import { MetadataItem } from '@/types/project';
 import { ThankContributorDialog } from "./ThankContributorDialog";
@@ -32,26 +32,18 @@ import { cn } from '@/lib/utils';
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
-interface ProjectDetailCardProps {
-  project: Project;
-  projectsData: ProjectsData;
-  activeAddress: string | undefined;
-  onInteractionSuccess: () => void;
-  isInsideCarousel?: boolean;
-  focusedId: string | null;
-  registerItem: ReturnType<typeof useKeyboardNavigation>['registerItem'];
-  isActive: boolean;
-  setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId'];
-  setFocusedId: ReturnType<typeof useKeyboardNavigation>['setFocusedId'];
-  onScrollToTop?: () => void;
-}
-
 interface ProjectStats {
   interactionScore: number;
   reviewsCount: number;
   commentsCount: number;
   repliesCount: number;
   likesCount: number;
+}
+
+interface CurrentUserProjectHolding {
+  assetId: number;
+  amount: number;
+  assetUnitName: string;
 }
 
 const getReviewInteractionScore = (review: Review): number => {
@@ -134,6 +126,11 @@ export function ProjectDetailCard({
   const [isMetadataNavigatorFocused, setIsMetadataNavigatorFocused] = useState(false);
   const { allCuratorData } = useCuratorIndex(undefined, projectsData);
 
+  // NEW STATE for current user's holding
+  const [currentUserHolding, setCurrentUserHolding] = useState<CurrentUserProjectHolding | null>(null);
+  const [tokenHoldingsLoading, setTokenHoldingsLoading] = useState(true);
+  const [assetHoldersError, setAssetHoldersError] = useState<string | null>(null); // Renamed error state
+
   const stats: ProjectStats = useMemo(() => {
     let reviewsCount = 0, commentsCount = 0, repliesCount = 0, likesCount = 0;
     const reviews = Object.values(project.reviews || {});
@@ -168,41 +165,50 @@ export function ProjectDetailCard({
   const assetId = assetIdItem?.value ? parseInt(assetIdItem.value, 10) : undefined;
   const round = project.round; // Use round directly from project
 
-  const [assetHolders, setAssetHolders] = useState<Map<string, number>>(new Map());
-  const [tokenHoldingsLoading, setTokenHoldingsLoading] = useState(true);
-  const [assetHoldersError, setAssetHoldersError] = useState<string | null>(null);
-
+  // NEW: Effect to fetch current user's asset balance
   useEffect(() => {
-    console.log(`[ProjectDetailCard] Checking Allo API fetch condition for Project ${projectId}:`);
-    console.log(`[ProjectDetailCard] assetId: ${assetId}, round: ${round}`);
+    console.log(`[ProjectDetailCard] Checking Allo API balance condition for Project ${projectId}:`);
+    console.log(`[ProjectDetailCard] activeAddress: ${activeAddress}, assetId: ${assetId}, round: ${round}`);
 
-    if (!assetId || !round) {
-      console.log(`[ProjectDetailCard] Skipping Allo API fetch: Missing assetId or round.`);
+    if (!activeAddress || !assetId || !round) {
+      console.log(`[ProjectDetailCard] Skipping Allo API balance fetch: Missing activeAddress, assetId, or round.`);
+      setCurrentUserHolding(null);
       setTokenHoldingsLoading(false);
-      setAssetHolders(new Map());
       return;
     }
 
     let isMounted = true;
-    const getHolders = async () => {
+    const getBalance = async () => {
       if (isMounted) {
         setTokenHoldingsLoading(true);
         setAssetHoldersError(null);
       }
       try {
-        const holdersMap = await fetchAssetHolders(assetId, round);
-        if (isMounted) setAssetHolders(holdersMap);
+        const balanceData = await fetchAssetBalanceAtRound(activeAddress, assetId, round);
+        
+        const assetUnitNameItem = projectMetadata.find(item => item.type === 'asset-unit-name');
+        
+        if (isMounted) {
+          setCurrentUserHolding({
+            assetId,
+            amount: balanceData.amount,
+            assetUnitName: balanceData.unitName || assetUnitNameItem?.value || '',
+          });
+        }
       } catch (err) {
         console.error(err);
-        if (isMounted) setAssetHoldersError(err instanceof Error ? err.message : 'An unknown error occurred');
+        if (isMounted) {
+          setAssetHoldersError(err instanceof Error ? err.message : 'An unknown error occurred');
+          setCurrentUserHolding(null);
+        }
       } finally {
         if (isMounted) setTokenHoldingsLoading(false);
       }
     };
 
-    getHolders();
+    getBalance();
     return () => { isMounted = false; };
-  }, [assetId, round]);
+  }, [activeAddress, assetId, round, projectId, projectMetadata]); // Added projectMetadata dependency
 
   const currentProjectName = projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${projectId}`;
   const currentProjectDescription = projectMetadata.find(item => item.type === 'project-description')?.value;
@@ -245,22 +251,27 @@ export function ProjectDetailCard({
     }
   }, [activeAddress, transactionSigner, algodClient, addedByAddress, projectId, currentProjectName, projectMetadata, refetchProjectDetails, onInteractionSuccess, effectiveCreatorAddress]);
 
-  const currentUserProjectHolding = useMemo(() => {
-    if (!activeAddress || !assetId || tokenHoldingsLoading || !assetHolders) return null;
-    const amount = assetHolders.get(activeAddress) || 0;
-    const assetUnitNameItem = projectMetadata.find(item => item.type === 'asset-unit-name');
-    return { projectId, projectName: currentProjectName, assetId, amount, assetUnitName: assetUnitNameItem?.value || '' };
-  }, [activeAddress, assetId, tokenHoldingsLoading, assetHolders, projectId, currentProjectName, projectMetadata]);
+  // NEW: Use currentUserHolding for the ProjectMetadataNavigator prop
+  const currentUserProjectHoldingProp = useMemo(() => {
+    if (!currentUserHolding || currentUserHolding.amount === 0) return null;
+    return {
+      projectId,
+      projectName: currentProjectName,
+      assetId: currentUserHolding.assetId,
+      amount: currentUserHolding.amount,
+      assetUnitName: currentUserHolding.assetUnitName,
+    };
+  }, [currentUserHolding, projectId, currentProjectName]);
 
   const projectSourceContext = useMemo(() => ({ path: `/project/${projectId}`, label: currentProjectName }), [projectId, currentProjectName]);
+  
+  // NEW: Simplified holdings maps for UserDisplay (only need to check if they hold > 0)
+  // Since we only fetch the current user's holding, we cannot determine if the addedByAddress holds the token.
   const addedByAddressHoldings = useMemo(() => {
-    if (!addedByAddress || !assetId || !assetHolders) return new Map<string, number>();
-    return new Map<string, number>().set(projectId, assetHolders.get(addedByAddress) || 0);
-  }, [addedByAddress, assetId, assetHolders, projectId]);
-  const currentUserHoldingsForProject = useMemo(() => {
-    if (!activeAddress || !assetId || !assetHolders) return new Map<string, number>();
-    return new Map<string, number>().set(projectId, assetHolders.get(activeAddress) || 0);
-  }, [activeAddress, assetId, assetHolders, projectId]);
+    return new Map<string, number>();
+  }, []);
+  
+  const currentUserHoldsToken = !!currentUserHolding && currentUserHolding.amount > 0;
 
   const isFocused = focusedId === project.id;
   const handleToggleExpand = useCallback(() => {
@@ -349,12 +360,22 @@ export function ProjectDetailCard({
                   <CardDescription>{stats.reviewsCount} {stats.reviewsCount === 1 ? 'review' : 'reviews'} found for this project.</CardDescription>
                   {currentProjectTags && <div className="flex flex-wrap justify-center gap-2 mt-1">{currentProjectTags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => <span key={index} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary-foreground">{tag}</span>)}</div>}
                   {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && <div className="mt-2"><Button onClick={() => setShowThankContributorDialog(true)} disabled={isClaiming} className="bg-green-600 hover:bg-green-700 text-white"><DollarSign className="h-4 w-4 mr-2" /> Thank Contributor & Claim</Button></div>}
-                  {addedByAddress && <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1">Added by <UserDisplay address={addedByAddress} textSizeClass="text-sm" avatarSizeClass="h-6 w-6" linkTo={`/profile/${addedByAddress}`} sourceContext={projectSourceContext} projectTokenHoldings={addedByAddressHoldings} writerHoldingsLoading={tokenHoldingsLoading} /></div>}
+                  {addedByAddress && <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1">Added by <UserDisplay address={addedByAddress} textSizeClass="text-sm" avatarSizeClass="h-6 w-6" linkTo={`/profile/${addedByAddress}`} sourceContext={projectSourceContext} isTokenHolder={false} /></div>}
                   <div className="px-2 pt-8 md:hidden">{StatsGrid}</div>
                 </CardHeader>
                 <CardContent className="space-y-4 px-4 pb-4 pt-2">
                   <div className="space-y-4">
-                    <ProjectMetadataNavigator projectId={projectId} projectMetadata={projectMetadata} currentUserProjectHolding={currentUserProjectHolding} tokenHoldingsLoading={tokenHoldingsLoading} projectSourceContext={projectSourceContext} isParentFocused={isFocused && !isMetadataNavigatorFocused} onFocusTransfer={handleFocusTransfer} onFocusReturn={handleFocusReturn} setParentFocusedId={setFocusedId} />
+                    <ProjectMetadataNavigator 
+                      projectId={projectId} 
+                      projectMetadata={projectMetadata} 
+                      currentUserProjectHolding={currentUserProjectHoldingProp} // UPDATED PROP
+                      tokenHoldingsLoading={tokenHoldingsLoading} 
+                      projectSourceContext={projectSourceContext} 
+                      isParentFocused={isFocused && !isMetadataNavigatorFocused} 
+                      onFocusTransfer={handleFocusTransfer} 
+                      onFocusReturn={handleFocusReturn} 
+                      setParentFocusedId={setFocusedId} 
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -365,7 +386,7 @@ export function ProjectDetailCard({
         </CardContent>
       </Card>
       <div className="space-y-6 mt-8">
-        {sortedReviews.length > 0 ? sortedReviews.map(({ review, score }) => <ReviewItem key={review.id} review={review} project={project} onInteractionSuccess={onInteractionSuccess} interactionScore={score} writerTokenHoldings={currentUserHoldingsForProject} writerHoldingsLoading={tokenHoldingsLoading} projectSourceContext={projectSourceContext} allCuratorData={allCuratorData} focusedId={focusedId} registerItem={registerItem} isActive={isActive} setLastActiveId={setLastActiveId} globalViewMode={viewMode} />) : <p className="text-muted-foreground text-center">No reviews yet for this project.</p>}
+        {sortedReviews.length > 0 ? sortedReviews.map(({ review, score }) => <ReviewItem key={review.id} review={review} project={project} onInteractionSuccess={onInteractionSuccess} interactionScore={score} projectSourceContext={projectSourceContext} allCuratorData={allCuratorData} focusedId={focusedId} registerItem={registerItem} isActive={isActive} setLastActiveId={setLastActiveId} globalViewMode={viewMode} />) : <p className="text-muted-foreground text-center">No reviews yet for this project.</p>}
         {activeAddress && <NewReviewForExistingProjectForm project={project} projectsData={projectsData} onInteractionSuccess={onInteractionSuccess} />}
       </div>
       {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && <ThankContributorDialog isOpen={showThankContributorDialog} onOpenChange={setShowThankContributorDialog} projectId={projectId} projectName={currentProjectName} contributorAddress={addedByAddress} projectCreatorAddress={effectiveCreatorAddress} initialMetadata={projectMetadata} onConfirm={handleClaimProject} isConfirming={isClaiming} />}

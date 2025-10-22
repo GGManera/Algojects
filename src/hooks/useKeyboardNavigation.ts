@@ -182,7 +182,6 @@ export function useKeyboardNavigation(pageKey: string) {
 
 
   // --- Registration Management ---
-  // Stabilize registerItem by ensuring it only depends on stable values
   const registerItem = useCallback((id: string, toggleExpand: () => void, isExpanded: boolean, type: NavigableItem['type']) => {
     const currentKey = pageKeyRef.current;
     if (currentKey === 'inactive') return () => {};
@@ -193,27 +192,16 @@ export function useKeyboardNavigation(pageKey: string) {
     const itemsMap = globalNavigableItemsMap.get(currentKey)!;
     
     // Store or update the item with its current expansion state
-    // NOTE: We must use a stable reference for toggleExpand, which is handled by the component calling this hook.
     itemsMap.set(id, { id, toggleExpand, isExpanded, type });
-    
-    // We only rebuild the order here if the item is new or its expansion state changed, 
-    // but since this hook is called inside useEffect, we rely on the component's useEffect 
-    // dependency array to control when this runs. We call rebuildOrder explicitly below.
-    
-    // We remove the immediate rebuildOrder call here to prevent loops when components re-render
-    // due to state changes unrelated to navigation (like a like count update).
-    // updateOrderedIds(currentKey); 
+    updateOrderedIds(currentKey); // Rebuild order immediately upon registration/update
 
     return () => {
       if (pageKeyRef.current === currentKey) {
         itemsMap.delete(id);
-        // Only rebuild order on unmount if the item was focused, to ensure focus moves correctly
-        if (focusedId === id) {
-            updateOrderedIds(currentKey);
-        }
+        updateOrderedIds(currentKey);
       }
     };
-  }, [focusedId]); // Added focusedId to dependency array for cleanup logic
+  }, []);
 
   // --- Explicit Rebuild Function ---
   const rebuildOrder = useCallback(() => {

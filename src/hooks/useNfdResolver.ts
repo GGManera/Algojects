@@ -12,7 +12,7 @@ interface NfdData {
 // Modified to store timestamp
 export const nfdLookupCache = new Map<string, (NfdData & { timestamp: number }) | null>(); // EXPORTED
 
-export const NFD_RESOLVER_CACHE_DURATION_MS = 86400 * 1000; // 24 hours for NFD resolver cache
+export const NFD_RESOLVER_CACHE_DURATION_MS = 15 * 1000; // 15 seconds for NFD resolver cache
 const NFD_API_URL = "https://api.nf.domains";
 const BATCH_SIZE = 20; // Max addresses per batch
 
@@ -59,7 +59,7 @@ export function useNfdResolver(inputs: string[] | undefined) {
         if (!trimmedInput) continue;
 
         const cachedEntry = nfdLookupCache.get(trimmedInput);
-        const isFresh = cachedEntry && (Date.now() - cachedEntry.timestamp < NFD_RESOLVER_CACHE_DURATION_MS); // Use imported constant
+        const isFresh = cachedEntry && (Date.now() - cachedEntry.timestamp < NFD_RESOLVER_CACHE_DURATION_MS);
 
         if (isFresh) {
           if (cachedEntry?.address) {

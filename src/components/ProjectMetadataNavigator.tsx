@@ -149,8 +149,7 @@ const renderMetadataItem = (
         onClick={clickHandler}
         data-nav-id={`meta-${item.title}-${index}`}
       >
-        {/* Removed font-numeric and added font-bold and larger text size */}
-        <strong className={cn("uppercase", isNumericDisplay && "font-bold !text-base !tracking-normal")}>{buttonText}</strong>
+        <strong className={cn("uppercase", isNumericDisplay && "font-numeric font-bold !text-base !tracking-normal")}>{buttonText}</strong>
         <div id="container-stars">
           <div id="stars"></div>
         </div>

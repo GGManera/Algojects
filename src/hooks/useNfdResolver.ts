@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { queueNfdResolutionV2 } from './useNfdBatcher'; // NEW: Import the batcher
 
 interface NfdData {
@@ -37,11 +37,50 @@ export const ipfsToGateway = (url: string | undefined): string | null => {
 export function useNfdResolver(inputs: string[] | undefined) {
   const [resolvedAddresses, setResolvedAddresses] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  
+  // NEW: State to hold the stable, unique, sorted list of inputs
+  const [stableInputs, setStableInputs] = useState<string[] | undefined>(undefined);
 
+  // Effect 1: Stabilize the inputs array reference
   useEffect(() => {
-    console.log("[useNfdResolver] Inputs received:", inputs);
+    if (!inputs) {
+      setStableInputs(undefined);
+      return;
+    }
+    
+    // 1. Clean and sort the new inputs
+    const newCleanedInputs = inputs
+      .map(input => input.trim())
+      .filter(Boolean)
+      .sort();
+      
+    // 2. Compare content with current stable inputs
+    const currentStable = stableInputs || [];
+    
+    if (newCleanedInputs.length !== currentStable.length) {
+      setStableInputs(newCleanedInputs);
+      return;
+    }
+    
+    let contentChanged = false;
+    for (let i = 0; i < newCleanedInputs.length; i++) {
+      if (newCleanedInputs[i] !== currentStable[i]) {
+        contentChanged = true;
+        break;
+      }
+    }
+    
+    if (contentChanged) {
+      setStableInputs(newCleanedInputs);
+    }
+    
+  }, [inputs]); // Only depends on the potentially unstable 'inputs' prop
 
-    if (!inputs || inputs.length === 0) {
+  // Effect 2: Perform resolution based on the stable inputs
+  useEffect(() => {
+    console.log("[useNfdResolver] Stable Inputs received:", stableInputs);
+
+    if (!stableInputs || stableInputs.length === 0) {
       setResolvedAddresses(new Set());
       setLoading(false);
       return;
@@ -54,7 +93,7 @@ export function useNfdResolver(inputs: string[] | undefined) {
       const nameLookups: string[] = [];
 
       // --- Phase 1: Check cache and categorize inputs ---
-      for (const input of inputs) {
+      for (const input of stableInputs) {
         const trimmedInput = input.trim();
         if (!trimmedInput) continue;
 
@@ -80,8 +119,6 @@ export function useNfdResolver(inputs: string[] | undefined) {
       const fetchPromises: Promise<void>[] = [];
 
       // --- Phase 2: Queue Address Lookups via Batcher ---
-      // This ensures that even if useNfdResolver is called with a list of addresses, 
-      // they are pooled with any concurrent calls from useNfd.
       const addressResolutionPromises = addressesToQueue.map(address => queueNfdResolutionV2(address));
       
       fetchPromises.push((async () => {
@@ -142,7 +179,7 @@ export function useNfdResolver(inputs: string[] | undefined) {
       
       // Re-aggregate all resolved addresses from cache (including those found in Phase 1)
       const finalResolvedAddresses = new Set<string>();
-      inputs.forEach(input => {
+      stableInputs.forEach(input => {
           const entry = nfdLookupCache.get(input.trim());
           if (entry?.address) {
               finalResolvedAddresses.add(entry.address);
@@ -158,7 +195,7 @@ export function useNfdResolver(inputs: string[] | undefined) {
     };
 
     fetchResolutions();
-  }, [inputs]);
+  }, [stableInputs]); // Now depends only on the stable inputs
 
   return { resolvedAddresses, loading };
 }

@@ -63,13 +63,25 @@ const renderMetadataItem = (
   
   // Determine the text to display on the button
   let buttonText = item.title || "Link";
+  let isNumericDisplay = false;
+
   if (isAssetIdItem) {
     if (copiedMessage) {
       buttonText = copiedMessage;
     } else if (isMobile) {
-      buttonText = isRevealed ? item.value : item.title || "Asset ID";
+      if (isRevealed) {
+        buttonText = item.value;
+        isNumericDisplay = true;
+      } else {
+        buttonText = item.title || "Asset ID";
+      }
     } else { // Desktop
-      buttonText = isHovered ? item.value : item.title || "Asset ID";
+      if (isHovered) {
+        buttonText = item.value;
+        isNumericDisplay = true;
+      } else {
+        buttonText = item.title || "Asset ID";
+      }
     }
   } else {
     buttonText = item.title || "Link";
@@ -135,7 +147,7 @@ const renderMetadataItem = (
         onClick={clickHandler}
         data-nav-id={`meta-${item.title}-${index}`}
       >
-        <strong className="uppercase">{buttonText}</strong>
+        <strong className={cn("uppercase", isNumericDisplay && "font-numeric !text-base !tracking-normal")}>{buttonText}</strong>
         <div id="container-stars">
           <div id="stars"></div>
         </div>

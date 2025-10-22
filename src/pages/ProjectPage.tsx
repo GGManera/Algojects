@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { useWallet } from "@txnlab/use-wallet-react";
 import React, { useRef, useEffect, useMemo } from "react";
-import { useNavigationHistory } '@/contexts/NavigationHistoryContext';
+import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { cn } from '@/lib/utils';
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import

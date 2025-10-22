@@ -2,11 +2,7 @@ const CACHE_NAME = 'algojects-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  // Removed '/src/main.tsx' and '/src/globals.css' as they are source files
   '/placeholder.svg', // Corrected path
-  'https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&family=Inter:wght@400;500;600;700&display=swap',
-  'https://fonts.gstatic.com/s/raleway/v22/1Ptxg8zSys_Uf5vYQJycxus.woff2',
-  'https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMw.woff2'
 ];
 
 self.addEventListener('install', (event) => {

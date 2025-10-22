@@ -37,9 +37,9 @@ const LAST_ACTIVE_ID_KEY = 'algojects_last_active_id';
 const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToTopTrigger }, ref) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { pushEntry, lastProjectPath, lastProfilePath, profile1, profile2, currentProfileSlot } = useNavigationHistory();
+  const { pushEntry } = useNavigationHistory(); // Removed unnecessary history state destructuring
   const { activeAddress } = useWallet();
-  const { projectDetails, loading: projectDetailsLoading } = useProjectDetails(); // NEW: Use loading from useProjectDetails
+  const { projectDetails, loading: projectDetailsLoading } = useProjectDetails();
   const { isMobile, isDeviceLandscape } = useAppContextDisplayMode();
   
   const [api, setApi] = useState<CarouselApi>();
@@ -51,12 +51,12 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   const [scrollTrigger, setScrollTrigger] = useState(0);
   const [lastScrolledHash, setLastScrolledHash] = useState<string | null>(null);
   
-  // NEW: State to trigger scroll to top from HeroSection/Logo click
+  // State to trigger scroll to top from HeroSection/Logo click
   const [internalScrollToTopTrigger, setInternalScrollToTopTrigger] = useState(0);
 
   const slideRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
-  // NEW: Refs and constants for touchpad navigation
+  // Refs and constants for touchpad navigation
   const lastSwipeTimeRef = useRef(0);
   const SWIPE_DEBOUNCE_MS = 500;
   const SWIPE_THRESHOLD = 50;
@@ -75,16 +75,16 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return { projectIdFromUrl: pId, addressFromUrl: addr };
   }, [location.pathname]);
 
-  const effectiveProjectId = projectIdFromUrl || lastProjectPath?.path.split('/')[2];
-  const effectiveProfileAddress = addressFromUrl || lastProfilePath?.path.split('/')[2] || activeAddress;
+  const effectiveProjectId = projectIdFromUrl || undefined; // Only use URL ID for project page
+  const effectiveProfileAddress = addressFromUrl || undefined; // Only use URL address for profile page
 
+  // Use NFD hook only for the address currently in the URL or active wallet
   const { nfd: effectiveProfileNfd, loading: nfdLoading } = useNfd(effectiveProfileAddress);
 
   const handleKeyboardModeChange = useCallback((isActive: boolean) => {
     setIsKeyboardModeActive(isActive);
   }, []);
 
-  // NEW: Função para rolar o slide ativo para o topo (chamada pelo Layout/DynamicNavButtons)
   const scrollToActiveSlideTop = useCallback(() => {
     if (!api) return;
     const activeSlideType = slidesConfig[api.selectedScrollSnap()]?.type;
@@ -98,7 +98,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     }
   }, [api]);
 
-  // NEW: Função para rolar TODOS os slides para o topo
   const resetAllScrolls = useCallback(() => {
     console.log("[NewWebsite] Resetting scroll position for all slides.");
     slideRefs.current.forEach(ref => {
@@ -106,11 +105,9 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
         ref.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
-    // Also reset the internal scroll trigger for the active slide components
     setInternalScrollToTopTrigger(prev => prev + 1);
   }, []);
 
-  // NEW: Função para ser passada para HeroSection para scrollar o slide ativo
   const handleHeroScrollToTop = useCallback(() => {
     scrollToActiveSlideTop();
   }, [scrollToActiveSlideTop]);
@@ -120,6 +117,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     resetAllScrolls,
   }));
 
+  // Memoize slidesConfig based on effective IDs
   const slidesConfig = useMemo(() => {
     const config = [];
     config.push({ 
@@ -129,7 +127,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
         isInsideCarousel={true} 
         scrollToTopTrigger={internalScrollToTopTrigger} 
         onKeyboardModeChange={handleKeyboardModeChange} 
-        onScrollToTop={handleHeroScrollToTop} // Pass the scroll function
+        onScrollToTop={handleHeroScrollToTop}
       />, 
       maxWidth: 'max-w-[710px]' 
     });
@@ -145,7 +143,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           scrollTrigger={scrollTrigger} 
           scrollToTopTrigger={internalScrollToTopTrigger} 
           onKeyboardModeChange={handleKeyboardModeChange} 
-          onScrollToTop={handleHeroScrollToTop} // Pass the scroll function
+          onScrollToTop={handleHeroScrollToTop}
         />, 
         maxWidth: 'max-w-[710px]' 
       });
@@ -167,6 +165,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return config;
   }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, internalScrollToTopTrigger, handleKeyboardModeChange, handleHeroScrollToTop]);
 
+  // Determine the target slide index based on the current URL path
   const targetSlideIndex = useMemo(() => {
     const currentPath = location.pathname;
     let targetType: 'home' | 'project' | 'profile' = 'home';
@@ -181,6 +180,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     return index !== -1 ? index : 0;
   }, [location.pathname, slidesConfig]);
 
+  // --- Carousel API Effects ---
   useEffect(() => {
     if (!api) return;
 
@@ -238,6 +238,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
     setHashToScroll(location.hash);
 
+    // Handle invalid URLs by redirecting to home
     if (location.pathname.startsWith('/project/') && !effectiveProjectId) {
       navigate('/');
       return;
@@ -247,6 +248,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       return;
     }
 
+    // Synchronize carousel position with URL
     if (api.selectedScrollSnap() !== targetSlideIndex) {
       api.scrollTo(targetSlideIndex);
     } else if (targetSlideIndex === 1 && location.pathname.startsWith('/project/') && location.hash) {
@@ -270,14 +272,51 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     effectiveProfileAddress,
     navigate,
     slidesConfig,
-    lastProjectPath,
-    lastProfilePath,
-    activeAddress,
-    projectIdFromUrl,
-    addressFromUrl,
     lastScrolledHash
   ]);
 
+  // --- History Push Effect (Stabilized) ---
+  // We use a ref to track the last successfully pushed entry to prevent redundant pushes
+  const lastPushedEntryRef = useRef<{ path: string; label: string } | null>(null);
+
+  useEffect(() => {
+    const path = location.pathname;
+    let label = "Projects";
+    let isReady = true;
+
+    if (path.startsWith('/project/')) {
+      const currentProjectId = path.split('/')[2];
+      if (projectDetailsLoading) {
+        isReady = false;
+        label = `Project ${currentProjectId}`;
+      } else {
+        const project = projectDetails.find(pd => pd.projectId === currentProjectId);
+        label = project?.projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${currentProjectId}`;
+      }
+    } else if (path.startsWith('/profile/')) {
+      const currentProfileAddress = path.split('/')[2];
+      if (nfdLoading) {
+        isReady = false;
+        label = `${currentProfileAddress.substring(0, 8)}... Profile`;
+      } else {
+        label = effectiveProfileNfd?.name || `${currentProfileAddress.substring(0, 8)}... Profile`;
+      }
+    }
+
+    const newEntry = { path, label, activeCategory: undefined };
+
+    // Only push if ready AND the path or label has actually changed since the last successful push
+    if (isReady) {
+      const lastPushed = lastPushedEntryRef.current;
+      if (!lastPushed || lastPushed.path !== newEntry.path || lastPushed.label !== newEntry.label) {
+        pushEntry(newEntry);
+        lastPushedEntryRef.current = { path: newEntry.path, label: newEntry.label };
+      }
+    }
+  }, [location.pathname, projectDetails, pushEntry, effectiveProfileNfd, nfdLoading, projectDetailsLoading]);
+
+
+  // --- Cursor/Keyboard Mode Effects ---
   useEffect(() => {
     if (isTransitioning) {
       if (isKeyboardModeActive) {
@@ -294,29 +333,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     }
   }, [isTransitioning, isKeyboardModeActive]);
 
-  useEffect(() => {
-    const path = location.pathname;
-    let label = "Projects";
-
-    if (path.startsWith('/project/')) {
-      const currentProjectId = path.split('/')[2];
-      // NEW: Check if projectDetails is loading before trying to find project name
-      if (!projectDetailsLoading) {
-        const project = projectDetails.find(pd => pd.projectId === currentProjectId);
-        label = project?.projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${currentProjectId}`;
-      } else {
-        label = `Project ${currentProjectId}`; // Fallback while loading
-      }
-    } else if (path.startsWith('/profile/')) {
-      const currentProfileAddress = path.split('/')[2];
-      label = effectiveProfileNfd?.name || `${currentProfileAddress.substring(0, 8)}... Profile`;
-    }
-
-    if (!path.startsWith('/profile/') || !nfdLoading) {
-      pushEntry({ path, label, activeCategory: undefined });
-    }
-  }, [location.pathname, projectDetails, pushEntry, effectiveProfileNfd, nfdLoading, projectDetailsLoading]); // NEW: Add projectDetailsLoading dependency
-
+  // --- Keyboard/Wheel Navigation ---
   useEffect(() => {
     if (!api || isMobile) return;
 
@@ -372,12 +389,9 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       }
     };
 
-    // NEW: Handle touchpad horizontal scroll/swipe
     const handleWheel = (e: WheelEvent) => {
-      // Only intercept if there is significant horizontal movement AND it dominates vertical movement
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > SWIPE_THRESHOLD) {
         
-        // Prevent default browser navigation/scroll
         e.preventDefault(); 
         
         if (isTransitioning) {
@@ -392,10 +406,8 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
         lastSwipeTimeRef.current = now;
 
         if (e.deltaX > 0) {
-          // Swiping left (deltaX positive) -> Go to next slide (right)
           api.scrollNext();
         } else {
-          // Swiping right (deltaX negative) -> Go to previous slide (left)
           api.scrollPrev();
         }
       }
@@ -427,7 +439,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           {slidesConfig.map((slide, index) => {
             const slideComponent = React.cloneElement(slide.component, {
               isActive: index === currentSlideIndex,
-              onScrollToTop: handleHeroScrollToTop, // Pass the scroll function to HeroSection
+              onScrollToTop: handleHeroScrollToTop,
             });
 
             return (

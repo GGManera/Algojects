@@ -100,6 +100,10 @@ export function useKeyboardNavigation(pageKey: string) {
   const pageKeyRef = useRef(pageKey);
   pageKeyRef.current = pageKey;
 
+  // NEW: Ref to hold the latest focusedId to break the dependency loop for rebuildOrder
+  const focusedIdRef = useRef(focusedId);
+  focusedIdRef.current = focusedId;
+
   // --- Cache Management ---
   const getCachedActiveId = useCallback(() => {
     try {
@@ -211,18 +215,18 @@ export function useKeyboardNavigation(pageKey: string) {
     const orderedIds = updateOrderedIds(currentKey);
     
     // If no item is currently focused, try to restore from cache
-    if (focusedId === null && orderedIds && orderedIds.length > 0) {
+    if (focusedIdRef.current === null && orderedIds && orderedIds.length > 0) { 
         const cachedId = getCachedActiveId();
         if (cachedId && orderedIds.includes(cachedId)) {
             // Restore focus ID, but DO NOT scroll into view here.
-            setFocusedId(cachedId);
+            setFocusedId(cachedId); 
         } else {
             // If cache is invalid or empty, set focus to the first item
-            setFocusedId(orderedIds[0]);
+            setFocusedId(orderedIds[0]); 
         }
     }
     return orderedIds;
-  }, [focusedId, getCachedActiveId]);
+  }, [getCachedActiveId]); // Dependency array is now clean!
 
   // --- Effect to manage focus state and cleanup when pageKey changes ---
   useEffect(() => {

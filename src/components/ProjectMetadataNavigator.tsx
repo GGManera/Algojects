@@ -43,8 +43,10 @@ const renderMetadataItem = (
   index: number, 
   isMobile: boolean, 
   copiedMessage: string | null, 
-  handleCopyClick: (e: React.MouseEvent, value: string) => void,
-  projectSourceContext: { path: string; label: string }
+  handleCopyClick: (e: React.MouseEvent, value: string, isAssetId: boolean) => void, // Updated signature
+  projectSourceContext: { path: string; label: string },
+  isHovered: boolean, // NEW
+  isRevealed: boolean // NEW
 ) => {
   // Base classes for centering and max width
   const baseItemClasses = cn(
@@ -57,12 +59,44 @@ const renderMetadataItem = (
     return null;
   }
 
+  const isAssetIdItem = item.type === 'asset-id';
+  
+  // Determine the text to display on the button
+  let buttonText = item.title || "Link";
+  if (isAssetIdItem) {
+    if (copiedMessage) {
+      buttonText = copiedMessage;
+    } else if (isMobile) {
+      buttonText = isRevealed ? item.value : item.title || "Asset ID";
+    } else { // Desktop
+      buttonText = isHovered ? item.value : item.title || "Asset ID";
+    }
+  } else {
+    buttonText = item.title || "Link";
+  }
+
+  // Determine the onClick handler
+  const clickHandler = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isAssetIdItem) {
+      handleCopyClick(e, item.value, true);
+    } else if (item.type === 'url' || item.type === 'x-url' || item.value.startsWith('http')) {
+      window.open(item.value, '_blank');
+    } else if (item.type === 'address' || item.value.length === 58) {
+      // For addresses, clicking navigates to profile
+      // Note: UserDisplay handles navigation internally if linkTo is set
+    } else {
+      // Default action for text/other types is copy
+      handleCopyClick(e, item.value, false);
+    }
+  };
+
   if (item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com'))) {
     return (
       <div
         key={index}
         className={cn("btn-profile", baseItemClasses)}
-        onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
+        onClick={clickHandler}
         data-nav-id={`meta-${item.title}-${index}`}
       >
         <strong className="uppercase">{item.title || extractDomainFromUrl(item.value)}</strong>
@@ -80,7 +114,7 @@ const renderMetadataItem = (
       <div
         key={index}
         className={cn("btn-profile", baseItemClasses)}
-        onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
+        onClick={clickHandler}
         data-nav-id={`meta-${item.title}-${index}`}
       >
         <strong className="uppercase">{item.title || extractXHandleFromUrl(item.value)}</strong>
@@ -93,15 +127,15 @@ const renderMetadataItem = (
         </div>
       </div>
     );
-  } else if (item.type === 'asset-id') { // Keep asset-id type, but simplify display
+  } else if (isAssetIdItem) { // Asset ID logic
     return (
       <div
         key={index}
         className={cn("btn-profile", baseItemClasses)}
-        onClick={(e) => handleCopyClick(e, item.value)}
+        onClick={clickHandler}
         data-nav-id={`meta-${item.title}-${index}`}
       >
-        <strong className="uppercase">{copiedMessage || item.title || "Asset ID"}</strong>
+        <strong className="uppercase">{buttonText}</strong>
         <div id="container-stars">
           <div id="stars"></div>
         </div>
@@ -153,6 +187,8 @@ export function ProjectMetadataNavigator({
   const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive, setFocusedId } = useKeyboardNavigation(isParentFocused ? pageKey : 'inactive');
   
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
+  const [hoveredAssetId, setHoveredAssetId] = useState<string | null>(null); // Track which asset ID button is hovered (desktop only)
+  const [revealedAssetId, setRevealedAssetId] = useState<string | null>(null); // Track which asset ID button is revealed (mobile only)
 
   // Filter and prepare items for navigation
   const allRenderableMetadataItems = useMemo(() => {
@@ -270,18 +306,54 @@ export function ProjectMetadataNavigator({
   }, [isParentFocused, isKeyboardModeActive, focusedId, onFocusReturn, onFocusTransfer, pageKey, setFocusedId, setParentFocusedId, projectId]);
 
   // --- Asset ID Click Handler (for keyboard action) ---
-  const handleCopyClick = async (e: React.MouseEvent, value: string) => {
+  const handleCopyClick = useCallback(async (e: React.MouseEvent, value: string, isAssetId: boolean) => {
     e.stopPropagation();
-    if (value) {
-      try {
-        await navigator.clipboard.writeText(value);
-        setCopiedMessage("Copied!");
-        setTimeout(() => setCopiedMessage(null), 2000);
-      } catch (err) {
-        showError("Failed to copy.");
+    
+    if (!isAssetId) {
+      // Default copy action for non-Asset ID items
+      if (value) {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopiedMessage("Copied!");
+          setTimeout(() => setCopiedMessage(null), 2000);
+        } catch (err) {
+          showError("Failed to copy.");
+        }
+      }
+      return;
+    }
+
+    // --- Asset ID Specific Logic ---
+    if (isMobile) {
+      // Mobile: Click once to reveal, click twice to copy
+      if (revealedAssetId === value) {
+        // Second click: Copy
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopiedMessage("Copied!");
+          setRevealedAssetId(null); // Hide after copy
+          setTimeout(() => setCopiedMessage(null), 2000);
+        } catch (err) {
+          showError("Failed to copy.");
+        }
+      } else {
+        // First click: Reveal
+        setRevealedAssetId(value);
+        setCopiedMessage(null);
+      }
+    } else {
+      // Desktop: Click once to copy
+      if (value) {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopiedMessage("Copied!");
+          setTimeout(() => setCopiedMessage(null), 2000);
+        } catch (err) {
+          showError("Failed to copy.");
+        }
       }
     }
-  };
+  }, [isMobile, revealedAssetId]);
 
   // --- Rendering ---
   const renderHoldingItem = () => {
@@ -322,9 +394,10 @@ export function ProjectMetadataNavigator({
   return (
     <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
       <div className="grid grid-cols-2 gap-4 text-sm">
-        {allRenderableMetadataItems.map((item, index) => {
+        {navigableItems.map((item, index) => {
           const id = `meta-${item.title}-${index}`;
           const isItemFocused = focusedId === id;
+          const isAssetIdItem = item.type === 'asset-id';
           
           // Clone the item renderer to inject focus/hover styles
           const renderedItem = renderMetadataItem(
@@ -333,7 +406,9 @@ export function ProjectMetadataNavigator({
             isMobile, 
             copiedMessage, 
             handleCopyClick, 
-            projectSourceContext
+            projectSourceContext,
+            hoveredAssetId === id, // Pass hover state
+            revealedAssetId === item.value // Pass revealed state
           );
 
           if (!renderedItem) return null;
@@ -343,8 +418,24 @@ export function ProjectMetadataNavigator({
               (renderedItem as React.ReactElement).props.className,
               isItemFocused ? "focus-glow-border" : "",
             ),
-            onMouseEnter: () => setLastActiveId(id),
-            onMouseLeave: () => setLastActiveId(null),
+            onMouseEnter: isAssetIdItem && !isMobile ? () => setHoveredAssetId(id) : undefined,
+            onMouseLeave: isAssetIdItem && !isMobile ? () => setHoveredAssetId(null) : undefined,
+            onClick: (e: React.MouseEvent) => {
+              // Handle click for non-Asset ID items or Asset ID items on desktop (copy)
+              if (!isAssetIdItem || !isMobile) {
+                handleCopyClick(e, item.value, isAssetIdItem);
+              } else {
+                // Mobile Asset ID: use the internal click handler logic
+                handleCopyClick(e, item.value, isAssetIdItem);
+              }
+            },
+            onFocus: () => {
+              // Ensure keyboard focus also reveals the ID on desktop
+              if (isAssetIdItem && !isMobile) setHoveredAssetId(id);
+            },
+            onBlur: () => {
+              if (isAssetIdItem && !isMobile) setHoveredAssetId(null);
+            },
           });
         })}
         {renderHoldingItem()}

@@ -338,7 +338,7 @@
   .btn-profile strong {
     z-index: 2;
     @apply font-sans;
-    font-size: 8px; /* Adjusted font size */
+    font-size: 9px; /* Adjusted font size from 8px to 9px */
     letter-spacing: 2px; /* Adjusted letter spacing */
     color: #ffffff;
     text-shadow: 0 0 4px white;

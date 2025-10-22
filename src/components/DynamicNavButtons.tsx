@@ -127,8 +127,8 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
             onClick={onCenterButtonClick} // NEW: Add onClick handler
           >
             <strong className={cn(
-              "uppercase text-[7.2px]", // Default desktop font size
-              isMobile && "text-[6.48px]" // 10% smaller on mobile
+              "uppercase text-[8.1px]", // Updated from 7.2px to 8.1px
+              isMobile && "text-[7.29px]" // Updated from 6.48px to 7.29px
             )}>{currentSlideName}</strong>
             <div id="container-stars">
               <div id="stars"></div>

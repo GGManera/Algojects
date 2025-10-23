@@ -69,18 +69,13 @@ const recursivelyConvertLikes = (data: ProjectsData): ProjectsData => {
   return convertedData;
 };
 
-const parseTransactions = (transactions: any[]): ProjectsData => {
+const parseTransactions = (transactions: any[], latestConfirmedRound: number): ProjectsData => {
     const parsedProjects: ProjectsData = {};
     const multiPartContent: { [key: string]: { [order: number]: string } } = {};
     const projectFirstReviewSender: { [projectId: string]: { sender: string, timestamp: number } } = {};
     const itemLikeEvents: { [itemId: string]: Array<{ sender: string; action: 'LIKE' | 'UNLIKE'; timestamp: number; txId: string }> } = {};
     
-    // Determine the latest confirmed round from all transactions
-    const latestConfirmedRound = transactions.reduce((maxRound, tx) => {
-        return Math.max(maxRound, tx['confirmed-round'] || 0);
-    }, 0);
-
-    console.log("[useSocialData] Starting parseTransactions with total transactions:", transactions.length);
+    console.log("[useSocialData] Starting parseTransactions with total transactions:", transactions.length, "Snapshot Round:", latestConfirmedRound);
 
     for (const tx of transactions) {
         if (!tx.note) {
@@ -243,8 +238,6 @@ const parseTransactions = (transactions: any[]): ProjectsData => {
             // Keep the review ONLY if its content is not empty or whitespace-only AND it is NOT excluded.
             if (review.content.trim() !== "" && !review.isExcluded) {
                 filteredReviews[review.id.split('.')[1]] = review;
-            } else {
-                console.log(`[useSocialData] Filtering out empty or excluded review: ${review.id}`);
             }
         });
         proj.reviews = filteredReviews;
@@ -312,6 +305,7 @@ export function useSocialData() {
           let allTransactions: any[] = [];
           let nextToken: string | undefined = undefined; // Always start with no nextToken for a full fetch
           const afterTime = new Date("2024-01-01T00:00:00Z").toISOString(); // Start from a fixed historical point
+          let latestConfirmedRound = 0; // Initialize here to capture current-round
 
           console.log("[SocialData] Starting full data fetch from Indexer.");
 
@@ -332,14 +326,20 @@ export function useSocialData() {
             const fetchedTransactions = data.transactions || [];
             allTransactions = allTransactions.concat(fetchedTransactions);
             nextToken = data['next-token'];
+            
+            // Capture the latest current-round reported by the indexer
+            if (data['current-round'] && data['current-round'] > latestConfirmedRound) {
+                latestConfirmedRound = data['current-round'];
+            }
+            
             console.log(`[SocialData] Fetched ${fetchedTransactions.length} transactions. Next token: ${nextToken || 'none'}. Total so far: ${allTransactions.length}`);
 
           } while (nextToken);
 
           console.log(`[SocialData] Finished fetching all transactions. Total: ${allTransactions.length}`);
-          console.log("[SocialData] Raw all transactions fetched:", allTransactions); // Log all raw transactions
-
-          const parsedProjects = parseTransactions(allTransactions);
+          
+          // Pass the captured latestConfirmedRound to parseTransactions
+          const parsedProjects = parseTransactions(allTransactions, latestConfirmedRound);
           setProjects(parsedProjects);
 
           const newCache: CachedSocialData = {

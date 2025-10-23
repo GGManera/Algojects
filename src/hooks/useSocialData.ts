@@ -274,7 +274,7 @@ export function useSocialData() {
     const fetchData = async () => {
       setError(null);
       let cacheUsed = false;
-      let isCacheStale = true; // Assume stale until proven fresh
+      let isCacheStale = true;
 
       const cachedItem = localStorage.getItem(SOCIAL_CACHE_KEY);
       if (cachedItem) {
@@ -322,7 +322,7 @@ export function useSocialData() {
             }
             
             console.log(`[SocialData] Fetching transactions from: ${url}`);
-            const response = await retryFetch(url);
+            const response = await retryFetch(url, undefined, 5); // Increased retries
             if (!response.ok) {
               const errorText = await response.text();
               throw new Error(`Indexer API responded with status ${response.status}: ${errorText}`);

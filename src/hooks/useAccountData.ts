@@ -84,7 +84,7 @@ export function useAccountData(activeAddress: string | undefined) {
             url += `&next=${nextToken}`;
           }
           
-          const response = await retryFetch(url);
+          const response = await retryFetch(url, undefined, 5); // Increased retries
           if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Indexer API for transactions responded with ${response.status}: ${errorText}`);

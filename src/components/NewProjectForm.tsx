@@ -125,7 +125,7 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
     const toastId = showLoading("Preparing your new project...");
 
     try {
-      const indexerStatusResponse = await retryFetch(`${INDEXER_URL}/v2/transactions?limit=1`);
+      const indexerStatusResponse = await retryFetch(`${INDEXER_URL}/v2/transactions?limit=1`, undefined, 5); // Increased retries
       if (!indexerStatusResponse.ok) throw new Error("Could not fetch network status from Indexer.");
       const indexerStatusData = await indexerStatusResponse.json();
       const lastRound = indexerStatusData['current-round'];
@@ -218,7 +218,7 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
         try {
           const assetIdNum = parseInt(assetIdItem.value, 10);
           if (!isNaN(assetIdNum) && assetIdNum > 0) {
-            const response = await fetch(`${INDEXER_URL}/v2/assets/${assetIdNum}`);
+            const response = await retryFetch(`${INDEXER_URL}/v2/assets/${assetIdNum}`, undefined, 5); // Increased retries
             if (response.ok) {
               const data = await response.json();
               const unitName = data.asset.params['unit-name'];

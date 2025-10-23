@@ -24,8 +24,10 @@ import { UserDisplay } from "./UserDisplay";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { fetchAccountAssetHoldings } from '@/utils/algorand'; // NEW: Import fetchAccountAssetHoldings
+import { retryFetch } from "@/utils/api"; // Import retryFetch
 
 const DESCRIPTION_MAX_LENGTH = 2048;
+const INDEXER_URL = "https://mainnet-idx.algonode.cloud"; // Define INDEXER_URL
 
 interface ProjectDetailsFormProps {
   projectId: string;
@@ -232,10 +234,15 @@ export function ProjectDetailsForm({
 
         if (assetIdNum > 0 && (finalAssetIdValue !== currentAssetIdInMetadata || !finalAssetUnitNameValue || finalAssetUnitNameValue !== currentAssetUnitNameInMetadata)) {
           try {
-            const response = await fetch(`https://mainnet-idx.algonode.cloud/v2/assets/${assetIdNum}`);
+            const response = await retryFetch(`${INDEXER_URL}/v2/assets/${assetIdNum}`, undefined, 5); // Increased retries
             if (response.ok) {
               const data = await response.json();
-              finalAssetUnitNameValue = data.asset.params['unit-name'] || '';
+              const unitName = data.asset.params['unit-name'];
+              if (unitName) {
+                finalAssetUnitNameValue = unitName;
+              } else {
+                finalAssetUnitNameValue = ''; // Clear if unit name is missing
+              }
             } else {
               console.warn(`Failed to fetch unit-name for asset ID ${assetIdNum}. Status: ${response.status}`);
               finalAssetUnitNameValue = ''; // Clear if fetch fails

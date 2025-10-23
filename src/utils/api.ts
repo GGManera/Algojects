@@ -1,7 +1,7 @@
 export async function retryFetch(
   input: RequestInfo | URL,
   init?: RequestInit,
-  retries: number = 3,
+  retries: number = 5, // Increased default retries from 3 to 5
   delay: number = 2000 // 2 seconds
 ): Promise<Response> {
   for (let i = 0; i < retries; i++) {

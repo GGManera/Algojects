@@ -81,7 +81,7 @@ export function InteractionForm({ type, project, review, comment, onInteractionS
     const toastId = showLoading(`Preparing your ${type}...`);
 
     try {
-      const indexerStatusResponse = await retryFetch(`${INDEXER_URL}/v2/transactions?limit=1`);
+      const indexerStatusResponse = await retryFetch(`${INDEXER_URL}/v2/transactions?limit=1`, undefined, 5); // Increased retries
       if (!indexerStatusResponse.ok) throw new Error("Could not fetch network status from Indexer.");
       const indexerStatusData = await indexerStatusResponse.json();
       const lastRound = indexerStatusData['current-round'];

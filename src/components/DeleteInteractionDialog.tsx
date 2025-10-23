@@ -84,7 +84,7 @@ export function DeleteInteractionDialog({
     const toastId = showLoading(`Preparing exclusion transaction for your ${itemType}...`);
 
     try {
-      const indexerStatusResponse = await retryFetch(`${INDEXER_URL}/v2/transactions?limit=1`);
+      const indexerStatusResponse = await retryFetch(`${INDEXER_URL}/v2/transactions?limit=1`, undefined, 5);
       if (!indexerStatusResponse.ok) throw new Error("Could not fetch network status from Indexer.");
       const indexerStatusData = await indexerStatusResponse.json();
       const lastRound = indexerStatusData['current-round'];

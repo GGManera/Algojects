@@ -23,6 +23,8 @@ import { useAppContextDisplayMode } from "@/contexts/AppDisplayModeContext";
 import { cn } from '@/lib/utils';
 import { usePlatformAnalytics } from "@/hooks/usePlatformAnalytics";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
+import { useUserWritingDiversity } from "@/hooks/useUserWritingDiversity"; // NEW Import
+import { UserProfileDiversityCard } from "@/components/UserProfileDiversityCard"; // NEW Import
 
 // Helper function to calculate interaction score for a review
 const getReviewInteractionScore = (review: Review): number => {
@@ -312,17 +314,28 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   // Use the new useCuratorIndex hook
   const { userCuratorData, loading: curatorIndexLoading, error: curatorIndexError } = useCuratorIndex(address, projects);
   
-  // Use usePlatformAnalytics to get amountSpentOnLikes
-  const { topWriters, topCurators, loading: analyticsLoading, error: analyticsError } = usePlatformAnalytics(projects);
+  // Use usePlatformAnalytics to get amountSpentOnLikes and platform totals
+  const { 
+    topWriters, 
+    topCurators, 
+    totalProjects, // NEW
+    totalWritersCount, // NEW
+    loading: analyticsLoading, 
+    error: analyticsError 
+  } = usePlatformAnalytics(projects);
+  
+  // Use new hook for user's writing diversity
+  const { 
+    uniqueProjectsWrittenIn, 
+    uniqueWritersInteractedWith, 
+    loading: diversityLoading 
+  } = useUserWritingDiversity(address, projects);
+
   const userAnalytics = useMemo(() => {
     if (!address || analyticsLoading) return null;
     return [...topWriters, ...topCurators].find(u => u.address === address);
   }, [address, analyticsLoading, topWriters, topCurators]);
   const userAmountSpentOnLikes = userAnalytics?.amountSpentOnLikes || 0;
-
-  // NEW: Get the round number from the first project (or fallback)
-  const firstProject = Object.values(projects)[0];
-  const round = firstProject?.round;
 
   // REMOVED: const { tokenHoldings, loading: tokenHoldingsLoading, error: tokenHoldingsError } = useProfileProjectTokenHoldings(address, projects, projectDetails, round); // UPDATED HOOK NAME
   const [activeCategory, setActiveCategory] = useState<'writing' | 'curating'>(initialCategoryFromState || "writing");
@@ -393,7 +406,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
     }
   }, [effectiveAddress, location.pathname, userProfileNfd, pushEntry, activeCategory, nfdLoading, projectDetailsLoading]); // NEW: Add projectDetailsLoading dependency
 
-  const isContentLoading = socialDataLoading || projectDetailsLoading || curatorIndexLoading || analyticsLoading; // NEW: Use projectDetailsLoading in combined loading state
+  const isContentLoading = socialDataLoading || projectDetailsLoading || curatorIndexLoading || analyticsLoading || diversityLoading; // UPDATED: Include diversityLoading
   const isContentError = socialDataError || projectDetailsError || curatorIndexError || analyticsError; // NEW: Use projectDetailsError in combined error state
 
   const tabOrder = {
@@ -574,8 +587,15 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                 isLoading={earningsLoading || curatorIndexLoading || analyticsLoading}
                 isInsideCarousel={isInsideCarousel}
               />
-
-              {/* REMOVED UserProjectTokensCard */}
+              
+              {/* NEW: Diversity Card */}
+              <UserProfileDiversityCard
+                userProjects={uniqueProjectsWrittenIn}
+                totalProjects={totalProjects}
+                userWriters={uniqueWritersInteractedWith}
+                totalWriters={totalWritersCount}
+                isLoading={diversityLoading || analyticsLoading}
+              />
 
               <GlassRadioGroupTwoItems defaultValue={activeCategory} onValueChange={handleCategoryChange} className="mb-4">
                   <GlassRadioItemTwoItems value="writing" id="glass-category-writing" label="Writing" />

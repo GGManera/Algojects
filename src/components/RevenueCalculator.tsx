@@ -78,7 +78,8 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
     error: analyticsError,
   } = usePlatformAnalytics(projects, allWriterDiversity); // Pass allWriterDiversity
 
-  const [activeStat, setActiveStat] = useState<string | null>(activeStat);
+  // FIX: Initialize activeStat to null
+  const [activeStat, setActiveStat] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   // NEW: Keyboard navigation state

@@ -23,6 +23,7 @@ interface UserAnalytics {
 }
 
 interface PlatformAnalyticsData {
+  totalProjects: number; // NEW
   totalReviews: number;
   totalComments: number;
   totalReplies: number;
@@ -47,6 +48,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
   const analytics = useMemo(() => {
     if (!projectsData || curatorIndexLoading) {
       return {
+        totalProjects: 0,
         totalReviews: 0, totalComments: 0, totalReplies: 0,
         totalReviewLikes: 0, totalCommentLikes: 0, totalReplyLikes: 0,
         platformRevenue: 0, totalUserEarnings: 0,
@@ -55,6 +57,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
       };
     }
 
+    const numProjects = Object.keys(projectsData).length; // Calculate total projects
     let numReviews = 0;
     let numComments = 0;
     let numReplies = 0;
@@ -180,6 +183,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
       .slice(0, 5);
 
     return {
+      totalProjects: numProjects, // NEW
       totalReviews: numReviews,
       totalComments: numComments,
       totalReplies: numReplies,

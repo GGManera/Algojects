@@ -5,12 +5,12 @@ import { useSocialData } from "@/hooks/useSocialData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, DollarSign, Users, MessageCircle, FileText, MessageSquare, Heart, Star, ChevronDown } from "lucide-react";
+import { AlertTriangle, DollarSign, Users, MessageCircle, FileText, MessageSquare, Heart, Star, ChevronDown, LayoutGrid } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePlatformAnalytics } from "@/hooks/usePlatformAnalytics";
 import { UserDisplay } from "./UserDisplay";
 import { Link } from "react-router-dom";
-import { cn } from '@/lib/utils';
+import { cn, formatLargeNumber } from '@/lib/utils';
 import {
   Collapsible,
   CollapsibleContent,
@@ -29,7 +29,7 @@ const ClickableStat = ({ id, icon, value, onClick, colorClass }: { id: string, i
       {/* Clone the icon element and merge the color class */}
       {React.cloneElement(icon as React.ReactElement, { className: cn((icon as React.ReactElement).props.className, colorClass) })}
       {/* Apply colorClass to the value */}
-      <span className={cn("font-numeric w-8 text-left", colorClass)}>{value}</span>
+      <span className={cn("font-numeric w-8 text-left", colorClass)}>{formatLargeNumber(value)}</span>
     </button>
   );
 };
@@ -58,6 +58,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
   const { projects, loading: socialDataLoading, error: socialDataError } = useSocialData();
   const { isMobile } = useAppContextDisplayMode();
   const {
+    totalProjects, // NEW: Destructure totalProjects
     totalReviews,
     totalComments,
     totalReplies,
@@ -170,21 +171,29 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-6">
-              <div className="space-y-4">
-                <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner">
-                  <DollarSign className="h-8 w-8 text-green-400 mb-2" />
-                  <h3 className="text-xl font-bold text-green-400 font-numeric">{platformRevenue.toFixed(1)} ALGO</h3>
-                  <p className="text-sm text-muted-foreground">Platform Revenue</p>
-                </div>
-                <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner">
-                  <Users className="h-8 w-8 text-hodl-blue mb-2" />
-                  <h3 className="text-xl font-bold text-hodl-blue font-numeric">{totalUserEarnings.toFixed(1)} ALGO</h3>
-                  <p className="text-sm text-muted-foreground">Total User Earnings</p>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 md:gap-x-6">
+              {/* Total Projects */}
+              <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner">
+                <LayoutGrid className="h-8 w-8 text-hodl-blue mb-2" />
+                <h3 className="text-xl font-bold text-hodl-blue font-numeric">{totalProjects}</h3>
+                <p className="text-sm text-muted-foreground">Total Projects</p>
               </div>
+              {/* Platform Revenue */}
+              <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner mt-4 md:mt-0">
+                <DollarSign className="h-8 w-8 text-green-400 mb-2" />
+                <h3 className="text-xl font-bold text-green-400 font-numeric">{platformRevenue.toFixed(1)} ALGO</h3>
+                <p className="text-sm text-muted-foreground">Platform Revenue</p>
+              </div>
+              {/* Total User Earnings */}
+              <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner mt-4 md:mt-0">
+                <Users className="h-8 w-8 text-hodl-blue mb-2" />
+                <h3 className="text-xl font-bold text-hodl-blue font-numeric">{totalUserEarnings.toFixed(1)} ALGO</h3>
+                <p className="text-sm text-muted-foreground">Total User Earnings</p>
+              </div>
+            </div>
 
-              <div className="border-t md:border-t-0 md:border-l md:pl-6 border-border pt-4 md:pt-0 space-y-2 flex flex-col">
+            <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-6">
+              <div className="border-t md:border-t-0 md:border-r md:pr-6 border-border pt-4 md:pt-0 space-y-2 flex flex-col">
                 <h4 className="text-lg font-semibold text-center gradient-text">Posts & Likes</h4>
                 <div className="flex-grow flex items-center justify-center">
                   <AnimatePresence mode="wait">
@@ -299,11 +308,9 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
                   </AnimatePresence>
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-6">
               {/* Top Writers Section */}
-              <div className="border-t border-border pt-4 space-y-2">
+              <div className="border-t md:border-t-0 md:border-l md:pl-6 border-border pt-4 md:pt-0 space-y-2">
                 <h4 className="text-lg font-semibold text-center gradient-text">Top Writers</h4>
                 {topWriters.length > 0 ? (
                   <ul className="space-y-2">

@@ -67,8 +67,8 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
     totalReplyLikes,
     platformRevenue,
     totalUserEarnings,
-    totalWritersCount, // NEW
-    totalCuratorsCount, // NEW
+    totalWritersCount,
+    totalCuratorsCount,
     topWriters,
     topCurators,
     loading: analyticsLoading,
@@ -241,11 +241,11 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
                         {/* Header */}
                         <div className="grid grid-cols-[1fr_80px_1fr] items-center">
                           <div className="flex justify-end pr-4">
-                            <div className="font-semibold w-[4.5rem] p-2 h-10 flex items-center">Writers</div>
+                            <div className="font-semibold w-[4.5rem] p-2 h-10 flex items-center">Posts</div>
                           </div>
                           <div />
                           <div className="flex justify-start pl-4">
-                            <div className="font-semibold w-[4.5rem] p-2 h-10 flex items-center">Curators</div>
+                            <div className="font-semibold w-[4.5rem] p-2 h-10 flex items-center">Likes</div>
                           </div>
                         </div>
 

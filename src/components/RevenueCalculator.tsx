@@ -35,12 +35,12 @@ const ClickableStat = ({ id, icon, value, onClick, colorClass }: { id: string, i
 };
 
 const statDetails: { [key: string]: { title: string; content: React.ReactNode } } = {
-  reviews: { title: "Reviews (Writer)", content: <div><p>Review Creator → 1A → AlgoJects</p></div> },
-  reviewLikes: { title: "Review Likes (Curator)", content: <div><p>User → 1A → Review Creator</p></div> },
-  comments: { title: "Comments (Writer)", content: <div><p>Comment Creator: 0.5A</p><p className="pl-4">↳ 0.25A → Review Creator</p><p className="pl-4">↳ 0.25A → AlgoJects</p></div> },
-  commentLikes: { title: "Comment Likes (Curator)", content: <div><p>User: 0.5A</p><p className="pl-4">↳ 0.25A → Comment Creator</p><p className="pl-4">↳ 0.25A → Review Creator</p></div> },
-  replies: { title: "Replies (Writer)", content: <div><p>Reply Creator: 0.3A</p><p className="pl-4">↳ 0.1A → Comment Creator</p><p className="pl-4">↳ 0.1A → Review Creator</p><p className="pl-4">↳ 0.1A → AlgoJects</p></div> },
-  replyLikes: { title: "Reply Likes (Curator)", content: <div><p>User: 0.3A</p><p className="pl-4">↳ 0.1A → Reply Creator</p><p className="pl-4">↳ 0.1A → Comment Creator</p><p className="pl-4">↳ 0.1A → Review Creator</p></div> },
+  reviews: { title: "Reviews", content: <div><p>Review Writer → 1A → AlgoJects</p></div> },
+  reviewLikes: { title: "Review Likes", content: <div><p>User → 1A → Review Writer</p></div> },
+  comments: { title: "Comments", content: <div><p>Comment Writer: 0.5A</p><p className="pl-4">↳ 0.25A → Review Writer</p><p className="pl-4">↳ 0.25A → AlgoJects</p></div> },
+  commentLikes: { title: "Comment Likes", content: <div><p>User: 0.5A</p><p className="pl-4">↳ 0.25A → Comment Writer</p><p className="pl-4">↳ 0.25A → Review Writer</p></div> },
+  replies: { title: "Replies", content: <div><p>Reply Writer: 0.3A</p><p className="pl-4">↳ 0.1A → Comment Writer</p><p className="pl-4">↳ 0.1A → Review Writer</p><p className="pl-4">↳ 0.1A → AlgoJects</p></div> },
+  replyLikes: { title: "Reply Likes", content: <div><p>User: 0.3A</p><p className="pl-4">↳ 0.1A → Reply Writer</p><p className="pl-4">↳ 0.1A → Comment Writer</p><p className="pl-4">↳ 0.1A → Review Writer</p></div> },
 };
 
 interface RevenueCalculatorProps {

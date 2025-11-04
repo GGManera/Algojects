@@ -58,7 +58,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData, allWriterDivers
   const { allCuratorData, loading: curatorIndexLoading, error: curatorIndexError } = useCuratorIndex(undefined, projectsData);
 
   const analytics = useMemo(() => {
-    if (!projectsData || curatorIndexLoading || !allWriterDiversity || allWriterDiversity.size === 0) {
+    if (!projectsData || curatorIndexLoading || allWriterDiversity.size === 0) {
       return {
         totalProjects: 0,
         totalReviews: 0, totalComments: 0, totalReplies: 0,

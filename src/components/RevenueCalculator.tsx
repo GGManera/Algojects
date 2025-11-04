@@ -5,7 +5,7 @@ import { useSocialData } from "@/hooks/useSocialData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, DollarSign, Users, MessageCircle, FileText, MessageSquare, Heart, Star, ChevronDown, LayoutGrid } from "lucide-react";
+import { AlertTriangle, DollarSign, Users, MessageCircle, FileText, MessageSquare, Heart, Star, ChevronDown, LayoutGrid, User } from "lucide-react"; // Import User icon
 import { motion, AnimatePresence } from "framer-motion";
 import { usePlatformAnalytics } from "@/hooks/usePlatformAnalytics";
 import { UserDisplay } from "./UserDisplay";
@@ -58,7 +58,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
   const { projects, loading: socialDataLoading, error: socialDataError } = useSocialData();
   const { isMobile } = useAppContextDisplayMode();
   const {
-    totalProjects, // NEW: Destructure totalProjects
+    totalProjects,
     totalReviews,
     totalComments,
     totalReplies,
@@ -67,6 +67,8 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
     totalReplyLikes,
     platformRevenue,
     totalUserEarnings,
+    totalWritersCount, // NEW
+    totalCuratorsCount, // NEW
     topWriters,
     topCurators,
     loading: analyticsLoading,
@@ -171,24 +173,36 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 md:gap-x-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 md:gap-x-4 gap-y-4">
               {/* Total Projects */}
-              <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner">
-                <LayoutGrid className="h-8 w-8 text-hodl-blue mb-2" />
-                <h3 className="text-xl font-bold text-hodl-blue font-numeric">{totalProjects}</h3>
-                <p className="text-sm text-muted-foreground">Total Projects</p>
+              <div className="flex flex-col items-center justify-center p-3 bg-muted/50 rounded-lg shadow-inner">
+                <LayoutGrid className="h-6 w-6 text-hodl-blue mb-1" />
+                <h3 className="text-lg font-bold text-hodl-blue font-numeric">{totalProjects}</h3>
+                <p className="text-xs text-muted-foreground text-center">Projects</p>
+              </div>
+              {/* Total Writers */}
+              <div className="flex flex-col items-center justify-center p-3 bg-muted/50 rounded-lg shadow-inner">
+                <FileText className="h-6 w-6 text-gradient-end mb-1" />
+                <h3 className="text-lg font-bold text-gradient-end font-numeric">{totalWritersCount}</h3>
+                <p className="text-xs text-muted-foreground text-center">Writers</p>
+              </div>
+              {/* Total Curators */}
+              <div className="flex flex-col items-center justify-center p-3 bg-muted/50 rounded-lg shadow-inner">
+                <Star className="h-6 w-6 text-pink-400 mb-1" />
+                <h3 className="text-lg font-bold text-pink-400 font-numeric">{totalCuratorsCount}</h3>
+                <p className="text-xs text-muted-foreground text-center">Curators</p>
               </div>
               {/* Platform Revenue */}
-              <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner mt-4 md:mt-0">
-                <DollarSign className="h-8 w-8 text-green-400 mb-2" />
-                <h3 className="text-xl font-bold text-green-400 font-numeric">{platformRevenue.toFixed(1)} ALGO</h3>
-                <p className="text-sm text-muted-foreground">Platform Revenue</p>
+              <div className="flex flex-col items-center justify-center p-3 bg-muted/50 rounded-lg shadow-inner">
+                <DollarSign className="h-6 w-6 text-green-400 mb-1" />
+                <h3 className="text-lg font-bold text-green-400 font-numeric">{platformRevenue.toFixed(1)} A</h3>
+                <p className="text-xs text-muted-foreground text-center">Revenue</p>
               </div>
               {/* Total User Earnings */}
-              <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg shadow-inner mt-4 md:mt-0">
-                <Users className="h-8 w-8 text-hodl-blue mb-2" />
-                <h3 className="text-xl font-bold text-hodl-blue font-numeric">{totalUserEarnings.toFixed(1)} ALGO</h3>
-                <p className="text-sm text-muted-foreground">Total User Earnings</p>
+              <div className="flex flex-col items-center justify-center p-3 bg-muted/50 rounded-lg shadow-inner">
+                <Users className="h-6 w-6 text-hodl-blue mb-1" />
+                <h3 className="text-lg font-bold text-hodl-blue font-numeric">{totalUserEarnings.toFixed(1)} A</h3>
+                <p className="text-xs text-muted-foreground text-center">Earnings</p>
               </div>
             </div>
 
@@ -310,7 +324,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
               </div>
 
               {/* Top Writers Section */}
-              <div className="border-t md:border-t-0 md:border-l md:pl-6 border-border pt-4 md:pt-0 space-y-2">
+              <div className="border-t md:border-t-0 md:border-l md:pl-6 border-border pt-4 md:pt-0 space-y-2 flex flex-col">
                 <h4 className="text-lg font-semibold text-center gradient-text">Top Writers</h4>
                 {topWriters.length > 0 ? (
                   <ul className="space-y-2">

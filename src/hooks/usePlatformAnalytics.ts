@@ -23,7 +23,7 @@ interface UserAnalytics {
 }
 
 interface PlatformAnalyticsData {
-  totalProjects: number; // NEW
+  totalProjects: number;
   totalReviews: number;
   totalComments: number;
   totalReplies: number;
@@ -32,6 +32,8 @@ interface PlatformAnalyticsData {
   totalReplyLikes: number;
   platformRevenue: number; // In ALGO
   totalUserEarnings: number; // In ALGO (sum of all userEarnings)
+  totalWritersCount: number; // NEW
+  totalCuratorsCount: number; // NEW
   topWriters: UserAnalytics[];
   topCurators: UserAnalytics[];
   loading: boolean;
@@ -52,12 +54,14 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
         totalReviews: 0, totalComments: 0, totalReplies: 0,
         totalReviewLikes: 0, totalCommentLikes: 0, totalReplyLikes: 0,
         platformRevenue: 0, totalUserEarnings: 0,
+        totalWritersCount: 0,
+        totalCuratorsCount: 0,
         topWriters: [], topCurators: [],
         loading: true, error: null,
       };
     }
 
-    const numProjects = Object.keys(projectsData).length; // Calculate total projects
+    const numProjects = Object.keys(projectsData).length;
     let numReviews = 0;
     let numComments = 0;
     let numReplies = 0;
@@ -181,9 +185,13 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
       .filter(u => u.overallCuratorIndex > 0)
       .sort((a, b) => b.overallCuratorIndex - a.overallCuratorIndex)
       .slice(0, 5);
+      
+    // NEW: Calculate total counts
+    const totalWritersCount = allUserAnalytics.filter(u => u.totalEarnings > 0).length;
+    const totalCuratorsCount = allUserAnalytics.filter(u => u.overallCuratorIndex > 0).length;
 
     return {
-      totalProjects: numProjects, // NEW
+      totalProjects: numProjects,
       totalReviews: numReviews,
       totalComments: numComments,
       totalReplies: numReplies,
@@ -192,6 +200,8 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
       totalReplyLikes: numReplyLikes,
       platformRevenue,
       totalUserEarnings,
+      totalWritersCount, // NEW
+      totalCuratorsCount, // NEW
       topWriters,
       topCurators,
       loading: false,

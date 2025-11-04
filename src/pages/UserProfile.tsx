@@ -23,7 +23,7 @@ import { useAppContextDisplayMode } from "@/contexts/AppDisplayModeContext";
 import { cn } from '@/lib/utils';
 import { usePlatformAnalytics } from "@/hooks/usePlatformAnalytics";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
-import { useUserWritingDiversity } from "@/hooks/useUserWritingDiversity"; // NEW Import
+import { useWritingDiversity } from "@/hooks/useWritingDiversity"; // UPDATED Import
 import { UserProfileDiversityCard } from "@/components/UserProfileDiversityCard"; // NEW Import
 
 // Helper function to calculate interaction score for a review
@@ -324,12 +324,17 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
     error: analyticsError 
   } = usePlatformAnalytics(projects);
   
-  // Use new hook for user's writing diversity
+  // Use new hook for ALL writers' diversity
   const { 
-    uniqueProjectsWrittenIn, 
-    uniqueWritersInteractedWith, 
+    allWriterDiversity, 
     loading: diversityLoading 
-  } = useUserWritingDiversity(address, projects);
+  } = useWritingDiversity(projects); // UPDATED: Use new hook
+
+  // Extract current user's diversity metrics
+  const userDiversityMetrics = useMemo(() => {
+    if (!address) return null;
+    return allWriterDiversity.get(address) || { uniqueProjectsWrittenIn: 0, uniqueWritersInteractedWith: 0 };
+  }, [address, allWriterDiversity]);
 
   const userAnalytics = useMemo(() => {
     if (!address || analyticsLoading) return null;
@@ -406,7 +411,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
     }
   }, [effectiveAddress, location.pathname, userProfileNfd, pushEntry, activeCategory, nfdLoading, projectDetailsLoading]); // NEW: Add projectDetailsLoading dependency
 
-  const isContentLoading = socialDataLoading || projectDetailsLoading || curatorIndexLoading || analyticsLoading || diversityLoading; // UPDATED: Include diversityLoading
+  const isContentLoading = socialDataLoading || projectDetailsLoading || curatorIndexLoading || analyticsLoading || diversityLoading; // UPDATED: diversityLoading from new hook
   const isContentError = socialDataError || projectDetailsError || curatorIndexError || analyticsError; // NEW: Use projectDetailsError in combined error state
 
   const tabOrder = {
@@ -590,9 +595,9 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
               
               {/* NEW: Diversity Card */}
               <UserProfileDiversityCard
-                userProjects={uniqueProjectsWrittenIn}
+                userProjects={userDiversityMetrics?.uniqueProjectsWrittenIn || 0}
                 totalProjects={totalProjects}
-                userWriters={uniqueWritersInteractedWith}
+                userWriters={userDiversityMetrics?.uniqueWritersInteractedWith || 0}
                 totalWriters={totalWritersCount}
                 isLoading={diversityLoading || analyticsLoading}
               />

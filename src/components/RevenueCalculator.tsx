@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/collapsible";
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
-import { AllWriterDiversityMap } from "@/hooks/useWritingDiversity"; // NEW Import
 
 const ClickableStat = ({ id, icon, value, onClick, colorClass }: { id: string, icon: React.ReactNode, value: number, onClick: (id: string) => void, colorClass: string }) => {
   return (
@@ -53,10 +52,9 @@ interface RevenueCalculatorProps {
   rebuildOrder: ReturnType<typeof useKeyboardNavigation>['rebuildOrder']; // NEW PROP
   isActive: boolean;
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId'];
-  allWriterDiversity: AllWriterDiversityMap; // NEW PROP
 }
 
-export function RevenueCalculator({ className, isInsideCarousel = false, focusedId, registerItem, rebuildOrder, isActive, setLastActiveId, allWriterDiversity }: RevenueCalculatorProps) {
+export function RevenueCalculator({ className, isInsideCarousel = false, focusedId, registerItem, rebuildOrder, isActive, setLastActiveId }: RevenueCalculatorProps) {
   const { projects, loading: socialDataLoading, error: socialDataError } = useSocialData();
   const { isMobile } = useAppContextDisplayMode();
   const {
@@ -75,7 +73,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
     topCurators,
     loading: analyticsLoading,
     error: analyticsError,
-  } = usePlatformAnalytics(projects, allWriterDiversity); // Pass allWriterDiversity
+  } = usePlatformAnalytics(projects);
 
   const [activeStat, setActiveStat] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);

@@ -7,7 +7,6 @@ import {
   CuratorIndexData, // Import CuratorIndexData interface
   AllCuratorCalculationsMap // Import the map of all curator calculations
 } from './useCuratorIndex'; // Import constants and interface from useCuratorIndex
-import { AllWriterDiversityMap } from './useWritingDiversity'; // NEW: Import AllWriterDiversityMap
 
 // Constants for like costs (still used for earnings calculation)
 export const LIKE_REVIEW_COST = 1.0;
@@ -21,10 +20,6 @@ interface UserAnalytics {
   inactivityPenalty: number; // From new CuratorIndexData (D3)
   totalLikesGiven: number; // From new CuratorIndexData
   amountSpentOnLikes: number; // In ALGO
-  // NEW Diversity Metrics
-  uniqueProjectsWrittenIn: number;
-  uniqueWritersInteractedWith: number;
-  writerScore: number; // Combined score for ranking writers
 }
 
 interface PlatformAnalyticsData {
@@ -45,12 +40,7 @@ interface PlatformAnalyticsData {
   error: string | null;
 }
 
-// NEW: Define weights for the combined Writer Score
-const EARNINGS_WEIGHT = 0.6;
-const PROJECT_DIVERSITY_WEIGHT = 0.2;
-const WRITER_INTERACTION_WEIGHT = 0.2;
-
-export function usePlatformAnalytics(projectsData: ProjectsData, allWriterDiversity: AllWriterDiversityMap): PlatformAnalyticsData {
+export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyticsData {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,7 +48,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData, allWriterDivers
   const { allCuratorData, loading: curatorIndexLoading, error: curatorIndexError } = useCuratorIndex(undefined, projectsData);
 
   const analytics = useMemo(() => {
-    if (!projectsData || curatorIndexLoading || !allWriterDiversity) {
+    if (!projectsData || curatorIndexLoading) {
       return {
         totalProjects: 0,
         totalReviews: 0, totalComments: 0, totalReplies: 0,
@@ -169,40 +159,12 @@ export function usePlatformAnalytics(projectsData: ProjectsData, allWriterDivers
 
     // Calculate overall curator index for each user using the data from useCuratorIndex
     const allUserAnalytics: UserAnalytics[] = [];
-    const allActiveAddresses = new Set([
-      ...Array.from(userEarningsMap.keys()), 
-      ...Array.from(allCuratorData.keys()),
-      ...Array.from(allWriterDiversity.keys()) // Include all writers
-    ]);
-
-    // --- Normalization Factors for Writer Score ---
-    // Find max earnings among all writers
-    const maxEarnings = Math.max(1, ...Array.from(userEarningsMap.values()));
-    // Find max diversity metrics among all writers
-    const maxProjectsWrittenIn = Math.max(1, ...Array.from(allWriterDiversity.values()).map(d => d.uniqueProjectsWrittenIn));
-    const maxWritersInteractedWith = Math.max(1, ...Array.from(allWriterDiversity.values()).map(d => d.uniqueWritersInteractedWith));
-
+    const allActiveAddresses = new Set([...Array.from(userEarningsMap.keys()), ...Array.from(allCuratorData.keys())]);
 
     allActiveAddresses.forEach(address => {
       const curatorData = allCuratorData.get(address);
-      const diversityData = allWriterDiversity.get(address);
       const earnings = userEarningsMap.get(address) || 0;
       const amountSpent = userAmountSpentOnLikesMap.get(address) || 0;
-      
-      const uniqueProjects = diversityData?.uniqueProjectsWrittenIn || 0;
-      const uniqueWriters = diversityData?.uniqueWritersInteractedWith || 0;
-
-      // Calculate Normalized Scores (0 to 1)
-      const normalizedEarnings = earnings / maxEarnings;
-      const normalizedProjects = uniqueProjects / maxProjectsWrittenIn;
-      const normalizedWriters = uniqueWriters / maxWritersInteractedWith;
-
-      // Calculate Combined Writer Score
-      const writerScore = (
-        normalizedEarnings * EARNINGS_WEIGHT +
-        normalizedProjects * PROJECT_DIVERSITY_WEIGHT +
-        normalizedWriters * WRITER_INTERACTION_WEIGHT
-      );
 
       allUserAnalytics.push({
         address,
@@ -211,15 +173,12 @@ export function usePlatformAnalytics(projectsData: ProjectsData, allWriterDivers
         inactivityPenalty: curatorData?.d3 || 0.1, // D3 is the recency factor
         totalLikesGiven: curatorData?.totalLikesGiven || 0,
         amountSpentOnLikes: amountSpent,
-        uniqueProjectsWrittenIn: uniqueProjects,
-        uniqueWritersInteractedWith: uniqueWriters,
-        writerScore: writerScore,
       });
     });
 
     const topWriters = allUserAnalytics
-      .filter(u => u.writerScore > 0) // Filter by the new combined score
-      .sort((a, b) => b.writerScore - a.writerScore)
+      .filter(u => u.totalEarnings > 0)
+      .sort((a, b) => b.totalEarnings - a.totalEarnings)
       .slice(0, 5);
 
     const topCurators = allUserAnalytics
@@ -248,7 +207,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData, allWriterDivers
       loading: false,
       error: null,
     };
-  }, [projectsData, allCuratorData, curatorIndexLoading, allWriterDiversity]);
+  }, [projectsData, allCuratorData, curatorIndexLoading]);
 
   useEffect(() => {
     setLoading(analytics.loading || curatorIndexLoading);

@@ -7,6 +7,7 @@ import {
   CuratorIndexData, // Import CuratorIndexData interface
   AllCuratorCalculationsMap // Import the map of all curator calculations
 } from './useCuratorIndex'; // Import constants and interface from useCuratorIndex
+import { AllWriterDiversityMap } from './useWritingDiversity'; // NEW: Import AllWriterDiversityMap
 
 // Constants for like costs (still used for earnings calculation)
 export const LIKE_REVIEW_COST = 1.0;
@@ -20,6 +21,10 @@ interface UserAnalytics {
   inactivityPenalty: number; // From new CuratorIndexData (D3)
   totalLikesGiven: number; // From new CuratorIndexData
   amountSpentOnLikes: number; // In ALGO
+  // NEW Diversity Metrics
+  uniqueProjectsWrittenIn: number;
+  uniqueWritersInteractedWith: number;
+  diversityScore: number; // Combined score for ranking
 }
 
 interface PlatformAnalyticsData {
@@ -36,11 +41,16 @@ interface PlatformAnalyticsData {
   totalCuratorsCount: number; // NEW
   topWriters: UserAnalytics[];
   topCurators: UserAnalytics[];
+  topDiversityWriters: UserAnalytics[]; // NEW: Top writers ranked by diversity
   loading: boolean;
   error: string | null;
 }
 
-export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyticsData {
+// NEW: Define weights for diversity score calculation
+const PROJECT_DIVERSITY_WEIGHT = 0.6;
+const WRITER_INTERACTION_WEIGHT = 0.4;
+
+export function usePlatformAnalytics(projectsData: ProjectsData, allWriterDiversity: AllWriterDiversityMap): PlatformAnalyticsData {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,7 +58,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
   const { allCuratorData, loading: curatorIndexLoading, error: curatorIndexError } = useCuratorIndex(undefined, projectsData);
 
   const analytics = useMemo(() => {
-    if (!projectsData || curatorIndexLoading) {
+    if (!projectsData || curatorIndexLoading || allWriterDiversity.size === 0) {
       return {
         totalProjects: 0,
         totalReviews: 0, totalComments: 0, totalReplies: 0,
@@ -56,7 +66,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
         platformRevenue: 0, totalUserEarnings: 0,
         totalWritersCount: 0,
         totalCuratorsCount: 0,
-        topWriters: [], topCurators: [],
+        topWriters: [], topCurators: [], topDiversityWriters: [],
         loading: true, error: null,
       };
     }
@@ -157,14 +167,42 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
 
     const totalUserEarnings = Array.from(userEarningsMap.values()).reduce((sum, earnings) => sum + earnings, 0);
 
-    // Calculate overall curator index for each user using the data from useCuratorIndex
+    // --- Combine all user data and calculate diversity score ---
+    const allActiveAddresses = new Set([...Array.from(userEarningsMap.keys()), ...Array.from(allCuratorData.keys()), ...Array.from(allWriterDiversity.keys())]);
+
     const allUserAnalytics: UserAnalytics[] = [];
-    const allActiveAddresses = new Set([...Array.from(userEarningsMap.keys()), ...Array.from(allCuratorData.keys())]);
+    
+    // Find max diversity values for normalization (used in diversity score calculation)
+    let maxProjectsWrittenIn = 0;
+    let maxWritersInteractedWith = 0;
+    allWriterDiversity.forEach(metrics => {
+        if (metrics.uniqueProjectsWrittenIn > maxProjectsWrittenIn) maxProjectsWrittenIn = metrics.uniqueProjectsWrittenIn;
+        if (metrics.uniqueWritersInteractedWith > maxWritersInteractedWith) maxWritersInteractedWith = metrics.uniqueWritersInteractedWith;
+    });
+    
+    // Handle zero division case
+    if (maxProjectsWrittenIn === 0) maxProjectsWrittenIn = 1;
+    if (maxWritersInteractedWith === 0) maxWritersInteractedWith = 1;
+
 
     allActiveAddresses.forEach(address => {
       const curatorData = allCuratorData.get(address);
+      const diversityData = allWriterDiversity.get(address);
       const earnings = userEarningsMap.get(address) || 0;
       const amountSpent = userAmountSpentOnLikesMap.get(address) || 0;
+      
+      const projectsWrittenIn = diversityData?.uniqueProjectsWrittenIn || 0;
+      const writersInteractedWith = diversityData?.uniqueWritersInteractedWith || 0;
+      
+      // Normalize and calculate Diversity Score (0 to 100)
+      const normalizedProjects = projectsWrittenIn / maxProjectsWrittenIn;
+      const normalizedWriters = writersInteractedWith / maxWritersInteractedWith;
+      
+      const diversityScore = (
+          normalizedProjects * PROJECT_DIVERSITY_WEIGHT + 
+          normalizedWriters * WRITER_INTERACTION_WEIGHT
+      ) * 100;
+
 
       allUserAnalytics.push({
         address,
@@ -173,6 +211,9 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
         inactivityPenalty: curatorData?.d3 || 0.1, // D3 is the recency factor
         totalLikesGiven: curatorData?.totalLikesGiven || 0,
         amountSpentOnLikes: amountSpent,
+        uniqueProjectsWrittenIn: projectsWrittenIn,
+        uniqueWritersInteractedWith: writersInteractedWith,
+        diversityScore: diversityScore,
       });
     });
 
@@ -184,6 +225,12 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
     const topCurators = allUserAnalytics
       .filter(u => u.overallCuratorIndex > 0)
       .sort((a, b) => b.overallCuratorIndex - a.overallCuratorIndex)
+      .slice(0, 5);
+      
+    // NEW: Top Diversity Writers (ranked by diversityScore)
+    const topDiversityWriters = allUserAnalytics
+      .filter(u => u.diversityScore > 0)
+      .sort((a, b) => b.diversityScore - a.diversityScore)
       .slice(0, 5);
       
     // NEW: Calculate total counts
@@ -200,14 +247,15 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
       totalReplyLikes: numReplyLikes,
       platformRevenue,
       totalUserEarnings,
-      totalWritersCount, // NEW
-      totalCuratorsCount, // NEW
+      totalWritersCount,
+      totalCuratorsCount,
       topWriters,
       topCurators,
+      topDiversityWriters, // NEW
       loading: false,
       error: null,
     };
-  }, [projectsData, allCuratorData, curatorIndexLoading]);
+  }, [projectsData, allCuratorData, allWriterDiversity, curatorIndexLoading]);
 
   useEffect(() => {
     setLoading(analytics.loading || curatorIndexLoading);

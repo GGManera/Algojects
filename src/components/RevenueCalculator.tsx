@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/collapsible";
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
+import { useWritingDiversity } from "@/hooks/useWritingDiversity"; // Import hook to get map
 
 const ClickableStat = ({ id, icon, value, onClick, colorClass }: { id: string, icon: React.ReactNode, value: number, onClick: (id: string) => void, colorClass: string }) => {
   return (
@@ -56,6 +57,7 @@ interface RevenueCalculatorProps {
 
 export function RevenueCalculator({ className, isInsideCarousel = false, focusedId, registerItem, rebuildOrder, isActive, setLastActiveId }: RevenueCalculatorProps) {
   const { projects, loading: socialDataLoading, error: socialDataError } = useSocialData();
+  const { allWriterDiversity } = useWritingDiversity(projects); // NEW: Get allWriterDiversity
   const { isMobile } = useAppContextDisplayMode();
   const {
     totalProjects,
@@ -71,11 +73,12 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
     totalCuratorsCount,
     topWriters,
     topCurators,
+    topDiversityWriters, // NEW
     loading: analyticsLoading,
     error: analyticsError,
-  } = usePlatformAnalytics(projects);
+  } = usePlatformAnalytics(projects, allWriterDiversity); // Pass allWriterDiversity
 
-  const [activeStat, setActiveStat] = useState<string | null>(null);
+  const [activeStat, setActiveStat] = useState<string | null>(activeStat);
   const [isOpen, setIsOpen] = useState(false);
 
   // NEW: Keyboard navigation state
@@ -345,26 +348,52 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
                 )}
               </div>
 
-              {/* Top Curators Section */}
-              <div className="mt-6 border-t border-border pt-4 space-y-2 md:mt-0 md:border-t-0 md:border-l md:border-border md:pl-6">
-                <h4 className="text-lg font-semibold text-center gradient-text">Top Curators</h4>
-                {topCurators.length > 0 ? (
-                  <ul className="space-y-2">
-                    {topCurators.map((curator, index) => (
-                      <li key={curator.address} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                        <div className="flex items-center gap-2">
-                          <span className="font-numeric text-muted-foreground font-semibold w-4">{index + 1}.</span>
-                          <UserDisplay address={curator.address} textSizeClass="text-sm" avatarSizeClass="h-7 w-7" />
-                        </div>
-                        <Link to={`/profile/${curator.address}`} className="font-bold font-numeric text-hodl-blue hover:underline">
-                          {(Math.floor(curator.overallCuratorIndex * 10) / 10).toFixed(1)} <Star className="h-4 w-4 inline-block ml-1" />
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center">No top curators yet.</p>
-                )}
+              {/* Top Curators & Diversity Writers Section (Combined) */}
+              <div className="mt-6 border-t border-border pt-4 space-y-4 md:mt-0 md:border-t-0 md:border-l md:border-border md:pl-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4">
+                
+                {/* Top Curators */}
+                <div className="space-y-2">
+                  <h4 className="text-lg font-semibold text-center gradient-text">Top Curators</h4>
+                  {topCurators.length > 0 ? (
+                    <ul className="space-y-2">
+                      {topCurators.map((curator, index) => (
+                        <li key={curator.address} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                          <div className="flex items-center gap-2">
+                            <span className="font-numeric text-muted-foreground font-semibold w-4">{index + 1}.</span>
+                            <UserDisplay address={curator.address} textSizeClass="text-sm" avatarSizeClass="h-7 w-7" />
+                          </div>
+                          <Link to={`/profile/${curator.address}`} className="font-bold font-numeric text-hodl-blue hover:underline">
+                            {(Math.floor(curator.overallCuratorIndex * 10) / 10).toFixed(1)} <Star className="h-4 w-4 inline-block ml-1" />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center">No top curators yet.</p>
+                  )}
+                </div>
+
+                {/* Top Diversity Writers */}
+                <div className="space-y-2 border-t pt-4 border-border sm:border-t-0 sm:pt-0 md:border-t md:pt-4">
+                  <h4 className="text-lg font-semibold text-center gradient-text">Top Diversity Writers</h4>
+                  {topDiversityWriters.length > 0 ? (
+                    <ul className="space-y-2">
+                      {topDiversityWriters.map((writer, index) => (
+                        <li key={writer.address} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                          <div className="flex items-center gap-2">
+                            <span className="font-numeric text-muted-foreground font-semibold w-4">{index + 1}.</span>
+                            <UserDisplay address={writer.address} textSizeClass="text-sm" avatarSizeClass="h-7 w-7" />
+                          </div>
+                          <Link to={`/profile/${writer.address}`} className="font-bold font-numeric text-hodl-blue hover:underline">
+                            {writer.diversityScore.toFixed(1)}% <LayoutGrid className="h-4 w-4 inline-block ml-1" />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center">No diversity writers yet.</p>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>

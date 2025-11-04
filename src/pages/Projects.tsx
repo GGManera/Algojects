@@ -19,6 +19,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from '@/lib/utils';
 import { HeroSection } from "@/components/HeroSection";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
+import { useWritingDiversity } from "@/hooks/useWritingDiversity"; // NEW Import
 
 interface ProjectsProps {
   isInsideCarousel?: boolean;
@@ -38,6 +39,9 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
   const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // NEW: Fetch global writing diversity data
+  const { allWriterDiversity } = useWritingDiversity(projects);
 
   const heroLogoRef = useRef<HTMLDivElement>(null);
   const projectCardRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
@@ -167,9 +171,10 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         isInsideCarousel={isInsideCarousel} 
         focusedId={focusedId}
         registerItem={registerItem}
+        rebuildOrder={rebuildOrder} // NEW: Pass rebuildOrder
         isActive={isActive}
         setLastActiveId={setLastActiveId}
-        rebuildOrder={rebuildOrder} // NEW: Pass rebuildOrder
+        allWriterDiversity={allWriterDiversity} // NEW: Pass diversity data
       />
 
       {shouldShowAddProjectButton && activeAddress && (

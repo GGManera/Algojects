@@ -72,11 +72,11 @@ const FALLBACK_FORM_STRUCTURE = {
  */
 export async function callCodaApi<T>(method: string, path: string, body?: any): Promise<T> {
   // Use dedicated feedback keys (now prefixed with VITE_)
-  const CODA_API_KEY = process.env.CODA_FEEDBACK_API_KEY;
-  const CODA_DOC_ID = process.env.CODA_FEEDBACK_DOC_ID;
+  const CODA_API_KEY = process.env.VITE_CODA_FEEDBACK_API_KEY;
+  const CODA_DOC_ID = process.env.VITE_CODA_FEEDBACK_DOC_ID;
 
   if (!CODA_API_KEY || !CODA_DOC_ID) {
-    throw new Error('Coda Feedback API keys or IDs are not configured. Please check environment variables (CODA_FEEDBACK_API_KEY/CODA_FEEDBACK_DOC_ID).');
+    throw new Error('Coda Feedback API keys or IDs are not configured. Please check environment variables (VITE_CODA_FEEDBACK_API_KEY/VITE_CODA_FEEDBACK_DOC_ID).');
   }
 
   const url = `https://coda.io/apis/v1/docs/${CODA_DOC_ID}${path}`;
@@ -106,11 +106,11 @@ export async function callCodaApi<T>(method: string, path: string, body?: any): 
  * Returns the JSON string and the Coda Row ID.
  */
 export async function fetchFormStructureFromCoda(): Promise<{ jsonString: string; rowId: string }> {
-  const CODA_FORM_STRUCTURE_TABLE_ID = process.env.CODA_FORM_STRUCTURE_TABLE_ID;
-  CODA_FORM_STRUCTURE_COLUMN_JSON = process.env.CODA_FORM_STRUCTURE_COLUMN_ID || '';
+  const CODA_FORM_STRUCTURE_TABLE_ID = process.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID;
+  CODA_FORM_STRUCTURE_COLUMN_JSON = process.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID || '';
 
-  if (!CODA_FORM_STRUCTURE_TABLE_ID || !CODA_FORM_STRUCTURE_COLUMN_JSON) {
-    throw new Error('CODA_FORM_STRUCTURE_TABLE_ID or CODA_FORM_STRUCTURE_COLUMN_ID is not configured.');
+  if (!CODA_FORM_STRUCTURE_TABLE_ID || !CODA_FORM_STRUCTURE_COLUMN_ID) {
+    throw new Error('VITE_CODA_FORM_STRUCTURE_TABLE_ID or VITE_CODA_FORM_STRUCTURE_COLUMN_ID is not configured.');
   }
 
   // Fetch all rows (assuming only one row holds the master structure)
@@ -138,11 +138,11 @@ export async function fetchFormStructureFromCoda(): Promise<{ jsonString: string
  * Updates the Form Structure JSON in Coda.
  */
 export async function updateFormStructureInCoda(newJsonString: string, rowId: string): Promise<void> {
-  const CODA_FORM_STRUCTURE_TABLE_ID = process.env.CODA_FORM_STRUCTURE_TABLE_ID;
-  const columnId = process.env.CODA_FORM_STRUCTURE_COLUMN_ID;
+  const CODA_FORM_STRUCTURE_TABLE_ID = process.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID;
+  const columnId = process.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID;
 
   if (!CODA_FORM_STRUCTURE_TABLE_ID || !columnId) {
-    throw new Error('CODA_FORM_STRUCTURE_TABLE_ID or CODA_FORM_STRUCTURE_COLUMN_ID is not configured.');
+    throw new Error('VITE_CODA_FORM_STRUCTURE_TABLE_ID or VITE_CODA_FORM_STRUCTURE_COLUMN_ID is not configured.');
   }
 
   const cells = [
@@ -160,9 +160,9 @@ export async function updateFormStructureInCoda(newJsonString: string, rowId: st
  * Writes a new user response to the Form Responses table.
  */
 export async function writeFormResponseToCoda(responseJson: any): Promise<void> {
-  const CODA_FORM_RESPONSES_TABLE_ID = process.env.CODA_FORM_RESPONSES_TABLE_ID;
+  const CODA_FORM_RESPONSES_TABLE_ID = process.env.VITE_CODA_FORM_RESPONSES_TABLE_ID;
   if (!CODA_FORM_RESPONSES_TABLE_ID) {
-    throw new Error('CODA_FORM_RESPONSES_TABLE_ID is not configured.');
+    throw new Error('VITE_CODA_FORM_RESPONSES_TABLE_ID is not configured.');
   }
 
   // Assuming the Form Responses table has a column named 'Response JSON' (c-ftTZjCuByP is a placeholder, but we must use a known column ID)

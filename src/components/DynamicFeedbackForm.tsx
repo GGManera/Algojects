@@ -73,10 +73,14 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
   const { activeAddress } = useWallet();
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [openModules, setOpenModules] = useState<Set<string>>(() => new Set(schema.modules.map(m => m.id))); // Open all by default
+  
+  // Initialize openModules safely
+  const initialOpenModules = useMemo(() => new Set((schema.modules || []).map(m => m.id)), [schema.modules]);
+  const [openModules, setOpenModules] = useState<Set<string>>(initialOpenModules);
 
   const allQuestions = useMemo(() => {
-    return schema.modules.flatMap(module => module.questions.map((q: any) => ({ ...q, moduleId: module.id })));
+    // Ensure schema.modules is an array before calling flatMap
+    return (schema.modules || []).flatMap(module => (module.questions || []).map((q: any) => ({ ...q, moduleId: module.id })));
   }, [schema]);
 
   const visibleQuestions = useMemo(() => {
@@ -154,7 +158,7 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {schema.modules.map(module => {
+          {(schema.modules || []).map(module => {
             const moduleQuestions = visibleQuestions.filter(q => q.moduleId === module.id);
             const isOpen = openModules.has(module.id);
 

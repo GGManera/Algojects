@@ -133,14 +133,14 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   const handleUpdateModule = useCallback((index: number, updatedModule: any) => {
     setStructuredDraft(prev => ({
       ...prev,
-      modules: prev.modules.map((m, i) => i === index ? updatedModule : m)
+      modules: (prev.modules || []).map((m, i) => i === index ? updatedModule : m)
     }));
   }, []);
 
   const handleRemoveModule = useCallback((index: number) => {
     setStructuredDraft(prev => ({
       ...prev,
-      modules: prev.modules.filter((_, i) => i !== index)
+      modules: (prev.modules || []).filter((_, i) => i !== index)
     }));
   }, []);
 

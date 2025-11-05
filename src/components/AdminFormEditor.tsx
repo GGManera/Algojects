@@ -19,6 +19,48 @@ interface AdminFormEditorProps {
   onSchemaUpdate: () => void;
 }
 
+// Define a fallback structure locally for safety if the fetched schema is empty/corrupted
+const FALLBACK_FORM_STRUCTURE_TEMPLATE: FormStructure = {
+  form_id: "algojects_feedback_master",
+  version: "1.3",
+  feedback_version: "v1",
+  authorized_wallet: import.meta.env.VITE_FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET",
+  project_wallet: import.meta.env.VITE_FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET",
+  hash_verification_required: true,
+  metadata: {
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    description: "AlgoJects dynamic feedback schema. Master JSON for FormStructure stored in Coda."
+  },
+  governance: {
+    enabled: true,
+    threshold_min_responses: 100,
+    reward_eligibility: {
+      min_posts: 2,
+      min_balance_algo: 1,
+      reward_amount_algo: 1
+    },
+    versioning_policy: "questions_reach_threshold_then_archive_in_next_version"
+  },
+  modules: [
+    { id: "general", title: "General Feedback", description: "Universal module.", questions: [] },
+    { id: "contributor", title: "Contributor / Creator Feedback", description: "Project creation/editing.", questions: [] },
+    { id: "writer", title: "Writer Feedback", description: "Posting experience.", questions: [] },
+    { id: "curator", title: "Curator Feedback", description: "Curation and CIX.", questions: [] },
+  ],
+  rendering_rules: {},
+  audit: {
+    last_edit: {
+      hash: null,
+      txid: null,
+      editor_wallet: null,
+      timestamp: null,
+    }
+  },
+  rowId: currentSchema.rowId, // Keep rowId if available
+};
+
+
 export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEditorProps) {
   const { activeAddress } = useWallet();
   const [editingMode, setEditingMode] = useState<'structured' | 'json'>('structured');
@@ -43,8 +85,20 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
 
   // 1. Sync currentSchema -> structuredDraft on initial load/commit
   useEffect(() => {
-    setStructuredDraft(currentSchema);
-    setJsonDraft(JSON.stringify(currentSchema, null, 2));
+    // Check if the fetched schema is clearly incomplete (e.g., missing modules array)
+    const isSchemaIncomplete = !currentSchema.modules || currentSchema.modules.length === 0;
+    
+    if (isSchemaIncomplete && currentSchema.rowId) {
+        // If incomplete but we have a rowId, initialize with the fallback template
+        // This prevents accidentally wiping the Coda table with an empty object if the fetch failed partially.
+        const safeDraft = { ...FALLBACK_FORM_STRUCTURE_TEMPLATE, rowId: currentSchema.rowId };
+        setStructuredDraft(safeDraft);
+        setJsonDraft(JSON.stringify(safeDraft, null, 2));
+    } else if (currentSchema.rowId) {
+        // If complete and has rowId, use the fetched schema
+        setStructuredDraft(currentSchema);
+        setJsonDraft(JSON.stringify(currentSchema, null, 2));
+    }
   }, [currentSchema]);
 
   // 2. Sync structuredDraft -> jsonDraft whenever structuredDraft changes
@@ -64,6 +118,10 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     setJsonDraft(newJson);
     try {
       const parsed = JSON.parse(newJson);
+      // Ensure the parsed object retains the rowId if it exists in the current schema
+      if (currentSchema.rowId) {
+          parsed.rowId = currentSchema.rowId;
+      }
       setStructuredDraft(parsed);
       setIsJsonValid(true);
     } catch (e) {
@@ -95,7 +153,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     };
     setStructuredDraft(prev => ({
       ...prev,
-      modules: [...prev.modules, newModule]
+      modules: [...(prev.modules || []), newModule] // Ensure prev.modules is an array
     }));
   }, []);
   
@@ -109,7 +167,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   // --- Core Logic: Direct Commit ---
 
   const handleCommitChanges = async () => {
-    const draftToCommit = editingMode === 'json' ? structuredDraft : structuredDraft;
+    const draftToCommit = structuredDraft; // Always use structuredDraft as it's the source of truth after JSON validation
 
     if (!draftToCommit || !isJsonValid || !currentSchema.rowId) {
       showError("Invalid draft or missing Coda Row ID.");
@@ -125,6 +183,10 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
       
       const finalDraft: FormStructure = {
         ...draftToCommit,
+        // Ensure fixed fields are present even if they were accidentally removed in the draft
+        authorized_wallet: draftToCommit.authorized_wallet || adminWallet,
+        project_wallet: draftToCommit.project_wallet || projectWallet,
+        
         audit: {
           last_edit: {
             hash: localHash,
@@ -192,17 +254,17 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="form-id">Form ID</Label>
-                    <Input id="form-id" value={structuredDraft.form_id} disabled className="bg-card" />
+                    <Input id="form-id" value={structuredDraft.form_id || ''} disabled className="bg-card" />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="feedback-version">Feedback Version</Label>
-                    <Input id="feedback-version" value={structuredDraft.feedback_version} disabled className="bg-card" />
+                    <Input id="feedback-version" value={structuredDraft.feedback_version || ''} disabled className="bg-card" />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
                     <Textarea 
                         id="description" 
-                        value={structuredDraft.metadata.description} 
+                        value={structuredDraft.metadata?.description || ''} 
                         onChange={(e) => handleUpdateMetadata('description', e.target.value)}
                         disabled={!isAuthorized || isCommitting}
                         className="bg-card"
@@ -210,9 +272,9 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="admin-wallet">Admin Wallet</Label>
-                    <Input id="admin-wallet" value={structuredDraft.authorized_wallet} disabled className="bg-card font-mono text-xs" />
+                    <Input id="admin-wallet" value={structuredDraft.authorized_wallet || ''} disabled className="bg-card font-mono text-xs" />
                     <Label htmlFor="project-wallet">Project Wallet</Label>
-                    <Input id="project-wallet" value={structuredDraft.project_wallet} disabled className="bg-card font-mono text-xs" />
+                    <Input id="project-wallet" value={structuredDraft.project_wallet || ''} disabled className="bg-card font-mono text-xs" />
                 </div>
             </div>
           </div>
@@ -220,7 +282,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
           {editingMode === 'structured' ? (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-primary">Modules</h3>
-              {structuredDraft.modules.map((module, index) => (
+              {(structuredDraft.modules || []).map((module, index) => (
                 <ModuleEditor
                   key={module.id}
                   module={module}
@@ -259,7 +321,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
             </Button>
           </div>
           
-          {currentSchema.audit.last_edit.hash && (
+          {currentSchema.audit?.last_edit?.hash && (
             <div className="pt-4 border-t border-muted mt-4 text-sm">
               <h4 className="font-semibold text-primary">Last Verified Update:</h4>
               <p className="text-muted-foreground">Hash: {currentSchema.audit.last_edit.hash.substring(0, 10)}...</p>

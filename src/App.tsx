@@ -17,7 +17,8 @@ import Layout from "./components/Layout";
 import { AppDisplayModeProvider } from "./contexts/AppDisplayModeContext";
 import { HeroLogoVisibilityProvider } from "./contexts/HeroLogoVisibilityContext";
 import { NavigationHistoryProvider } from "./contexts/NavigationHistoryContext";
-import NewWebsite from "./pages/NewWebsite"; // Import the new page
+import NewWebsite from "./pages/NewWebsite";
+import FeedbackPage from "./pages/Feedback"; // Import the new Feedback page
 
 const queryClient = new QueryClient();
 
@@ -57,9 +58,13 @@ const App = () => {
                 <BrowserRouter>
                   <NavigationHistoryProvider>
                     <Routes>
-                      {/* A rota raiz agora renderiza o Layout com NewWebsite como seu filho */}
+                      {/* New Feedback Route - outside the main Layout */}
+                      <Route path="/feedback" element={<FeedbackPage />} />
+                      
+                      {/* Main Application Routes */}
                       <Route path="/*" element={<Layout><NewWebsite /></Layout>} />
-                      {/* A rota NotFound ainda é mantida para URLs inválidas */}
+                      
+                      {/* The NotFound route still catches everything else */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </NavigationHistoryProvider>

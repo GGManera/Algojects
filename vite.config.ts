@@ -3,8 +3,12 @@ import dyadComponentTagger from "@dyad-sh/react-vite-component-tagger";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import projectDetailsHandler from "./api/project-details";
-import alloProxyHandler from "./api/allo-proxy"; // Import the new proxy handler
-import type { VercelRequest, VercelResponse } from '@vercel/node'; // Import Vercel types for emulation
+import alloProxyHandler from "./api/allo-proxy";
+import formStructureHandler from "./api/form-structure"; // NEW
+import formResponsesHandler from "./api/form-responses"; // NEW
+import generateHashHandler from "./api/generate-hash"; // NEW
+import verifyTxHandler from "./api/verify-tx"; // NEW
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default defineConfig(({ mode }) => {
   // Carrega as variáveis de ambiente do arquivo .env apropriado (ex: .env.local)
@@ -44,60 +48,47 @@ export default defineConfig(({ mode }) => {
                 },
             } as VercelResponse);
 
-            // --- Emulate /api/project-details ---
-            if (req.url === '/api/project-details') {
-              const mockRequest: VercelRequest = {
-                ...req,
-                query: {},
-                cookies: {},
-                body: await getRequestBody(req),
-              } as VercelRequest;
-
-              const mockResponse = createMockResponse(res);
-
-              try {
-                await projectDetailsHandler(mockRequest, mockResponse);
-              } catch (error) {
-                console.error("Error in API emulator for /api/project-details:", error);
-                const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-                if (!res.headersSent) {
-                  res.statusCode = 500;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ error: errorMessage }));
-                }
-              }
-              return;
-            }
+            const requestBody = await getRequestBody(req);
             
-            // --- Emulate /api/allo-proxy ---
-            if (req.url?.startsWith('/api/allo-proxy')) {
-                const url = new URL(req.url, `http://${req.headers.host}`);
-                const query: { [key: string]: string | string[] } = {};
-                url.searchParams.forEach((value, key) => {
-                    query[key] = value;
-                });
+            const url = new URL(req.url || '/', `http://${req.headers.host}`);
+            const query: { [key: string]: string | string[] } = {};
+            url.searchParams.forEach((value, key) => {
+                query[key] = value;
+            });
 
-                const mockRequest: VercelRequest = {
-                    ...req,
-                    query,
-                    cookies: {},
-                    body: await getRequestBody(req),
-                } as VercelRequest;
+            const mockRequest: VercelRequest = {
+                ...req,
+                query,
+                cookies: {},
+                body: requestBody,
+            } as VercelRequest;
 
-                const mockResponse = createMockResponse(res);
+            const mockResponse = createMockResponse(res);
 
-                try {
-                    await alloProxyHandler(mockRequest, mockResponse);
-                } catch (error) {
-                    console.error("Error in API emulator for /api/allo-proxy:", error);
-                    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-                    if (!res.headersSent) {
-                        res.statusCode = 500;
-                        res.setHeader('Content-Type', 'application/json');
-                        res.end(JSON.stringify({ error: errorMessage }));
+            const apiMap: { [key: string]: (req: VercelRequest, res: VercelResponse) => Promise<void> } = {
+                '/api/project-details': projectDetailsHandler,
+                '/api/allo-proxy': alloProxyHandler,
+                '/api/form-structure': formStructureHandler, // NEW
+                '/api/form-responses': formResponsesHandler, // NEW
+                '/api/generate-hash': generateHashHandler, // NEW
+                '/api/verify-tx': verifyTxHandler, // NEW
+            };
+
+            for (const endpoint in apiMap) {
+                if (req.url?.startsWith(endpoint)) {
+                    try {
+                        await apiMap[endpoint](mockRequest, mockResponse);
+                    } catch (error) {
+                        console.error(`Error in API emulator for ${endpoint}:`, error);
+                        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+                        if (!res.headersSent) {
+                            res.statusCode = 500;
+                            res.setHeader('Content-Type', 'application/json');
+                            res.end(JSON.stringify({ error: errorMessage }));
+                        }
                     }
+                    return;
                 }
-                return;
             }
 
             next(); // Pass to the next middleware if the URL doesn't match

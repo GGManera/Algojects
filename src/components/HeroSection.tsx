@@ -35,15 +35,12 @@ export function HeroSection({ heroLogoRef, isInsideCarousel, className, focusedI
   }, [handleToggleExpand, registerItem, isActive]);
 
   return (
-    <div className={cn(
-      "flex flex-col items-center py-8 md:pb-12", // Use flex-col and items-center for robust centering
-      className
-    )}>
+    <div className={cn("text-center py-8 md:pb-12", className)}>
       <div
         ref={heroLogoRef}
         className={cn(
           "p-4 rounded-xl bg-gradient-to-br from-hodl-darker to-hodl-dark shadow-deep-lg cursor-pointer transition-all duration-200 border-2 border-transparent",
-          "block mx-auto w-fit",
+          "block mx-auto w-fit", // Explicitly center the logo wrapper
           isFocused ? "focus-glow-border" : "",
           !isFocused && "hover:focus-glow-border"
         )}

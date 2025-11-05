@@ -70,20 +70,26 @@ export default async function handler(
     const { rowId } = await fetchFormStructureFromCoda();
     
     // Call the internal PUT endpoint to update the Coda cell
-    // *** CHANGED to use retryFetch ***
-    const updateResponse = await retryFetch(`/api/form-structure`, {
+    const updateResponse = await fetch(`/api/form-structure`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             newJsonString: JSON.stringify(newJsonDraft, Object.keys(newJsonDraft).sort(), 2), // Re-normalize before sending to Coda
             rowId 
         }),
-    }, 1); // Only 1 retry needed for internal call
+    });
 
     if (!updateResponse.ok) {
-        // Since retryFetch throws on non-ok status, this block is only for safety
-        const updateError = await updateResponse.json();
-        throw new Error(`Failed to update Coda after TX verification: ${updateError.error}`);
+        const updateErrorText = await updateResponse.text();
+        let updateError;
+        try {
+            updateError = JSON.parse(updateErrorText);
+        } catch {
+            updateError = { error: updateErrorText };
+        }
+        console.error("Internal API Update Failed:", updateError);
+        // Return 500 status with the internal error message
+        return response.status(500).json({ error: `Internal Coda Update Failed: ${updateError.error}` });
     }
     
     return response.status(200).json({ 

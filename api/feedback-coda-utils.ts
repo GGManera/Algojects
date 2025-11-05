@@ -48,9 +48,9 @@ export async function callCodaApi<T>(method: string, path: string, body?: any): 
  * Returns the JSON string and the Coda Row ID.
  */
 export async function fetchFormStructureFromCoda(): Promise<{ jsonString: string; rowId: string }> {
-  const CODA_FORM_STRUCTURE_TABLE_ID = process.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID;
+  const CODA_FORM_STRUCTURE_TABLE_ID = process.env.CODA_FORM_STRUCTURE_TABLE_ID;
   if (!CODA_FORM_STRUCTURE_TABLE_ID) {
-    throw new Error('VITE_CODA_FORM_STRUCTURE_TABLE_ID is not configured.');
+    throw new Error('CODA_FORM_STRUCTURE_TABLE_ID is not configured.');
   }
 
   // Fetch all rows (assuming only one row holds the master structure)
@@ -74,9 +74,9 @@ export async function fetchFormStructureFromCoda(): Promise<{ jsonString: string
  * Updates the Form Structure JSON in Coda.
  */
 export async function updateFormStructureInCoda(newJsonString: string, rowId: string): Promise<void> {
-  const CODA_FORM_STRUCTURE_TABLE_ID = process.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID;
+  const CODA_FORM_STRUCTURE_TABLE_ID = process.env.CODA_FORM_STRUCTURE_TABLE_ID;
   if (!CODA_FORM_STRUCTURE_TABLE_ID) {
-    throw new Error('VITE_CODA_FORM_STRUCTURE_TABLE_ID is not configured.');
+    throw new Error('CODA_FORM_STRUCTURE_TABLE_ID is not configured.');
   }
 
   const cells = [
@@ -94,13 +94,12 @@ export async function updateFormStructureInCoda(newJsonString: string, rowId: st
  * Writes a new user response to the Form Responses table.
  */
 export async function writeFormResponseToCoda(responseJson: any): Promise<void> {
-  const CODA_FORM_RESPONSES_TABLE_ID = process.env.VITE_CODA_FORM_RESPONSES_TABLE_ID;
+  const CODA_FORM_RESPONSES_TABLE_ID = process.env.CODA_FORM_RESPONSES_TABLE_ID;
   if (!CODA_FORM_RESPONSES_TABLE_ID) {
-    throw new Error('VITE_CODA_FORM_RESPONSES_TABLE_ID is not configured.');
+    throw new Error('CODA_FORM_RESPONSES_TABLE_ID is not configured.');
   }
 
   // Assuming the Form Responses table has a column named 'Response JSON' (c-ftTZjCuByP is a placeholder, but we must use a known column ID)
-  // For simplicity, let's assume the target column ID is 'c-response-json' and the Coda table is configured to accept a single JSON string column.
   const CODA_COLUMN_RESPONSE_JSON = 'c-response-json'; 
 
   const postBody = {

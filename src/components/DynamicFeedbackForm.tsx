@@ -12,8 +12,8 @@ import { useWallet } from '@txnlab/use-wallet-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { cn } from '@/lib/utils';
 import { CollapsibleContent } from './CollapsibleContent';
-import { ChevronDown, ChevronUp, Info } from 'lucide-react'; // IMPORT MISSING ICONS
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Adicionado: Importação do componente Alert
+import { ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface DynamicFeedbackFormProps {
   schema: FormStructure;
@@ -169,7 +169,7 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
   return (
     <Card className="w-full max-w-3xl mx-auto mt-8 bg-card">
       <CardHeader>
-        <CardTitle className="gradient-text">{schema.form_id} ({schema.feedback_version})</CardTitle>
+        <CardTitle className="gradient-text">AlgoJects Feedback Form - V.{schema.version}</CardTitle>
         <CardDescription>{schema.metadata.description}</CardDescription>
       </CardHeader>
       <CardContent>

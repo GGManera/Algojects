@@ -12,9 +12,10 @@ import { useWallet } from '@txnlab/use-wallet-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { cn } from '@/lib/utils';
 import { CollapsibleContent } from './CollapsibleContent';
-import { ChevronDown, ChevronUp, Info, Star } from 'lucide-react'; // Adicionado Star aqui
+import { ChevronDown, ChevronUp, Info, Star } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { RatingInput } from './RatingInput'; // Importado o novo componente RatingInput
+import { RatingInput } from './RatingInput';
+import { SingleChoiceCardGroup } from './SingleChoiceCardGroup'; // Importado o novo componente
 
 interface DynamicFeedbackFormProps {
   schema: FormStructure;
@@ -51,16 +52,11 @@ const QuestionRenderer = ({ question, value, onChange }: { question: any, value:
       return (
         <div className="space-y-2">
           <Label>{question.question}</Label>
-          <Select value={value || ''} onValueChange={onChange}>
-            <SelectTrigger className="bg-muted/50">
-              <SelectValue placeholder="Select an option" />
-            </SelectTrigger>
-            <SelectContent>
-              {question.options.map((option: string) => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SingleChoiceCardGroup
+            options={question.options || []}
+            value={value || null}
+            onChange={onChange}
+          />
         </div>
       );
     default:

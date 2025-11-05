@@ -73,22 +73,20 @@ export async function createFormStructureClient(newJsonDraft: FormStructure): Pr
   // Remove rowId before stringifying, as it's an internal Coda ID not part of the schema
   const { rowId, ...draftWithoutRowId } = newJsonDraft;
   
-  // Normalize the JSON string and REMOVE PRETTY PRINTING to reduce payload size and complexity
-  // We still sort keys for consistent hashing, but use no spacing (null, 0)
-  const sortedKeys = Object.keys(draftWithoutRowId).sort();
-  const newJsonString = JSON.stringify(draftWithoutRowId, sortedKeys); // Use standard stringify without pretty print
+  // IMPORTANT FIX: Remove the `sortedKeys` parameter from JSON.stringify.
+  // Using `sortedKeys` here was causing only top-level properties to be included,
+  // making nested objects like `metadata`, `governance`, `modules` appear empty.
+  // We want a full, deep stringification of the entire object.
+  const newJsonString = JSON.stringify(draftWithoutRowId); // <--- THE CRITICAL CHANGE IS HERE
   
   const response = await retryFetch('/api/form-structure', {
     method: 'POST', // CHANGED to POST
     headers: { 'Content-Type': 'application/json' },
-    body: newJsonString, // <--- ALTERADO: Envia a string JSON diretamente
+    body: newJsonString, // Envia a string JSON diretamente
   }, 5);
 
   // No need to call response.json() here, as retryFetch will throw on error
   // and for success, the server just returns a message, not data to be parsed.
-  // If you needed to read a success message, you would do:
-  // const successData = await response.json();
-  // console.log(successData.message);
 }
 
 /**
@@ -98,7 +96,7 @@ export async function createFormStructureClient(newJsonDraft: FormStructure): Pr
 export function generateLocalHash(jsonDraft: FormStructure): string {
     // Remove rowId before hashing
     const { rowId, ...draftWithoutRowId } = jsonDraft;
-    // Use the same normalization logic as the server (if it fosse still running)
-    const normalizedJsonString = JSON.stringify(draftWithoutRowId, Object.keys(draftWithoutRowId).sort()); // Use compact stringify for hashing
+    // For consistent hashing, sorting keys is still appropriate here.
+    const normalizedJsonString = JSON.stringify(draftWithoutRowId, Object.keys(draftWithoutRowId).sort());
     return sha256(normalizedJsonString);
 }

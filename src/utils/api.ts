@@ -8,24 +8,22 @@ export async function retryFetch(
     try {
       const response = await fetch(input, init);
       if (!response.ok) {
-        // Read body only on error to log it, then throw
-        const errorText = await response.text();
-        console.warn(`Fetch attempt ${i + 1} failed with status ${response.status}: ${errorText}. Retrying...`);
+        // Read body only on error to log it, then throw a new Error with the content
+        const errorBody = await response.text(); // Consume the body here
+        const errorMessage = `Failed to fetch after ${i + 1} attempts: ${response.status} - ${errorBody}`;
+        console.warn(`Fetch attempt ${i + 1} failed: ${errorMessage}. Retrying...`);
         if (i < retries - 1) {
           await new Promise(res => setTimeout(res, delay));
         } else {
-          // Throw an Error object with the server's message
-          throw new Error(`Failed to fetch after ${retries} attempts: ${response.status} - ${errorText}`);
+          throw new Error(errorMessage); // Throw the error with the consumed body content
         }
       }
-      // If response is OK, return the response object directly without consuming the body stream
-      return response;
+      return response; // If OK, return the response object
     } catch (error) {
       console.error(`Fetch attempt ${i + 1} caught an error:`, error);
       if (i < retries - 1) {
         await new Promise(res => setTimeout(res, delay));
       } else {
-        // Re-throw the original error or a new one if it's not an instance of Error
         throw new Error(`Failed to fetch after ${retries} attempts: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }

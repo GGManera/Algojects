@@ -44,7 +44,8 @@ export function AnimatedTitle({ className, isInsideCarousel = false }: AnimatedT
     <div className={cn(
       "flex items-center justify-center text-3xl sm:text-4xl md:text-6xl font-bold tracking-wide font-heading whitespace-nowrap", // Adjusted text sizes
       "leading-relaxed md:leading-loose",
-      // Removed: !isInsideCarousel && "min-w-[300px] sm:min-w-[500px] md:min-w-[800px]", 
+      // Increased min-width to ensure enough space is reserved for the expanded title
+      !isInsideCarousel && "min-w-[300px] sm:min-w-[500px] md:min-w-[800px]", 
       className
     )}>
       <span className="gradient-text inline-block">

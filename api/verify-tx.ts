@@ -35,21 +35,17 @@ export default async function handler(
     const txData = await txResponse.json();
     const transaction = txData.transaction;
 
-    // 2. Basic checks
-    const sender = transaction.sender;
-    const noteBase64 = transaction.note;
-    const receiver = transaction['payment-transaction']?.receiver;
+    // 2. Basic checks (omitted for brevity, assuming they pass)
 
-    if (sender !== ADMIN_WALLET) {
+    if (transaction.sender !== ADMIN_WALLET) {
       return response.status(403).json({ error: 'Transaction sender does not match authorized_wallet.' });
     }
     
-    // Check if it's a payment transaction to the project wallet or self-transfer (if project wallet is admin wallet)
-    if (transaction['tx-type'] !== 'pay' || (receiver !== PROJECT_WALLET && receiver !== ADMIN_WALLET)) {
+    if (transaction['tx-type'] !== 'pay' || (transaction['payment-transaction']?.receiver !== PROJECT_WALLET && transaction['payment-transaction']?.receiver !== ADMIN_WALLET)) {
         return response.status(400).json({ error: 'Transaction must be a payment to the project wallet or a self-transfer by the admin.' });
     }
 
-    // 3. Verify hash in note
+    const noteBase64 = transaction.note;
     if (!noteBase64) {
       return response.status(400).json({ error: 'Transaction note is missing.' });
     }
@@ -57,27 +53,35 @@ export default async function handler(
     const noteBytes = Buffer.from(noteBase64, 'base64');
     const noteText = new TextDecoder('utf-8').decode(noteBytes);
     
-    // The note should contain the hash exactly, possibly with some prefix/suffix
     if (!noteText.includes(expectedHash)) {
-      console.log(`Expected Hash: ${expectedHash}`);
-      console.log(`Note Content: ${noteText}`);
       return response.status(400).json({ error: 'Transaction note does not contain the expected hash.' });
     }
 
     // 4. Transaction is verified. Now update Coda.
     
-    // Fetch current structure to get the rowId
+    console.log("[VerifyTx] Transaction verified. Fetching Coda rowId...");
     const { rowId } = await fetchFormStructureFromCoda();
+    console.log(`[VerifyTx] Coda rowId fetched: ${rowId}. Attempting internal PUT to update schema...`);
     
-    // Call the internal PUT endpoint to update the Coda cell
-    const updateResponse = await fetch(`/api/form-structure`, {
+    // --- CRITICAL FIX: Use absolute URL for internal fetch ---
+    const host = request.headers.host;
+    const internalUrl = `http://${host}/api/form-structure`;
+    console.log(`[VerifyTx] Internal PUT URL: ${internalUrl}`);
+    
+    const updateResponse = await fetch(internalUrl, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            // Ensure we pass the host header for the emulator to route correctly
+            'Host': host, 
+        },
         body: JSON.stringify({ 
             newJsonString: JSON.stringify(newJsonDraft, Object.keys(newJsonDraft).sort(), 2), // Re-normalize before sending to Coda
             rowId 
         }),
     });
+
+    console.log(`[VerifyTx] Internal PUT response status: ${updateResponse.status}`);
 
     if (!updateResponse.ok) {
         const updateErrorText = await updateResponse.text();
@@ -92,6 +96,7 @@ export default async function handler(
         return response.status(500).json({ error: `Internal Coda Update Failed: ${updateError.error}` });
     }
     
+    console.log("[VerifyTx] Internal PUT successful. Returning 200.");
     return response.status(200).json({ 
         message: 'Transaction verified and Form Structure updated successfully.',
         txid: txid,

@@ -1,14 +1,71 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Constants for the Form Structure table
-const CODA_FORM_STRUCTURE_COLUMN_JSON = 'c-ftTZjCuByP'; // Assuming a single column for the JSON content
+let CODA_FORM_STRUCTURE_COLUMN_JSON: string; 
 
 interface CodaRow {
   id: string; // Coda's internal row ID
   values: {
-    [CODA_FORM_STRUCTURE_COLUMN_JSON]: string;
+    [key: string]: string; // Use index signature since the key is dynamic
   };
 }
+
+// Fallback structure if the Coda cell is empty
+const FALLBACK_FORM_STRUCTURE = {
+  form_id: "AlgoJects_Feedback_V1",
+  version: "1.0.0",
+  feedback_version: "1",
+  authorized_wallet: process.env.VITE_FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET",
+  project_wallet: process.env.VITE_FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET",
+  hash_verification_required: true,
+  metadata: {
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    description: "Initial dynamic feedback form structure. Please edit and commit via the Admin Editor.",
+  },
+  governance: {
+    enabled: false,
+    threshold_min_responses: 10,
+    reward_eligibility: {
+      min_posts: 1,
+      min_balance_algo: 10,
+      reward_amount_algo: 0.1,
+    },
+    versioning_policy: "MAJOR_MINOR",
+  },
+  modules: [
+    {
+      id: "m1",
+      title: "General Experience",
+      description: "Rate your overall experience with AlgoJects.",
+      questions: [
+        {
+          id: "q1",
+          type: "rating",
+          question: "Overall satisfaction with the platform?",
+          scale: 5,
+          required: true,
+        },
+        {
+          id: "q2",
+          type: "text",
+          question: "Any suggestions for improvement?",
+          required: false,
+        }
+      ]
+    }
+  ],
+  rendering_rules: {},
+  audit: {
+    last_edit: {
+      hash: null,
+      txid: null,
+      editor_wallet: null,
+      timestamp: null,
+    },
+  },
+};
+
 
 /**
  * Generic Coda API caller for the feedback system.
@@ -50,25 +107,31 @@ export async function callCodaApi<T>(method: string, path: string, body?: any): 
  */
 export async function fetchFormStructureFromCoda(): Promise<{ jsonString: string; rowId: string }> {
   const CODA_FORM_STRUCTURE_TABLE_ID = process.env.CODA_FORM_STRUCTURE_TABLE_ID;
-  if (!CODA_FORM_STRUCTURE_TABLE_ID) {
-    throw new Error('CODA_FORM_STRUCTURE_TABLE_ID is not configured.');
+  CODA_FORM_STRUCTURE_COLUMN_JSON = process.env.CODA_FORM_STRUCTURE_COLUMN_ID || '';
+
+  if (!CODA_FORM_STRUCTURE_TABLE_ID || !CODA_FORM_STRUCTURE_COLUMN_JSON) {
+    throw new Error('CODA_FORM_STRUCTURE_TABLE_ID or CODA_FORM_STRUCTURE_COLUMN_ID is not configured.');
   }
 
   // Fetch all rows (assuming only one row holds the master structure)
   const data = await callCodaApi<{ items: CodaRow[] }>('GET', `/tables/${CODA_FORM_STRUCTURE_TABLE_ID}/rows`);
 
   if (!data.items || data.items.length === 0) {
-    throw new Error('Form Structure table is empty or misconfigured.');
+    // If the table is completely empty, we still throw an error, as the setup is incomplete.
+    throw new Error('Form Structure table is empty or misconfigured (no rows found).');
   }
 
   const masterRow = data.items[0];
-  const jsonString = masterRow.values[CODA_FORM_STRUCTURE_COLUMN_JSON];
+  let jsonString = masterRow.values[CODA_FORM_STRUCTURE_COLUMN_JSON];
+  const rowId = masterRow.id;
 
-  if (!jsonString) {
-    throw new Error('Form Structure JSON column is empty.');
+  if (!jsonString || jsonString.trim() === '') {
+    console.warn("[Coda Feedback] Form Structure JSON column is empty. Returning fallback structure.");
+    // If the column is empty, return the fallback structure as a string
+    jsonString = JSON.stringify(FALLBACK_FORM_STRUCTURE);
   }
 
-  return { jsonString, rowId: masterRow.id };
+  return { jsonString, rowId };
 }
 
 /**
@@ -76,12 +139,14 @@ export async function fetchFormStructureFromCoda(): Promise<{ jsonString: string
  */
 export async function updateFormStructureInCoda(newJsonString: string, rowId: string): Promise<void> {
   const CODA_FORM_STRUCTURE_TABLE_ID = process.env.CODA_FORM_STRUCTURE_TABLE_ID;
-  if (!CODA_FORM_STRUCTURE_TABLE_ID) {
-    throw new Error('CODA_FORM_STRUCTURE_TABLE_ID is not configured.');
+  const columnId = process.env.CODA_FORM_STRUCTURE_COLUMN_ID;
+
+  if (!CODA_FORM_STRUCTURE_TABLE_ID || !columnId) {
+    throw new Error('CODA_FORM_STRUCTURE_TABLE_ID or CODA_FORM_STRUCTURE_COLUMN_ID is not configured.');
   }
 
   const cells = [
-    { column: CODA_FORM_STRUCTURE_COLUMN_JSON, value: newJsonString },
+    { column: columnId, value: newJsonString },
   ];
 
   const putBody = {
@@ -101,6 +166,7 @@ export async function writeFormResponseToCoda(responseJson: any): Promise<void> 
   }
 
   // Assuming the Form Responses table has a column named 'Response JSON' (c-ftTZjCuByP is a placeholder, but we must use a known column ID)
+  // Since this is a new table, we need a placeholder. Let's use a generic one and assume the user will map it.
   const CODA_COLUMN_RESPONSE_JSON = 'c-response-json'; 
 
   const postBody = {

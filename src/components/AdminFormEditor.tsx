@@ -60,6 +60,32 @@ const FALLBACK_FORM_STRUCTURE_TEMPLATE: Omit<FormStructure, 'rowId'> & { rowId?:
   },
 };
 
+/**
+ * Ensures the schema object has all necessary nested properties initialized as objects or arrays.
+ */
+const normalizeSchema = (schema: FormStructure): FormStructure => {
+    const normalized = { ...schema };
+    
+    // Ensure top-level objects exist
+    normalized.metadata = normalized.metadata || {};
+    normalized.governance = normalized.governance || {};
+    normalized.audit = normalized.audit || { last_edit: {} };
+    normalized.audit.last_edit = normalized.audit.last_edit || {};
+    normalized.rendering_rules = normalized.rendering_rules || {};
+    
+    // Ensure modules is an array
+    normalized.modules = Array.isArray(normalized.modules) ? normalized.modules : [];
+    
+    // Ensure governance nested objects exist
+    normalized.governance.reward_eligibility = normalized.governance.reward_eligibility || {};
+    
+    // Ensure fixed wallets are set from environment if missing in schema
+    normalized.authorized_wallet = normalized.authorized_wallet || import.meta.env.VITE_FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET";
+    normalized.project_wallet = normalized.project_wallet || import.meta.env.VITE_FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET";
+
+    return normalized;
+};
+
 
 export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEditorProps) {
   const { activeAddress } = useWallet();
@@ -73,7 +99,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   }, []);
 
   // 1. Inicialização do estado com clone profundo
-  const [structuredDraft, setStructuredDraft] = useState<FormStructure>(() => deepCloneSchema(currentSchema));
+  const [structuredDraft, setStructuredDraft] = useState<FormStructure>(() => normalizeSchema(deepCloneSchema(currentSchema)));
   
   // State for JSON editing (synced with structuredDraft)
   const [jsonDraft, setJsonDraft] = useState(JSON.stringify(currentSchema, null, 2));
@@ -101,12 +127,13 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     
     if (isSchemaIncomplete && currentSchema.rowId) {
         // Se incompleto mas temos rowId, inicializa com o template de fallback
-        const safeDraft = { ...FALLBACK_FORM_STRUCTURE_TEMPLATE, rowId: currentSchema.rowId } as FormStructure;
+        const safeDraft = normalizeSchema({ ...FALLBACK_FORM_STRUCTURE_TEMPLATE, rowId: currentSchema.rowId } as FormStructure);
         setStructuredDraft(safeDraft);
         setJsonDraft(JSON.stringify(safeDraft, null, 2));
     } else if (currentSchema.rowId) {
-        // Se completo e tem rowId, usa o esquema clonado
-        setStructuredDraft(clonedSchema);
+        // Se completo e tem rowId, usa o esquema clonado e normalizado
+        const normalizedDraft = normalizeSchema(clonedSchema);
+        setStructuredDraft(normalizedDraft);
         setJsonDraft(JSON.stringify(currentSchema, null, 2));
     }
   }, [currentSchema, deepCloneSchema]);
@@ -116,7 +143,10 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     try {
       // Use o structuredDraft completo (sem rowId) para serialização
       const { rowId, ...draftWithoutRowId } = structuredDraft;
-      setJsonDraft(JSON.stringify(draftWithoutRowId, null, 2));
+      // Normalize again just before stringify to ensure no empty objects sneak in from editing
+      const normalizedDraft = normalizeSchema(draftWithoutRowId as FormStructure);
+      
+      setJsonDraft(JSON.stringify(normalizedDraft, null, 2));
       setIsJsonValid(true);
     } catch (e) {
       console.error("Error syncing structuredDraft to jsonDraft:", e);
@@ -130,8 +160,18 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     try {
       const parsed = JSON.parse(newJson);
       
-      // Se o JSON for válido, substitua o structuredDraft pelo objeto completo
-      setStructuredDraft(parsed);
+      // Merge parsed JSON with existing structuredDraft to ensure all properties are kept
+      const mergedDraft: FormStructure = {
+          ...structuredDraft, // Start with the current full draft
+          ...parsed,          // Overwrite with parsed top-level fields
+          // Ensure nested objects are also merged if they exist in both
+          metadata: { ...structuredDraft.metadata, ...parsed.metadata },
+          governance: { ...structuredDraft.governance, ...parsed.governance },
+          audit: { ...structuredDraft.audit, ...parsed.audit },
+          modules: parsed.modules || structuredDraft.modules, // Modules must be replaced entirely if present
+      };
+
+      setStructuredDraft(normalizeSchema(mergedDraft)); // Normalize the merged result
       setIsJsonValid(true);
     } catch (e) {
       setIsJsonValid(false);
@@ -183,26 +223,24 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
       return null;
     }
     
-    // 1. Generate local hash
-    const localHash = generateLocalHash(draftToCommit);
+    // 1. Normalize the draft one last time to ensure integrity
+    const normalizedDraft = normalizeSchema(draftToCommit);
+
+    // 2. Generate local hash
+    const localHash = generateLocalHash(normalizedDraft);
     
-    // 2. Increment version number (e.g., "1.3" -> "1.4")
+    // 3. Increment version number (e.g., "1.3" -> "1.4")
     const currentVersion = parseFloat(currentSchema.version || '1.0'); // Use currentSchema version as base
     const newVersion = (Math.floor(currentVersion * 10) + 1) / 10;
 
-    // 3. Construir o finalDraft usando o structuredDraft completo
-    // CRITICAL: We use the structuredDraft (which holds the user's edits) but overwrite the version and audit fields.
+    // 4. Construir o finalDraft
     const finalDraft: FormStructure = {
-      ...draftToCommit,
+      ...normalizedDraft,
       version: newVersion.toFixed(1), // Incremented version
       metadata: {
-          ...draftToCommit.metadata,
+          ...normalizedDraft.metadata,
           updated_at: new Date().toISOString(),
       },
-      // Garantir que as propriedades aninhadas sejam copiadas explicitamente
-      governance: draftToCommit.governance,
-      modules: draftToCommit.modules,
-      rendering_rules: draftToCommit.rendering_rules,
       audit: {
         last_edit: {
           hash: localHash,
@@ -211,13 +249,10 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
           timestamp: new Date().toISOString(),
         }
       },
-      // Garantir que os campos fixos estejam presentes
-      authorized_wallet: draftToCommit.authorized_wallet || adminWallet,
-      project_wallet: draftToCommit.project_wallet || projectWallet,
     };
 
     return finalDraft;
-  }, [structuredDraft, isJsonValid, activeAddress, adminWallet, projectWallet, currentSchema.version]); // Added currentSchema.version dependency
+  }, [structuredDraft, isJsonValid, activeAddress, currentSchema.version]);
 
   const handlePrepareCommit = () => {
     const finalDraft = prepareDraftForCommit();

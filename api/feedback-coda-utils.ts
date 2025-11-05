@@ -425,15 +425,10 @@ export async function createFormStructureInCoda(newJsonString: string): Promise<
     throw new Error('VITE_CODA_FORM_STRUCTURE_TABLE_ID or VITE_CODA_FORM_STRUCTURE_COLUMN_ID is not configured.');
   }
 
-  let parsedJson: any;
-  try {
-    parsedJson = JSON.parse(newJsonString); // Parse the string back to an object
-  } catch (e) {
-    throw new Error(`Failed to parse newJsonString before sending to Coda: ${e}`);
-  }
-
+  // We no longer parse newJsonString here. It's already a string containing the JSON.
+  // We pass it directly as the value for the Coda cell.
   const cells = [
-    { column: columnId, value: parsedJson }, // Pass the object directly
+    { column: columnId, value: newJsonString }, // Pass the JSON string directly
   ];
 
   const postBody = {
@@ -442,7 +437,7 @@ export async function createFormStructureInCoda(newJsonString: string): Promise<
     ],
   };
 
-  console.log("[Coda Feedback] Sending to Coda API with parsed JSON object:", JSON.stringify(postBody, null, 2)); // NEW LOG
+  console.log("[Coda Feedback] Sending to Coda API with postBody:", JSON.stringify(postBody, null, 2)); // NEW LOG: Log the full postBody
 
   await callCodaApi('POST', `/tables/${CODA_FORM_STRUCTURE_TABLE_ID}/rows`, postBody);
 }

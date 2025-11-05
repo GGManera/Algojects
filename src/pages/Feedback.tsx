@@ -37,27 +37,17 @@ const FeedbackPage = () => {
       
       // Attempt to parse the error message for debug info
       const match = errorMessage.match(/Coda API responded with status (\d+): (.*)/);
-      if (match) {
-        setDebugInfo({
-          status: match[1],
-          rawError: match[2],
-          env: {
-            CODA_FEEDBACK_DOC_ID: process.env.CODA_FEEDBACK_DOC_ID, // Note: This is read from process.env in the server emulator
-            VITE_CODA_FORM_STRUCTURE_TABLE_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID,
-            VITE_CODA_FORM_STRUCTURE_COLUMN_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID,
-          }
-        });
-      } else {
-        setDebugInfo({
-          status: 'Unknown',
-          rawError: errorMessage,
-          env: {
-            CODA_FEEDBACK_DOC_ID: process.env.CODA_FEEDBACK_DOC_ID,
-            VITE_CODA_FORM_STRUCTURE_TABLE_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID,
-            VITE_CODA_FORM_STRUCTURE_COLUMN_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID,
-          }
-        });
-      }
+      
+      // Use import.meta.env for client-side access
+      setDebugInfo({
+        status: match ? match[1] : 'Unknown',
+        rawError: match ? match[2] : errorMessage,
+        env: {
+          VITE_CODA_FEEDBACK_DOC_ID: import.meta.env.VITE_CODA_FEEDBACK_DOC_ID,
+          VITE_CODA_FORM_STRUCTURE_TABLE_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID,
+          VITE_CODA_FORM_STRUCTURE_COLUMN_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID,
+        }
+      });
     } finally {
       setLoading(false);
     }
@@ -98,11 +88,11 @@ const FeedbackPage = () => {
                 <p className="font-semibold text-sm">API Status: <span className="text-red-400">{debugInfo.status}</span></p>
                 <p className="font-semibold text-sm">Raw Error: <span className="font-mono text-xs break-all">{debugInfo.rawError}</span></p>
                 <div className="pt-2 space-y-1 text-xs font-mono">
-                  <p>CODA_FEEDBACK_DOC_ID: {debugInfo.env.CODA_FEEDBACK_DOC_ID || 'MISSING'}</p>
+                  <p>VITE_CODA_FEEDBACK_DOC_ID: {debugInfo.env.VITE_CODA_FEEDBACK_DOC_ID || 'MISSING'}</p>
                   <p>VITE_CODA_FORM_STRUCTURE_TABLE_ID: {debugInfo.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID || 'MISSING'}</p>
                   <p>VITE_CODA_FORM_STRUCTURE_COLUMN_ID: {debugInfo.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID || 'MISSING'}</p>
                 </div>
-                <p className="text-xs pt-2 flex items-center gap-1"><Info className="h-3 w-3" /> Ensure CODA_FEEDBACK_API_KEY has access to CODA_FEEDBACK_DOC_ID.</p>
+                <p className="text-xs pt-2 flex items-center gap-1"><Info className="h-3 w-3" /> Ensure CODA_FEEDBACK_API_KEY has access to VITE_CODA_FEEDBACK_DOC_ID.</p>
               </AlertDescription>
             </Alert>
           )}

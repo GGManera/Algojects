@@ -6,6 +6,7 @@ import projectDetailsHandler from "./api/project-details";
 import alloProxyHandler from "./api/allo-proxy";
 import formStructureHandler from "./api/form-structure";
 import formResponsesHandler from "./api/form-responses";
+import feedbackResponsesStatsHandler from "./api/feedback-responses-stats"; // NEW: Import the new handler
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default defineConfig(({ mode }) => {
@@ -68,6 +69,7 @@ export default defineConfig(({ mode }) => {
                 '/api/allo-proxy': alloProxyHandler,
                 '/api/form-structure': formStructureHandler,
                 '/api/form-responses': formResponsesHandler,
+                '/api/feedback-responses-stats': feedbackResponsesStatsHandler, // NEW: Add the new handler
             };
 
             for (const endpoint in apiMap) {

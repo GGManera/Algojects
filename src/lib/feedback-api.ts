@@ -37,6 +37,15 @@ export interface FormStructure {
   rowId?: string; // NEW: Include rowId in the structure returned by GET
 }
 
+// NEW: Interface for a single feedback response entry
+export interface FeedbackResponseEntry {
+  form_id: string;
+  version: string;
+  feedback_version: string;
+  wallet_address: string;
+  responses: Record<string, any>; // Key-value pairs of questionId to response
+}
+
 /**
  * Fetches the current master form structure JSON.
  */
@@ -99,4 +108,13 @@ export function generateLocalHash(jsonDraft: FormStructure): string {
     // For consistent hashing, sorting keys is still appropriate here.
     const normalizedJsonString = JSON.stringify(draftWithoutRowId, Object.keys(draftWithoutRowId).sort());
     return sha256(normalizedJsonString);
+}
+
+/**
+ * NEW: Fetches all feedback responses.
+ */
+export async function fetchFormResponses(): Promise<FeedbackResponseEntry[]> {
+  const response = await retryFetch('/api/feedback-responses-stats', undefined, 5);
+  const data = await response.json();
+  return data.responses;
 }

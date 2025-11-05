@@ -18,7 +18,8 @@ import { AppDisplayModeProvider } from "./contexts/AppDisplayModeContext";
 import { HeroLogoVisibilityProvider } from "./contexts/HeroLogoVisibilityContext";
 import { NavigationHistoryProvider } from "./contexts/NavigationHistoryContext";
 import NewWebsite from "./pages/NewWebsite";
-import FeedbackPage from "./pages/Feedback"; // Import the new Feedback page
+import FeedbackPage from "./pages/Feedback";
+import FeedbackStatsPage from "./pages/FeedbackStats"; // Import the new FeedbackStats page
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,8 @@ const App = () => {
                     <Routes>
                       {/* New Feedback Route - outside the main Layout */}
                       <Route path="/feedback" element={<FeedbackPage />} />
+                      {/* New Feedback Stats Route - outside the main Layout */}
+                      <Route path="/feedbackstats" element={<FeedbackStatsPage />} />
                       
                       {/* Main Application Routes */}
                       <Route path="/*" element={<Layout><NewWebsite /></Layout>} />

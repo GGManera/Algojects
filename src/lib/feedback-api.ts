@@ -75,7 +75,7 @@ export async function submitFormResponse(response: any): Promise<void> {
     body: JSON.stringify(response),
   }, 5);
 
-  const responseText = await responseApi.text();
+  const responseText = await responseApi.text(); // Read body once
 
   if (!responseApi.ok) {
     let errorText = `Failed to submit response: ${responseApi.status}`;

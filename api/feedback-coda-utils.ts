@@ -422,13 +422,12 @@ export async function updateFormStructureInCoda(newJsonString: string, rowId: st
  */
 export async function writeFormResponseToCoda(responseJson: any): Promise<void> {
   const CODA_FORM_RESPONSES_TABLE_ID = process.env.VITE_CODA_FORM_RESPONSES_TABLE_ID;
-  if (!CODA_FORM_RESPONSES_TABLE_ID) {
-    throw new Error('VITE_CODA_FORM_RESPONSES_TABLE_ID is not configured.');
-  }
+  const CODA_COLUMN_RESPONSE_JSON = process.env.VITE_CODA_FORM_RESPONSES_COLUMN_ID; // NEW: Use env variable
 
-  // Assuming the Form Responses table has a column named 'Response JSON' (c-ftTZjCuByP is a placeholder, but we must use a known column ID)
-  // Since this is a new table, we need a placeholder. Let's use a generic one and assume the user will map it.
-  const CODA_COLUMN_RESPONSE_JSON = 'c-response-json'; 
+  if (!CODA_FORM_RESPONSES_TABLE_ID || !CODA_COLUMN_RESPONSE_JSON) {
+    // Throw a clear error if the environment variables are missing
+    throw new Error('VITE_CODA_FORM_RESPONSES_TABLE_ID or VITE_CODA_FORM_RESPONSES_COLUMN_ID is not configured. Please check .env.local.');
+  }
 
   const postBody = {
     rows: [

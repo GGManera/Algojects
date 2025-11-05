@@ -12,8 +12,9 @@ import { useWallet } from '@txnlab/use-wallet-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { cn } from '@/lib/utils';
 import { CollapsibleContent } from './CollapsibleContent';
-import { ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { ChevronDown, ChevronUp, Info, Star } from 'lucide-react'; // Adicionado Star aqui
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { RatingInput } from './RatingInput'; // Importado o novo componente RatingInput
 
 interface DynamicFeedbackFormProps {
   schema: FormStructure;
@@ -27,14 +28,11 @@ const QuestionRenderer = ({ question, value, onChange }: { question: any, value:
     case 'rating':
       return (
         <div className="space-y-2">
-          <Label>{question.question} (Scale: 1-{question.scale})</Label>
-          <Input
-            type="number"
-            min={1}
-            max={question.scale}
-            value={value || ''}
-            onChange={(e) => onChange(parseInt(e.target.value) || null)}
-            className="bg-muted/50"
+          <Label>{question.question}</Label>
+          <RatingInput
+            scale={question.scale || 5} // Default to 5 if scale is not defined
+            value={value}
+            onChange={onChange}
           />
         </div>
       );

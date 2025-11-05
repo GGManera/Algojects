@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { QuestionEditor } from './QuestionEditor';
 import { cn } from '@/lib/utils';
+import { CollapsibleContent } from './CollapsibleContent'; // IMPORT MISSING COMPONENT
 
 interface Module {
   id: string;

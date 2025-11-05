@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CollapsibleContent } from './CollapsibleContent';
+import { CollapsibleContent } from './CollapsibleContent'; // IMPORT MISSING COMPONENT
 
 interface Question {
   id: string;

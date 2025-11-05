@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { callCodaApi } from './feedback-coda-utils'; // Re-use the existing Coda API caller
+import { callCodaApi } from './feedback-coda-utils.js'; // Adicionado .js
 
 interface CodaRow {
   id: string; // Coda's internal row ID

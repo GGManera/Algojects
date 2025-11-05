@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { writeFormResponseToCoda } from './feedback-coda-utils';
+import { writeFormResponseToCoda } from './feedback-coda-utils.js'; // Adicionado .js
 
 export default async function handler(
   request: VercelRequest,

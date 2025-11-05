@@ -35,7 +35,7 @@ export function HeroSection({ heroLogoRef, isInsideCarousel, className, focusedI
   }, [handleToggleExpand, registerItem, isActive]);
 
   return (
-    <div className={cn("text-center py-8 md:pb-12", className)}>
+    <div className={cn("text-center py-8 md:pb-12 relative", className)}> {/* Added relative here */}
       <div
         ref={heroLogoRef}
         className={cn(
@@ -55,7 +55,15 @@ export function HeroSection({ heroLogoRef, isInsideCarousel, className, focusedI
           className="w-48 md:w-64 h-auto mx-auto"
         />
       </div>
-      <AnimatedTitle className="mt-4 mb-4" isInsideCarousel={isInsideCarousel} />
+      
+      {/* NEW: Container to hold the AnimatedTitle and center it absolutely */}
+      <div className="absolute left-1/2 transform -translate-x-1/2 w-full" style={{ top: 'calc(50% + 16px)' }}>
+        <AnimatedTitle className="mt-4 mb-4" isInsideCarousel={isInsideCarousel} />
+      </div>
+      
+      {/* Placeholder to reserve vertical space for the AnimatedTitle */}
+      <div className="h-16 md:h-24"></div> 
+
       <p className="text-blue-200 mt-[-10px] md:mt-[-30px]">
         Project Review Portal on Algorand
       </p>

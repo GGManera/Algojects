@@ -28,8 +28,11 @@ interface ModuleEditorProps {
 export function ModuleEditor({ module, index, onUpdate, onRemove }: ModuleEditorProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
+  // Ensure questions is always an array
+  const questions = module.questions || [];
+
   const handleUpdateQuestion = (qIndex: number, updatedQuestion: any) => {
-    const newQuestions = module.questions.map((q, i) => i === qIndex ? updatedQuestion : q);
+    const newQuestions = questions.map((q, i) => i === qIndex ? updatedQuestion : q);
     onUpdate(index, { ...module, questions: newQuestions });
   };
 
@@ -40,11 +43,11 @@ export function ModuleEditor({ module, index, onUpdate, onRemove }: ModuleEditor
       question: 'New Question',
       required: false,
     };
-    onUpdate(index, { ...module, questions: [...module.questions, newQuestion] });
+    onUpdate(index, { ...module, questions: [...questions, newQuestion] });
   };
 
   const handleRemoveQuestion = (qIndex: number) => {
-    const newQuestions = module.questions.filter((_, i) => i !== qIndex);
+    const newQuestions = questions.filter((_, i) => i !== qIndex);
     onUpdate(index, { ...module, questions: newQuestions });
   };
 
@@ -81,11 +84,12 @@ export function ModuleEditor({ module, index, onUpdate, onRemove }: ModuleEditor
             />
           </div>
           
-          <h4 className="text-md font-semibold pt-2">Questions ({module.questions.length})</h4>
+          <h4 className="text-md font-semibold pt-2">Questions ({questions.length})</h4>
           <div className="space-y-4 border p-3 rounded-md bg-card">
-            {module.questions.map((question, qIndex) => (
+            {questions.map((question, qIndex) => (
               <QuestionEditor
-                key={question.id}
+                // Use a combination of module ID and question ID for a unique key
+                key={`${module.id}-${question.id}`} 
                 question={question}
                 index={qIndex}
                 onUpdate={handleUpdateQuestion}

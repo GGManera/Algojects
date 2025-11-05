@@ -25,8 +25,8 @@ const FALLBACK_FORM_STRUCTURE_TEMPLATE: Omit<FormStructure, 'rowId'> & { rowId?:
   form_id: "algojects_feedback_master",
   version: "1.3",
   feedback_version: "v1",
-  authorized_wallet: import.meta.env.VITE_FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET",
-  project_wallet: import.meta.env.VITE_FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET",
+  authorized_wallet: import.meta.env.VITE_FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET", // Changed to import.meta.env
+  project_wallet: import.meta.env.VITE_FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET", // Changed to import.meta.env
   hash_verification_required: true,
   metadata: {
     created_at: new Date().toISOString(),
@@ -80,8 +80,8 @@ const normalizeSchema = (schema: FormStructure): FormStructure => {
     normalized.governance.reward_eligibility = normalized.governance.reward_eligibility || {};
     
     // Ensure fixed wallets are set from environment if missing in schema
-    normalized.authorized_wallet = normalized.authorized_wallet || import.meta.env.VITE_FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET";
-    normalized.project_wallet = normalized.project_wallet || import.meta.env.VITE_FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET";
+    normalized.authorized_wallet = normalized.authorized_wallet || import.meta.env.VITE_FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET"; // Changed to import.meta.env
+    normalized.project_wallet = normalized.project_wallet || import.meta.env.VITE_FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET"; // Changed to import.meta.env
 
     return normalized;
 };
@@ -109,8 +109,8 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false); // NEW State for confirmation dialog
   const [finalDraftToConfirm, setFinalDraftToConfirm] = useState<FormStructure | null>(null); // NEW State for final draft
 
-  const adminWallet = import.meta.env.VITE_FEEDBACK_ADMIN_WALLET;
-  const projectWallet = import.meta.env.VITE_FEEDBACK_PROJECT_WALLET;
+  const adminWallet = import.meta.env.VITE_FEEDBACK_ADMIN_WALLET; // Changed to import.meta.env
+  const projectWallet = import.meta.env.VITE_FEEDBACK_PROJECT_WALLET; // Changed to import.meta.env
 
   const isAuthorized = useMemo(() => {
     return activeAddress === adminWallet;
@@ -123,7 +123,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     const clonedSchema = deepCloneSchema(currentSchema);
     
     // Check if the fetched schema is clearly incomplete (e.g., missing modules array)
-    const isSchemaIncomplete = !clonedSchema.modules || clonedSchema.modules.length === 0;
+    const isSchemaIncomplete = !clonedSchema.modules || clonedToJSON.modules.length === 0; // Use clonedToJSON here
     
     if (isSchemaIncomplete && currentSchema.rowId) {
         // Se incompleto mas temos rowId, inicializa com o template de fallback

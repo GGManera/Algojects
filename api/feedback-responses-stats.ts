@@ -12,12 +12,12 @@ export default async function handler(
   request: VercelRequest,
   response: VercelResponse,
 ) {
-  const CODA_FORM_RESPONSES_TABLE_ID = process.env.VITE_CODA_FORM_RESPONSES_TABLE_ID;
-  const CODA_COLUMN_RESPONSE_JSON = process.env.VITE_CODA_FORM_RESPONSES_COLUMN_ID;
+  const CODA_FORM_RESPONSES_TABLE_ID = process.env.CODA_FORM_RESPONSES_TABLE_ID; // Removed VITE_
+  const CODA_COLUMN_RESPONSE_JSON = process.env.CODA_FORM_RESPONSES_COLUMN_ID; // Removed VITE_
 
   if (!CODA_FORM_RESPONSES_TABLE_ID || !CODA_COLUMN_RESPONSE_JSON) {
     return response.status(500).json({ 
-      error: 'Coda Feedback Responses Table ID or Column ID is not configured. Please check environment variables (VITE_CODA_FORM_RESPONSES_TABLE_ID/VITE_CODA_FORM_RESPONSES_COLUMN_ID).' 
+      error: 'Coda Feedback Responses Table ID or Column ID is not configured. Please check environment variables (CODA_FORM_RESPONSES_TABLE_ID/CODA_FORM_RESPONSES_COLUMN_ID).' // Updated error message
     });
   }
 

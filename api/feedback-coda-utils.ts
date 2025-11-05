@@ -1,8 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Constants for the Form Structure table
-let CODA_FORM_STRUCTURE_COLUMN_JSON: string; 
-
 interface CodaRow {
   id: string; // Coda's internal row ID
   values: {
@@ -15,8 +12,8 @@ const FALLBACK_FORM_STRUCTURE = {
   "form_id": "algojects_feedback_master",
   "version": "1.3",
   "feedback_version": "v1",
-  "authorized_wallet": process.env.VITE_FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET",
-  "project_wallet": process.env.VITE_FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET",
+  "authorized_wallet": process.env.FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET", // Changed to non-VITE_
+  "project_wallet": process.env.FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET", // Changed to non-VITE_
   "hash_verification_required": true,
   "metadata": {
     "created_at": "2025-11-05T00:00:00Z",
@@ -332,11 +329,11 @@ const FALLBACK_FORM_STRUCTURE = {
 export async function callCodaApi<T>(method: string, path: string, body?: any): Promise<T> {
   // Use dedicated feedback keys (NON-VITE_ prefixed for security)
   const CODA_API_KEY = process.env.CODA_FEEDBACK_API_KEY;
-  // Standardize DOC_ID to use VITE_ prefix for consistency with other IDs
-  const CODA_DOC_ID = process.env.VITE_CODA_FEEDBACK_DOC_ID;
+  // Standardize DOC_ID to use non-VITE_ prefix for consistency with other IDs
+  const CODA_DOC_ID = process.env.CODA_FEEDBACK_DOC_ID; // Removed VITE_
 
   if (!CODA_API_KEY || !CODA_DOC_ID) {
-    throw new Error('Coda Feedback API keys or IDs are not configured. Please check environment variables (CODA_FEEDBACK_API_KEY/VITE_CODA_FEEDBACK_DOC_ID).');
+    throw new Error('Coda Feedback API keys or IDs are not configured. Please check environment variables (CODA_FEEDBACK_API_KEY/CODA_FEEDBACK_DOC_ID).'); // Updated error message
   }
 
   const url = `https://coda.io/apis/v1/docs/${CODA_DOC_ID}${path}`;
@@ -366,11 +363,12 @@ export async function callCodaApi<T>(method: string, path: string, body?: any): 
  * Returns the JSON string and the Coda Row ID of the LATEST version.
  */
 export async function fetchFormStructureFromCoda(): Promise<{ jsonString: string; rowId: string }> {
-  const CODA_FORM_STRUCTURE_TABLE_ID = process.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID;
-  CODA_FORM_STRUCTURE_COLUMN_JSON = process.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID || '';
+  // Use non-VITE_ prefixed variables for IDs
+  const CODA_FORM_STRUCTURE_TABLE_ID = process.env.CODA_FORM_STRUCTURE_TABLE_ID; // Removed VITE_
+  const CODA_FORM_STRUCTURE_COLUMN_ID = process.env.CODA_FORM_STRUCTURE_COLUMN_ID || ''; // Removed VITE_
 
-  if (!CODA_FORM_STRUCTURE_TABLE_ID || !CODA_FORM_STRUCTURE_COLUMN_JSON) {
-    throw new Error('VITE_CODA_FORM_STRUCTURE_TABLE_ID or VITE_CODA_FORM_STRUCTURE_COLUMN_ID is not configured.');
+  if (!CODA_FORM_STRUCTURE_TABLE_ID || !CODA_FORM_STRUCTURE_COLUMN_ID) {
+    throw new Error('CODA_FORM_STRUCTURE_TABLE_ID or CODA_FORM_STRUCTURE_COLUMN_ID is not configured.'); // Updated error message
   }
 
   // Fetch all rows
@@ -388,7 +386,7 @@ export async function fetchFormStructureFromCoda(): Promise<{ jsonString: string
 
   // Iterate through rows to find the one with the highest version number
   for (const row of data.items) {
-    const jsonString = row.values[CODA_FORM_STRUCTURE_COLUMN_JSON];
+    const jsonString = row.values[CODA_FORM_STRUCTURE_COLUMN_ID]; // Use the local column ID variable
     if (jsonString) {
       try {
         const parsed = JSON.parse(jsonString);
@@ -418,11 +416,11 @@ export async function fetchFormStructureFromCoda(): Promise<{ jsonString: string
  * Creates a new Form Structure JSON row in Coda (POST).
  */
 export async function createFormStructureInCoda(newJsonString: string): Promise<void> {
-  const CODA_FORM_STRUCTURE_TABLE_ID = process.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID;
-  const columnId = process.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID;
+  const CODA_FORM_STRUCTURE_TABLE_ID = process.env.CODA_FORM_STRUCTURE_TABLE_ID; // Removed VITE_
+  const columnId = process.env.CODA_FORM_STRUCTURE_COLUMN_ID; // Removed VITE_
 
   if (!CODA_FORM_STRUCTURE_TABLE_ID || !columnId) {
-    throw new Error('VITE_CODA_FORM_STRUCTURE_TABLE_ID or VITE_CODA_FORM_STRUCTURE_COLUMN_ID is not configured.');
+    throw new Error('CODA_FORM_STRUCTURE_TABLE_ID or CODA_FORM_STRUCTURE_COLUMN_ID is not configured.'); // Updated error message
   }
 
   // We no longer parse newJsonString here. It's already a string containing the JSON.
@@ -446,12 +444,12 @@ export async function createFormStructureInCoda(newJsonString: string): Promise<
  * Writes a new user response to the Form Responses table.
  */
 export async function writeFormResponseToCoda(responseJson: any): Promise<void> {
-  const CODA_FORM_RESPONSES_TABLE_ID = process.env.VITE_CODA_FORM_RESPONSES_TABLE_ID;
-  const CODA_COLUMN_RESPONSE_JSON = process.env.VITE_CODA_FORM_RESPONSES_COLUMN_ID; // NEW: Use env variable
+  const CODA_FORM_RESPONSES_TABLE_ID = process.env.CODA_FORM_RESPONSES_TABLE_ID; // Removed VITE_
+  const CODA_COLUMN_RESPONSE_JSON = process.env.CODA_FORM_RESPONSES_COLUMN_ID; // Removed VITE_
 
   if (!CODA_FORM_RESPONSES_TABLE_ID || !CODA_COLUMN_RESPONSE_JSON) {
     // Throw a clear error if the environment variables are missing
-    throw new Error('VITE_CODA_FORM_RESPONSES_TABLE_ID or VITE_CODA_FORM_RESPONSES_COLUMN_ID is not configured. Please check .env.local.');
+    throw new Error('CODA_FORM_RESPONSES_TABLE_ID or CODA_FORM_RESPONSES_COLUMN_ID is not configured. Please check .env.local.'); // Updated error message
   }
 
   const postBody = {

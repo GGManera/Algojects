@@ -16,7 +16,7 @@ const FeedbackPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
-  const [debugInfo, setDebugInfo] = useState<any>(null); // State to hold debug info
+  // const [debugInfo, setDebugInfo] = useState<any>(null); // REMOVED: State to hold debug info
 
   const adminWallet = import.meta.env.VITE_FEEDBACK_ADMIN_WALLET;
 
@@ -27,7 +27,7 @@ const FeedbackPage = () => {
   const fetchSchema = async () => {
     setLoading(true);
     setError(null);
-    setDebugInfo(null);
+    // setDebugInfo(null); // REMOVED
     try {
       const fetchedSchema = await fetchFormStructure();
       setSchema(fetchedSchema);
@@ -35,19 +35,19 @@ const FeedbackPage = () => {
       const errorMessage = err instanceof Error ? err.message : "Failed to load form schema.";
       setError(errorMessage);
       
-      // Attempt to parse the error message for debug info
-      const match = errorMessage.match(/Coda API responded with status (\d+): (.*)/);
+      // REMOVED: Attempt to parse the error message for debug info
+      // const match = errorMessage.match(/Coda API responded with status (\d+): (.*)/);
       
-      // Use import.meta.env for client-side access
-      setDebugInfo({
-        status: match ? match[1] : 'Unknown',
-        rawError: match ? match[2] : errorMessage,
-        env: {
-          VITE_CODA_FEEDBACK_DOC_ID: import.meta.env.VITE_CODA_FEEDBACK_DOC_ID,
-          VITE_CODA_FORM_STRUCTURE_TABLE_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID,
-          VITE_CODA_FORM_STRUCTURE_COLUMN_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID,
-        }
-      });
+      // REMOVED: Use import.meta.env for client-side access
+      // setDebugInfo({
+      //   status: match ? match[1] : 'Unknown',
+      //   rawError: match ? match[2] : errorMessage,
+      //   env: {
+      //     VITE_CODA_FEEDBACK_DOC_ID: import.meta.env.VITE_CODA_FEEDBACK_DOC_ID,
+      //     VITE_CODA_FORM_STRUCTURE_TABLE_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID,
+      //     VITE_CODA_FORM_STRUCTURE_COLUMN_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID,
+      //   }
+      // });
     } finally {
       setLoading(false);
     }
@@ -80,7 +80,8 @@ const FeedbackPage = () => {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
           
-          {debugInfo && (
+          {/* REMOVED: Debug Information Block */}
+          {/* {debugInfo && (
             <Alert className="w-full max-w-3xl bg-muted/50 border-hodl-blue text-muted-foreground">
               <Bug className="h-4 w-4 text-hodl-blue" />
               <AlertTitle className="text-hodl-blue">Debug Information (Check .env.local)</AlertTitle>
@@ -95,7 +96,7 @@ const FeedbackPage = () => {
                 <p className="text-xs pt-2 flex items-center gap-1"><Info className="h-3 w-3" /> Ensure CODA_FEEDBACK_API_KEY has access to VITE_CODA_FEEDBACK_DOC_ID.</p>
               </AlertDescription>
             </Alert>
-          )}
+          )} */}
         </>
       )}
 

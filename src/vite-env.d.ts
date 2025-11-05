@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_CODA_DOC_ID: string;
   readonly VITE_CODA_PROJECT_TABLE_ID: string;
   // FEEDBACK API CONFIG (IDs are VITE_ prefixed, keys are not)
+  readonly VITE_CODA_FEEDBACK_DOC_ID: string; // NEW: Document ID for feedback
   readonly VITE_CODA_FORM_STRUCTURE_TABLE_ID: string;
   readonly VITE_CODA_FORM_RESPONSES_TABLE_ID: string;
   readonly VITE_CODA_FORM_STRUCTURE_COLUMN_ID: string; // NEW: Column ID for the JSON content

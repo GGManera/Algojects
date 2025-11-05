@@ -7,7 +7,7 @@ import { DynamicFeedbackForm } from '@/components/DynamicFeedbackForm';
 import { AdminFormEditor } from '@/components/AdminFormEditor';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Bug, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const FeedbackPage = () => {
@@ -16,6 +16,7 @@ const FeedbackPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
+  const [debugInfo, setDebugInfo] = useState<any>(null); // State to hold debug info
 
   const adminWallet = import.meta.env.VITE_FEEDBACK_ADMIN_WALLET;
 
@@ -26,11 +27,37 @@ const FeedbackPage = () => {
   const fetchSchema = async () => {
     setLoading(true);
     setError(null);
+    setDebugInfo(null);
     try {
       const fetchedSchema = await fetchFormStructure();
       setSchema(fetchedSchema);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load form schema.");
+      const errorMessage = err instanceof Error ? err.message : "Failed to load form schema.";
+      setError(errorMessage);
+      
+      // Attempt to parse the error message for debug info
+      const match = errorMessage.match(/Coda API responded with status (\d+): (.*)/);
+      if (match) {
+        setDebugInfo({
+          status: match[1],
+          rawError: match[2],
+          env: {
+            CODA_FEEDBACK_DOC_ID: process.env.CODA_FEEDBACK_DOC_ID, // Note: This is read from process.env in the server emulator
+            VITE_CODA_FORM_STRUCTURE_TABLE_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID,
+            VITE_CODA_FORM_STRUCTURE_COLUMN_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID,
+          }
+        });
+      } else {
+        setDebugInfo({
+          status: 'Unknown',
+          rawError: errorMessage,
+          env: {
+            CODA_FEEDBACK_DOC_ID: process.env.CODA_FEEDBACK_DOC_ID,
+            VITE_CODA_FORM_STRUCTURE_TABLE_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID,
+            VITE_CODA_FORM_STRUCTURE_COLUMN_ID: import.meta.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID,
+          }
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -56,11 +83,30 @@ const FeedbackPage = () => {
       )}
 
       {error && (
-        <Alert variant="destructive" className="w-full max-w-3xl">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Schema Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <>
+          <Alert variant="destructive" className="w-full max-w-3xl mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Schema Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+          
+          {debugInfo && (
+            <Alert className="w-full max-w-3xl bg-muted/50 border-hodl-blue text-muted-foreground">
+              <Bug className="h-4 w-4 text-hodl-blue" />
+              <AlertTitle className="text-hodl-blue">Debug Information (Check .env.local)</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p className="font-semibold text-sm">API Status: <span className="text-red-400">{debugInfo.status}</span></p>
+                <p className="font-semibold text-sm">Raw Error: <span className="font-mono text-xs break-all">{debugInfo.rawError}</span></p>
+                <div className="pt-2 space-y-1 text-xs font-mono">
+                  <p>CODA_FEEDBACK_DOC_ID: {debugInfo.env.CODA_FEEDBACK_DOC_ID || 'MISSING'}</p>
+                  <p>VITE_CODA_FORM_STRUCTURE_TABLE_ID: {debugInfo.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID || 'MISSING'}</p>
+                  <p>VITE_CODA_FORM_STRUCTURE_COLUMN_ID: {debugInfo.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID || 'MISSING'}</p>
+                </div>
+                <p className="text-xs pt-2 flex items-center gap-1"><Info className="h-3 w-3" /> Ensure CODA_FEEDBACK_API_KEY has access to CODA_FEEDBACK_DOC_ID.</p>
+              </AlertDescription>
+            </Alert>
+          )}
+        </>
       )}
 
       {schema && (

@@ -73,10 +73,11 @@ const FALLBACK_FORM_STRUCTURE = {
 export async function callCodaApi<T>(method: string, path: string, body?: any): Promise<T> {
   // Use dedicated feedback keys (NON-VITE_ prefixed for security)
   const CODA_API_KEY = process.env.CODA_FEEDBACK_API_KEY;
-  const CODA_DOC_ID = process.env.CODA_FEEDBACK_DOC_ID;
+  // Standardize DOC_ID to use VITE_ prefix for consistency with other IDs
+  const CODA_DOC_ID = process.env.VITE_CODA_FEEDBACK_DOC_ID;
 
   if (!CODA_API_KEY || !CODA_DOC_ID) {
-    throw new Error('Coda Feedback API keys or IDs are not configured. Please check environment variables (CODA_FEEDBACK_API_KEY/CODA_FEEDBACK_DOC_ID).');
+    throw new Error('Coda Feedback API keys or IDs are not configured. Please check environment variables (CODA_FEEDBACK_API_KEY/VITE_CODA_FEEDBACK_DOC_ID).');
   }
 
   const url = `https://coda.io/apis/v1/docs/${CODA_DOC_ID}${path}`;

@@ -121,6 +121,8 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
         responses: responses,
       };
       
+      console.log("[DynamicFeedbackForm] Submitting data:", submissionData); // NEW: Log submission data
+      
       await submitFormResponse(submissionData);
       
       dismissToast(toastId);

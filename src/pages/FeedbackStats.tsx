@@ -35,13 +35,13 @@ interface QuestionStats {
 interface ModuleStats {
   moduleId: string;
   moduleTitle: string;
-  totalResponses: number;
+  totalResponses: number; // Number of forms that had at least one answer in this module
   questions: Record<string, QuestionStats>;
 }
 
 interface VersionStats {
   version: string;
-  totalResponses: number;
+  totalResponses: number; // Number of forms submitted for this version
   modules: Record<string, ModuleStats>;
 }
 
@@ -72,61 +72,101 @@ const FeedbackStatsPage = () => {
 
     const stats: Record<string, VersionStats> = {};
 
+    // Create a map of all question definitions from the LATEST schema for quick lookup
+    const questionDefinitionsMap = new Map<string, any>();
+    schema.modules.forEach(moduleDef => {
+      (moduleDef.questions || []).forEach((q: any) => {
+        questionDefinitionsMap.set(q.id, { ...q, moduleId: moduleDef.id, moduleTitle: moduleDef.title });
+      });
+    });
+
     responses.forEach(response => {
       const version = response.version || 'unknown';
       if (!stats[version]) {
         stats[version] = {
           version,
-          totalResponses: 0,
+          totalResponses: 0, // This will count total submitted forms for this version
           modules: {},
         };
       }
-      stats[version].totalResponses++;
+      stats[version].totalResponses++; // Increment total forms submitted for this version
 
-      // Iterate through modules in the schema to get question definitions
-      schema.modules.forEach(moduleDef => {
-        const moduleId = moduleDef.id;
-        if (!stats[version].modules[moduleId]) {
-          stats[version].modules[moduleId] = {
-            moduleId,
-            moduleTitle: moduleDef.title,
-            totalResponses: 0, // This will be updated per module
-            questions: {},
-          };
-        }
-        // Increment module response count only if there's at least one response for a question in this module
-        // This is a simplification; a more robust approach would check if any question in the module was answered.
-        stats[version].modules[moduleId].totalResponses++; 
+      const modulesWithResponsesInThisForm = new Set<string>(); // Track which modules in this form had answers
 
-        moduleDef.questions.forEach((questionDef: any) => {
-          const questionId = questionDef.id;
-          const userAnswer = response.responses[questionId];
+      // Iterate through the actual responses submitted by the user
+      for (const questionId in response.responses) {
+        const userAnswer = response.responses[questionId];
+
+        // Only process if the answer is not empty (undefined, null, or empty string)
+        if (userAnswer !== undefined && userAnswer !== null && userAnswer !== '') {
+          const questionDef = questionDefinitionsMap.get(questionId);
+          
+          const moduleId = questionDef?.moduleId || 'unknown_module';
+          const moduleTitle = questionDef?.moduleTitle || 'Unknown Module';
+          const questionText = questionDef?.question || `Unknown Question ID: ${questionId}`;
+          const questionType = questionDef?.type || 'text'; // Default to text if type is unknown
+
+          if (!stats[version].modules[moduleId]) {
+            stats[version].modules[moduleId] = {
+              moduleId,
+              moduleTitle,
+              totalResponses: 0, // This will count forms that had answers in this module
+              questions: {},
+            };
+          }
+          modulesWithResponsesInThisForm.add(moduleId); // Mark that this module received an answer in this form
 
           if (!stats[version].modules[moduleId].questions[questionId]) {
             stats[version].modules[moduleId].questions[questionId] = {
-              questionText: questionDef.question,
-              type: questionDef.type,
-              totalResponses: 0,
+              questionText,
+              type: questionType,
+              totalResponses: 0, // This will count actual answers for this specific question
               data: [],
             };
           }
 
           const qStats = stats[version].modules[moduleId].questions[questionId];
+          qStats.totalResponses++; // Increment total answers for this specific question
 
-          if (userAnswer !== undefined && userAnswer !== null && userAnswer !== '') {
-            qStats.totalResponses++;
-
-            if (questionDef.type === 'rating' || questionDef.type === 'single_choice') {
-              const existingDataIndex = qStats.data.findIndex(d => d.name === String(userAnswer));
-              if (existingDataIndex !== -1) {
-                qStats.data[existingDataIndex].value++;
-              } else {
-                qStats.data.push({ name: String(userAnswer), value: 1 });
-              }
-            } else if (questionDef.type === 'text') {
-              // For text questions, we just count total responses, no specific data points
-              // We could potentially do word clouds or sentiment analysis here, but for now, just count.
+          if (questionType === 'rating' || questionType === 'single_choice') {
+            const existingDataIndex = qStats.data.findIndex(d => d.name === String(userAnswer));
+            if (existingDataIndex !== -1) {
+              qStats.data[existingDataIndex].value++;
+            } else {
+              qStats.data.push({ name: String(userAnswer), value: 1 });
             }
+          }
+          // For text questions, totalResponses is already incremented, no specific data points needed for charts.
+        }
+      }
+      // After processing all questions in a response, update module totalResponses
+      modulesWithResponsesInThisForm.forEach(moduleId => {
+        stats[version].modules[moduleId].totalResponses++;
+      });
+    });
+
+    // Post-processing: Ensure all modules and questions from the schema are present, even if no responses.
+    // This ensures the structure is consistent with the schema for display, showing 0 responses if no data.
+    Object.values(stats).forEach(versionStat => {
+      schema.modules.forEach(moduleDef => {
+        const moduleId = moduleDef.id;
+        if (!versionStat.modules[moduleId]) {
+          versionStat.modules[moduleId] = {
+            moduleId,
+            moduleTitle: moduleDef.title,
+            totalResponses: 0,
+            questions: {},
+          };
+        }
+        (moduleDef.questions || []).forEach((questionDef: any) => {
+          const questionId = questionDef.id;
+          if (!versionStat.modules[moduleId].questions[questionId]) {
+            versionStat.modules[moduleId].questions[questionId] = {
+              questionText: questionDef.question,
+              type: questionDef.type,
+              totalResponses: 0,
+              data: [],
+            };
           }
         });
       });

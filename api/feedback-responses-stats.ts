@@ -28,6 +28,7 @@ export default async function handler(
       
       const parsedResponses = data.items.map(row => {
         const jsonString = row.values[CODA_COLUMN_RESPONSE_JSON];
+        console.log(`[Feedback Responses Stats API] Raw JSON string from Coda for row ${row.id}:`, jsonString); // NEW: Log raw JSON string
         try {
           return JSON.parse(jsonString);
         } catch (e) {

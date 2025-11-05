@@ -9,11 +9,11 @@ export default async function handler(
   request: VercelRequest,
   response: VercelResponse,
 ) {
-  if (request.method !== 'POST') { // CHANGED from GET to POST
+  if (request.method !== 'POST') {
     return response.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { txid, hash: expectedHash, newJsonDraft } = request.body; // Read all parameters from body
+  const { txid, hash: expectedHash, newJsonDraft } = request.body;
 
   if (!txid || typeof txid !== 'string' || !expectedHash || !newJsonDraft) {
     return response.status(400).json({ error: 'Missing txid, expectedHash, or newJsonDraft in request body.' });
@@ -30,14 +30,13 @@ export default async function handler(
     // 1. Fetch transaction details from Indexer
     const txResponse = await retryFetch(`${INDEXER_URL}/v2/transactions/${txid}`, undefined, 5);
     if (!txResponse.ok) {
-      // Since retryFetch now returns the response object, we need to read the error body here if needed
       const errorText = await txResponse.text();
       return response.status(404).json({ error: `Transaction ${txid} not found or Indexer error: ${errorText}` });
     }
     const txData = await txResponse.json();
     const transaction = txData.transaction;
 
-    // 2. Basic checks (omitted for brevity, assuming they pass)
+    // 2. Basic checks
 
     if (transaction.sender !== ADMIN_WALLET) {
       return response.status(403).json({ error: 'Transaction sender does not match authorized_wallet.' });
@@ -65,8 +64,7 @@ export default async function handler(
     const { rowId } = await fetchFormStructureFromCoda();
     console.log(`[VerifyTx] Coda rowId fetched: ${rowId}. Attempting internal PUT to update schema...`);
     
-    // --- CRITICAL FIX: Use absolute URL for internal fetch ---
-    // Safely access host header
+    // Safely access host header, falling back to a known default if necessary
     const host = request.headers.host || 'localhost:8080'; 
     const internalUrl = `http://${host}/api/form-structure`;
     console.log(`[VerifyTx] Internal PUT URL: ${internalUrl}`);
@@ -75,7 +73,7 @@ export default async function handler(
         method: 'PUT',
         headers: { 
             'Content-Type': 'application/json',
-            // Ensure we pass the host header for the emulator to route correctly
+            // Explicitly pass the Host header for the emulator
             'Host': host, 
         },
         body: JSON.stringify({ 
@@ -103,7 +101,7 @@ export default async function handler(
     return response.status(200).json({ 
         message: 'Transaction verified and Form Structure updated successfully.',
         txid: txid,
-        sender: transaction.sender, // Use transaction.sender here
+        sender: transaction.sender,
         note: noteText
     });
 

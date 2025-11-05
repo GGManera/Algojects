@@ -93,6 +93,14 @@ export async function verifyTransactionAndCommit(txid: string, expectedHash: str
   }, 5);
 
   // If retryFetch returns, the response is guaranteed to be response.ok
-  // We can safely parse it as JSON.
-  await response.json();
+  // Clone the response before reading the body, just in case the stream was partially consumed.
+  const clonedResponse = response.clone();
+  
+  try {
+    await clonedResponse.json();
+  } catch (e) {
+    const errorText = await response.text();
+    console.error("Failed to parse JSON response from verify-tx:", errorText);
+    throw new Error(`Failed to finalize verification: ${errorText}`);
+  }
 }

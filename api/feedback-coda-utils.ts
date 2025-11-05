@@ -14,11 +14,12 @@ interface CodaRow {
  * Generic Coda API caller for the feedback system.
  */
 export async function callCodaApi<T>(method: string, path: string, body?: any): Promise<T> {
-  const CODA_API_KEY = process.env.CODA_API_KEY;
-  const CODA_DOC_ID = process.env.CODA_DOC_ID;
+  // Use dedicated feedback keys
+  const CODA_API_KEY = process.env.CODA_FEEDBACK_API_KEY;
+  const CODA_DOC_ID = process.env.CODA_FEEDBACK_DOC_ID;
 
   if (!CODA_API_KEY || !CODA_DOC_ID) {
-    throw new Error('Coda API keys or IDs are not configured. Please check environment variables.');
+    throw new Error('Coda Feedback API keys or IDs are not configured. Please check environment variables (CODA_FEEDBACK_API_KEY/CODA_FEEDBACK_DOC_ID).');
   }
 
   const url = `https://coda.io/apis/v1/docs/${CODA_DOC_ID}${path}`;

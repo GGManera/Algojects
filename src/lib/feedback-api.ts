@@ -41,10 +41,20 @@ export interface FormStructure {
  */
 export async function fetchFormStructure(): Promise<FormStructure> {
   const response = await retryFetch('/api/form-structure', undefined, 5);
+  
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || `Failed to fetch form structure: ${response.status}`);
+    let errorText = `Failed to fetch form structure: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      errorText = errorData.error || errorText;
+    } catch (e) {
+      // If response is not JSON, read as text
+      errorText = await response.text();
+    }
+    throw new Error(errorText);
   }
+  
+  // Read JSON only if response is OK
   return response.json();
 }
 
@@ -64,8 +74,14 @@ export async function submitFormResponse(response: any): Promise<void> {
   }, 5);
 
   if (!responseApi.ok) {
-    const errorData = await responseApi.json();
-    throw new Error(errorData.error || `Failed to submit response: ${responseApi.status}`);
+    let errorText = `Failed to submit response: ${responseApi.status}`;
+    try {
+      const errorData = await responseApi.json();
+      errorText = errorData.error || errorText;
+    } catch (e) {
+      errorText = await responseApi.text();
+    }
+    throw new Error(errorText);
   }
 }
 
@@ -80,8 +96,14 @@ export async function generateHash(jsonDraft: FormStructure): Promise<{ hash: st
   }, 5);
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || `Failed to generate hash: ${response.status}`);
+    let errorText = `Failed to generate hash: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      errorText = errorData.error || errorText;
+    } catch (e) {
+      errorText = await response.text();
+    }
+    throw new Error(errorText);
   }
   return response.json();
 }
@@ -97,8 +119,14 @@ export async function verifyTransactionAndCommit(txid: string, expectedHash: str
   }, 5);
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || `Transaction verification failed: ${response.status}`);
+    let errorText = `Transaction verification failed: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      errorText = errorData.error || errorText;
+    } catch (e) {
+      errorText = await response.text();
+    }
+    throw new Error(errorText);
   }
 }
 

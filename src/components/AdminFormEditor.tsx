@@ -103,7 +103,9 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   useEffect(() => {
     try {
       // Use the full structuredDraft object for stringification
-      setJsonDraft(JSON.stringify(structuredDraft, null, 2));
+      // We explicitly exclude rowId here, as it's not part of the schema definition
+      const { rowId, ...draftWithoutRowId } = structuredDraft;
+      setJsonDraft(JSON.stringify(draftWithoutRowId, null, 2));
       setIsJsonValid(true);
     } catch (e) {
       console.error("Error syncing structuredDraft to jsonDraft:", e);
@@ -116,11 +118,20 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     setJsonDraft(newJson);
     try {
       const parsed = JSON.parse(newJson);
-      // Ensure the parsed object retains the rowId if it exists in the current schema
-      if (currentSchema.rowId) {
-          parsed.rowId = currentSchema.rowId;
-      }
-      setStructuredDraft(parsed);
+      
+      // --- CRITICAL FIX: Merge parsed JSON with existing structuredDraft to ensure all properties are kept ---
+      // This prevents partial JSON input (like only top-level fields) from wiping out nested data.
+      const mergedDraft: FormStructure = {
+          ...structuredDraft, // Start with the current full draft
+          ...parsed,          // Overwrite with parsed top-level fields
+          // Ensure nested objects are also merged if they exist in both
+          metadata: { ...structuredDraft.metadata, ...parsed.metadata },
+          governance: { ...structuredDraft.governance, ...parsed.governance },
+          audit: { ...structuredDraft.audit, ...parsed.audit },
+          modules: parsed.modules || structuredDraft.modules, // Modules must be replaced entirely if present
+      };
+
+      setStructuredDraft(mergedDraft);
       setIsJsonValid(true);
     } catch (e) {
       setIsJsonValid(false);

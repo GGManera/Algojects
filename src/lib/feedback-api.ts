@@ -73,8 +73,10 @@ export async function createFormStructureClient(newJsonDraft: FormStructure): Pr
   // Remove rowId before stringifying, as it's an internal Coda ID not part of the schema
   const { rowId, ...draftWithoutRowId } = newJsonDraft;
   
-  // Normalize the JSON string before sending
-  const newJsonString = JSON.stringify(draftWithoutRowId, Object.keys(draftWithoutRowId).sort(), 2);
+  // Normalize the JSON string and REMOVE PRETTY PRINTING to reduce payload size and complexity
+  // We still sort keys for consistent hashing, but use no spacing (null, 0)
+  const sortedKeys = Object.keys(draftWithoutRowId).sort();
+  const newJsonString = JSON.stringify(draftWithoutRowId, sortedKeys); // Use standard stringify without pretty print
   
   const response = await retryFetch('/api/form-structure', {
     method: 'POST', // CHANGED to POST
@@ -92,7 +94,7 @@ export async function createFormStructureClient(newJsonDraft: FormStructure): Pr
 export function generateLocalHash(jsonDraft: FormStructure): string {
     // Remove rowId before hashing
     const { rowId, ...draftWithoutRowId } = jsonDraft;
-    // Use the same normalization logic as the server (if it were still running)
-    const normalizedJsonString = JSON.stringify(draftWithoutRowId, Object.keys(draftWithoutRowId).sort(), 2);
+    // Use the same normalization logic as the server (if it fosse still running)
+    const normalizedJsonString = JSON.stringify(draftWithoutRowId, Object.keys(draftWithoutRowId).sort()); // Use compact stringify for hashing
     return sha256(normalizedJsonString);
 }

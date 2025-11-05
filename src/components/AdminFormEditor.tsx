@@ -13,6 +13,7 @@ import { Edit, Hash, CheckCircle, ArrowRight, AlertTriangle, PlusCircle, Setting
 import { toast } from 'sonner';
 import { ModuleEditor } from './ModuleEditor';
 import { cn } from '@/lib/utils';
+import { CommitConfirmationDialog } from './CommitConfirmationDialog'; // NEW Import
 
 interface AdminFormEditorProps {
   currentSchema: FormStructure;
@@ -64,22 +65,17 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   const { activeAddress } = useWallet();
   const [editingMode, setEditingMode] = useState<'structured' | 'json'>('structured');
   
-  // Função para criar um clone profundo do esquema
-  const deepCloneSchema = useCallback((schema: FormStructure): FormStructure => {
-    // Remove rowId antes de clonar, pois ele não faz parte do esquema JSON
-    const { rowId, ...schemaWithoutRowId } = schema;
-    return JSON.parse(JSON.stringify(schemaWithoutRowId)) as FormStructure;
-  }, []);
-
-  // 1. Inicialização do estado com clone profundo
-  const [structuredDraft, setStructuredDraft] = useState<FormStructure>(() => deepCloneSchema(currentSchema));
+  // State for structured editing
+  const [structuredDraft, setStructuredDraft] = useState<FormStructure>(currentSchema);
   
   // State for JSON editing (synced with structuredDraft)
   const [jsonDraft, setJsonDraft] = useState(JSON.stringify(currentSchema, null, 2));
   
   const [isJsonValid, setIsJsonValid] = useState(true);
   const [isCommitting, setIsCommitting] = useState(false);
-  
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false); // NEW State for confirmation dialog
+  const [finalDraftToConfirm, setFinalDraftToConfirm] = useState<FormStructure | null>(null); // NEW State for final draft
+
   const adminWallet = import.meta.env.VITE_FEEDBACK_ADMIN_WALLET;
   const projectWallet = import.meta.env.VITE_FEEDBACK_PROJECT_WALLET;
 
@@ -91,28 +87,32 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
 
   // 1. Sync currentSchema -> structuredDraft on initial load/commit
   useEffect(() => {
-    // Se o esquema atual for atualizado (após um commit bem-sucedido), re-inicialize o rascunho
-    const clonedSchema = deepCloneSchema(currentSchema);
-    
+    // Função para criar um clone profundo do esquema
+    const deepCloneSchema = (schema: FormStructure): FormStructure => {
+        const { rowId, ...schemaWithoutRowId } = schema;
+        return JSON.parse(JSON.stringify(schemaWithoutRowId)) as FormStructure;
+    };
+
     // Check if the fetched schema is clearly incomplete (e.g., missing modules array)
-    const isSchemaIncomplete = !clonedSchema.modules || clonedSchema.modules.length === 0;
+    const isSchemaIncomplete = !currentSchema.modules || currentSchema.modules.length === 0;
     
     if (isSchemaIncomplete && currentSchema.rowId) {
-        // Se incompleto mas temos rowId, inicializa com o template de fallback
+        // If incomplete but we have a rowId, initialize with the fallback template
         const safeDraft = { ...FALLBACK_FORM_STRUCTURE_TEMPLATE, rowId: currentSchema.rowId } as FormStructure;
         setStructuredDraft(safeDraft);
         setJsonDraft(JSON.stringify(safeDraft, null, 2));
     } else if (currentSchema.rowId) {
-        // Se completo e tem rowId, usa o esquema clonado
-        setStructuredDraft(clonedSchema);
+        // If complete and has rowId, use the fetched schema (deep clone)
+        setStructuredDraft(deepCloneSchema(currentSchema));
         setJsonDraft(JSON.stringify(currentSchema, null, 2));
     }
-  }, [currentSchema, deepCloneSchema]);
+  }, [currentSchema]);
 
   // 2. Sync structuredDraft -> jsonDraft whenever structuredDraft changes
   useEffect(() => {
     try {
-      // Use o structuredDraft completo (sem rowId) para serialização
+      // Use the full structuredDraft object for stringification
+      // We explicitly exclude rowId here, as it's not part of the schema definition
       const { rowId, ...draftWithoutRowId } = structuredDraft;
       setJsonDraft(JSON.stringify(draftWithoutRowId, null, 2));
       setIsJsonValid(true);
@@ -128,9 +128,18 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     try {
       const parsed = JSON.parse(newJson);
       
-      // Se o JSON for válido, substitua o structuredDraft pelo objeto completo
-      // Isso garante que todas as edições feitas no JSON sejam refletidas no structuredDraft
-      setStructuredDraft(parsed);
+      // --- CRITICAL FIX: Merge parsed JSON with existing structuredDraft to ensure all properties are kept ---
+      const mergedDraft: FormStructure = {
+          ...structuredDraft, // Start with the current full draft
+          ...parsed,          // Overwrite with parsed top-level fields
+          // Ensure nested objects are also merged if they exist in both
+          metadata: { ...structuredDraft.metadata, ...parsed.metadata },
+          governance: { ...structuredDraft.governance, ...parsed.governance },
+          audit: { ...structuredDraft.audit, ...parsed.audit },
+          modules: parsed.modules || structuredDraft.modules, // Modules must be replaced entirely if present
+      };
+
+      setStructuredDraft(mergedDraft);
       setIsJsonValid(true);
     } catch (e) {
       setIsJsonValid(false);
@@ -172,58 +181,74 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     }));
   }, []);
 
-  // --- Core Logic: Direct Commit (Now creates a new version) ---
+  // --- Core Logic: Prepare Draft for Confirmation ---
 
-  const handleCommitChanges = async () => {
+  const prepareDraftForCommit = useCallback(() => {
     const draftToCommit = structuredDraft;
 
     if (!draftToCommit || !isJsonValid) {
       showError("Invalid draft or missing Coda Row ID.");
-      return;
+      return null;
     }
     
+    // 1. Generate local hash
+    const localHash = generateLocalHash(draftToCommit);
+    
+    // 2. Increment version number (e.g., "1.3" -> "1.4")
+    const currentVersion = parseFloat(draftToCommit.version || '1.0');
+    const newVersion = (Math.floor(currentVersion * 10) + 1) / 10;
+
+    // 3. Construir o finalDraft usando o structuredDraft completo
+    const finalDraft: FormStructure = {
+      ...draftToCommit,
+      version: newVersion.toFixed(1), // Incremented version
+      metadata: {
+          ...draftToCommit.metadata,
+          updated_at: new Date().toISOString(),
+      },
+      // Garantir que as propriedades aninhadas sejam copiadas explicitamente
+      governance: draftToCommit.governance,
+      modules: draftToCommit.modules,
+      rendering_rules: draftToCommit.rendering_rules,
+      audit: {
+        last_edit: {
+          hash: localHash,
+          txid: 'LOCAL_COMMIT', // Mark as local commit
+          editor_wallet: activeAddress || 'unconnected',
+          timestamp: new Date().toISOString(),
+        }
+      },
+      // Garantir que os campos fixos estejam presentes
+      authorized_wallet: draftToCommit.authorized_wallet || adminWallet,
+      project_wallet: draftToCommit.project_wallet || projectWallet,
+    };
+
+    return finalDraft;
+  }, [structuredDraft, isJsonValid, activeAddress, adminWallet, projectWallet]);
+
+  const handlePrepareCommit = () => {
+    const finalDraft = prepareDraftForCommit();
+    if (finalDraft) {
+      setFinalDraftToConfirm(finalDraft);
+      setIsConfirmationOpen(true);
+    }
+  };
+
+  // --- Core Logic: Execute Commit ---
+
+  const handleExecuteCommit = async () => {
+    if (!finalDraftToConfirm) return;
+
     setIsCommitting(true);
-    const toastId = showLoading("Committing changes directly to Coda...");
+    const toastId = showLoading(`Committing version ${finalDraftToConfirm.version}...`);
 
     try {
-      // 1. Generate local hash
-      const localHash = generateLocalHash(draftToCommit);
-      
-      // 2. Increment version number (e.g., "1.3" -> "1.4")
-      const currentVersion = parseFloat(draftToCommit.version || '1.0');
-      // Increment by 0.1 and fix to one decimal place
-      const newVersion = (Math.floor(currentVersion * 10) + 1) / 10;
-
-      // 3. Construir o finalDraft usando o structuredDraft completo
-      const finalDraft: FormStructure = {
-        ...draftToCommit,
-        version: newVersion.toFixed(1), // Ensure it's formatted back to string "X.Y"
-        metadata: {
-            ...draftToCommit.metadata,
-            updated_at: new Date().toISOString(),
-        },
-        // Garantir que as propriedades aninhadas sejam copiadas explicitamente
-        governance: draftToCommit.governance,
-        modules: draftToCommit.modules,
-        rendering_rules: draftToCommit.rendering_rules,
-        audit: {
-          last_edit: {
-            hash: localHash,
-            txid: 'LOCAL_COMMIT', // Mark as local commit
-            editor_wallet: activeAddress || 'unconnected',
-            timestamp: new Date().toISOString(),
-          }
-        },
-        // Garantir que os campos fixos estejam presentes
-        authorized_wallet: draftToCommit.authorized_wallet || adminWallet,
-        project_wallet: draftToCommit.project_wallet || projectWallet,
-      };
-      
-      // 4. Commit the final draft using the client API (which now POSTs a new row)
-      await createFormStructureClient(finalDraft);
+      // 1. Commit the final draft using the client API (which now POSTs a new row)
+      await createFormStructureClient(finalDraftToConfirm);
       
       dismissToast(toastId);
-      showSuccess(`Form schema updated to version ${finalDraft.version} successfully!`);
+      showSuccess(`Form schema updated to version ${finalDraftToConfirm.version} successfully!`);
+      setIsConfirmationOpen(false);
       onSchemaUpdate(); // Trigger parent refetch
     } catch (error) {
       dismissToast(toastId);
@@ -234,15 +259,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     }
   };
 
-  const parsedDraft = useMemo(() => {
-    try {
-      return JSON.parse(jsonDraft);
-    } catch {
-      return null;
-    }
-  }, [jsonDraft]);
-  
-  const canCommit = isAuthorized && isJsonValid && !isCommitting;
+  const canSubmit = isAuthorized && isJsonValid && !isCommitting;
 
   return (
     <>
@@ -334,11 +351,11 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
 
           <div className="flex justify-end items-center pt-4 border-t border-muted">
             <Button 
-              onClick={handleCommitChanges} 
-              disabled={!canCommit}
+              onClick={handlePrepareCommit} 
+              disabled={!canSubmit}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isCommitting ? "Committing..." : "Commit New Version"}
+              {isCommitting ? "Preparing..." : "Review & Commit New Version"}
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
@@ -353,6 +370,14 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
           )}
         </CardContent>
       </Card>
+      
+      <CommitConfirmationDialog
+        isOpen={isConfirmationOpen}
+        onOpenChange={setIsConfirmationOpen}
+        finalDraft={finalDraftToConfirm}
+        onConfirm={handleExecuteCommit}
+        isCommitting={isCommitting}
+      />
     </>
   );
 }

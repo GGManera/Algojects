@@ -1,0 +1,66 @@
+"use client";
+
+import React from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { FormStructure } from '@/lib/feedback-api';
+import { ArrowRight, Hash } from 'lucide-react';
+
+interface CommitConfirmationDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  finalDraft: FormStructure | null;
+  onConfirm: () => void;
+  isCommitting: boolean;
+}
+
+export function CommitConfirmationDialog({
+  isOpen,
+  onOpenChange,
+  finalDraft,
+  onConfirm,
+  isCommitting,
+}: CommitConfirmationDialogProps) {
+  
+  const jsonString = finalDraft ? JSON.stringify(finalDraft, null, 2) : "Loading...";
+  const newVersion = finalDraft?.version || 'N/A';
+  const localHash = finalDraft?.audit?.last_edit?.hash || 'N/A';
+
+  return (
+    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="sm:max-w-[600px] bg-card text-foreground">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-primary">
+            <Hash className="h-5 w-5" /> Confirm Schema Commit (v{newVersion})
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Review the final JSON schema before creating a new version in Coda.
+            <p className="mt-2 text-xs text-muted-foreground">Local Hash: <span className="font-mono break-all">{localHash}</span></p>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        
+        <ScrollArea className="h-[400px] border rounded-md p-2 bg-muted/20 font-mono text-xs">
+          <pre className="whitespace-pre-wrap break-all">{jsonString}</pre>
+        </ScrollArea>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isCommitting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} disabled={isCommitting}>
+            {isCommitting ? "Committing..." : `Commit v${newVersion}`}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}

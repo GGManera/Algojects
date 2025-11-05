@@ -7,8 +7,9 @@ import { DynamicFeedbackForm } from '@/components/DynamicFeedbackForm';
 import { AdminFormEditor } from '@/components/AdminFormEditor';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Bug, Info } from 'lucide-react';
+import { AlertTriangle, Bug, Info, BarChart3 } from 'lucide-react'; // Import BarChart3
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom'; // Import Link
 
 const FeedbackPage = () => {
   const { activeAddress } = useWallet();
@@ -102,10 +103,17 @@ const FeedbackPage = () => {
       {schema && (
         <>
           {isAuthorized && (
-            <AdminFormEditor 
-              currentSchema={schema} 
-              onSchemaUpdate={handleSchemaUpdate} 
-            />
+            <>
+              <AdminFormEditor 
+                currentSchema={schema} 
+                onSchemaUpdate={handleSchemaUpdate} 
+              />
+              <Link to="/feedbackstats" className="w-full max-w-3xl mx-auto mt-4">
+                <Button className="w-full bg-hodl-blue hover:bg-hodl-blue/90">
+                  <BarChart3 className="h-4 w-4 mr-2" /> View Feedback Statistics
+                </Button>
+              </Link>
+            </>
           )}
           <DynamicFeedbackForm 
             schema={schema} 

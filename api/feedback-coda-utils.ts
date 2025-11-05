@@ -466,3 +466,35 @@ export async function writeFormResponseToCoda(responseJson: any): Promise<void> 
 
   await callCodaApi('POST', `/tables/${CODA_FORM_RESPONSES_TABLE_ID}/rows`, postBody);
 }
+
+/**
+ * NEW: Fetches all form responses from Coda.
+ * Returns an array of parsed response objects.
+ */
+export async function fetchFormResponsesFromCoda(): Promise<any[]> {
+  const CODA_FORM_RESPONSES_TABLE_ID = process.env.VITE_CODA_FORM_RESPONSES_TABLE_ID;
+  const CODA_COLUMN_RESPONSE_JSON = process.env.VITE_CODA_FORM_RESPONSES_COLUMN_ID;
+
+  if (!CODA_FORM_RESPONSES_TABLE_ID || !CODA_COLUMN_RESPONSE_JSON) {
+    throw new Error('VITE_CODA_FORM_RESPONSES_TABLE_ID or VITE_CODA_FORM_RESPONSES_COLUMN_ID is not configured.');
+  }
+
+  const data = await callCodaApi<{ items: CodaRow[] }>('GET', `/tables/${CODA_FORM_RESPONSES_TABLE_ID}/rows`);
+
+  if (!data.items || data.items.length === 0) {
+    return [];
+  }
+
+  const responses: any[] = [];
+  for (const row of data.items) {
+    const jsonString = row.values[CODA_COLUMN_RESPONSE_JSON];
+    if (jsonString) {
+      try {
+        responses.push(JSON.parse(jsonString));
+      } catch (e) {
+        console.warn(`[Coda Feedback] Failed to parse JSON response in row ${row.id}. Skipping.`);
+      }
+    }
+  }
+  return responses;
+}

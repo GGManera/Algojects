@@ -64,8 +64,15 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   const { activeAddress } = useWallet();
   const [editingMode, setEditingMode] = useState<'structured' | 'json'>('structured');
   
-  // State for structured editing
-  const [structuredDraft, setStructuredDraft] = useState<FormStructure>(currentSchema);
+  // Função para criar um clone profundo do esquema
+  const deepCloneSchema = useCallback((schema: FormStructure): FormStructure => {
+    // Remove rowId antes de clonar, pois ele não faz parte do esquema JSON
+    const { rowId, ...schemaWithoutRowId } = schema;
+    return JSON.parse(JSON.stringify(schemaWithoutRowId)) as FormStructure;
+  }, []);
+
+  // 1. Inicialização do estado com clone profundo
+  const [structuredDraft, setStructuredDraft] = useState<FormStructure>(() => deepCloneSchema(currentSchema));
   
   // State for JSON editing (synced with structuredDraft)
   const [jsonDraft, setJsonDraft] = useState(JSON.stringify(currentSchema, null, 2));
@@ -84,26 +91,28 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
 
   // 1. Sync currentSchema -> structuredDraft on initial load/commit
   useEffect(() => {
+    // Se o esquema atual for atualizado (após um commit bem-sucedido), re-inicialize o rascunho
+    const clonedSchema = deepCloneSchema(currentSchema);
+    
     // Check if the fetched schema is clearly incomplete (e.g., missing modules array)
-    const isSchemaIncomplete = !currentSchema.modules || currentSchema.modules.length === 0;
+    const isSchemaIncomplete = !clonedSchema.modules || clonedSchema.modules.length === 0;
     
     if (isSchemaIncomplete && currentSchema.rowId) {
-        // If incomplete but we have a rowId, initialize with the fallback template
+        // Se incompleto mas temos rowId, inicializa com o template de fallback
         const safeDraft = { ...FALLBACK_FORM_STRUCTURE_TEMPLATE, rowId: currentSchema.rowId } as FormStructure;
         setStructuredDraft(safeDraft);
         setJsonDraft(JSON.stringify(safeDraft, null, 2));
     } else if (currentSchema.rowId) {
-        // If complete and has rowId, use the fetched schema
-        setStructuredDraft(currentSchema);
+        // Se completo e tem rowId, usa o esquema clonado
+        setStructuredDraft(clonedSchema);
         setJsonDraft(JSON.stringify(currentSchema, null, 2));
     }
-  }, [currentSchema]);
+  }, [currentSchema, deepCloneSchema]);
 
   // 2. Sync structuredDraft -> jsonDraft whenever structuredDraft changes
   useEffect(() => {
     try {
-      // Use the full structuredDraft object for stringification
-      // We explicitly exclude rowId here, as it's not part of the schema definition
+      // Use o structuredDraft completo (sem rowId) para serialização
       const { rowId, ...draftWithoutRowId } = structuredDraft;
       setJsonDraft(JSON.stringify(draftWithoutRowId, null, 2));
       setIsJsonValid(true);
@@ -119,19 +128,9 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     try {
       const parsed = JSON.parse(newJson);
       
-      // --- CRITICAL FIX: Merge parsed JSON with existing structuredDraft to ensure all properties are kept ---
-      // This prevents partial JSON input (like only top-level fields) from wiping out nested data.
-      const mergedDraft: FormStructure = {
-          ...structuredDraft, // Start with the current full draft
-          ...parsed,          // Overwrite with parsed top-level fields
-          // Ensure nested objects are also merged if they exist in both
-          metadata: { ...structuredDraft.metadata, ...parsed.metadata },
-          governance: { ...structuredDraft.governance, ...parsed.governance },
-          audit: { ...structuredDraft.audit, ...parsed.audit },
-          modules: parsed.modules || structuredDraft.modules, // Modules must be replaced entirely if present
-      };
-
-      setStructuredDraft(mergedDraft);
+      // Se o JSON for válido, substitua o structuredDraft pelo objeto completo
+      // Isso garante que todas as edições feitas no JSON sejam refletidas no structuredDraft
+      setStructuredDraft(parsed);
       setIsJsonValid(true);
     } catch (e) {
       setIsJsonValid(false);
@@ -195,25 +194,18 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
       // Increment by 0.1 and fix to one decimal place
       const newVersion = (Math.floor(currentVersion * 10) + 1) / 10;
 
-      // --- CRITICAL FIX: Explicitly construct the final draft to ensure all nested objects are present ---
+      // 3. Construir o finalDraft usando o structuredDraft completo
       const finalDraft: FormStructure = {
-        // Base properties
-        form_id: draftToCommit.form_id,
-        version: newVersion.toFixed(1), // Incremented version
-        feedback_version: draftToCommit.feedback_version,
-        authorized_wallet: draftToCommit.authorized_wallet || adminWallet,
-        project_wallet: draftToCommit.project_wallet || projectWallet,
-        hash_verification_required: draftToCommit.hash_verification_required,
-        
-        // Nested objects (ensuring deep copy of content)
+        ...draftToCommit,
+        version: newVersion.toFixed(1), // Ensure it's formatted back to string "X.Y"
         metadata: {
             ...draftToCommit.metadata,
             updated_at: new Date().toISOString(),
         },
+        // Garantir que as propriedades aninhadas sejam copiadas explicitamente
         governance: draftToCommit.governance,
         modules: draftToCommit.modules,
         rendering_rules: draftToCommit.rendering_rules,
-        
         audit: {
           last_edit: {
             hash: localHash,
@@ -221,10 +213,13 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
             editor_wallet: activeAddress || 'unconnected',
             timestamp: new Date().toISOString(),
           }
-        }
+        },
+        // Garantir que os campos fixos estejam presentes
+        authorized_wallet: draftToCommit.authorized_wallet || adminWallet,
+        project_wallet: draftToCommit.project_wallet || projectWallet,
       };
       
-      // 3. Commit the final draft using the client API (which now POSTs a new row)
+      // 4. Commit the final draft using the client API (which now POSTs a new row)
       await createFormStructureClient(finalDraft);
       
       dismissToast(toastId);

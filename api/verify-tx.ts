@@ -9,15 +9,14 @@ export default async function handler(
   request: VercelRequest,
   response: VercelResponse,
 ) {
-  if (request.method !== 'GET') {
+  if (request.method !== 'POST') { // CHANGED from GET to POST
     return response.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { txid } = request.query;
-  const { hash: expectedHash, newJsonDraft } = request.body; // Expecting hash and new JSON draft in the body
+  const { txid, hash: expectedHash, newJsonDraft } = request.body; // Read all parameters from body
 
   if (!txid || typeof txid !== 'string' || !expectedHash || !newJsonDraft) {
-    return response.status(400).json({ error: 'Missing txid, expectedHash, or newJsonDraft.' });
+    return response.status(400).json({ error: 'Missing txid, expectedHash, or newJsonDraft in request body.' });
   }
 
   try {
@@ -84,9 +83,6 @@ export default async function handler(
         const updateError = await updateResponse.json();
         throw new Error(`Failed to update Coda after TX verification: ${updateError.error}`);
     }
-    
-    // 5. Update audit log within the JSON draft before saving (this is handled by the PUT body above)
-    // We need to ensure the JSON draft passed to this endpoint already has the updated audit log fields.
     
     return response.status(200).json({ 
         message: 'Transaction verified and Form Structure updated successfully.',

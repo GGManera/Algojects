@@ -123,11 +123,10 @@ export async function generateHash(jsonDraft: FormStructure): Promise<{ hash: st
  * Verifies the Algorand transaction and triggers the Coda update if valid.
  */
 export async function verifyTransactionAndCommit(txid: string, expectedHash: string, newJsonDraft: FormStructure): Promise<void> {
-  // Note: The body is sent here because the Vercel API emulator in vite.config.ts reads it from the request body
-  const response = await retryFetch(`/api/verify-tx?txid=${txid}`, {
-    method: 'GET',
+  const response = await retryFetch(`/api/verify-tx`, { // Removed query string, using body
+    method: 'POST', // CHANGED from GET to POST
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ hash: expectedHash, newJsonDraft }),
+    body: JSON.stringify({ txid, hash: expectedHash, newJsonDraft }), // Send all data in body
   }, 5);
 
   const responseText = await response.text();

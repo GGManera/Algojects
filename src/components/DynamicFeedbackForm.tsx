@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useWallet } from '@txnlab/use-wallet-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { cn } from '@/lib/utils';
-import { CollapsibleContent } from './CollapsibleContent'; // Import CollapsibleContent
-import { ChevronDown, ChevronUp } from 'lucide-react'; // IMPORT MISSING ICONS
+import { CollapsibleContent } from './CollapsibleContent';
+import { ChevronDown, ChevronUp, Info } from 'lucide-react'; // IMPORT MISSING ICONS
 
 interface DynamicFeedbackFormProps {
   schema: FormStructure;
@@ -74,14 +74,27 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Initialize openModules safely
-  const initialOpenModules = useMemo(() => new Set((schema.modules || []).map(m => m.id)), [schema.modules]);
+  const isUserConnected = !!activeAddress;
+
+  // Filter modules based on connection status
+  const filteredModules = useMemo(() => {
+    if (!schema.modules) return [];
+
+    if (!isUserConnected && schema.rendering_rules?.unconnected_user?.show_modules) {
+      const allowedModuleIds = new Set(schema.rendering_rules.unconnected_user.show_modules);
+      return schema.modules.filter(module => allowedModuleIds.has(module.id));
+    }
+    // For connected users, or if no specific rules for unconnected, show all modules
+    return schema.modules;
+  }, [schema.modules, isUserConnected, schema.rendering_rules]);
+
+  // Initialize openModules safely, now based on filteredModules
+  const initialOpenModules = useMemo(() => new Set(filteredModules.map(m => m.id)), [filteredModules]);
   const [openModules, setOpenModules] = useState<Set<string>>(initialOpenModules);
 
   const allQuestions = useMemo(() => {
-    // Ensure schema.modules is an array before calling flatMap
-    return (schema.modules || []).flatMap(module => (module.questions || []).map((q: any) => ({ ...q, moduleId: module.id })));
-  }, [schema]);
+    return (filteredModules || []).flatMap(module => (module.questions || []).map((q: any) => ({ ...q, moduleId: module.id })));
+  }, [filteredModules]);
 
   const visibleQuestions = useMemo(() => {
     return allQuestions.filter(q => {
@@ -150,6 +163,8 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
     );
   }
 
+  const unconnectedExplainer = schema.rendering_rules?.unconnected_user?.explainers?.investor_mode;
+
   return (
     <Card className="w-full max-w-3xl mx-auto mt-8 bg-card">
       <CardHeader>
@@ -157,8 +172,16 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
         <CardDescription>{schema.metadata.description}</CardDescription>
       </CardHeader>
       <CardContent>
+        {!isUserConnected && unconnectedExplainer && (
+          <Alert className="w-full max-w-3xl bg-muted/50 border-hodl-blue text-muted-foreground mb-6">
+            <Info className="h-4 w-4 text-hodl-blue" />
+            <AlertTitle className="text-hodl-blue">Investor Mode</AlertTitle>
+            <AlertDescription>{unconnectedExplainer}</AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          {(schema.modules || []).map(module => {
+          {(filteredModules || []).map(module => {
             const moduleQuestions = visibleQuestions.filter(q => q.moduleId === module.id);
             const isOpen = openModules.has(module.id);
 

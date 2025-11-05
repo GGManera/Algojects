@@ -42,44 +42,48 @@ export interface FormStructure {
 export async function fetchFormStructure(): Promise<FormStructure> {
   const response = await retryFetch('/api/form-structure', undefined, 5);
   
+  // Read the body text once, regardless of status
+  const responseText = await response.text(); 
+
   if (!response.ok) {
     let errorText = `Failed to fetch form structure: ${response.status}`;
     try {
-      const errorData = await response.json();
+      const errorData = JSON.parse(responseText); // Try to parse the text
       errorText = errorData.error || errorText;
     } catch (e) {
-      // If response is not JSON, read as text
-      errorText = await response.text();
+      // If parsing fails, use the raw text as the error message
+      errorText = responseText || errorText;
     }
     throw new Error(errorText);
   }
   
-  // Read JSON only if response is OK
-  return response.json();
+  // If response is OK, parse the text as JSON
+  try {
+      return JSON.parse(responseText);
+  } catch (e) {
+      throw new Error("Failed to parse successful response as JSON.");
+  }
 }
 
 /**
  * Submits a user response to the Form Responses table.
  */
 export async function submitFormResponse(response: any): Promise<void> {
-  const responseBody = {
-    ...response,
-    submitted_at: new Date().toISOString(),
-  };
-  
   const responseApi = await retryFetch('/api/form-responses', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(responseBody),
+    body: JSON.stringify(response),
   }, 5);
+
+  const responseText = await responseApi.text();
 
   if (!responseApi.ok) {
     let errorText = `Failed to submit response: ${responseApi.status}`;
     try {
-      const errorData = await responseApi.json();
+      const errorData = JSON.parse(responseText);
       errorText = errorData.error || errorText;
     } catch (e) {
-      errorText = await responseApi.text();
+      errorText = responseText || errorText;
     }
     throw new Error(errorText);
   }
@@ -95,36 +99,46 @@ export async function generateHash(jsonDraft: FormStructure): Promise<{ hash: st
     body: JSON.stringify(jsonDraft),
   }, 5);
 
+  const responseText = await response.text();
+
   if (!response.ok) {
     let errorText = `Failed to generate hash: ${response.status}`;
     try {
-      const errorData = await response.json();
+      const errorData = JSON.parse(responseText);
       errorText = errorData.error || errorText;
     } catch (e) {
-      errorText = await response.text();
+      errorText = responseText || errorText;
     }
     throw new Error(errorText);
   }
-  return response.json();
+  
+  try {
+      return JSON.parse(responseText);
+  } catch (e) {
+      throw new Error("Failed to parse successful hash response as JSON.");
+  }
 }
 
 /**
  * Verifies the Algorand transaction and triggers the Coda update if valid.
  */
 export async function verifyTransactionAndCommit(txid: string, expectedHash: string, newJsonDraft: FormStructure): Promise<void> {
+  // Note: The body is sent here because the Vercel API emulator in vite.config.ts reads it from the request body
   const response = await retryFetch(`/api/verify-tx?txid=${txid}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ hash: expectedHash, newJsonDraft }),
   }, 5);
 
+  const responseText = await response.text();
+
   if (!response.ok) {
     let errorText = `Transaction verification failed: ${response.status}`;
     try {
-      const errorData = await response.json();
+      const errorData = JSON.parse(responseText);
       errorText = errorData.error || errorText;
     } catch (e) {
-      errorText = await response.text();
+      errorText = responseText || errorText;
     }
     throw new Error(errorText);
   }

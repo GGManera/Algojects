@@ -35,7 +35,7 @@ export function HeroSection({ heroLogoRef, isInsideCarousel, className, focusedI
   }, [handleToggleExpand, registerItem, isActive]);
 
   return (
-    <div className={cn("text-center py-8 md:pb-12 relative", className)}> {/* Added relative here */}
+    <div className={cn("text-center py-8 md:pb-12", className)}> {/* Removed 'relative' */}
       <div
         ref={heroLogoRef}
         className={cn(
@@ -56,15 +56,15 @@ export function HeroSection({ heroLogoRef, isInsideCarousel, className, focusedI
         />
       </div>
       
-      {/* NEW: Container to hold the AnimatedTitle and center it absolutely */}
-      <div className="absolute left-1/2 transform -translate-x-1/2 w-full" style={{ top: 'calc(50% + 16px)' }}>
-        <AnimatedTitle className="mt-4 mb-4" isInsideCarousel={isInsideCarousel} />
+      {/* NEW: Wrapper for AnimatedTitle to control its width and centering */}
+      {/* The AnimatedTitle itself will now manage its internal width changes without affecting this parent's width */}
+      <div className="mx-auto w-full max-w-3xl mt-4"> {/* Added max-w-3xl, mx-auto, and mt-4 */}
+        <AnimatedTitle isInsideCarousel={isInsideCarousel} /> {/* Removed className prop here */}
       </div>
       
-      {/* Placeholder to reserve vertical space for the AnimatedTitle */}
-      <div className="h-16 md:h-24"></div> 
+      {/* Removed the placeholder div as AnimatedTitle is now in flow */}
 
-      <p className="text-blue-200 mt-[-10px] md:mt-[-30px]">
+      <p className="text-blue-200 mt-2"> {/* Adjusted margin-top */}
         Project Review Portal on Algorand
       </p>
     </div>

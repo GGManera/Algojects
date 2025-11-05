@@ -65,8 +65,15 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   const { activeAddress } = useWallet();
   const [editingMode, setEditingMode] = useState<'structured' | 'json'>('structured');
   
-  // State for structured editing
-  const [structuredDraft, setStructuredDraft] = useState<FormStructure>(currentSchema);
+  // Função para criar um clone profundo do esquema
+  const deepCloneSchema = useCallback((schema: FormStructure): FormStructure => {
+    // Remove rowId antes de clonar, pois ele não faz parte do esquema JSON
+    const { rowId, ...schemaWithoutRowId } = schema;
+    return JSON.parse(JSON.stringify(schemaWithoutRowId)) as FormStructure;
+  }, []);
+
+  // 1. Inicialização do estado com clone profundo
+  const [structuredDraft, setStructuredDraft] = useState<FormStructure>(() => deepCloneSchema(currentSchema));
   
   // State for JSON editing (synced with structuredDraft)
   const [jsonDraft, setJsonDraft] = useState(JSON.stringify(currentSchema, null, 2));
@@ -87,32 +94,27 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
 
   // 1. Sync currentSchema -> structuredDraft on initial load/commit
   useEffect(() => {
-    // Função para criar um clone profundo do esquema
-    const deepCloneSchema = (schema: FormStructure): FormStructure => {
-        const { rowId, ...schemaWithoutRowId } = schema;
-        return JSON.parse(JSON.stringify(schemaWithoutRowId)) as FormStructure;
-    };
-
+    const clonedSchema = deepCloneSchema(currentSchema);
+    
     // Check if the fetched schema is clearly incomplete (e.g., missing modules array)
-    const isSchemaIncomplete = !currentSchema.modules || currentSchema.modules.length === 0;
+    const isSchemaIncomplete = !clonedSchema.modules || clonedSchema.modules.length === 0;
     
     if (isSchemaIncomplete && currentSchema.rowId) {
-        // If incomplete but we have a rowId, initialize with the fallback template
+        // Se incompleto mas temos rowId, inicializa com o template de fallback
         const safeDraft = { ...FALLBACK_FORM_STRUCTURE_TEMPLATE, rowId: currentSchema.rowId } as FormStructure;
         setStructuredDraft(safeDraft);
         setJsonDraft(JSON.stringify(safeDraft, null, 2));
     } else if (currentSchema.rowId) {
-        // If complete and has rowId, use the fetched schema (deep clone)
-        setStructuredDraft(deepCloneSchema(currentSchema));
+        // Se completo e tem rowId, usa o esquema clonado
+        setStructuredDraft(clonedSchema);
         setJsonDraft(JSON.stringify(currentSchema, null, 2));
     }
-  }, [currentSchema]);
+  }, [currentSchema, deepCloneSchema]);
 
   // 2. Sync structuredDraft -> jsonDraft whenever structuredDraft changes
   useEffect(() => {
     try {
-      // Use the full structuredDraft object for stringification
-      // We explicitly exclude rowId here, as it's not part of the schema definition
+      // Use o structuredDraft completo (sem rowId) para serialização
       const { rowId, ...draftWithoutRowId } = structuredDraft;
       setJsonDraft(JSON.stringify(draftWithoutRowId, null, 2));
       setIsJsonValid(true);
@@ -128,18 +130,8 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     try {
       const parsed = JSON.parse(newJson);
       
-      // --- CRITICAL FIX: Merge parsed JSON with existing structuredDraft to ensure all properties are kept ---
-      const mergedDraft: FormStructure = {
-          ...structuredDraft, // Start with the current full draft
-          ...parsed,          // Overwrite with parsed top-level fields
-          // Ensure nested objects are also merged if they exist in both
-          metadata: { ...structuredDraft.metadata, ...parsed.metadata },
-          governance: { ...structuredDraft.governance, ...parsed.governance },
-          audit: { ...structuredDraft.audit, ...parsed.audit },
-          modules: parsed.modules || structuredDraft.modules, // Modules must be replaced entirely if present
-      };
-
-      setStructuredDraft(mergedDraft);
+      // Se o JSON for válido, substitua o structuredDraft pelo objeto completo
+      setStructuredDraft(parsed);
       setIsJsonValid(true);
     } catch (e) {
       setIsJsonValid(false);
@@ -195,10 +187,11 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     const localHash = generateLocalHash(draftToCommit);
     
     // 2. Increment version number (e.g., "1.3" -> "1.4")
-    const currentVersion = parseFloat(draftToCommit.version || '1.0');
+    const currentVersion = parseFloat(currentSchema.version || '1.0'); // Use currentSchema version as base
     const newVersion = (Math.floor(currentVersion * 10) + 1) / 10;
 
     // 3. Construir o finalDraft usando o structuredDraft completo
+    // CRITICAL: We use the structuredDraft (which holds the user's edits) but overwrite the version and audit fields.
     const finalDraft: FormStructure = {
       ...draftToCommit,
       version: newVersion.toFixed(1), // Incremented version
@@ -224,7 +217,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     };
 
     return finalDraft;
-  }, [structuredDraft, isJsonValid, activeAddress, adminWallet, projectWallet]);
+  }, [structuredDraft, isJsonValid, activeAddress, adminWallet, projectWallet, currentSchema.version]); // Added currentSchema.version dependency
 
   const handlePrepareCommit = () => {
     const finalDraft = prepareDraftForCommit();

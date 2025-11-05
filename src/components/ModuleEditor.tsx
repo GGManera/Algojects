@@ -32,7 +32,9 @@ export function ModuleEditor({ module, index, onUpdate, onRemove }: ModuleEditor
   const questions = module.questions || [];
 
   const handleUpdateQuestion = (qIndex: number, updatedQuestion: any) => {
+    // Ensure we create a new array reference
     const newQuestions = questions.map((q, i) => i === qIndex ? updatedQuestion : q);
+    // Pass a new module object to the parent
     onUpdate(index, { ...module, questions: newQuestions });
   };
 

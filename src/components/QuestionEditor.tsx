@@ -39,6 +39,7 @@ export function QuestionEditor({ question, index, onUpdate, onRemove, moduleId }
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleUpdate = (field: keyof Question, value: any) => {
+    // Ensure we are creating a new object reference for the question
     const updatedQuestion = { ...question, [field]: value };
     onUpdate(index, updatedQuestion);
   };

@@ -12,6 +12,7 @@ import { useWallet } from '@txnlab/use-wallet-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { cn } from '@/lib/utils';
 import { CollapsibleContent } from './CollapsibleContent'; // Import CollapsibleContent
+import { ChevronDown, ChevronUp } from 'lucide-react'; // IMPORT MISSING ICONS
 
 interface DynamicFeedbackFormProps {
   schema: FormStructure;

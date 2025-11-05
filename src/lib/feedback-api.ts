@@ -84,7 +84,11 @@ export async function createFormStructureClient(newJsonDraft: FormStructure): Pr
     body: newJsonString, // <--- ALTERADO: Envia a string JSON diretamente
   }, 5);
 
-  await response.json();
+  // No need to call response.json() here, as retryFetch will throw on error
+  // and for success, the server just returns a message, not data to be parsed.
+  // If you needed to read a success message, you would do:
+  // const successData = await response.json();
+  // console.log(successData.message);
 }
 
 /**

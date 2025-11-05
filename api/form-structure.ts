@@ -13,19 +13,29 @@ export default async function handler(
       return response.status(200).json({ ...JSON.parse(jsonString), rowId });
     } else if (request.method === 'POST') { // CHANGED from PUT to POST for versioning
       // 2. POST /api/form-structure: Create a new schema version
-      const newJsonString = request.body; // <--- ALTERADO: Recebe a string JSON diretamente
+      let newJsonString: string;
+      
+      // Ensure request.body is a string, as it might be an object if already parsed by middleware
+      if (typeof request.body === 'string') {
+        newJsonString = request.body;
+      } else if (typeof request.body === 'object' && request.body !== null) {
+        newJsonString = JSON.stringify(request.body);
+      } else {
+        console.error("[Form Structure API] Error: Invalid or missing request body.");
+        return response.status(400).json({ error: 'Invalid or missing JSON string in request body.' });
+      }
       
       console.log("[Form Structure API] Received POST request to create new version.");
       
       if (!newJsonString) {
-        console.error("[Form Structure API] Error: Missing newJsonString in request body.");
+        console.error("[Form Structure API] Error: newJsonString is empty after processing.");
         return response.status(400).json({ error: 'Missing newJsonString for creation.' });
       }
       
       // Log the start and end of the received string to check for truncation
       console.log(`[Form Structure API] Received JSON String Length: ${newJsonString.length}`);
-      console.log(`[Form Structure API] Received JSON String Start (100 chars): ${newJsonString.substring(0, 100)}`);
-      console.log(`[Form Structure API] Received JSON String End (100 chars): ${newJsonString.substring(newJsonString.length - 100)}`);
+      console.log(`[Form Structure API] Received JSON String Start (100 chars): ${newJsonString.substring(0, Math.min(newJsonString.length, 100))}`);
+      console.log(`[Form Structure API] Received JSON String End (100 chars): ${newJsonString.substring(Math.max(0, newJsonString.length - 100))}`);
       console.log(`[Form Structure API] Full received JSON string: ${newJsonString}`); // <--- NOVO LOG: Mostra a string completa
 
       await createFormStructureInCoda(newJsonString); // Use the new creation function

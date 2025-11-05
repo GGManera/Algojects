@@ -14,6 +14,7 @@ export async function retryFetch(
         if (i < retries - 1) {
           await new Promise(res => setTimeout(res, delay));
         } else {
+          // Throw an Error object with the server's message
           throw new Error(`Failed to fetch after ${retries} attempts: ${response.status} - ${errorText}`);
         }
       }
@@ -24,6 +25,7 @@ export async function retryFetch(
       if (i < retries - 1) {
         await new Promise(res => setTimeout(res, delay));
       } else {
+        // Re-throw the original error or a new one if it's not an instance of Error
         throw new Error(`Failed to fetch after ${retries} attempts: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }

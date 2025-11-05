@@ -20,7 +20,8 @@ interface AdminFormEditorProps {
 }
 
 // Define a fallback structure locally for safety if the fetched schema is empty/corrupted
-const FALLBACK_FORM_STRUCTURE_TEMPLATE: FormStructure = {
+// NOTE: Removed rowId assignment here as currentSchema is out of scope.
+const FALLBACK_FORM_STRUCTURE_TEMPLATE: Omit<FormStructure, 'rowId'> & { rowId?: string } = {
   form_id: "algojects_feedback_master",
   version: "1.3",
   feedback_version: "v1",
@@ -57,7 +58,6 @@ const FALLBACK_FORM_STRUCTURE_TEMPLATE: FormStructure = {
       timestamp: null,
     }
   },
-  rowId: currentSchema.rowId, // Keep rowId if available
 };
 
 
@@ -90,8 +90,8 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     
     if (isSchemaIncomplete && currentSchema.rowId) {
         // If incomplete but we have a rowId, initialize with the fallback template
-        // This prevents accidentally wiping the Coda table with an empty object if the fetch failed partially.
-        const safeDraft = { ...FALLBACK_FORM_STRUCTURE_TEMPLATE, rowId: currentSchema.rowId };
+        // We explicitly add the rowId here.
+        const safeDraft = { ...FALLBACK_FORM_STRUCTURE_TEMPLATE, rowId: currentSchema.rowId } as FormStructure;
         setStructuredDraft(safeDraft);
         setJsonDraft(JSON.stringify(safeDraft, null, 2));
     } else if (currentSchema.rowId) {

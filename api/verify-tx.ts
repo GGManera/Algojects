@@ -70,17 +70,18 @@ export default async function handler(
     const { rowId } = await fetchFormStructureFromCoda();
     
     // Call the internal PUT endpoint to update the Coda cell
-    // NOTE: Using a relative path here relies on the Vite proxy/emulator handling the routing correctly.
-    const updateResponse = await fetch(`/api/form-structure`, {
+    // *** CHANGED to use retryFetch ***
+    const updateResponse = await retryFetch(`/api/form-structure`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             newJsonString: JSON.stringify(newJsonDraft, Object.keys(newJsonDraft).sort(), 2), // Re-normalize before sending to Coda
             rowId 
         }),
-    });
+    }, 1); // Only 1 retry needed for internal call
 
     if (!updateResponse.ok) {
+        // Since retryFetch throws on non-ok status, this block is only for safety
         const updateError = await updateResponse.json();
         throw new Error(`Failed to update Coda after TX verification: ${updateError.error}`);
     }

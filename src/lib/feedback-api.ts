@@ -129,18 +129,9 @@ export async function verifyTransactionAndCommit(txid: string, expectedHash: str
     body: JSON.stringify({ txid, hash: expectedHash, newJsonDraft }), // Send all data in body
   }, 5);
 
-  const responseText = await response.text();
-
-  if (!response.ok) {
-    let errorText = `Transaction verification failed: ${response.status}`;
-    try {
-      const errorData = JSON.parse(responseText);
-      errorText = errorData.error || errorText;
-    } catch (e) {
-      errorText = responseText || errorText;
-    }
-    throw new Error(errorText);
-  }
+  // If retryFetch returns, the response is guaranteed to be response.ok
+  // We can safely parse it as JSON.
+  await response.json();
 }
 
 /**

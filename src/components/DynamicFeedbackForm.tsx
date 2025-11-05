@@ -13,6 +13,7 @@ import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast
 import { cn } from '@/lib/utils';
 import { CollapsibleContent } from './CollapsibleContent';
 import { ChevronDown, ChevronUp, Info } from 'lucide-react'; // IMPORT MISSING ICONS
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Adicionado: Importação do componente Alert
 
 interface DynamicFeedbackFormProps {
   schema: FormStructure;

@@ -8,6 +8,7 @@ export async function retryFetch(
     try {
       const response = await fetch(input, init);
       if (!response.ok) {
+        // Read body only on error to log it, then throw
         const errorText = await response.text();
         console.warn(`Fetch attempt ${i + 1} failed with status ${response.status}: ${errorText}. Retrying...`);
         if (i < retries - 1) {
@@ -16,6 +17,7 @@ export async function retryFetch(
           throw new Error(`Failed to fetch after ${retries} attempts: ${response.status} - ${errorText}`);
         }
       }
+      // If response is OK, return the response object directly without consuming the body stream
       return response;
     } catch (error) {
       console.error(`Fetch attempt ${i + 1} caught an error:`, error);

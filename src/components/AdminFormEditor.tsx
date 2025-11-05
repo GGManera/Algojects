@@ -133,6 +133,14 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
 
   // --- Core Logic ---
 
+  const parsedDraft = useMemo(() => {
+    try {
+      return JSON.parse(jsonDraft);
+    } catch {
+      return null;
+    }
+  }, [jsonDraft]);
+
   const handleGenerateHash = async () => {
     const draftToHash = editingMode === 'json' ? parsedDraft : structuredDraft;
 
@@ -355,7 +363,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
               <h3 className="text-lg font-semibold text-primary">Modules</h3>
               {structuredDraft.modules.map((module, index) => (
                 <ModuleEditor
-                  key={module.id}
+                  key={module.id} // Use module.id as the key
                   module={module}
                   index={index}
                   onUpdate={handleUpdateModule}

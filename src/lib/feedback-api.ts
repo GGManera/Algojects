@@ -42,24 +42,9 @@ export interface FormStructure {
 export async function fetchFormStructure(): Promise<FormStructure> {
   const response = await retryFetch('/api/form-structure', undefined, 5);
   
-  // Read the body text once, regardless of status
-  const responseText = await response.text(); 
-
-  if (!response.ok) {
-    let errorText = `Failed to fetch form structure: ${response.status}`;
-    try {
-      const errorData = JSON.parse(responseText); // Try to parse the text
-      errorText = errorData.error || errorText;
-    } catch (e) {
-      // If parsing fails, use the raw text as the error message
-      errorText = responseText || errorText;
-    }
-    throw new Error(errorText);
-  }
-  
-  // If response is OK, parse the text as JSON
+  // If response is OK, parse the body as JSON
   try {
-      return JSON.parse(responseText);
+      return response.json();
   } catch (e) {
       throw new Error("Failed to parse successful response as JSON.");
   }
@@ -75,18 +60,9 @@ export async function submitFormResponse(response: any): Promise<void> {
     body: JSON.stringify(response),
   }, 5);
 
-  const responseText = await responseApi.text(); // Read body once
-
-  if (!responseApi.ok) {
-    let errorText = `Failed to submit response: ${responseApi.status}`;
-    try {
-      const errorData = JSON.parse(responseText);
-      errorText = errorData.error || errorText;
-    } catch (e) {
-      errorText = responseText || errorText;
-    }
-    throw new Error(errorText);
-  }
+  // Read body only if needed for error logging, but since retryFetch handles errors, 
+  // we just need to consume the body if successful (or let it be consumed by json())
+  await responseApi.json();
 }
 
 /**
@@ -99,21 +75,8 @@ export async function generateHash(jsonDraft: FormStructure): Promise<{ hash: st
     body: JSON.stringify(jsonDraft),
   }, 5);
 
-  const responseText = await response.text();
-
-  if (!response.ok) {
-    let errorText = `Failed to generate hash: ${response.status}`;
-    try {
-      const errorData = JSON.parse(responseText);
-      errorText = errorData.error || errorText;
-    } catch (e) {
-      errorText = responseText || errorText;
-    }
-    throw new Error(errorText);
-  }
-  
   try {
-      return JSON.parse(responseText);
+      return response.json();
   } catch (e) {
       throw new Error("Failed to parse successful hash response as JSON.");
   }
@@ -123,22 +86,13 @@ export async function generateHash(jsonDraft: FormStructure): Promise<{ hash: st
  * Verifies the Algorand transaction and triggers the Coda update if valid.
  */
 export async function verifyTransactionAndCommit(txid: string, expectedHash: string, newJsonDraft: FormStructure): Promise<void> {
-  const response = await retryFetch(`/api/verify-tx`, { // Removed query string, using body
-    method: 'POST', // CHANGED from GET to POST
+  const response = await retryFetch(`/api/verify-tx`, {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ txid, hash: expectedHash, newJsonDraft }), // Send all data in body
+    body: JSON.stringify({ txid, hash: expectedHash, newJsonDraft }),
   }, 5);
 
   // If retryFetch returns, the response is guaranteed to be response.ok
   // We can safely parse it as JSON.
   await response.json();
-}
-
-/**
- * Utility to generate the hash locally (for display/comparison)
- */
-export function generateLocalHash(jsonDraft: FormStructure): string {
-    // Ensure the same normalization logic as the server
-    const normalizedJsonString = JSON.stringify(jsonDraft, Object.keys(jsonDraft).sort(), 2);
-    return sha256(normalizedJsonString);
 }

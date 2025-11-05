@@ -30,7 +30,9 @@ export default async function handler(
     // 1. Fetch transaction details from Indexer
     const txResponse = await retryFetch(`${INDEXER_URL}/v2/transactions/${txid}`, undefined, 5);
     if (!txResponse.ok) {
-      return response.status(404).json({ error: `Transaction ${txid} not found or Indexer error.` });
+      // Since retryFetch now returns the response object, we need to read the error body here if needed
+      const errorText = await txResponse.text();
+      return response.status(404).json({ error: `Transaction ${txid} not found or Indexer error: ${errorText}` });
     }
     const txData = await txResponse.json();
     const transaction = txData.transaction;
@@ -64,7 +66,8 @@ export default async function handler(
     console.log(`[VerifyTx] Coda rowId fetched: ${rowId}. Attempting internal PUT to update schema...`);
     
     // --- CRITICAL FIX: Use absolute URL for internal fetch ---
-    const host = request.headers.host;
+    // Safely access host header
+    const host = request.headers.host || 'localhost:8080'; 
     const internalUrl = `http://${host}/api/form-structure`;
     console.log(`[VerifyTx] Internal PUT URL: ${internalUrl}`);
     
@@ -100,7 +103,7 @@ export default async function handler(
     return response.status(200).json({ 
         message: 'Transaction verified and Form Structure updated successfully.',
         txid: txid,
-        sender: sender,
+        sender: transaction.sender, // Use transaction.sender here
         note: noteText
     });
 

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useWallet } from '@txnlab/use-wallet-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { cn } from '@/lib/utils';
+import { CollapsibleContent } from './CollapsibleContent'; // Import CollapsibleContent
 
 interface DynamicFeedbackFormProps {
   schema: FormStructure;
@@ -71,6 +72,7 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
   const { activeAddress } = useWallet();
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [openModules, setOpenModules] = useState<Set<string>>(() => new Set(schema.modules.map(m => m.id))); // Open all by default
 
   const allQuestions = useMemo(() => {
     return schema.modules.flatMap(module => module.questions.map((q: any) => ({ ...q, moduleId: module.id })));
@@ -119,13 +121,25 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
       setIsSubmitting(false);
     }
   };
+  
+  const toggleModule = (moduleId: string) => {
+    setOpenModules(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(moduleId)) {
+        newSet.delete(moduleId);
+      } else {
+        newSet.add(moduleId);
+      }
+      return newSet;
+    });
+  };
 
   if (isEditing) {
     return (
       <Card className="w-full max-w-3xl mx-auto mt-8 bg-card border-primary/50">
         <CardHeader>
           <CardTitle className="gradient-text">Admin Mode Active</CardTitle>
-          <CardDescription>Use the editor below to modify the form schema.</CardDescription>
+          <CardDescription>Use the editor above to modify the form schema.</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -141,22 +155,27 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
         <form onSubmit={handleSubmit} className="space-y-6">
           {schema.modules.map(module => {
             const moduleQuestions = visibleQuestions.filter(q => q.moduleId === module.id);
-            if (moduleQuestions.length === 0) return null;
+            const isOpen = openModules.has(module.id);
 
             return (
-              <div key={module.id} className="space-y-4 p-4 border border-muted rounded-lg">
-                <h3 className="text-xl font-semibold text-primary">{module.title}</h3>
+              <div key={module.id} className="space-y-4 p-4 border border-muted rounded-lg bg-muted/20">
+                <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleModule(module.id)}>
+                    <h3 className="text-xl font-semibold text-primary">{module.title}</h3>
+                    {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                </div>
                 <p className="text-sm text-muted-foreground">{module.description}</p>
                 
-                {moduleQuestions.map(question => (
-                  <div key={question.id} className="pt-2">
-                    <QuestionRenderer
-                      question={question}
-                      value={responses[question.id]}
-                      onChange={(value) => handleResponseChange(question.id, value)}
-                    />
-                  </div>
-                ))}
+                <CollapsibleContent isOpen={isOpen}>
+                    {moduleQuestions.map(question => (
+                    <div key={question.id} className="pt-2">
+                        <QuestionRenderer
+                        question={question}
+                        value={responses[question.id]}
+                        onChange={(value) => handleResponseChange(question.id, value)}
+                        />
+                    </div>
+                    ))}
+                </CollapsibleContent>
               </div>
             );
           })}

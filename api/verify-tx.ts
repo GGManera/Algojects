@@ -70,7 +70,8 @@ export default async function handler(
     const { rowId } = await fetchFormStructureFromCoda();
     
     // Call the internal PUT endpoint to update the Coda cell
-    const updateResponse = await fetch(`${request.headers.origin}/api/form-structure`, {
+    // NOTE: Using a relative path here relies on the Vite proxy/emulator handling the routing correctly.
+    const updateResponse = await fetch(`/api/form-structure`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

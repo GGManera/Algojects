@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FormStructure, generateHash, verifyTransactionAndCommit, generateLocalHash } from '@/lib/feedback-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,10 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useWallet } from '@txnlab/use-wallet-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
-import { Edit, Hash, CheckCircle, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Edit, Hash, CheckCircle, ArrowRight, AlertTriangle, PlusCircle, Settings } from 'lucide-react';
 import algosdk from 'algosdk';
 import { toast } from 'sonner';
 import { PaymentConfirmationDialog } from './PaymentConfirmationDialog';
+import { ModuleEditor } from './ModuleEditor'; // NEW Import
+import { cn } from '@/lib/utils';
 
 const TRANSACTION_TIMEOUT_MS = 60000;
 
@@ -34,10 +36,16 @@ interface AdminFormEditorProps {
 
 export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEditorProps) {
   const { activeAddress, transactionSigner, algodClient } = useWallet();
-  const [draftJson, setDraftJson] = useState(JSON.stringify(currentSchema, null, 2));
+  const [editingMode, setEditingMode] = useState<'structured' | 'json'>('structured');
+  
+  // State for structured editing
+  const [structuredDraft, setStructuredDraft] = useState<FormStructure>(currentSchema);
+  
+  // State for JSON editing (synced with structuredDraft)
+  const [jsonDraft, setJsonDraft] = useState(JSON.stringify(currentSchema, null, 2));
+  
   const [isJsonValid, setIsJsonValid] = useState(true);
   const [generatedHash, setGeneratedHash] = useState<string | null>(null);
-  const [txId, setTxId] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
@@ -55,26 +63,80 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     return activeAddress === adminWallet;
   }, [activeAddress, adminWallet]);
 
-  const parsedDraft = useMemo(() => {
-    try {
-      const parsed = JSON.parse(draftJson);
-      setIsJsonValid(true);
-      return parsed;
-    } catch (e) {
-      setIsJsonValid(false);
-      return null;
-    }
-  }, [draftJson]);
+  // --- Sync Effects ---
 
+  // 1. Sync currentSchema -> structuredDraft on initial load/commit
   useEffect(() => {
-    // Reset draft when currentSchema changes (e.g., after a successful commit)
-    setDraftJson(JSON.stringify(currentSchema, null, 2));
+    setStructuredDraft(currentSchema);
+    setJsonDraft(JSON.stringify(currentSchema, null, 2));
     setGeneratedHash(null);
-    setTxId('');
   }, [currentSchema]);
 
+  // 2. Sync structuredDraft -> jsonDraft whenever structuredDraft changes
+  useEffect(() => {
+    try {
+      setJsonDraft(JSON.stringify(structuredDraft, null, 2));
+      setIsJsonValid(true);
+    } catch (e) {
+      // Should not happen if structured editing is used
+      console.error("Error syncing structuredDraft to jsonDraft:", e);
+    }
+  }, [structuredDraft]);
+
+  // 3. Sync jsonDraft -> structuredDraft when switching from JSON mode
+  const handleJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newJson = e.target.value;
+    setJsonDraft(newJson);
+    try {
+      const parsed = JSON.parse(newJson);
+      setStructuredDraft(parsed);
+      setIsJsonValid(true);
+    } catch (e) {
+      setIsJsonValid(false);
+    }
+  };
+
+  // --- Structured Editing Handlers ---
+  const handleUpdateModule = useCallback((index: number, updatedModule: any) => {
+    setStructuredDraft(prev => ({
+      ...prev,
+      modules: prev.modules.map((m, i) => i === index ? updatedModule : m)
+    }));
+  }, []);
+
+  const handleRemoveModule = useCallback((index: number) => {
+    setStructuredDraft(prev => ({
+      ...prev,
+      modules: prev.modules.filter((_, i) => i !== index)
+    }));
+  }, []);
+
+  const handleAddModule = useCallback(() => {
+    const newModule = {
+      id: `m${Date.now()}`,
+      title: 'New Module',
+      description: 'New module description.',
+      questions: [],
+    };
+    setStructuredDraft(prev => ({
+      ...prev,
+      modules: [...prev.modules, newModule]
+    }));
+  }, []);
+  
+  const handleUpdateMetadata = useCallback((key: keyof FormStructure['metadata'], value: string) => {
+    setStructuredDraft(prev => ({
+      ...prev,
+      metadata: { ...prev.metadata, [key]: value }
+    }));
+  }, []);
+
+  // --- Core Logic ---
+
   const handleGenerateHash = async () => {
-    if (!parsedDraft || !isJsonValid) {
+    const draftToHash = editingMode === 'json' ? parsedDraft : structuredDraft;
+
+    if (!draftToHash || !isJsonValid) {
       showError("Invalid JSON draft.");
       return;
     }
@@ -82,7 +144,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     try {
       // Update audit fields locally before hashing
       const updatedDraft = {
-        ...parsedDraft,
+        ...draftToHash,
         audit: {
           last_edit: {
             hash: null, // Hash is generated *after* this step
@@ -93,11 +155,13 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
         }
       } as FormStructure;
       
-      // Re-stringify the updated draft to ensure the hash is correct
+      // Generate hash using the serverless function
       const { hash, normalizedJsonString } = await generateHash(updatedDraft);
       
-      // Update the draft JSON state with the normalized, audited version
-      setDraftJson(JSON.stringify(updatedDraft, Object.keys(updatedDraft).sort(), 2));
+      // Update the draft state with the normalized, audited version
+      const finalDraft = JSON.parse(normalizedJsonString);
+      setStructuredDraft(finalDraft);
+      setJsonDraft(JSON.stringify(finalDraft, null, 2));
       setGeneratedHash(hash);
       showSuccess("Hash generated successfully. Proceed to sign transaction.");
     } catch (error) {
@@ -196,7 +260,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   };
   
   const handleVerifyAndCommit = async (confirmedTxId: string) => {
-    if (!generatedHash || !parsedDraft) return;
+    if (!generatedHash || !structuredDraft) return;
     
     setIsVerifying(true);
     loadingToastIdRef.current = toast.loading("Finalizing update and committing to Coda...", { id: loadingToastIdRef.current });
@@ -204,10 +268,10 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     try {
         // Update the audit log in the draft with the confirmed TXID
         const finalDraft = {
-            ...parsedDraft,
+            ...structuredDraft,
             audit: {
                 last_edit: {
-                    ...parsedDraft.audit.last_edit,
+                    ...structuredDraft.audit.last_edit,
                     hash: generatedHash,
                     txid: confirmedTxId,
                 }
@@ -232,13 +296,19 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   return (
     <>
       <Card className="w-full max-w-3xl mx-auto mt-8 bg-card border-primary/50">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-primary">
             <Edit className="h-5 w-5" /> Dynamic Form Editor
           </CardTitle>
-          <CardDescription>
-            Edit the master JSON schema. Changes must be verified via an Algorand transaction signed by the authorized wallet ({adminWallet}).
-          </CardDescription>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setEditingMode(prev => prev === 'structured' ? 'json' : 'structured')}
+            disabled={!isAuthorized || isGenerating || isVerifying || isCommitting}
+          >
+            {editingMode === 'structured' ? 'Edit JSON' : 'Edit Structured'}
+            <Settings className="h-4 w-4 ml-2" />
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           {!isAuthorized && (
@@ -249,20 +319,69 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
             </Alert>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="json-draft">Master JSON Schema Draft</Label>
-            <Textarea
-              id="json-draft"
-              value={draftJson}
-              onChange={(e) => setDraftJson(e.target.value)}
-              rows={20}
-              disabled={!isAuthorized || isGenerating || isVerifying || isCommitting}
-              className={`font-mono text-xs bg-muted/50 ${!isJsonValid ? 'border-red-500' : ''}`}
-            />
-            {!isJsonValid && <p className="text-red-500 text-sm">Invalid JSON format.</p>}
+          {/* Metadata Editor */}
+          <div className="space-y-2 p-4 border rounded-lg bg-muted/20">
+            <h3 className="text-lg font-semibold text-primary">Form Metadata</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="form-id">Form ID</Label>
+                    <Input id="form-id" value={structuredDraft.form_id} disabled className="bg-card" />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="feedback-version">Feedback Version</Label>
+                    <Input id="feedback-version" value={structuredDraft.feedback_version} disabled className="bg-card" />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea 
+                        id="description" 
+                        value={structuredDraft.metadata.description} 
+                        onChange={(e) => handleUpdateMetadata('description', e.target.value)}
+                        disabled={!isAuthorized || isGenerating || isVerifying || isCommitting}
+                        className="bg-card"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="admin-wallet">Admin Wallet</Label>
+                    <Input id="admin-wallet" value={structuredDraft.authorized_wallet} disabled className="bg-card font-mono text-xs" />
+                    <Label htmlFor="project-wallet">Project Wallet</Label>
+                    <Input id="project-wallet" value={structuredDraft.project_wallet} disabled className="bg-card font-mono text-xs" />
+                </div>
+            </div>
           </div>
 
-          <div className="flex justify-between items-center pt-4">
+          {editingMode === 'structured' ? (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-primary">Modules</h3>
+              {structuredDraft.modules.map((module, index) => (
+                <ModuleEditor
+                  key={module.id}
+                  module={module}
+                  index={index}
+                  onUpdate={handleUpdateModule}
+                  onRemove={handleRemoveModule}
+                />
+              ))}
+              <Button onClick={handleAddModule} className="w-full" disabled={!isAuthorized || isGenerating || isVerifying || isCommitting}>
+                <PlusCircle className="h-4 w-4 mr-2" /> Add New Module
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="json-draft">Master JSON Schema Draft</Label>
+              <Textarea
+                id="json-draft"
+                value={jsonDraft}
+                onChange={handleJsonChange}
+                rows={20}
+                disabled={!isAuthorized || isGenerating || isVerifying || isCommitting}
+                className={cn("font-mono text-xs bg-muted/50", !isJsonValid && 'border-red-500')}
+              />
+              {!isJsonValid && <p className="text-red-500 text-sm">Invalid JSON format.</p>}
+            </div>
+          )}
+
+          <div className="flex justify-between items-center pt-4 border-t border-muted">
             <Button 
               onClick={handleGenerateHash} 
               disabled={!isAuthorized || !isJsonValid || isGenerating || isVerifying || isCommitting}
@@ -295,8 +414,6 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
               </Button>
             </div>
           )}
-          
-          {/* The verification step is now handled automatically after signing */}
           
           {currentSchema.audit.last_edit.hash && (
             <div className="pt-4 border-t border-muted mt-4 text-sm">

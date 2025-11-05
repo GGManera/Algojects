@@ -13,7 +13,7 @@ export default async function handler(
       return response.status(200).json({ ...JSON.parse(jsonString), rowId });
     } else if (request.method === 'POST') { // CHANGED from PUT to POST for versioning
       // 2. POST /api/form-structure: Create a new schema version
-      const { newJsonString } = request.body; // rowId is no longer needed for POST
+      const newJsonString = request.body; // <--- ALTERADO: Recebe a string JSON diretamente
       
       console.log("[Form Structure API] Received POST request to create new version.");
       
@@ -26,6 +26,7 @@ export default async function handler(
       console.log(`[Form Structure API] Received JSON String Length: ${newJsonString.length}`);
       console.log(`[Form Structure API] Received JSON String Start (100 chars): ${newJsonString.substring(0, 100)}`);
       console.log(`[Form Structure API] Received JSON String End (100 chars): ${newJsonString.substring(newJsonString.length - 100)}`);
+      console.log(`[Form Structure API] Full received JSON string: ${newJsonString}`); // <--- NOVO LOG: Mostra a string completa
 
       await createFormStructureInCoda(newJsonString); // Use the new creation function
       return response.status(200).json({ message: 'New form structure version created successfully.' });

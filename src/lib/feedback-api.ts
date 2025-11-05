@@ -81,7 +81,7 @@ export async function createFormStructureClient(newJsonDraft: FormStructure): Pr
   const response = await retryFetch('/api/form-structure', {
     method: 'POST', // CHANGED to POST
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ newJsonString }), // Only send the string
+    body: newJsonString, // <--- ALTERADO: Envia a string JSON diretamente
   }, 5);
 
   await response.json();

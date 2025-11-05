@@ -250,6 +250,9 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
         }
       },
     };
+    
+    // NEW: Log the final draft before confirmation
+    console.log("[AdminFormEditor] Final Draft Prepared for Commit:", JSON.stringify(finalDraft, null, 2));
 
     return finalDraft;
   }, [structuredDraft, isJsonValid, activeAddress, currentSchema.version]);

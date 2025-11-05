@@ -45,7 +45,7 @@ export function CommitConfirmationDialog({
           </AlertDialogTitle>
           <AlertDialogDescription>
             Review the final JSON schema before creating a new version in Coda.
-            <p className="mt-2 text-xs text-muted-foreground">Local Hash: <span className="font-mono break-all">{localHash}</span></p>
+            <div className="mt-2 text-xs text-muted-foreground">Local Hash: <span className="font-mono break-all">{localHash}</span></div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         

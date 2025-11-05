@@ -195,16 +195,24 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
       // Increment by 0.1 and fix to one decimal place
       const newVersion = (Math.floor(currentVersion * 10) + 1) / 10;
 
+      // --- CRITICAL FIX: Explicitly construct the final draft to ensure all nested objects are present ---
       const finalDraft: FormStructure = {
-        ...draftToCommit,
-        version: newVersion.toFixed(1), // Ensure it's formatted back to string "X.Y"
+        // Base properties
+        form_id: draftToCommit.form_id,
+        version: newVersion.toFixed(1), // Incremented version
+        feedback_version: draftToCommit.feedback_version,
+        authorized_wallet: draftToCommit.authorized_wallet || adminWallet,
+        project_wallet: draftToCommit.project_wallet || projectWallet,
+        hash_verification_required: draftToCommit.hash_verification_required,
+        
+        // Nested objects (ensuring deep copy of content)
         metadata: {
             ...draftToCommit.metadata,
             updated_at: new Date().toISOString(),
         },
-        // Ensure fixed fields are present
-        authorized_wallet: draftToCommit.authorized_wallet || adminWallet,
-        project_wallet: draftToCommit.project_wallet || projectWallet,
+        governance: draftToCommit.governance,
+        modules: draftToCommit.modules,
+        rendering_rules: draftToCommit.rendering_rules,
         
         audit: {
           last_edit: {

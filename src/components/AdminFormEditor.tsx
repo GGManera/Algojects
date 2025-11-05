@@ -1,33 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FormStructure, generateHash, verifyTransactionAndCommit, generateLocalHash } from '@/lib/feedback-api';
+import { FormStructure, updateFormStructureClient, generateLocalHash } from '@/lib/feedback-api';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useWallet } from '@txnlab/use-wallet-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { Edit, Hash, CheckCircle, ArrowRight, AlertTriangle, PlusCircle, Settings } from 'lucide-react';
-import algosdk from 'algosdk';
 import { toast } from 'sonner';
-import { PaymentConfirmationDialog } from './PaymentConfirmationDialog';
-import { ModuleEditor } from './ModuleEditor'; // NEW Import
+import { ModuleEditor } from './ModuleEditor';
 import { cn } from '@/lib/utils';
-
-const TRANSACTION_TIMEOUT_MS = 60000;
-
-interface TransactionDisplayItem {
-  type: 'pay' | 'axfer';
-  from: string;
-  to?: string;
-  amount?: number;
-  assetId?: number;
-  note?: string;
-  isOptIn?: boolean;
-  role?: 'Review Writer' | 'Comment Writer' | 'Reply Writer' | 'Protocol';
-}
 
 interface AdminFormEditorProps {
   currentSchema: FormStructure;
@@ -35,7 +20,7 @@ interface AdminFormEditorProps {
 }
 
 export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEditorProps) {
-  const { activeAddress, transactionSigner, algodClient } = useWallet();
+  const { activeAddress } = useWallet();
   const [editingMode, setEditingMode] = useState<'structured' | 'json'>('structured');
   
   // State for structured editing
@@ -45,17 +30,8 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   const [jsonDraft, setJsonDraft] = useState(JSON.stringify(currentSchema, null, 2));
   
   const [isJsonValid, setIsJsonValid] = useState(true);
-  const [generatedHash, setGeneratedHash] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
   
-  // Transaction states
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [transactionsToConfirm, setTransactionsToConfirm] = useState<TransactionDisplayItem[]>([]);
-  const [preparedAtc, setPreparedAtc] = useState<algosdk.AtomicTransactionComposer | null>(null);
-  const loadingToastIdRef = React.useRef<string | number | null>(null);
-
   const adminWallet = import.meta.env.VITE_FEEDBACK_ADMIN_WALLET;
   const projectWallet = import.meta.env.VITE_FEEDBACK_PROJECT_WALLET;
 
@@ -69,7 +45,6 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   useEffect(() => {
     setStructuredDraft(currentSchema);
     setJsonDraft(JSON.stringify(currentSchema, null, 2));
-    setGeneratedHash(null);
   }, [currentSchema]);
 
   // 2. Sync structuredDraft -> jsonDraft whenever structuredDraft changes
@@ -131,7 +106,49 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     }));
   }, []);
 
-  // --- Core Logic ---
+  // --- Core Logic: Direct Commit ---
+
+  const handleCommitChanges = async () => {
+    const draftToCommit = editingMode === 'json' ? structuredDraft : structuredDraft;
+
+    if (!draftToCommit || !isJsonValid || !currentSchema.rowId) {
+      showError("Invalid draft or missing Coda Row ID.");
+      return;
+    }
+    
+    setIsCommitting(true);
+    const toastId = showLoading("Committing changes directly to Coda...");
+
+    try {
+      // 1. Generate local hash and update audit fields
+      const localHash = generateLocalHash(draftToCommit);
+      
+      const finalDraft: FormStructure = {
+        ...draftToCommit,
+        audit: {
+          last_edit: {
+            hash: localHash,
+            txid: 'LOCAL_COMMIT', // Mark as local commit
+            editor_wallet: activeAddress || 'unconnected',
+            timestamp: new Date().toISOString(),
+          }
+        }
+      };
+      
+      // 2. Commit the final draft using the client API
+      await updateFormStructureClient(finalDraft, currentSchema.rowId);
+      
+      dismissToast(toastId);
+      showSuccess("Form schema updated successfully!");
+      onSchemaUpdate(); // Trigger parent refetch
+    } catch (error) {
+      dismissToast(toastId);
+      console.error(error);
+      showError(error instanceof Error ? error.message : "Failed to commit changes to Coda.");
+    } finally {
+      setIsCommitting(false);
+    }
+  };
 
   const parsedDraft = useMemo(() => {
     try {
@@ -140,179 +157,21 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
       return null;
     }
   }, [jsonDraft]);
-
-  const handleGenerateHash = async () => {
-    const draftToHash = editingMode === 'json' ? parsedDraft : structuredDraft;
-
-    if (!draftToHash || !isJsonValid) {
-      showError("Invalid JSON draft.");
-      return;
-    }
-    setIsGenerating(true);
-    try {
-      // Update audit fields locally before hashing
-      const updatedDraft = {
-        ...draftToHash,
-        audit: {
-          last_edit: {
-            hash: null, // Hash is generated *after* this step
-            txid: null,
-            editor_wallet: activeAddress,
-            timestamp: new Date().toISOString(),
-          }
-        }
-      } as FormStructure;
-      
-      // Generate hash using the serverless function
-      const { hash, normalizedJsonString } = await generateHash(updatedDraft);
-      
-      // Update the draft state with the normalized, audited version
-      const finalDraft = JSON.parse(normalizedJsonString);
-      setStructuredDraft(finalDraft);
-      setJsonDraft(JSON.stringify(finalDraft, null, 2));
-      setGeneratedHash(hash);
-      showSuccess("Hash generated successfully. Proceed to sign transaction.");
-    } catch (error) {
-      console.error(error);
-      showError(error instanceof Error ? error.message : "Failed to generate hash.");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handlePrepareTransaction = async () => {
-    if (!generatedHash) {
-      showError("Please generate the hash first.");
-      return;
-    }
-    if (!activeAddress || !transactionSigner || !algodClient) {
-      showError("Wallet not connected.");
-      return;
-    }
-    
-    setIsCommitting(true);
-    const toastId = showLoading("Preparing verification transaction...");
-
-    try {
-      const atc = new algosdk.AtomicTransactionComposer();
-      const suggestedParams = await algodClient.getTransactionParams().do();
-      
-      // 0 ALGO payment to the project wallet (or admin wallet if they are the same)
-      const receiver = projectWallet || adminWallet;
-      const noteText = `AlgoJects Form Schema Update Hash: ${generatedHash}`;
-      const noteBytes = new TextEncoder().encode(noteText);
-      
-      const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ 
-          sender: activeAddress, 
-          receiver: receiver, 
-          amount: 0, 
-          suggestedParams, 
-          note: noteBytes 
-      });
-      atc.addTransaction({ txn: paymentTxn, signer: transactionSigner });
-      
-      const displayItems: TransactionDisplayItem[] = [{ 
-          type: 'pay', 
-          from: activeAddress, 
-          to: receiver, 
-          amount: 0, 
-          note: noteText, 
-          role: 'Schema Update Proof' 
-      }];
-
-      dismissToast(toastId);
-      setPreparedAtc(atc);
-      setTransactionsToConfirm(displayItems);
-      setIsPaymentDialogOpen(true);
-    } catch (error) {
-      dismissToast(toastId);
-      console.error(error);
-      showError(error instanceof Error ? error.message : "An unknown error occurred during transaction preparation.");
-      setIsCommitting(false);
-    }
-  };
-
-  const executeTransaction = async (atcToExecute: algosdk.AtomicTransactionComposer) => {
-    if (!atcToExecute || !algodClient) {
-      showError("Transaction composer not prepared.");
-      return;
-    }
-
-    setIsVerifying(true);
-    loadingToastIdRef.current = toast.loading("Executing transaction... Please check your wallet.");
-
-    const timeoutPromise = new Promise((_resolve, reject) =>
-      setTimeout(() => reject(new Error("Wallet did not respond in time.")), TRANSACTION_TIMEOUT_MS)
-    );
-
-    try {
-      const result = await Promise.race([atcToExecute.execute(algodClient, 4), timeoutPromise]);
-      const confirmedTxId = result.txIDs[0];
-      
-      toast.info(`Transaction confirmed. Verifying hash on server...`, { id: loadingToastIdRef.current });
-      
-      // Now, verify the transaction hash and commit the schema
-      await handleVerifyAndCommit(confirmedTxId);
-      
-    } catch (error) {
-      console.error(error);
-      toast.error(error instanceof Error ? error.message : "An unknown error occurred during execution.", { id: loadingToastIdRef.current });
-    } finally {
-      setIsPaymentDialogOpen(false);
-      setIsVerifying(false);
-      setIsCommitting(false);
-      setPreparedAtc(null);
-      setTransactionsToConfirm([]);
-      loadingToastIdRef.current = null;
-    }
-  };
   
-  const handleVerifyAndCommit = async (confirmedTxId: string) => {
-    if (!generatedHash || !structuredDraft) return;
-    
-    setIsVerifying(true);
-    loadingToastIdRef.current = toast.loading("Finalizing update and committing to Coda...", { id: loadingToastIdRef.current });
-
-    try {
-        // Update the audit log in the draft with the confirmed TXID
-        const finalDraft = {
-            ...structuredDraft,
-            audit: {
-                last_edit: {
-                    ...structuredDraft.audit.last_edit,
-                    hash: generatedHash,
-                    txid: confirmedTxId,
-                }
-            }
-        } as FormStructure;
-        
-        // Verify the transaction and commit the final draft
-        await verifyTransactionAndCommit(confirmedTxId, generatedHash, finalDraft);
-        
-        dismissToast(loadingToastIdRef.current);
-        showSuccess("Form schema updated and verified on-chain!");
-        onSchemaUpdate(); // Trigger parent refetch
-    } catch (error) {
-        dismissToast(loadingToastIdRef.current);
-        console.error(error);
-        showError(error instanceof Error ? error.message : "Failed to verify transaction or commit changes.");
-    } finally {
-        setIsVerifying(false);
-    }
-  };
+  const canCommit = isAuthorized && isJsonValid && !isCommitting;
 
   return (
     <>
       <Card className="w-full max-w-3xl mx-auto mt-8 bg-card border-primary/50">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-primary">
-            <Edit className="h-5 w-5" /> Dynamic Form Editor
+            <Edit className="h-5 w-5" /> Dynamic Form Editor (Admin Mode)
           </CardTitle>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => setEditingMode(prev => prev === 'structured' ? 'json' : 'structured')}
-            disabled={!isAuthorized || isGenerating || isVerifying || isCommitting}
+            disabled={!isAuthorized || isCommitting}
           >
             {editingMode === 'structured' ? 'Edit JSON' : 'Edit Structured'}
             <Settings className="h-4 w-4 ml-2" />
@@ -345,7 +204,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
                         id="description" 
                         value={structuredDraft.metadata.description} 
                         onChange={(e) => handleUpdateMetadata('description', e.target.value)}
-                        disabled={!isAuthorized || isGenerating || isVerifying || isCommitting}
+                        disabled={!isAuthorized || isCommitting}
                         className="bg-card"
                     />
                 </div>
@@ -363,14 +222,14 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
               <h3 className="text-lg font-semibold text-primary">Modules</h3>
               {structuredDraft.modules.map((module, index) => (
                 <ModuleEditor
-                  key={module.id} // Use module.id as the key
+                  key={module.id}
                   module={module}
                   index={index}
                   onUpdate={handleUpdateModule}
                   onRemove={handleRemoveModule}
                 />
               ))}
-              <Button onClick={handleAddModule} className="w-full" disabled={!isAuthorized || isGenerating || isVerifying || isCommitting}>
+              <Button onClick={handleAddModule} className="w-full" disabled={!isAuthorized || isCommitting}>
                 <PlusCircle className="h-4 w-4 mr-2" /> Add New Module
               </Button>
             </div>
@@ -382,71 +241,34 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
                 value={jsonDraft}
                 onChange={handleJsonChange}
                 rows={20}
-                disabled={!isAuthorized || isGenerating || isVerifying || isCommitting}
+                disabled={!isAuthorized || isCommitting}
                 className={cn("font-mono text-xs bg-muted/50", !isJsonValid && 'border-red-500')}
               />
               {!isJsonValid && <p className="text-red-500 text-sm">Invalid JSON format.</p>}
             </div>
           )}
 
-          <div className="flex justify-between items-center pt-4 border-t border-muted">
+          <div className="flex justify-end items-center pt-4 border-t border-muted">
             <Button 
-              onClick={handleGenerateHash} 
-              disabled={!isAuthorized || !isJsonValid || isGenerating || isVerifying || isCommitting}
-              className="bg-hodl-blue hover:bg-hodl-blue/90"
+              onClick={handleCommitChanges} 
+              disabled={!canCommit}
+              className="bg-green-600 hover:bg-green-700"
             >
-              <Hash className="h-4 w-4 mr-2" /> 
-              {isGenerating ? "Generating..." : "1. Generate Hash"}
+              {isCommitting ? "Committing..." : "Commit Changes to Coda"}
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
-            
-            {generatedHash && (
-              <div className="text-sm font-mono text-muted-foreground truncate max-w-[50%]">
-                Hash: <span className="text-primary font-bold">{generatedHash.substring(0, 10)}...</span>
-              </div>
-            )}
           </div>
-
-          {generatedHash && (
-            <div className="space-y-4 pt-4 border-t border-muted mt-4">
-              <p className="text-sm text-muted-foreground">
-                2. Sign a 0 ALGO transaction to the project wallet ({projectWallet}) containing the full hash in the note field.
-              </p>
-              
-              <Button 
-                onClick={handlePrepareTransaction} 
-                disabled={!isAuthorized || isVerifying || isCommitting}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {isCommitting ? "Waiting for Wallet..." : "2. Sign Transaction"}
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          )}
           
           {currentSchema.audit.last_edit.hash && (
             <div className="pt-4 border-t border-muted mt-4 text-sm">
               <h4 className="font-semibold text-primary">Last Verified Update:</h4>
               <p className="text-muted-foreground">Hash: {currentSchema.audit.last_edit.hash.substring(0, 10)}...</p>
-              <p className="text-muted-foreground">TXID: <a href={`https://algoexplorer.io/tx/${currentSchema.audit.last_edit.txid}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{currentSchema.audit.last_edit.txid?.substring(0, 10)}...</a></p>
+              <p className="text-muted-foreground">TXID: {currentSchema.audit.last_edit.txid}</p>
               <p className="text-muted-foreground">Timestamp: {new Date(currentSchema.audit.last_edit.timestamp || '').toLocaleString()}</p>
             </div>
           )}
         </CardContent>
       </Card>
-      
-      <PaymentConfirmationDialog
-        isOpen={isPaymentDialogOpen}
-        onOpenChange={(open) => {
-          setIsPaymentDialogOpen(open);
-          if (!open) {
-            setIsCommitting(false);
-            setIsVerifying(false);
-          }
-        }}
-        transactions={transactionsToConfirm}
-        onConfirm={() => preparedAtc && executeTransaction(preparedAtc)}
-        isConfirming={isVerifying}
-      />
     </>
   );
 }

@@ -34,6 +34,7 @@ export interface FormStructure {
       timestamp: string | null;
     };
   };
+  rowId?: string; // NEW: Include rowId in the structure returned by GET
 }
 
 /**
@@ -66,33 +67,27 @@ export async function submitFormResponse(response: any): Promise<void> {
 }
 
 /**
- * Generates the SHA-256 hash of the new JSON draft.
+ * NEW: Updates the Form Structure JSON directly via PUT request.
  */
-export async function generateHash(jsonDraft: FormStructure): Promise<{ hash: string; normalizedJsonString: string }> {
-  const response = await retryFetch('/api/generate-hash', {
-    method: 'POST',
+export async function updateFormStructureClient(newJsonDraft: FormStructure, rowId: string): Promise<void> {
+  // Normalize the JSON string before sending
+  const newJsonString = JSON.stringify(newJsonDraft, Object.keys(newJsonDraft).sort(), 2);
+  
+  const response = await retryFetch('/api/form-structure', {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(jsonDraft),
+    body: JSON.stringify({ newJsonString, rowId }),
   }, 5);
 
-  try {
-      return response.json();
-  } catch (e) {
-      throw new Error("Failed to parse successful hash response as JSON.");
-  }
+  await response.json();
 }
 
 /**
- * Verifies the Algorand transaction and triggers the Coda update if valid.
+ * Generates a local SHA-256 hash of the normalized JSON draft.
+ * This is now only used for display/audit logging, not for on-chain verification.
  */
-export async function verifyTransactionAndCommit(txid: string, expectedHash: string, newJsonDraft: FormStructure): Promise<void> {
-  const response = await retryFetch(`/api/verify-tx`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ txid, hash: expectedHash, newJsonDraft }),
-  }, 5);
-
-  // If retryFetch returns, the response is guaranteed to be response.ok
-  // We can safely parse it as JSON.
-  await response.json();
+export function generateLocalHash(jsonDraft: FormStructure): string {
+    // Use the same normalization logic as the server (if it were still running)
+    const normalizedJsonString = JSON.stringify(jsonDraft, Object.keys(jsonDraft).sort(), 2);
+    return sha256(normalizedJsonString);
 }

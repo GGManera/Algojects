@@ -4,10 +4,8 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import projectDetailsHandler from "./api/project-details";
 import alloProxyHandler from "./api/allo-proxy";
-import formStructureHandler from "./api/form-structure"; // NEW
-import formResponsesHandler from "./api/form-responses"; // NEW
-import generateHashHandler from "./api/generate-hash"; // NEW
-import verifyTxHandler from "./api/verify-tx"; // NEW
+import formStructureHandler from "./api/form-structure";
+import formResponsesHandler from "./api/form-responses";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default defineConfig(({ mode }) => {
@@ -68,10 +66,8 @@ export default defineConfig(({ mode }) => {
             const apiMap: { [key: string]: (req: VercelRequest, res: VercelResponse) => Promise<void> } = {
                 '/api/project-details': projectDetailsHandler,
                 '/api/allo-proxy': alloProxyHandler,
-                '/api/form-structure': formStructureHandler, // NEW
-                '/api/form-responses': formResponsesHandler, // NEW
-                '/api/generate-hash': generateHashHandler, // NEW
-                '/api/verify-tx': verifyTxHandler, // NEW
+                '/api/form-structure': formStructureHandler,
+                '/api/form-responses': formResponsesHandler,
             };
 
             for (const endpoint in apiMap) {

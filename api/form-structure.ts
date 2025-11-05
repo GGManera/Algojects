@@ -8,10 +8,11 @@ export default async function handler(
   try {
     if (request.method === 'GET') {
       // 1. GET /api/form-structure: Fetch the current schema
-      const { jsonString } = await fetchFormStructureFromCoda();
-      return response.status(200).json(JSON.parse(jsonString));
+      const { jsonString, rowId } = await fetchFormStructureFromCoda();
+      // Include rowId in the response so the client can use it for updates
+      return response.status(200).json({ ...JSON.parse(jsonString), rowId });
     } else if (request.method === 'PUT') {
-      // 2. PUT /api/form-structure: Update the schema (used internally by verify-tx)
+      // 2. PUT /api/form-structure: Update the schema (now callable directly by client)
       const { newJsonString, rowId } = request.body;
       if (!newJsonString || !rowId) {
         return response.status(400).json({ error: 'Missing newJsonString or rowId for update.' });

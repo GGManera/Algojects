@@ -57,7 +57,7 @@ export function HeroSection({ heroLogoRef, isInsideCarousel, className, focusedI
       </div>
       
       {/* NEW: Container to hold the AnimatedTitle and center it absolutely */}
-      <div className="absolute left-1/2 transform -translate-x-1/2 w-full" style={{ top: 'calc(50% + 48px)' }}>
+      <div className="absolute left-1/2 transform -translate-x-1/2 w-full" style={{ top: 'calc(50% + 64px)' }}>
         <AnimatedTitle className="mt-4 mb-4" isInsideCarousel={isInsideCarousel} />
       </div>
       

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FormStructure, updateFormStructureClient, generateLocalHash } from '@/lib/feedback-api';
+import { FormStructure, createFormStructureClient, generateLocalHash } from '@/lib/feedback-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,7 +20,6 @@ interface AdminFormEditorProps {
 }
 
 // Define a fallback structure locally for safety if the fetched schema is empty/corrupted
-// NOTE: Removed rowId assignment here as currentSchema is out of scope.
 const FALLBACK_FORM_STRUCTURE_TEMPLATE: Omit<FormStructure, 'rowId'> & { rowId?: string } = {
   form_id: "algojects_feedback_master",
   version: "1.3",
@@ -90,7 +89,6 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     
     if (isSchemaIncomplete && currentSchema.rowId) {
         // If incomplete but we have a rowId, initialize with the fallback template
-        // We explicitly add the rowId here.
         const safeDraft = { ...FALLBACK_FORM_STRUCTURE_TEMPLATE, rowId: currentSchema.rowId } as FormStructure;
         setStructuredDraft(safeDraft);
         setJsonDraft(JSON.stringify(safeDraft, null, 2));
@@ -104,10 +102,10 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   // 2. Sync structuredDraft -> jsonDraft whenever structuredDraft changes
   useEffect(() => {
     try {
+      // Use the full structuredDraft object for stringification
       setJsonDraft(JSON.stringify(structuredDraft, null, 2));
       setIsJsonValid(true);
     } catch (e) {
-      // Should not happen if structured editing is used
       console.error("Error syncing structuredDraft to jsonDraft:", e);
     }
   }, [structuredDraft]);
@@ -164,12 +162,12 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     }));
   }, []);
 
-  // --- Core Logic: Direct Commit ---
+  // --- Core Logic: Direct Commit (Now creates a new version) ---
 
   const handleCommitChanges = async () => {
-    const draftToCommit = structuredDraft; // Always use structuredDraft as it's the source of truth after JSON validation
+    const draftToCommit = structuredDraft;
 
-    if (!draftToCommit || !isJsonValid || !currentSchema.rowId) {
+    if (!draftToCommit || !isJsonValid) {
       showError("Invalid draft or missing Coda Row ID.");
       return;
     }
@@ -178,12 +176,22 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     const toastId = showLoading("Committing changes directly to Coda...");
 
     try {
-      // 1. Generate local hash and update audit fields
+      // 1. Generate local hash
       const localHash = generateLocalHash(draftToCommit);
       
+      // 2. Increment version number (e.g., "1.3" -> "1.4")
+      const currentVersion = parseFloat(draftToCommit.version || '1.0');
+      // Increment by 0.1 and fix to one decimal place
+      const newVersion = (Math.floor(currentVersion * 10) + 1) / 10;
+
       const finalDraft: FormStructure = {
         ...draftToCommit,
-        // Ensure fixed fields are present even if they were accidentally removed in the draft
+        version: newVersion.toFixed(1), // Ensure it's formatted back to string "X.Y"
+        metadata: {
+            ...draftToCommit.metadata,
+            updated_at: new Date().toISOString(),
+        },
+        // Ensure fixed fields are present
         authorized_wallet: draftToCommit.authorized_wallet || adminWallet,
         project_wallet: draftToCommit.project_wallet || projectWallet,
         
@@ -197,11 +205,11 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
         }
       };
       
-      // 2. Commit the final draft using the client API
-      await updateFormStructureClient(finalDraft, currentSchema.rowId);
+      // 3. Commit the final draft using the client API (which now POSTs a new row)
+      await createFormStructureClient(finalDraft);
       
       dismissToast(toastId);
-      showSuccess("Form schema updated successfully!");
+      showSuccess(`Form schema updated to version ${finalDraft.version} successfully!`);
       onSchemaUpdate(); // Trigger parent refetch
     } catch (error) {
       dismissToast(toastId);
@@ -316,7 +324,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
               disabled={!canCommit}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isCommitting ? "Committing..." : "Commit Changes to Coda"}
+              {isCommitting ? "Committing..." : "Commit New Version"}
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>

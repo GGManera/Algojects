@@ -67,16 +67,19 @@ export async function submitFormResponse(response: any): Promise<void> {
 }
 
 /**
- * NEW: Updates the Form Structure JSON directly via PUT request.
+ * NEW: Creates a new Form Structure JSON version via POST request.
  */
-export async function updateFormStructureClient(newJsonDraft: FormStructure, rowId: string): Promise<void> {
+export async function createFormStructureClient(newJsonDraft: FormStructure): Promise<void> {
+  // Remove rowId before stringifying, as it's an internal Coda ID not part of the schema
+  const { rowId, ...draftWithoutRowId } = newJsonDraft;
+  
   // Normalize the JSON string before sending
-  const newJsonString = JSON.stringify(newJsonDraft, Object.keys(newJsonDraft).sort(), 2);
+  const newJsonString = JSON.stringify(draftWithoutRowId, Object.keys(draftWithoutRowId).sort(), 2);
   
   const response = await retryFetch('/api/form-structure', {
-    method: 'PUT',
+    method: 'POST', // CHANGED to POST
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ newJsonString, rowId }),
+    body: JSON.stringify({ newJsonString }), // Only send the string
   }, 5);
 
   await response.json();
@@ -87,7 +90,9 @@ export async function updateFormStructureClient(newJsonDraft: FormStructure, row
  * This is now only used for display/audit logging, not for on-chain verification.
  */
 export function generateLocalHash(jsonDraft: FormStructure): string {
+    // Remove rowId before hashing
+    const { rowId, ...draftWithoutRowId } = jsonDraft;
     // Use the same normalization logic as the server (if it were still running)
-    const normalizedJsonString = JSON.stringify(jsonDraft, Object.keys(jsonDraft).sort(), 2);
+    const normalizedJsonString = JSON.stringify(draftWithoutRowId, Object.keys(draftWithoutRowId).sort(), 2);
     return sha256(normalizedJsonString);
 }

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { fetchFormStructureFromCoda, updateFormStructureInCoda } from './feedback-coda-utils';
+import { fetchFormStructureFromCoda, createFormStructureInCoda } from './feedback-coda-utils'; // UPDATED: Import createFormStructureInCoda
 
 export default async function handler(
   request: VercelRequest,
@@ -7,18 +7,18 @@ export default async function handler(
 ) {
   try {
     if (request.method === 'GET') {
-      // 1. GET /api/form-structure: Fetch the current schema
+      // 1. GET /api/form-structure: Fetch the current LATEST schema
       const { jsonString, rowId } = await fetchFormStructureFromCoda();
-      // Include rowId in the response so the client can use it for updates
+      // Include rowId in the response so the client can use it for context/audit
       return response.status(200).json({ ...JSON.parse(jsonString), rowId });
-    } else if (request.method === 'PUT') {
-      // 2. PUT /api/form-structure: Update the schema (now callable directly by client)
-      const { newJsonString, rowId } = request.body;
-      if (!newJsonString || !rowId) {
-        return response.status(400).json({ error: 'Missing newJsonString or rowId for update.' });
+    } else if (request.method === 'POST') { // CHANGED from PUT to POST for versioning
+      // 2. POST /api/form-structure: Create a new schema version
+      const { newJsonString } = request.body; // rowId is no longer needed for POST
+      if (!newJsonString) {
+        return response.status(400).json({ error: 'Missing newJsonString for creation.' });
       }
-      await updateFormStructureInCoda(newJsonString, rowId);
-      return response.status(200).json({ message: 'Form structure updated successfully.' });
+      await createFormStructureInCoda(newJsonString); // Use the new creation function
+      return response.status(200).json({ message: 'New form structure version created successfully.' });
     } else {
       return response.status(405).json({ error: 'Method Not Allowed' });
     }

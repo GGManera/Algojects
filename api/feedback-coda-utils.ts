@@ -363,10 +363,9 @@ export async function callCodaApi<T>(method: string, path: string, body?: any): 
 
 /**
  * Fetches the current Form Structure JSON from Coda.
- * Returns the JSON string and the Coda Row ID.
+ * Returns the JSON string and the Coda Row ID of the LATEST version.
  */
 export async function fetchFormStructureFromCoda(): Promise<{ jsonString: string; rowId: string }> {
-  // Use VITE_ prefixed variables for IDs that might be needed in the frontend (though currently only used here)
   const CODA_FORM_STRUCTURE_TABLE_ID = process.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID;
   CODA_FORM_STRUCTURE_COLUMN_JSON = process.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID || '';
 
@@ -374,31 +373,51 @@ export async function fetchFormStructureFromCoda(): Promise<{ jsonString: string
     throw new Error('VITE_CODA_FORM_STRUCTURE_TABLE_ID or VITE_CODA_FORM_STRUCTURE_COLUMN_ID is not configured.');
   }
 
-  // Fetch all rows (assuming only one row holds the master structure)
+  // Fetch all rows
   const data = await callCodaApi<{ items: CodaRow[] }>('GET', `/tables/${CODA_FORM_STRUCTURE_TABLE_ID}/rows`);
 
   if (!data.items || data.items.length === 0) {
-    // If the table is completely empty, we still throw an error, as the setup is incomplete.
-    throw new Error('Form Structure table is empty or misconfigured (no rows found).');
+    // If the table is completely empty, return the fallback structure with a null rowId
+    console.warn("[Coda Feedback] Form Structure table is empty. Returning fallback structure.");
+    return { jsonString: JSON.stringify(FALLBACK_FORM_STRUCTURE), rowId: 'fallback' };
   }
 
-  const masterRow = data.items[0];
-  let jsonString = masterRow.values[CODA_FORM_STRUCTURE_COLUMN_JSON];
-  const rowId = masterRow.id;
+  let latestVersion = -1;
+  let latestRow: CodaRow | null = null;
+  let latestJsonString: string | null = null;
 
-  if (!jsonString || jsonString.trim() === '') {
-    console.warn("[Coda Feedback] Form Structure JSON column is empty. Returning fallback structure.");
-    // If the column is empty, return the fallback structure as a string
-    jsonString = JSON.stringify(FALLBACK_FORM_STRUCTURE);
+  // Iterate through rows to find the one with the highest version number
+  for (const row of data.items) {
+    const jsonString = row.values[CODA_FORM_STRUCTURE_COLUMN_JSON];
+    if (jsonString) {
+      try {
+        const parsed = JSON.parse(jsonString);
+        // Use parseFloat to handle versions like "1.3"
+        const version = parseFloat(parsed.version);
+        if (!isNaN(version) && version > latestVersion) {
+          latestVersion = version;
+          latestRow = row;
+          latestJsonString = jsonString;
+        }
+      } catch (e) {
+        console.warn(`[Coda Feedback] Failed to parse JSON in row ${row.id}. Skipping.`);
+      }
+    }
   }
 
-  return { jsonString, rowId };
+  if (latestRow && latestJsonString) {
+    return { jsonString: latestJsonString, rowId: latestRow.id };
+  }
+
+  // If no valid JSON was found, return fallback
+  console.warn("[Coda Feedback] No valid JSON found in Form Structure table. Returning fallback structure.");
+  return { jsonString: JSON.stringify(FALLBACK_FORM_STRUCTURE), rowId: 'fallback' };
 }
 
 /**
- * Updates the Form Structure JSON in Coda.
+ * Creates a new Form Structure JSON row in Coda (POST).
  */
-export async function updateFormStructureInCoda(newJsonString: string, rowId: string): Promise<void> {
+export async function createFormStructureInCoda(newJsonString: string): Promise<void> {
   const CODA_FORM_STRUCTURE_TABLE_ID = process.env.VITE_CODA_FORM_STRUCTURE_TABLE_ID;
   const columnId = process.env.VITE_CODA_FORM_STRUCTURE_COLUMN_ID;
 
@@ -410,11 +429,13 @@ export async function updateFormStructureInCoda(newJsonString: string, rowId: st
     { column: columnId, value: newJsonString },
   ];
 
-  const putBody = {
-    row: { cells },
+  const postBody = {
+    rows: [
+      { cells },
+    ],
   };
 
-  await callCodaApi('PUT', `/tables/${CODA_FORM_STRUCTURE_TABLE_ID}/rows/${rowId}`, putBody);
+  await callCodaApi('POST', `/tables/${CODA_FORM_STRUCTURE_TABLE_ID}/rows`, postBody);
 }
 
 /**

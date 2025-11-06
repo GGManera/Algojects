@@ -37,6 +37,33 @@ const RATING_COLORS = [
   'hsl(140, 70%, 35%)',  // 5 Stars (Dark Green)
 ];
 
+// NEW: Semantic colors for Single Choice based on response ID
+const SEMANTIC_COLORS: Record<string, string> = {
+  // Positive
+  'yes': 'hsl(140, 70%, 45%)', // Green
+  'agree': 'hsl(140, 70%, 45%)', // Green
+  'had_one': 'hsl(140, 70%, 45%)', // Green
+  'created_one': 'hsl(100, 70%, 45%)', // Light Green
+  'no_delay': 'hsl(140, 70%, 45%)', // Green
+  
+  // Negative
+  'no': 'hsl(0, 80%, 50%)', // Red
+  'disagree': 'hsl(0, 80%, 50%)', // Red
+  'didnt_understand': 'hsl(0, 80%, 50%)', // Red
+  'noticeable_delay': 'hsl(0, 80%, 50%)', // Red
+  
+  // Neutral/Intermediate
+  'somewhat': 'hsl(50, 90%, 50%)', // Yellow
+  'partially': 'hsl(50, 90%, 50%)', // Yellow
+  'neutral': 'hsl(50, 90%, 50%)', // Yellow
+  'maybe': 'hsl(50, 90%, 50%)', // Yellow
+  'slight_delay': 'hsl(50, 90%, 50%)', // Yellow
+  'not_really': 'hsl(50, 90%, 50%)', // Yellow
+  
+  // Fallback (using standard palette)
+  'default': COLORS[0],
+};
+
 interface QuestionStats {
   questionText: string;
   type: 'rating' | 'text' | 'single_choice';
@@ -205,7 +232,8 @@ const GovernancePage = () => {
             if (existingDataIndex !== -1) {
               qStats.data[existingDataIndex].value++;
             } else {
-              qStats.data.push({ name: responseKey, value: 1 });
+              // Store the original response key (ID) in the data object for semantic coloring later
+              qStats.data.push({ name: responseKey, value: 1, id: responseKey });
             }
           }
         }
@@ -266,9 +294,10 @@ const GovernancePage = () => {
             // Map response IDs (stored in 'name') back to their labels from the schema
             const optionLabelsMap = new Map((questionDef.options || []).map((opt: any) => [opt.id, opt.label]));
             
+            // We need to preserve the original ID for coloring, but use the label for display (name)
             qStats.data = qStats.data.map(d => ({
               ...d,
-              name: optionLabelsMap.get(d.name) || d.name, // Replace ID with Label for display
+              name: optionLabelsMap.get(d.id) || d.name, // Replace ID with Label for display
             }));
             
             // Sort by label name
@@ -494,9 +523,12 @@ const GovernancePage = () => {
                                                     dataKey="value"
                                                     label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                                                 >
-                                                    {qStats.data.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                    ))}
+                                                    {qStats.data.map((entry, index) => {
+                                                        // Use the original ID (stored in d.id) for semantic coloring
+                                                        const originalId = entry.id || 'default';
+                                                        const color = SEMANTIC_COLORS[originalId] || SEMANTIC_COLORS['default'];
+                                                        return <Cell key={`cell-${index}`} fill={color} />;
+                                                    })}
                                                 </Pie>
                                                 <Tooltip />
                                                 <Legend 

@@ -380,7 +380,7 @@ const GovernancePage = () => {
                                 
                                 {/* Display Average for Rating Questions */}
                                 {qStats.type === 'rating' && qStats.average !== undefined && (
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 flex flex-col items-center"> {/* ADDED items-center here */}
                                         <p className="text-sm text-hodl-blue font-bold">Average Rating: {formatAverageRating(qStats.average)} / {scale}</p>
                                         <StarRatingProgressBar 
                                             average={qStats.average} 
@@ -439,7 +439,7 @@ const GovernancePage = () => {
                                                 </Pie>
                                                 <Tooltip />
                                                 <Legend 
-                                                    wrapperStyle={{ paddingTop: '30px' }} /* Increased padding top to 30px */
+                                                    wrapperStyle={{ paddingTop: '30px' }} 
                                                 />
                                             </PieChart>
                                         </ResponsiveContainer>

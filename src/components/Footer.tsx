@@ -8,18 +8,18 @@ import { SettingsDialog } from './SettingsDialog'; // Import SettingsDialog
 
 interface FooterProps {
   className?: string;
-  isMobile: boolean; // New prop
+  // isMobile: boolean; // Removed isMobile prop
 }
 
-export function Footer({ className, isMobile }: FooterProps) {
+export function Footer({ className }: FooterProps) { // Removed isMobile from props
   const handleHomeClick = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Only render the footer if it's NOT mobile landscape
-  if (isMobile) {
-    return null;
-  }
+  // Removed conditional rendering based on isMobile
+  // if (isMobile) {
+  //   return null;
+  // }
 
   return (
     <footer className={cn(
@@ -49,6 +49,10 @@ export function Footer({ className, isMobile }: FooterProps) {
         >
           <Twitter className="h-4 w-4" /> Twitter
         </a>
+        <span className="hidden md:inline-block text-border">|</span>
+        <Link to="/feedback" className="hover:text-foreground transition-colors">
+          Feedback
+        </Link>
         <span className="hidden md:inline-block text-border">|</span>
         {/* Settings Dialog added here */}
         <SettingsDialog />

@@ -39,7 +39,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   const navigate = useNavigate();
   const { pushEntry, lastProjectPath, lastProfilePath, profile1, profile2, currentProfileSlot } = useNavigationHistory();
   const { activeAddress } = useWallet();
-  const { projectDetails } = useProjectDetails();
+  const { projectDetails, loading: projectDetailsLoading } = useProjectDetails(); // NEW: Use loading from useProjectDetails
   const { isMobile, isDeviceLandscape } = useAppContextDisplayMode();
   
   const [api, setApi] = useState<CarouselApi>();
@@ -55,6 +55,11 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   const [internalScrollToTopTrigger, setInternalScrollToTopTrigger] = useState(0);
 
   const slideRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+
+  // NEW: Refs and constants for touchpad navigation
+  const lastSwipeTimeRef = useRef(0);
+  const SWIPE_DEBOUNCE_MS = 500;
+  const SWIPE_THRESHOLD = 50;
 
   const { projectIdFromUrl, addressFromUrl } = useMemo(() => {
     const pathParts = location.pathname.split('/').filter(Boolean);
@@ -295,8 +300,13 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
     if (path.startsWith('/project/')) {
       const currentProjectId = path.split('/')[2];
-      const project = projectDetails.find(pd => pd.projectId === currentProjectId);
-      label = project?.projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${currentProjectId}`;
+      // NEW: Check if projectDetails is loading before trying to find project name
+      if (!projectDetailsLoading) {
+        const project = projectDetails.find(pd => pd.projectId === currentProjectId);
+        label = project?.projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${currentProjectId}`;
+      } else {
+        label = `Project ${currentProjectId}`; // Fallback while loading
+      }
     } else if (path.startsWith('/profile/')) {
       const currentProfileAddress = path.split('/')[2];
       label = effectiveProfileNfd?.name || `${currentProfileAddress.substring(0, 8)}... Profile`;
@@ -305,7 +315,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     if (!path.startsWith('/profile/') || !nfdLoading) {
       pushEntry({ path, label, activeCategory: undefined });
     }
-  }, [location.pathname, projectDetails, pushEntry, effectiveProfileNfd, nfdLoading]);
+  }, [location.pathname, projectDetails, pushEntry, effectiveProfileNfd, nfdLoading, projectDetailsLoading]); // NEW: Add projectDetailsLoading dependency
 
   useEffect(() => {
     if (!api || isMobile) return;
@@ -362,10 +372,41 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       }
     };
 
+    // NEW: Handle touchpad horizontal scroll/swipe
+    const handleWheel = (e: WheelEvent) => {
+      // Only intercept if there is significant horizontal movement AND it dominates vertical movement
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > SWIPE_THRESHOLD) {
+        
+        // Prevent default browser navigation/scroll
+        e.preventDefault(); 
+        
+        if (isTransitioning) {
+          return;
+        }
+
+        const now = Date.now();
+        if (now - lastSwipeTimeRef.current < SWIPE_DEBOUNCE_MS) {
+          return;
+        }
+
+        lastSwipeTimeRef.current = now;
+
+        if (e.deltaX > 0) {
+          // Swiping left (deltaX positive) -> Go to next slide (right)
+          api.scrollNext();
+        } else {
+          // Swiping right (deltaX negative) -> Go to previous slide (left)
+          api.scrollPrev();
+        }
+      }
+    };
+
     document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('wheel', handleWheel);
     };
   }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
@@ -381,7 +422,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
   return (
     <div className="w-full px-0 py-0 md:p-0 text-foreground h-full scroll-mt-header-offset">
-      <Carousel setApi={setApi} className="w-full" opts={{ duration: 20 }}>
+      <Carousel setApi={setApi} className="w-full" opts={{ duration: 13, baseFriction: 0.5 }}>
         <CarouselContent>
           {slidesConfig.map((slide, index) => {
             const slideComponent = React.cloneElement(slide.component, {
@@ -410,7 +451,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
                   >
                     <div className={cn("w-full mx-auto", slide.maxWidth)}>
                       {slideComponent}
-                      <Footer isMobile={isMobile && !isDeviceLandscape} />
+                      <Footer /> {/* Removed isMobile prop */}
                     </div>
                   </CardContent>
                 </Card>

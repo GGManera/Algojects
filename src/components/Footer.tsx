@@ -26,9 +26,9 @@ export function Footer({ className }: FooterProps) {
     )}>
       <div className={cn(
         "flex items-center gap-2 md:gap-4 mb-2",
-        isMobile ? "flex-col space-y-2" : "flex-row flex-wrap" // Stack vertically on mobile
+        isMobile ? "grid grid-cols-2 gap-x-4 gap-y-2" : "flex-row flex-wrap" // Use grid for mobile, flex for desktop
       )}>
-        <Link to="/" onClick={handleHomeClick} className="hover:text-foreground transition-colors">
+        <Link to="/" onClick={handleHomeClick} className="hover:text-foreground transition-colors flex items-center justify-center">
           Home
         </Link>
         <span className={cn("text-border", isMobile && "hidden")}>|</span>
@@ -36,7 +36,7 @@ export function Footer({ className }: FooterProps) {
           href="https://github.com/GGManera/Algojects" 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="flex items-center gap-1 hover:text-foreground transition-colors"
+          className="flex items-center gap-1 hover:text-foreground transition-colors justify-center"
         >
           <Github className="h-4 w-4" /> GitHub
         </a>
@@ -45,17 +45,19 @@ export function Footer({ className }: FooterProps) {
           href="https://x.com/AlgoJects" 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="flex items-center gap-1 hover:text-foreground transition-colors"
+          className="flex items-center gap-1 hover:text-foreground transition-colors justify-center"
         >
           <Twitter className="h-4 w-4" /> Twitter
         </a>
         <span className={cn("text-border", isMobile && "hidden")}>|</span>
-        <Link to="/feedback" className="hover:text-foreground transition-colors">
+        <Link to="/feedback" className="hover:text-foreground transition-colors flex items-center justify-center">
           Feedback
         </Link>
         <span className={cn("text-border", isMobile && "hidden")}>|</span>
-        {/* Settings Dialog added here */}
-        <SettingsDialog />
+        {/* Settings Dialog takes full width on mobile grid */}
+        <div className={cn(isMobile && "col-span-2 flex justify-center")}>
+          <SettingsDialog />
+        </div>
       </div>
       <p className="text-xs text-muted-foreground text-center">
         &copy; {new Date().getFullYear()} AlgoJects. Powered by{' '}

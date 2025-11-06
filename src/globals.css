@@ -73,11 +73,11 @@
 
     /* CSS Variables for Header Heights */
     --sticky-header-height: 48px; /* h-12 */
-    --dynamic-nav-buttons-height: 40px; /* h-10 - INCREASED FROM 32px */
+    --dynamic-nav-buttons-height: 32px; /* h-8 */
     --dynamic-nav-buttons-desktop-vertical-gap: 12px; /* Adjusted from 11px to 12px */
     --mobile-bottom-bar-height: 64px; /* h-16 */
 
-    /* RECALCULATED: Total fixed height = Header (48) + Gap Above Nav (12) + Nav (40) + Gap Below Nav (12) = 112px */
+    /* RECALCULATED: Total fixed height = Header (48) + Gap Above Nav (12) + Nav (32) + Gap Below Nav (12) = 104px */
     --total-fixed-header-height: calc(
       var(--sticky-header-height) + 
       (2 * var(--dynamic-nav-buttons-desktop-vertical-gap)) +
@@ -87,19 +87,17 @@
     /* NEW: CardContent default padding (p-6) */
     --card-content-padding-y: 48px; /* 24px top + 24px bottom */
 
-    /* RECALCULATED: Total fixed offset desktop */
     --total-fixed-offset-desktop: calc(
       var(--sticky-header-height) + 
       var(--dynamic-nav-buttons-height) +
       (2 * var(--dynamic-nav-buttons-desktop-vertical-gap))
-    ); /* 48 + 40 + 24 = 112px */
+    ); /* 48 + 32 + 24 = 104px (Original calculation, kept for reference) */
 
-    /* RECALCULATED: Total fixed offset mobile */
     --total-fixed-offset-mobile: calc(
       var(--sticky-header-height) +
       var(--mobile-bottom-bar-height) +
       var(--dynamic-nav-buttons-height)
-    ); /* 48 + 64 + 40 = 152px */
+    ); /* 48 + 64 + 32 = 144px */
   }
 }
 

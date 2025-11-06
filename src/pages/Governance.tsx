@@ -456,9 +456,9 @@ const GovernancePage = () => {
                                     {/* RATING: Bar Chart only */}
                                     {qStats.type === 'rating' && (
                                         <ResponsiveContainer width="100%" height={200}>
-                                            <BarChart data={qStats.data} margin={{ top: 5, right: 0, left: -5, bottom: 5 }} barCategoryGap={1}> {/* Adjusted barCategoryGap to 1 */}
+                                            <BarChart data={qStats.data} margin={{ top: 5, right: 0, left: -5, bottom: 5 }} barCategoryGap={1}>
                                                 {/* Use CustomStarTick for yellow stars */}
-                                                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} interval={0} /> {/* Added interval={0} */}
+                                                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} interval={0} />
                                                 <YAxis 
                                                     stroke="hsl(var(--muted-foreground))" 
                                                     allowDecimals={false} 
@@ -473,7 +473,7 @@ const GovernancePage = () => {
                                                 {/* REMOVED: <Legend /> */}
                                                 <Bar dataKey="value">
                                                     {qStats.data.map((entry, index) => (
-                                                        <Cell key={`bar-cell-${index}`} fill={RATING_COLORS[index % RATING_COLORS.length]} /> {/* Use RATING_COLORS */}
+                                                        <Cell key={`bar-cell-${index}`} fill={RATING_COLORS[index % RATING_COLORS.length]} />
                                                     ))}
                                                 </Bar>
                                             </BarChart>

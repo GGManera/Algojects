@@ -426,7 +426,7 @@ const GovernancePage = () => {
                                                 <Pie
                                                     data={qStats.data}
                                                     cx="50%"
-                                                    cy="50%"
+                                                    cy="40%" /* Moved Pie up to make space for Legend */
                                                     labelLine={false}
                                                     outerRadius={100}
                                                     fill="#8884d8"
@@ -438,7 +438,9 @@ const GovernancePage = () => {
                                                     ))}
                                                 </Pie>
                                                 <Tooltip />
-                                                <Legend />
+                                                <Legend 
+                                                    wrapperStyle={{ paddingTop: '20px' }} /* Added padding top to Legend wrapper */
+                                                />
                                             </PieChart>
                                         </ResponsiveContainer>
                                     )}

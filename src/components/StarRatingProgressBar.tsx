@@ -22,7 +22,7 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
   const fractionalPart = average - fullStars;
 
   return (
-    <div className="flex flex-col space-y-2">
+    <div className="flex flex-col space-y-2 items-center justify-center"> {/* ADDED items-center and justify-center */}
       {/* Removed space-x-1 from the outermost relative container */}
       <div className="relative flex items-center h-6" title={`Average: ${average.toFixed(1)} / ${scale}`}>
         

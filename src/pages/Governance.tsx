@@ -406,7 +406,7 @@ const GovernancePage = () => {
                                     {/* RATING: Bar Chart only */}
                                     {qStats.type === 'rating' && (
                                         <ResponsiveContainer width="100%" height={200}>
-                                            <BarChart data={qStats.data} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}> {/* Adjusted margin: left: 0 */}
+                                            <BarChart data={qStats.data} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}> {/* Adjusted margin: left: -20 */}
                                                 {/* Use CustomStarTick for yellow stars */}
                                                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} />
                                                 <YAxis 
@@ -414,6 +414,7 @@ const GovernancePage = () => {
                                                     allowDecimals={false} 
                                                     domain={[0, maxResponses]} // Set domain from 0 to maxResponses
                                                     tickCount={maxResponses + 1} // Ensure all integer ticks are shown
+                                                    width={30} // Set explicit width for YAxis
                                                 />
                                                 <Tooltip 
                                                     formatter={(value, name, props) => [`${value} responses`, 'Count']}

@@ -28,6 +28,15 @@ import { StarRatingProgressBar } from '@/components/StarRatingProgressBar'; // N
 // Define colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#d0ed57'];
 
+// NEW: Custom color palette for Rating charts (Red -> Green)
+const RATING_COLORS = [
+  'hsl(0, 80%, 50%)',    // 1 Star (Red)
+  'hsl(30, 90%, 50%)',   // 2 Stars (Orange)
+  'hsl(50, 90%, 50%)',   // 3 Stars (Yellow)
+  'hsl(100, 70%, 45%)',  // 4 Stars (Light Green)
+  'hsl(140, 70%, 35%)',  // 5 Stars (Dark Green)
+];
+
 interface QuestionStats {
   questionText: string;
   type: 'rating' | 'text' | 'single_choice';
@@ -462,9 +471,9 @@ const GovernancePage = () => {
                                                     cursor={{ fill: 'hsl(var(--muted) / 0.5)' }} // Add cursor style
                                                 />
                                                 {/* REMOVED: <Legend /> */}
-                                                <Bar dataKey="value" fill="#8884d8">
+                                                <Bar dataKey="value">
                                                     {qStats.data.map((entry, index) => (
-                                                        <Cell key={`bar-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                        <Cell key={`bar-cell-${index}`} fill={RATING_COLORS[index % RATING_COLORS.length]} /> {/* Use RATING_COLORS */}
                                                     ))}
                                                 </Bar>
                                             </BarChart>

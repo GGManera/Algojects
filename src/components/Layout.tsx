@@ -63,12 +63,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     mainTopPadding = "pt-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-height)+var(--dynamic-nav-buttons-desktop-vertical-gap)+env(safe-area-inset-top))]";
   }
 
-  // Calcula o preenchimento inferior para o main (apenas se for mobile E portrait)
-  let mainBottomPadding = "";
-  if (isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape) {
-    // Always use the combined height of MobileBottomBar and DynamicNavButtons
-    mainBottomPadding = "pb-[calc(var(--mobile-bottom-bar-height)+var(--dynamic-nav-buttons-height)+env(safe-area-inset-bottom))]";
-  }
+  // O preenchimento inferior não é mais necessário, pois a barra inferior é fixa e o conteúdo deve rolar por baixo dela.
+  // let mainBottomPadding = "";
+  // if (isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape) {
+  //   mainBottomPadding = "pb-[calc(var(--mobile-bottom-bar-height)+var(--dynamic-nav-buttons-height)+env(safe-area-inset-bottom))]";
+  // }
 
   return (
     <div className="relative min-h-screen flex flex-col">
@@ -77,8 +76,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       <main
         className={cn(
           "flex-grow relative overflow-hidden",
-          mainTopPadding,
-          mainBottomPadding
+          mainTopPadding
+          // mainBottomPadding // REMOVIDO: Este padding não é mais necessário
         )}
       >
         {/* Passando a ref para o NewWebsite */}

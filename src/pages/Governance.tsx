@@ -23,6 +23,7 @@ import {
 } from 'recharts';
 import { StickyHeader } from '@/components/StickyHeader';
 import { useNavigate } from 'react-router-dom';
+import { StarRatingProgressBar } from '@/components/StarRatingProgressBar'; // NEW: Import StarRatingProgressBar
 
 // Define colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#d0ed57'];
@@ -350,7 +351,7 @@ const GovernancePage = () => {
                             // Fallback scale if not found
                             const scale = originalQuestionDef?.scale || 5;
 
-                            // NEW: Calculate max value for YAxis domain
+                            // Calculate max value for YAxis domain
                             const maxResponses = qStats.data.length > 0 
                                 ? Math.max(...qStats.data.map(d => d.value)) 
                                 : 1; // Default to 1 if no responses
@@ -361,7 +362,14 @@ const GovernancePage = () => {
                                 
                                 {/* Display Average for Rating Questions */}
                                 {qStats.type === 'rating' && qStats.average !== undefined && (
-                                    <p className="text-sm text-hodl-blue font-bold">Average Rating: {formatAverageRating(qStats.average)} / {scale}</p>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-hodl-blue font-bold">Average Rating: {formatAverageRating(qStats.average)} / {scale}</p>
+                                        <StarRatingProgressBar 
+                                            average={qStats.average} 
+                                            scale={scale} 
+                                            totalResponses={qStats.totalResponses} 
+                                        />
+                                    </div>
                                 )}
 
                                 {qStats.totalResponses > 0 ? (

@@ -462,7 +462,7 @@ const GovernancePage = () => {
                                                     cursor={{ fill: 'hsl(var(--muted) / 0.5)' }} // Add cursor style
                                                 />
                                                 {/* REMOVED: <Legend /> */}
-                                                <Bar dataKey="value" fill="#8884d8" barSize={20}> {/* ADDED barSize={20} */}
+                                                <Bar dataKey="value" fill="#8884d8">
                                                     {qStats.data.map((entry, index) => (
                                                         <Cell key={`bar-cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                     ))}

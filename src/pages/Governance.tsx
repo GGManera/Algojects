@@ -421,12 +421,12 @@ const GovernancePage = () => {
                                     
                                     {/* SINGLE CHOICE: Pie Chart only */}
                                     {qStats.type === 'single_choice' && (
-                                        <ResponsiveContainer width="100%" height={300}> {/* Increased height to 300 */}
+                                        <ResponsiveContainer width="100%" height={300}>
                                             <PieChart>
                                                 <Pie
                                                     data={qStats.data}
                                                     cx="50%"
-                                                    cy="50%" /* Centered Pie vertically */
+                                                    cy="60%" /* Adjusted cy to shift pie down */
                                                     labelLine={false}
                                                     outerRadius={100}
                                                     fill="#8884d8"

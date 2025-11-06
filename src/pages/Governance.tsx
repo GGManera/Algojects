@@ -340,7 +340,14 @@ const GovernancePage = () => {
             const versionStats = aggregatedStats[version];
             const isVersionOpen = openVersions.has(version);
             return (
-              <Card key={version} className="bg-card border-primary/50">
+              <Card 
+                key={version} 
+                className={cn(
+                  "bg-card border-primary/50",
+                  // Mobile specific styles: remove rounded corners and horizontal margin
+                  "rounded-none mx-[-1rem] sm:mx-0 md:rounded-lg md:mx-0"
+                )}
+              >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 cursor-pointer" onClick={() => toggleVersion(version)}>
                   <CardTitle className="text-xl text-primary">Form Version {version} ({versionStats.totalResponses} responses)</CardTitle>
                   {isVersionOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
@@ -380,7 +387,7 @@ const GovernancePage = () => {
                                 
                                 {/* Display Average for Rating Questions */}
                                 {qStats.type === 'rating' && qStats.average !== undefined && (
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 flex flex-col items-center"> {/* Added flex flex-col items-center for centering */}
                                         <p className="text-sm text-hodl-blue font-bold">Average Rating: {formatAverageRating(qStats.average)} / {scale}</p>
                                         <StarRatingProgressBar 
                                             average={qStats.average} 
@@ -391,12 +398,12 @@ const GovernancePage = () => {
                                 )}
 
                                 {qStats.totalResponses > 0 ? (
-                                  <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+                                  <div className="flex flex-col md:flex-row items-center justify-center"> {/* Removed gap-4 */}
                                     
                                     {/* RATING: Bar Chart only */}
                                     {qStats.type === 'rating' && (
                                         <ResponsiveContainer width="100%" height={200}>
-                                            <BarChart data={qStats.data}>
+                                            <BarChart data={qStats.data} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}> {/* Adjusted margins */}
                                                 {/* Use CustomStarTick for yellow stars */}
                                                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} />
                                                 <YAxis 
@@ -439,7 +446,7 @@ const GovernancePage = () => {
                                                 </Pie>
                                                 <Tooltip />
                                                 <Legend 
-                                                    wrapperStyle={{ paddingTop: '30px' }} /* Increased padding top to 30px */
+                                                    wrapperStyle={{ paddingTop: '30px' }} 
                                                 />
                                             </PieChart>
                                         </ResponsiveContainer>

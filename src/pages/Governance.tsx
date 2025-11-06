@@ -57,7 +57,7 @@ const CustomStarTick = (props: any) => {
   const { x, y, payload } = props;
   return (
     <g transform={`translate(${x},${y})`}>
-      <text x={0} y={0} dy={16} textAnchor="middle" fill="#FFBB28" className="font-numeric">
+      <text x={0} y={0} dy={16} textAnchor="middle" fill="#FFBB28" className="font-numeric text-xs"> {/* ADDED text-xs */}
         {payload.value}
       </text>
     </g>
@@ -370,7 +370,7 @@ const GovernancePage = () => {
                           <CardTitle className="text-lg text-hodl-blue">{moduleStats.moduleTitle}</CardTitle>
                           {isModuleOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </CardHeader>
-                        <CollapsibleContent isOpen={isModuleOpen} className="py-4 pt-0 space-y-4 md:p-4 md:pt-0"> {/* Adjusted padding here: py-4 pt-0 for mobile, p-4 pt-0 for desktop */}
+                        <CollapsibleContent isOpen={isModuleOpen} className="py-4 pt-0 space-y-4 md:p-4 md:pt-0">
                           {Object.entries(moduleStats.questions).map(([questionId, qStats], qIndex) => {
                             
                             // --- Filter out text questions ---
@@ -391,12 +391,12 @@ const GovernancePage = () => {
                                 : 1; // Default to 1 if no responses
 
                             return (
-                              <div key={questionId} className="border py-3 rounded-md bg-card space-y-3 px-4 md:p-3"> {/* Adjusted padding here: px-4 py-3 for mobile, p-3 for desktop */}
-                                <h4 className="text-md font-semibold text-foreground">{qIndex + 1}. {qStats.questionText} ({qStats.totalResponses} responses)</h4>
+                              <div key={questionId} className="border py-3 rounded-md bg-card space-y-3 px-0 md:p-3">
+                                <h4 className="text-md font-semibold text-foreground px-4">{qIndex + 1}. {qStats.questionText} ({qStats.totalResponses} responses)</h4>
                                 
                                 {/* Display Average for Rating Questions */}
                                 {qStats.type === 'rating' && qStats.average !== undefined && (
-                                    <div className="space-y-2 flex flex-col items-center">
+                                    <div className="space-y-2 flex flex-col items-center px-4">
                                         <p className="text-sm text-hodl-blue font-bold">Average Rating: {formatAverageRating(qStats.average)} / {scale}</p>
                                         <StarRatingProgressBar 
                                             average={qStats.average} 
@@ -412,7 +412,7 @@ const GovernancePage = () => {
                                     {/* RATING: Bar Chart only */}
                                     {qStats.type === 'rating' && (
                                         <ResponsiveContainer width="100%" height={200}>
-                                            <BarChart data={qStats.data} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
+                                            <BarChart data={qStats.data} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
                                                 {/* Use CustomStarTick for yellow stars */}
                                                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} />
                                                 <YAxis 

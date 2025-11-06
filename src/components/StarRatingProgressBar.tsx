@@ -22,10 +22,11 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
   const fractionalPart = average - fullStars;
 
   return (
-    <div className="flex flex-col space-y-2 w-full max-w-[200px]"> {/* Added max-width for better centering control */}
+    <div className="flex flex-col space-y-2">
+      {/* Removed space-x-1 from the outermost relative container */}
       <div className="relative flex items-center h-6" title={`Average: ${average.toFixed(1)} / ${scale}`}>
         
-        {/* 1. Background stars (unfilled) - Base layer */}
+        {/* Background stars (unfilled) */}
         <div className="flex absolute inset-0 items-center space-x-1">
           {Array.from({ length: scale }, (_, index) => (
             <Star
@@ -35,31 +36,32 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
           ))}
         </div>
 
-        {/* 2. Foreground stars (Clipped container) - This container controls the overall fill width */}
+        {/* Foreground stars (Clipped container) */}
         <div 
-          className="absolute inset-0 overflow-hidden"
+          className="absolute inset-0 overflow-hidden" // This container clips the content
           style={{ width: `${fillPercentage}%` }}
         >
-          {/* 3. Inner container with the actual filled stars and spacing, matching the background exactly */}
+          {/* Inner container with the actual stars and spacing, matching the background */}
           <div className="flex items-center space-x-1"> 
             {Array.from({ length: scale }, (_, index) => {
+              const isFull = index < fullStars;
               const isPartial = index === fullStars && fractionalPart > 0;
 
               return (
                 <div key={`fg-${index}`} className="relative h-6 w-6 flex-shrink-0">
                   <Star
                     className={cn(
-                      "h-6 w-6 text-yellow-400 fill-yellow-400"
+                      "h-6 w-6 text-yellow-400",
+                      isFull ? "fill-yellow-400" : ""
                     )}
                   />
-                  {/* Handle fractional fill for the partial star by overlaying a clipped gray star */}
+                  {/* Handle fractional fill for the partial star */}
                   {isPartial && (
                     <div 
                       className="absolute inset-0 overflow-hidden"
-                      style={{ width: `${(1 - fractionalPart) * 100}%`, left: `${fractionalPart * 100}%` }}
+                      style={{ width: `${fractionalPart * 100}%` }}
                     >
-                      {/* Overlay the gray star exactly over the yellow star */}
-                      <Star className="h-6 w-6 text-muted-foreground/50 fill-muted-foreground/50" />
+                      <Star className="h-6 w-6 text-yellow-400 fill-yellow-400" />
                     </div>
                   )}
                 </div>
@@ -68,7 +70,7 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
           </div>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground text-center">Based on {totalResponses} responses.</p>
+      <p className="text-xs text-muted-foreground">Based on {totalResponses} responses.</p>
     </div>
   );
 }

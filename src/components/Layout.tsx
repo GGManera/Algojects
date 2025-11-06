@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useWallet } from '@txnlab/use-wallet-react';
 import { MobileBottomBar } from './MobileBottomBar';
 import { useSocialData } from '@/hooks/useSocialData';
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useState, useRef, useMemo } from 'react'; // Import useMemo
 import { StickyHeader } from './StickyHeader';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { useAccountData } from '@/hooks/useAccountData';
@@ -57,18 +57,16 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     }
   }, [location.pathname]);
 
-  // Calcula o preenchimento superior para o main
-  let mainTopPadding = "pt-[calc(var(--sticky-header-height)+env(safe-area-inset-top))]";
-  if (!isMobile || isDeviceLandscape) {
-    mainTopPadding = "pt-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-height)+var(--dynamic-nav-buttons-desktop-vertical-gap)+env(safe-area-inset-top))]";
-  }
-
-  // Calcula o preenchimento inferior para o main (apenas se for mobile E portrait)
-  let mainBottomPadding = "";
-  if (isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape) {
-    // Always use the combined height of MobileBottomBar and DynamicNavButtons
-    mainBottomPadding = "pb-[calc(var(--mobile-bottom-bar-height)+var(--dynamic-nav-buttons-height)+env(safe-area-inset-bottom))]";
-  }
+  // Calcula a altura do conteúdo principal
+  const mainContentHeightClass = useMemo(() => {
+    if (isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape) {
+      // Mobile Portrait: 100vh - StickyHeader - DynamicNavButtons - MobileBottomBar - safe-area-insets
+      return "h-[calc(100vh - var(--sticky-header-height) - var(--dynamic-nav-buttons-height) - var(--mobile-bottom-bar-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
+    } else {
+      // Desktop/Landscape: 100vh - StickyHeader - DynamicNavButtons - Gap - safe-area-insets
+      return "h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
+    }
+  }, [isMobile, appDisplayMode, isDeviceLandscape]);
 
   return (
     <div className="relative min-h-screen flex flex-col">
@@ -77,8 +75,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       <main
         className={cn(
           "flex-grow relative overflow-hidden",
-          mainTopPadding,
-          mainBottomPadding
+          mainContentHeightClass // ADD new height class
         )}
       >
         {/* Passando a ref para o NewWebsite */}

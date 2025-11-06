@@ -410,19 +410,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     };
   }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
-  const cardContentMaxHeightClass = useMemo(() => {
-    // Desktop/Landscape: Fixed top elements: StickyHeader (48px) + dynamic-nav-buttons-desktop-vertical-gap (12px) + DynamicNavButtons (32px) = 92px.
-    // Mobile Portrait: Fixed top elements: StickyHeader (48px). Fixed bottom elements: MobileBottomBar (64px) + DynamicNavButtons (32px) = 96px.
-    if (isMobile && isDeviceLandscape) {
-      return "max-h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
-    } else if (isMobile && !isDeviceLandscape) {
-      // Corrected calculation for mobile portrait:
-      // 100vh - StickyHeader - DynamicNavButtons - MobileBottomBar - safe-area-insets
-      return "max-h-[calc(100vh - var(--sticky-header-height) - var(--dynamic-nav-buttons-height) - var(--mobile-bottom-bar-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
-    } else {
-      return "max-h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
-    }
-  }, [isMobile, isDeviceLandscape]);
+  // REMOVED cardContentMaxHeightClass calculation, as it's now handled by the parent <main> element.
 
   return (
     <div className="w-full px-0 py-0 md:p-0 text-foreground h-full scroll-mt-header-offset">
@@ -449,8 +437,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
                   <CardContent
                     ref={el => slideRefs.current.set(slide.type, el)}
                     className={cn(
-                      "overflow-y-auto scrollbar-thin",
-                      cardContentMaxHeightClass
+                      "overflow-y-auto scrollbar-thin h-full" // Changed to h-full
                     )}
                   >
                     <div className={cn("w-full mx-auto", slide.maxWidth)}>

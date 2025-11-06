@@ -199,7 +199,6 @@ const GovernancePage = () => {
             let totalSum = 0;
             let totalCount = 0;
 
-            // Ensure all rating options (1 to scale) are present in the data array
             for (let i = 1; i <= scale; i++) {
               const count = dataMap.get(i) || 0;
               normalizedData.push({ name: getStarLabel(i), value: count });
@@ -352,11 +351,10 @@ const GovernancePage = () => {
                             // Fallback scale if not found
                             const scale = originalQuestionDef?.scale || 5;
 
-                            // NEW: Use totalResponses as the maximum domain value for YAxis
-                            const maxDomainValue = qStats.totalResponses;
-                            
-                            // Generate explicit ticks array from 0 up to maxDomainValue
-                            const yAxisTicks = Array.from({ length: maxDomainValue + 1 }, (_, i) => i);
+                            // Calculate max value for YAxis domain
+                            const maxResponses = qStats.data.length > 0 
+                                ? Math.max(...qStats.data.map(d => d.value)) 
+                                : 1; // Default to 1 if no responses
 
                             return (
                               <div key={questionId} className="border p-3 rounded-md bg-card space-y-3">
@@ -386,13 +384,14 @@ const GovernancePage = () => {
                                                 <YAxis 
                                                     stroke="hsl(var(--muted-foreground))" 
                                                     allowDecimals={false} 
-                                                    domain={[0, maxDomainValue]} // Use maxDomainValue (total responses)
-                                                    ticks={yAxisTicks} // Use explicit ticks
+                                                    domain={[0, maxResponses]} // Set domain from 0 to maxResponses
+                                                    tickCount={maxResponses + 1} // Ensure all integer ticks are shown
                                                 />
                                                 <Tooltip 
                                                     formatter={(value, name, props) => [`${value} responses`, 'Count']}
                                                     labelFormatter={(label) => `Rating: ${label}`}
                                                 />
+                                                {/* REMOVED: <Legend /> */}
                                                 <Bar dataKey="value" fill="#8884d8">
                                                     {qStats.data.map((entry, index) => (
                                                         <Cell key={`bar-cell-${index}`} fill={COLORS[index % COLORS.length]} />

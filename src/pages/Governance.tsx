@@ -421,12 +421,12 @@ const GovernancePage = () => {
                                     
                                     {/* SINGLE CHOICE: Pie Chart only */}
                                     {qStats.type === 'single_choice' && (
-                                        <ResponsiveContainer width="100%" height={250}>
+                                        <ResponsiveContainer width="100%" height={300}> {/* Increased height to 300 */}
                                             <PieChart>
                                                 <Pie
                                                     data={qStats.data}
                                                     cx="50%"
-                                                    cy="40%" /* Moved Pie up to make space for Legend */
+                                                    cy="50%" /* Centered Pie vertically */
                                                     labelLine={false}
                                                     outerRadius={100}
                                                     fill="#8884d8"
@@ -439,7 +439,7 @@ const GovernancePage = () => {
                                                 </Pie>
                                                 <Tooltip />
                                                 <Legend 
-                                                    wrapperStyle={{ paddingTop: '20px' }} /* Added padding top to Legend wrapper */
+                                                    wrapperStyle={{ paddingTop: '20px' }} 
                                                 />
                                             </PieChart>
                                         </ResponsiveContainer>

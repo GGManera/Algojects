@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"; // Import Select components
+import { LanguageSelector } from '@/components/LanguageSelector'; // NEW: Import LanguageSelector
 
 // Componente interno para gerenciar o estado e renderizar o formulário
 const FeedbackContent = ({ isSubmitting, setIsSubmitting }: { isSubmitting: boolean, setIsSubmitting: (isSubmitting: boolean) => void }) => { // Receive props
@@ -69,7 +70,7 @@ const FeedbackContent = ({ isSubmitting, setIsSubmitting }: { isSubmitting: bool
   const ptSchemaDraft = bilingualSchema?.schema.pt;
 
   return (
-    <div className="p-2 md:p-4 w-full flex flex-col items-center pt-0"> {/* Reduced padding, removed h1 */}
+    <div className="p-2 md:p-4 w-full flex flex-col items-center pt-0">
       {loading && (
         <div className="w-full max-w-3xl space-y-4">
           <Skeleton className="h-12 w-full" />
@@ -94,6 +95,9 @@ const FeedbackContent = ({ isSubmitting, setIsSubmitting }: { isSubmitting: bool
               onSchemaUpdate={handleSchemaUpdate} 
             />
           )}
+          {/* Language Selector is now inside the content flow */}
+          <LanguageSelector disabled={isSubmitting} className="mt-8 mb-4" /> 
+          
           {activeSchema && (
             <DynamicFeedbackForm 
               schema={activeSchema} 
@@ -109,7 +113,6 @@ const FeedbackContent = ({ isSubmitting, setIsSubmitting }: { isSubmitting: bool
 
 const FeedbackLayout = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const { language, setLanguage } = useFeedbackLanguage();
     const navigate = useNavigate();
 
     const handleLogoClick = (e: React.MouseEvent) => {
@@ -117,40 +120,14 @@ const FeedbackLayout = () => {
         navigate('/');
     };
     
-    const languageOptions = [
-        { value: 'en', label: 'English' },
-        { value: 'pt', label: 'Português-BR' },
-    ];
-
     return (
         <div className="w-full min-h-screen flex flex-col items-center">
             <StickyHeader onLogoClick={handleLogoClick} />
             
-            {/* Fixed Language Selector Bar */}
-            <div className="fixed top-[var(--sticky-header-height)] left-0 right-0 z-30 bg-hodl-darker border-b border-border-accent-green h-10 flex items-center justify-center px-2 md:px-4">
-                <div className="w-full max-w-3xl flex items-center justify-center"> {/* Added max-w-3xl and justify-center */}
-                    <div className="flex items-center space-x-2">
-                        <Label htmlFor="feedback-language" className="text-sm text-muted-foreground">Language:</Label>
-                        <Select
-                            value={language}
-                            onValueChange={(value: 'en' | 'pt') => setLanguage(value)}
-                            disabled={isSubmitting}
-                        >
-                            <SelectTrigger id="feedback-language" className="w-[150px] bg-card">
-                                <SelectValue placeholder="Select Language" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {languageOptions.map(opt => (
-                                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-            </div>
+            {/* REMOVED: Fixed Language Selector Bar */}
             
-            {/* Content starts below the fixed bar */}
-            <div className="pt-[calc(var(--sticky-header-height)+40px)] w-full"> {/* 40px is the height of the fixed bar */}
+            {/* Content starts below the fixed header */}
+            <div className="pt-[var(--sticky-header-height)] w-full">
                 <FeedbackContent isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} />
             </div>
         </div>

@@ -69,6 +69,10 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
     totalUserEarnings,
     totalWritersCount,
     totalCuratorsCount,
+    avgLikesPerReview, // NEW
+    avgCommentsPerReview, // NEW
+    avgRepliesPerComment, // NEW
+    avgCuratorIndex, // NEW
     topWriters,
     topCurators,
     loading: analyticsLoading,
@@ -173,6 +177,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="space-y-6">
+            {/* Row 1: 5 summary stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-x-4 gap-y-4">
               {/* Total Projects */}
               <div className="flex flex-col items-center justify-center p-3 bg-muted/50 rounded-lg shadow-inner">
@@ -206,7 +211,9 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
               </div>
             </div>
 
+            {/* NEW Row 2: Posts & Likes (left) and Engagement Metrics (right) */}
             <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-6">
+              {/* Posts & Likes section (left) */}
               <div className="border-t md:border-t-0 md:border-r md:pr-6 border-border pt-4 md:pt-0 space-y-2 flex flex-col">
                 <h4 className="text-lg font-semibold text-center gradient-text">Posts & Likes</h4>
                 <div className="flex-grow flex items-center justify-center">
@@ -323,8 +330,34 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
                 </div>
               </div>
 
-              {/* Top Writers Section */}
+              {/* NEW: Engagement Metrics section (right) */}
               <div className="border-t md:border-t-0 md:border-l md:pl-6 border-border pt-4 md:pt-0 space-y-2 flex flex-col">
+                <h4 className="text-lg font-semibold text-center gradient-text">Engagement Metrics</h4>
+                <div className="flex-grow flex flex-col items-center justify-center space-y-4 p-4">
+                  <div className="flex items-center justify-between w-full p-2 rounded-md bg-muted/50">
+                    <span className="text-sm text-muted-foreground">Avg. Likes/Review</span>
+                    <span className="font-numeric font-bold text-hodl-blue">{avgLikesPerReview.toFixed(1)}</span>
+                  </div>
+                  <div className="flex items-center justify-between w-full p-2 rounded-md bg-muted/50">
+                    <span className="text-sm text-muted-foreground">Avg. Comments/Review</span>
+                    <span className="font-numeric font-bold text-hodl-blue">{avgCommentsPerReview.toFixed(1)}</span>
+                  </div>
+                  <div className="flex items-center justify-between w-full p-2 rounded-md bg-muted/50">
+                    <span className="text-sm text-muted-foreground">Avg. Replies/Comment</span>
+                    <span className="font-numeric font-bold text-hodl-blue">{avgRepliesPerComment.toFixed(1)}</span>
+                  </div>
+                  <div className="flex items-center justify-between w-full p-2 rounded-md bg-muted/50">
+                    <span className="text-sm text-muted-foreground">Avg. Curator Index</span>
+                    <span className="font-numeric font-bold text-hodl-blue">{avgCuratorIndex.toFixed(1)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* NEW Row 3: Top Writers (left) and Top Curators (right) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-6">
+              {/* Top Writers Section (left) */}
+              <div className="border-t md:border-t-0 md:border-r md:pr-6 border-border pt-4 md:pt-0 space-y-2 flex flex-col">
                 <h4 className="text-lg font-semibold text-center gradient-text">Top Writers</h4>
                 {topWriters.length > 0 ? (
                   <ul className="space-y-2">
@@ -345,8 +378,8 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
                 )}
               </div>
 
-              {/* Top Curators Section */}
-              <div className="mt-6 border-t border-border pt-4 space-y-2 md:mt-0 md:border-t-0 md:border-l md:border-border md:pl-6">
+              {/* Top Curators Section (right) */}
+              <div className="border-t md:border-t-0 md:border-l md:pl-6 border-border pt-4 md:pt-0 space-y-2 flex flex-col">
                 <h4 className="text-lg font-semibold text-center gradient-text">Top Curators</h4>
                 {topCurators.length > 0 ? (
                   <ul className="space-y-2">

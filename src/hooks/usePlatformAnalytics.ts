@@ -34,6 +34,10 @@ interface PlatformAnalyticsData {
   totalUserEarnings: number; // In ALGO (sum of all userEarnings)
   totalWritersCount: number; // NEW
   totalCuratorsCount: number; // NEW
+  avgLikesPerReview: number; // NEW
+  avgCommentsPerReview: number; // NEW
+  avgRepliesPerComment: number; // NEW
+  avgCuratorIndex: number; // NEW
   topWriters: UserAnalytics[];
   topCurators: UserAnalytics[];
   loading: boolean;
@@ -56,12 +60,16 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
         platformRevenue: 0, totalUserEarnings: 0,
         totalWritersCount: 0,
         totalCuratorsCount: 0,
+        avgLikesPerReview: 0, // NEW
+        avgCommentsPerReview: 0, // NEW
+        avgRepliesPerComment: 0, // NEW
+        avgCuratorIndex: 0, // NEW
         topWriters: [], topCurators: [],
         loading: true, error: null,
       };
     }
 
-    const numProjects = Object.keys(projectsData).length;
+    let numProjects = Object.keys(projectsData).length;
     let numReviews = 0;
     let numComments = 0;
     let numReplies = 0;
@@ -190,6 +198,17 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
     const totalWritersCount = allUserAnalytics.filter(u => u.totalEarnings > 0).length;
     const totalCuratorsCount = allUserAnalytics.filter(u => u.overallCuratorIndex > 0).length;
 
+    // NEW: Calculate engagement metrics
+    const avgLikesPerReview = numReviews > 0 ? numReviewLikes / numReviews : 0;
+    const avgCommentsPerReview = numReviews > 0 ? numComments / numReviews : 0;
+    const avgRepliesPerComment = numComments > 0 ? numReplies / numComments : 0;
+
+    let totalCuratorIndexSum = 0;
+    allCuratorData.forEach(curator => {
+      totalCuratorIndexSum += curator.finalScore;
+    });
+    const avgCuratorIndex = totalCuratorsCount > 0 ? totalCuratorIndexSum / totalCuratorsCount : 0;
+
     return {
       totalProjects: numProjects,
       totalReviews: numReviews,
@@ -202,6 +221,10 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
       totalUserEarnings,
       totalWritersCount, // NEW
       totalCuratorsCount, // NEW
+      avgLikesPerReview, // NEW
+      avgCommentsPerReview, // NEW
+      avgRepliesPerComment, // NEW
+      avgCuratorIndex, // NEW
       topWriters,
       topCurators,
       loading: false,

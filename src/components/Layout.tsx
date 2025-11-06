@@ -66,6 +66,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   // Calcula o preenchimento inferior para o main (apenas se for mobile E portrait)
   let mainBottomPadding = "";
   if (isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape) {
+    // Always use the combined height of MobileBottomBar and DynamicNavButtons
     mainBottomPadding = "pb-[calc(var(--mobile-bottom-bar-height)+var(--dynamic-nav-buttons-height)+env(safe-area-inset-bottom))]";
   }
 

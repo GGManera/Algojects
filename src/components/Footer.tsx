@@ -58,7 +58,7 @@ export function Footer({ className }: FooterProps) {
           </div>
         </div>
       ) : (
-        // Desktop layout
+        // Desktop layout (reverted to original)
         <div className="flex w-full max-w-md items-center justify-between mb-2">
           {/* Left group of links (Home, Feedback, Governance) */}
           <div className="flex flex-row items-center gap-4">

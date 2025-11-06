@@ -416,7 +416,6 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     if (isMobile && isDeviceLandscape) {
       return "max-h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
     } else if (isMobile && !isDeviceLandscape) {
-      // For mobile portrait, subtract the combined height of top and bottom fixed elements
       return "max-h-[calc(100vh - var(--sticky-header-height) - var(--total-fixed-bottom-height-mobile) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
     } else {
       return "max-h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";

@@ -15,7 +15,7 @@ import Projects from '@/pages/Projects';
 import ProjectPage from '@/pages/ProjectPage';
 import UserProfile from '@/pages/UserProfile';
 import { useWallet } from '@txnlab/use-wallet-react';
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { useNfd } from '@/hooks/useNfd';
@@ -410,6 +410,18 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     };
   }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
+  const cardContentMaxHeightClass = useMemo(() => {
+    // Desktop/Landscape: Fixed top elements: StickyHeader (48px) + dynamic-nav-buttons-desktop-vertical-gap (12px) + DynamicNavButtons (32px) = 92px.
+    // Mobile Portrait: Fixed top elements: StickyHeader (48px). Fixed bottom elements: MobileBottomBar (64px) + DynamicNavButtons (32px) = 96px.
+    if (isMobile && isDeviceLandscape) {
+      return "max-h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
+    } else if (isMobile && !isDeviceLandscape) {
+      return "max-h-[calc(100vh - var(--sticky-header-height) - var(--total-fixed-bottom-height-mobile) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
+    } else {
+      return "max-h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
+    }
+  }, [isMobile, isDeviceLandscape]);
+
   return (
     <div className="w-full px-0 py-0 md:p-0 text-foreground h-full scroll-mt-header-offset">
       <Carousel setApi={setApi} className="w-full" opts={{ duration: 13, baseFriction: 0.5 }}>
@@ -435,7 +447,8 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
                   <CardContent
                     ref={el => slideRefs.current.set(slide.type, el)}
                     className={cn(
-                      "overflow-y-auto scrollbar-thin h-full" // Ensure it takes full height
+                      "overflow-y-auto scrollbar-thin",
+                      cardContentMaxHeightClass
                     )}
                   >
                     <div className={cn("w-full mx-auto", slide.maxWidth)}>

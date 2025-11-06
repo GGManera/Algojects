@@ -22,9 +22,9 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
   const fractionalPart = average - fullStars;
 
   return (
-    <div className="flex flex-col space-y-2 w-full"> {/* Ensure full width */}
+    <div className="flex flex-col space-y-2">
       {/* Removed space-x-1 from the outermost relative container */}
-      <div className="relative flex items-center h-6 mx-auto" title={`Average: ${average.toFixed(1)} / ${scale}`}> {/* ADDED mx-auto here */}
+      <div className="relative flex items-center h-6" title={`Average: ${average.toFixed(1)} / ${scale}`}>
         
         {/* Background stars (unfilled) */}
         <div className="flex absolute inset-0 items-center space-x-1">
@@ -70,7 +70,7 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
           </div>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground text-center">Based on {totalResponses} responses.</p>
+      <p className="text-xs text-muted-foreground">Based on {totalResponses} responses.</p>
     </div>
   );
 }

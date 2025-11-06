@@ -24,7 +24,7 @@ import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
 
 interface NewWebsiteProps {
-  scrollToTopTrigger?: number;
+  // REMOVED: scrollToTopTrigger?: number;
 }
 
 export interface NewWebsiteRef {
@@ -34,7 +34,7 @@ export interface NewWebsiteRef {
 
 const LAST_ACTIVE_ID_KEY = 'algojects_last_active_id';
 
-const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToTopTrigger }, ref) => {
+const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ /* REMOVED: scrollToTopTrigger */ }, ref) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { pushEntry, lastProjectPath, lastProfilePath, profile1, profile2, currentProfileSlot } = useNavigationHistory();
@@ -51,8 +51,8 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   const [scrollTrigger, setScrollTrigger] = useState(0);
   const [lastScrolledHash, setLastScrolledHash] = useState<string | null>(null);
   
-  // NEW: State to trigger scroll to top from HeroSection/Logo click
-  const [internalScrollToTopTrigger, setInternalScrollToTopTrigger] = useState(0);
+  // REMOVED: State to trigger scroll to top from HeroSection/Logo click
+  // const [internalScrollToTopTrigger, setInternalScrollToTopTrigger] = useState(0);
 
   const slideRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
@@ -106,8 +106,8 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
         ref.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
-    // Also reset the internal scroll trigger for the active slide components
-    setInternalScrollToTopTrigger(prev => prev + 1);
+    // REMOVED: Also reset the internal scroll trigger for the active slide components
+    // setInternalScrollToTopTrigger(prev => prev + 1);
   }, []);
 
   // NEW: Função para ser passada para HeroSection para scrollar o slide ativo
@@ -127,7 +127,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
       pathPrefix: '/', 
       component: <Projects 
         isInsideCarousel={true} 
-        scrollToTopTrigger={internalScrollToTopTrigger} 
+        // REMOVED: scrollToTopTrigger={internalScrollToTopTrigger} 
         onKeyboardModeChange={handleKeyboardModeChange} 
         onScrollToTop={handleHeroScrollToTop} // Pass the scroll function
       />, 
@@ -143,7 +143,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
           isInsideCarousel={true} 
           hashToScroll={hashToScroll} 
           scrollTrigger={scrollTrigger} 
-          scrollToTopTrigger={internalScrollToTopTrigger} 
+          // REMOVED: scrollToTopTrigger={internalScrollToTopTrigger} 
           onKeyboardModeChange={handleKeyboardModeChange} 
           onScrollToTop={handleHeroScrollToTop} // Pass the scroll function
         />, 
@@ -158,14 +158,15 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
         component: <UserProfile 
           address={effectiveProfileAddress} 
           isInsideCarousel={true} 
-          scrollToTopTrigger={internalScrollToTopTrigger} 
+          // REMOVED: scrollToTopTrigger={internalScrollToTopTrigger} 
           onKeyboardModeChange={handleKeyboardModeChange} 
+          onScrollToTop={handleHeroScrollToTop} // NEW: Pass onScrollToTop to UserProfile
         />, 
         maxWidth: 'max-w-[710px]' 
       });
     }
     return config;
-  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, internalScrollToTopTrigger, handleKeyboardModeChange, handleHeroScrollToTop]);
+  }, [effectiveProjectId, effectiveProfileAddress, hashToScroll, scrollTrigger, handleKeyboardModeChange, handleHeroScrollToTop]); // REMOVED internalScrollToTopTrigger
 
   const targetSlideIndex = useMemo(() => {
     const currentPath = location.pathname;
@@ -411,12 +412,16 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
   const cardContentMaxHeightClass = useMemo(() => {
+    // Desktop/Landscape: Fixed top elements: StickyHeader (48px) + dynamic-nav-buttons-desktop-vertical-gap (12px) + DynamicNavButtons (32px) = 92px.
+    // Mobile Portrait: Fixed top elements: StickyHeader (48px). Fixed bottom elements: MobileBottomBar (64px) + DynamicNavButtons (32px) = 96px.
     if (isMobile && isDeviceLandscape) {
-      return "max-h-[calc(100vh-var(--sticky-header-height)-var(--dynamic-nav-buttons-height)-var(--dynamic-nav-buttons-desktop-vertical-gap)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      return "max-h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
     } else if (isMobile && !isDeviceLandscape) {
-      return "max-h-[calc(100vh-var(--sticky-header-height)-var(--dynamic-nav-buttons-height)-var(--mobile-bottom-bar-height)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      // Corrected calculation for mobile portrait:
+      // 100vh - StickyHeader - DynamicNavButtons - MobileBottomBar - safe-area-insets
+      return "max-h-[calc(100vh - var(--sticky-header-height) - var(--dynamic-nav-buttons-height) - var(--mobile-bottom-bar-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
     } else {
-      return "max-h-[calc(100vh-var(--sticky-header-height)-var(--dynamic-nav-buttons-height)-var(--dynamic-nav-buttons-desktop-vertical-gap)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      return "max-h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
     }
   }, [isMobile, isDeviceLandscape]);
 
@@ -451,7 +456,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
                   >
                     <div className={cn("w-full mx-auto", slide.maxWidth)}>
                       {slideComponent}
-                      <Footer isMobile={isMobile && !isDeviceLandscape} />
+                      <Footer /> {/* Removed isMobile prop */}
                     </div>
                   </CardContent>
                 </Card>

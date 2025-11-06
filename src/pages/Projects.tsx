@@ -22,13 +22,13 @@ import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 
 interface ProjectsProps {
   isInsideCarousel?: boolean;
-  scrollToTopTrigger?: number;
+  // REMOVED: scrollToTopTrigger?: number;
   isActive?: boolean;
   onKeyboardModeChange?: (isActive: boolean) => void;
   onScrollToTop: () => void; // Added prop
 }
 
-const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop }: ProjectsProps) => {
+const Projects = ({ isInsideCarousel = false, /* REMOVED: scrollToTopTrigger, */ isActive = false, onKeyboardModeChange, onScrollToTop }: ProjectsProps) => {
   const { projects, loading: socialDataLoading, error: socialDataError, isRefreshing: isRefreshingSocialData } = useSocialData(); // NEW: Destructure loading and error
   const { isRefreshing: isRefreshingProjectDetails, loading: projectDetailsLoading, error: projectDetailsError } = useProjectDetails(); // NEW: Destructure loading and error
   const { activeAddress } = useWallet();

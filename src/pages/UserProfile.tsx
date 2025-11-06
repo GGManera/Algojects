@@ -297,12 +297,12 @@ type GroupedUserInteractions = {
 interface UserProfileProps {
   address: string | undefined;
   isInsideCarousel?: boolean;
-  scrollToTopTrigger?: number; // NEW prop
   isActive?: boolean; // NEW prop
   onKeyboardModeChange?: (isActive: boolean) => void; // NEW PROP
+  onScrollToTop?: () => void; // NEW: Add onScrollToTop prop
 }
 
-const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange }: UserProfileProps) => { // Accept scrollToTopTrigger
+const UserProfile = ({ address, isInsideCarousel = false, isActive = false, onKeyboardModeChange, onScrollToTop = () => {} }: UserProfileProps) => { // Accept onScrollToTop
   const location = useLocation();
   // Read initialActiveCategory from location.state
   const initialCategoryFromState = (location.state as { initialActiveCategory?: 'writing' | 'curating' })?.initialActiveCategory;
@@ -359,7 +359,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
 
   const { nfd: userProfileNfd, loading: nfdLoading } = useNfd(effectiveAddress);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  // REMOVED: const scrollRef = useRef<HTMLDivElement>(null);
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
   const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
@@ -382,18 +382,19 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   }, [isActive, rebuildOrder, activeTab, activeCategory]);
 
   useEffect(() => {
-    if (location.pathname.startsWith('/profile/') && scrollRef.current) {
-      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    if (location.pathname.startsWith('/profile/')) { // Removed scrollRef.current check
+      // The parent NewWebsite component's CardContent is the scrollable element.
+      // We don't need to manage scrolling here directly.
     }
   }, [location.pathname]);
 
-  // NEW: Effect to scroll to top when scrollToTopTrigger changes
-  useEffect(() => {
-    if (scrollToTopTrigger && scrollRef.current && location.pathname.startsWith('/profile/')) {
-      console.log("[UserProfile] Scrolling to top due to trigger.");
-      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [scrollToTopTrigger, location.pathname]);
+  // REMOVED: Effect to scroll to top when scrollToTopTrigger changes
+  // useEffect(() => {
+  //   if (scrollToTopTrigger && scrollRef.current && location.pathname.startsWith('/profile/')) {
+  //     console.log("[UserProfile] Scrolling to top due to trigger.");
+  //     scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+  //   }
+  // }, [scrollToTopTrigger, location.pathname]);
 
   // Effect to update history entry with current activeCategory
   useEffect(() => {

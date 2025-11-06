@@ -18,13 +18,12 @@ interface ProjectPageProps {
   isInsideCarousel?: boolean;
   hashToScroll: string | null; // New prop
   scrollTrigger: number; // New prop
-  scrollToTopTrigger?: number; // NEW prop
   isActive?: boolean; // NEW prop
   onKeyboardModeChange?: (isActive: boolean) => void; // NEW PROP
   onScrollToTop?: () => void; // Made optional
 }
 
-const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop = () => {} }: ProjectPageProps) => { // Provide fallback
+const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scrollTrigger, isActive = false, onKeyboardModeChange, onScrollToTop = () => {} }: ProjectPageProps) => { // Provide fallback
   const location = useLocation();
   const navigate = useNavigate();
   const { projects, loading: socialDataLoading, error: socialDataError, refetch } = useSocialData(); // NEW: Destructure loading and error
@@ -97,13 +96,13 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
     }
   }, [scrollTrigger, hashToScroll, location.pathname, location.hash, navigate]); // Depend on trigger, hash, and navigate
 
-  // NEW: Effect to scroll to top when scrollToTopTrigger changes
-  useEffect(() => {
-    if (scrollToTopTrigger && location.pathname.startsWith('/project/')) {
-      console.log("[ProjectPage] Scrolling to top due to trigger.");
-      onScrollToTop(); // Use the function provided by the parent (NewWebsite)
-    }
-  }, [scrollToTopTrigger, location.pathname, onScrollToTop]);
+  // REMOVED: Effect to scroll to top when scrollToTopTrigger changes
+  // useEffect(() => {
+  //   if (scrollToTopTrigger && location.pathname.startsWith('/project/')) {
+  //     console.log("[ProjectPage] Scrolling to top due to trigger.");
+  //     onScrollToTop(); // Use the function provided by the parent (NewWebsite)
+  //   }
+  // }, [scrollToTopTrigger, location.pathname, onScrollToTop]);
 
   if (!effectiveProjectId) {
     return (

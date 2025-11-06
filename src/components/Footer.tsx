@@ -31,7 +31,7 @@ export function Footer({ className }: FooterProps) {
             <div className="flex flex-col items-center gap-y-2"> {/* Left column - Changed to items-center */}
               <Link to="/" onClick={handleHomeClick} className="hover:text-foreground transition-colors">Home</Link>
               <Link to="/feedback" className="hover:text-foreground transition-colors">Feedback</Link>
-              <Link to="/governance" className="hover:text-foreground transition-colors">Governance</Link>
+              <Link to="/governance" className="hover:text-foreground transition-colors">Governance</Link> {/* Updated link */}
             </div>
             <div className="flex flex-col items-center gap-y-2"> {/* Right column - Changed to items-center */}
               <a
@@ -66,7 +66,7 @@ export function Footer({ className }: FooterProps) {
             <span className="text-border">|</span>
             <Link to="/feedback" className="hover:text-foreground transition-colors">Feedback</Link>
             <span className="text-border">|</span>
-            <Link to="/governance" className="hover:text-foreground transition-colors">Governance</Link>
+            <Link to="/governance" className="hover:text-foreground transition-colors">Governance</Link> {/* Updated link */}
           </div>
 
           {/* Right group of links (GitHub, Twitter) */}

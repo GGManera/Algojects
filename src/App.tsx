@@ -19,8 +19,7 @@ import { HeroLogoVisibilityProvider } from "./contexts/HeroLogoVisibilityContext
 import { NavigationHistoryProvider } from "./contexts/NavigationHistoryContext";
 import NewWebsite from "./pages/NewWebsite";
 import FeedbackPage from "./pages/Feedback";
-import FeedbackStatsPage from "./pages/FeedbackStats"; // Import the new FeedbackStats page
-import Governance from "./pages/Governance"; // NEW: Import Governance page
+import GovernancePage from "./pages/Governance"; // Updated import to GovernancePage
 
 const queryClient = new QueryClient();
 
@@ -62,10 +61,8 @@ const App = () => {
                     <Routes>
                       {/* New Feedback Route - outside the main Layout */}
                       <Route path="/feedback" element={<FeedbackPage />} />
-                      {/* New Feedback Stats Route - outside the main Layout */}
-                      <Route path="/feedbackstats" element={<FeedbackStatsPage />} />
-                      {/* NEW: Governance Route - outside the main Layout */}
-                      <Route path="/governance" element={<Governance />} />
+                      {/* Governance Route (now includes Feedback Stats) - outside the main Layout */}
+                      <Route path="/governance" element={<GovernancePage />} />
                       
                       {/* Main Application Routes */}
                       <Route path="/*" element={<Layout><NewWebsite /></Layout>} />

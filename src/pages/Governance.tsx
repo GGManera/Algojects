@@ -32,6 +32,7 @@ interface QuestionStats {
   type: 'rating' | 'text' | 'single_choice';
   totalResponses: number;
   data: Array<{ name: string; value: number }>;
+  average?: number; // Added average field
 }
 
 interface ModuleStats {
@@ -47,7 +48,7 @@ interface VersionStats {
   modules: Record<string, ModuleStats>;
 }
 
-const GovernancePage = () => { // Renamed component from FeedbackStatsPage to GovernancePage
+const GovernancePage = () => {
   const [openVersions, setOpenVersions] = useState<Set<string>>(new Set());
   const [openModules, setOpenModules] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
@@ -173,6 +174,18 @@ const GovernancePage = () => { // Renamed component from FeedbackStatsPage to Go
       Object.values(versionStat.modules).forEach(moduleStat => {
         Object.values(moduleStat.questions).forEach(qStat => {
           qStat.data.sort((a, b) => a.name.localeCompare(b.name));
+          
+          // Calculate average for rating questions
+          if (qStat.type === 'rating' && qStat.totalResponses > 0) {
+            let totalSum = 0;
+            qStat.data.forEach(d => {
+              const rating = parseInt(d.name, 10);
+              if (!isNaN(rating)) {
+                totalSum += rating * d.value;
+              }
+            });
+            (qStat as QuestionStats).average = totalSum / qStat.totalResponses;
+          }
         });
       });
     });
@@ -216,7 +229,7 @@ const GovernancePage = () => { // Renamed component from FeedbackStatsPage to Go
       <div className="w-full min-h-screen flex flex-col items-center pt-12">
         <StickyHeader onLogoClick={handleLogoClick} />
         <div className="p-4 md:p-8 w-full flex flex-col items-center">
-          <h1 className="text-4xl font-bold gradient-text mb-6">AlgoJects Governance & Feedback Statistics</h1> {/* Updated title */}
+          <h1 className="text-4xl font-bold gradient-text mb-6">AlgoJects Governance & Feedback Statistics</h1>
           <div className="w-full max-w-3xl space-y-4">
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-64 w-full" />
@@ -231,7 +244,7 @@ const GovernancePage = () => { // Renamed component from FeedbackStatsPage to Go
       <div className="w-full min-h-screen flex flex-col items-center pt-12">
         <StickyHeader onLogoClick={handleLogoClick} />
         <div className="p-4 md:p-8 w-full flex flex-col items-center">
-          <h1 className="text-4xl font-bold gradient-text mb-6">AlgoJects Governance & Feedback Statistics</h1> {/* Updated title */}
+          <h1 className="text-4xl font-bold gradient-text mb-6">AlgoJects Governance & Feedback Statistics</h1>
           <Alert variant="destructive" className="w-full max-w-3xl mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Error Loading Data</AlertTitle>
@@ -247,7 +260,7 @@ const GovernancePage = () => { // Renamed component from FeedbackStatsPage to Go
       <div className="w-full min-h-screen flex flex-col items-center pt-12">
         <StickyHeader onLogoClick={handleLogoClick} />
         <div className="p-4 md:p-8 w-full flex flex-col items-center">
-          <h1 className="text-4xl font-bold gradient-text mb-6">AlgoJects Governance & Feedback Statistics</h1> {/* Updated title */}
+          <h1 className="text-4xl font-bold gradient-text mb-6">AlgoJects Governance & Feedback Statistics</h1>
           <Alert className="w-full max-w-3xl">
             <Info className="h-4 w-4" />
             <AlertTitle>No Feedback Data</AlertTitle>
@@ -262,7 +275,7 @@ const GovernancePage = () => { // Renamed component from FeedbackStatsPage to Go
     <div className="w-full min-h-screen flex flex-col items-center pt-12">
       <StickyHeader onLogoClick={handleLogoClick} />
       <div className="p-4 md:p-8 w-full flex flex-col items-center">
-        <h1 className="text-4xl font-bold gradient-text mb-6">AlgoJects Governance & Feedback Statistics</h1> {/* Updated title */}
+        <h1 className="text-4xl font-bold gradient-text mb-6">AlgoJects Governance & Feedback Statistics</h1>
         <p className="text-lg text-muted-foreground mb-4 text-center max-w-2xl">
           This page provides insights into community feedback, which informs the ongoing governance and evolution of AlgoJects.
         </p>
@@ -288,56 +301,79 @@ const GovernancePage = () => { // Renamed component from FeedbackStatsPage to Go
                           {isModuleOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </CardHeader>
                         <CollapsibleContent isOpen={isModuleOpen} className="p-4 pt-0 space-y-4">
-                          {Object.values(moduleStats.questions).map((qStats, qIndex) => (
-                            <div key={qStats.questionText} className="border p-3 rounded-md bg-card space-y-3">
-                              <h4 className="text-md font-semibold text-foreground">{qIndex + 1}. {qStats.questionText} ({qStats.totalResponses} responses)</h4>
-                              {qStats.totalResponses > 0 ? (
-                                <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-                                  {qStats.type === 'rating' || qStats.type === 'single_choice' ? (
-                                    <>
-                                      <ResponsiveContainer width="100%" height={200} className="md:w-1/2">
-                                        <PieChart>
-                                          <Pie
-                                            data={qStats.data}
-                                            cx="50%"
-                                            cy="50%"
-                                            labelLine={false}
-                                            outerRadius={80}
-                                            fill="#8884d8"
-                                            dataKey="value"
-                                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                                          >
-                                            {qStats.data.map((entry, index) => (
-                                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                          </Pie>
-                                          <Tooltip />
-                                          <Legend />
-                                        </PieChart>
-                                      </ResponsiveContainer>
-                                      <ResponsiveContainer width="100%" height={200} className="md:w-1/2">
-                                        <BarChart data={qStats.data}>
-                                          <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                                          <YAxis stroke="hsl(var(--muted-foreground))" />
-                                          <Tooltip />
-                                          <Legend />
-                                          <Bar dataKey="value" fill="#8884d8">
-                                            {qStats.data.map((entry, index) => (
-                                              <Cell key={`bar-cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                          </Bar>
-                                        </BarChart>
-                                      </ResponsiveContainer>
-                                    </>
-                                  ) : (
-                                    <p className="text-muted-foreground">Text responses are counted but not charted here.</p>
-                                  )}
-                                </div>
-                              ) : (
-                                <p className="text-muted-foreground">No responses for this question yet.</p>
-                              )}
-                            </div>
-                          ))}
+                          {Object.entries(moduleStats.questions).map(([questionId, qStats], qIndex) => {
+                            
+                            // Find the original question definition using the ID
+                            const originalQuestionDef = schema.modules
+                                .flatMap(m => m.questions || [])
+                                .find((q: any) => q.id === questionId);
+                            
+                            // Fallback scale if not found
+                            const scale = originalQuestionDef?.scale || 5;
+
+                            return (
+                              <div key={questionId} className="border p-3 rounded-md bg-card space-y-3">
+                                <h4 className="text-md font-semibold text-foreground">{qIndex + 1}. {qStats.questionText} ({qStats.totalResponses} responses)</h4>
+                                
+                                {/* Display Average for Rating Questions */}
+                                {qStats.type === 'rating' && qStats.average !== undefined && (
+                                    <p className="text-sm text-hodl-blue font-bold">Average Rating: {qStats.average.toFixed(2)} / {scale}</p>
+                                )}
+
+                                {qStats.totalResponses > 0 ? (
+                                  <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+                                    
+                                    {/* RATING: Bar Chart only */}
+                                    {qStats.type === 'rating' && (
+                                        <ResponsiveContainer width="100%" height={200}>
+                                            <BarChart data={qStats.data}>
+                                                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
+                                                <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+                                                <Tooltip />
+                                                <Legend />
+                                                <Bar dataKey="value" name="Responses" fill="#8884d8">
+                                                    {qStats.data.map((entry, index) => (
+                                                        <Cell key={`bar-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    )}
+                                    
+                                    {/* SINGLE CHOICE: Pie Chart only */}
+                                    {qStats.type === 'single_choice' && (
+                                        <ResponsiveContainer width="100%" height={250}>
+                                            <PieChart>
+                                                <Pie
+                                                    data={qStats.data}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    labelLine={false}
+                                                    outerRadius={100}
+                                                    fill="#8884d8"
+                                                    dataKey="value"
+                                                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                                                >
+                                                    {qStats.data.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip />
+                                                <Legend />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    )}
+                                    
+                                    {qStats.type === 'text' && (
+                                        <p className="text-muted-foreground">Text responses are counted but not charted here.</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-muted-foreground">No responses for this question yet.</p>
+                                )}
+                              </div>
+                            );
+                          })}
                         </CollapsibleContent>
                       </Card>
                     );

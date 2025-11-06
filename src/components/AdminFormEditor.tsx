@@ -123,7 +123,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     const clonedSchema = deepCloneSchema(currentSchema);
     
     // Check if the fetched schema is clearly incomplete (e.g., missing modules array)
-    const isSchemaIncomplete = !clonedSchema.modules || clonedToJSON.modules.length === 0; // Use clonedToJSON here
+    const isSchemaIncomplete = !clonedSchema.modules || clonedSchema.modules.length === 0; // Use clonedSchema here
     
     if (isSchemaIncomplete && currentSchema.rowId) {
         // Se incompleto mas temos rowId, inicializa com o template de fallback

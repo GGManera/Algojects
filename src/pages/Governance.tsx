@@ -327,17 +327,17 @@ const GovernancePage = () => {
   return (
     <div className="w-full min-h-screen flex flex-col items-center pt-12">
       <StickyHeader onLogoClick={handleLogoClick} />
-      <div className="p-4 md:p-8 w-full flex flex-col items-center">
-        <h1 className="text-4xl font-bold gradient-text mb-6">AlgoJects Governance & Feedback Statistics</h1>
-        <p className="text-lg text-muted-foreground mb-4 text-center max-w-2xl">
+      <div className="py-4 md:p-8 w-full flex flex-col items-center"> {/* Removed px-4, kept py-4 */}
+        <h1 className="text-4xl font-bold gradient-text mb-6 px-4 text-center">AlgoJects Governance & Feedback Statistics</h1>
+        <p className="text-lg text-muted-foreground mb-4 text-center max-w-2xl px-4">
           This page provides insights into community feedback, which informs the ongoing governance and evolution of AlgoJects.
         </p>
-        <p className="text-muted-foreground mb-8">Aggregated data from {responses.length} responses across {sortedVersions.length} form versions.</p>
+        <p className="text-muted-foreground mb-8 px-4">Aggregated data from {responses.length} responses across {sortedVersions.length} form versions.</p>
 
         <div className={cn(
           "w-full max-w-4xl",
-          "space-y-6 md:space-y-6", // Keep space-y-6 for desktop
-          "sm:px-0" // Ensure no horizontal padding on small screens
+          "space-y-6 md:space-y-6",
+          "sm:px-0"
         )}>
           {sortedVersions.map(version => {
             const versionStats = aggregatedStats[version];
@@ -347,8 +347,8 @@ const GovernancePage = () => {
                 key={version} 
                 className={cn(
                   "bg-card border-primary/50",
-                  "sm:rounded-lg", // Keep rounded on desktop
-                  "rounded-none border-x-0 sm:border-x" // Remove rounded and border-x on mobile
+                  "sm:rounded-lg",
+                  "rounded-none border-x-0 sm:border-x"
                 )}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 cursor-pointer" onClick={() => toggleVersion(version)}>

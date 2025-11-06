@@ -23,10 +23,11 @@ export function LanguageSelector({ disabled = false, className }: LanguageSelect
         defaultValue={language}
         onValueChange={handleValueChange}
         className={cn(disabled && "opacity-50 pointer-events-none")}
+        groupName="feedback-language-selector" // Unique group name
       >
         <GlassRadioItemTwoItems
           value="en"
-          id="lang-en"
+          id="lang-en" // Unique ID for CSS targeting
           label={
             <span className="flex items-center justify-center gap-2">
               🇺🇸 English-US
@@ -35,7 +36,7 @@ export function LanguageSelector({ disabled = false, className }: LanguageSelect
         />
         <GlassRadioItemTwoItems
           value="pt"
-          id="lang-pt"
+          id="lang-pt" // Unique ID for CSS targeting
           label={
             <span className="flex items-center justify-center gap-2">
               🇧🇷 Português-BR

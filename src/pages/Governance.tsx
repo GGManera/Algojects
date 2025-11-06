@@ -161,7 +161,6 @@ const GovernancePage = () => {
             if (existingDataIndex !== -1) {
               qStats.data[existingDataIndex].value++;
             } else {
-              // Store the response ID/Key as the 'name' initially
               qStats.data.push({ name: responseKey, value: 1 });
             }
           }
@@ -335,12 +334,23 @@ const GovernancePage = () => {
         </p>
         <p className="text-muted-foreground mb-8">Aggregated data from {responses.length} responses across {sortedVersions.length} form versions.</p>
 
-        <div className="w-full max-w-4xl space-y-6">
+        <div className={cn(
+          "w-full max-w-4xl",
+          "space-y-6 md:space-y-6", // Keep space-y-6 for desktop
+          "sm:px-0" // Ensure no horizontal padding on small screens
+        )}>
           {sortedVersions.map(version => {
             const versionStats = aggregatedStats[version];
             const isVersionOpen = openVersions.has(version);
             return (
-              <Card key={version} className="bg-card border-primary/50">
+              <Card 
+                key={version} 
+                className={cn(
+                  "bg-card border-primary/50",
+                  "sm:rounded-lg", // Keep rounded on desktop
+                  "rounded-none border-x-0 sm:border-x" // Remove rounded and border-x on mobile
+                )}
+              >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 cursor-pointer" onClick={() => toggleVersion(version)}>
                   <CardTitle className="text-xl text-primary">Form Version {version} ({versionStats.totalResponses} responses)</CardTitle>
                   {isVersionOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
@@ -380,7 +390,7 @@ const GovernancePage = () => {
                                 
                                 {/* Display Average for Rating Questions */}
                                 {qStats.type === 'rating' && qStats.average !== undefined && (
-                                    <div className="space-y-2 flex flex-col items-center"> {/* ADDED items-center here */}
+                                    <div className="space-y-2 flex flex-col items-center">
                                         <p className="text-sm text-hodl-blue font-bold">Average Rating: {formatAverageRating(qStats.average)} / {scale}</p>
                                         <StarRatingProgressBar 
                                             average={qStats.average} 

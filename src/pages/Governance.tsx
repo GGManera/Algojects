@@ -6,7 +6,7 @@ import { fetchFormStructure, fetchFormResponses, FormStructure, FeedbackResponse
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, ChevronDown, ChevronUp, BarChart as BarChartIcon, PieChart as PieChartIcon, Info } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, BarChart as BarChartIcon, PieChart as PieChartIcon, Info, Star } from 'lucide-react'; // Import Star icon
 import { cn } from '@/lib/utils';
 import { CollapsibleContent } from '@/components/CollapsibleContent';
 import {
@@ -63,6 +63,41 @@ const CustomStarTick = (props: any) => {
     </g>
   );
 };
+
+// NEW: Custom Tooltip Component
+const CustomTooltip = ({ active, payload, label, scale }: any) => {
+  if (active && payload && payload.length) {
+    // 1. Determine the rating value (number of filled stars) from the label
+    const filledStarsCount = label.split('★').length - 1;
+    const maxScale = scale || 5; // Use the passed scale or default to 5
+
+    // 2. Render the colored stars
+    const renderStars = () => {
+      return Array.from({ length: maxScale }, (_, index) => {
+        const isFilled = index < filledStarsCount;
+        return (
+          <Star
+            key={index}
+            className={cn("h-4 w-4", isFilled ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground")}
+          />
+        );
+      });
+    };
+
+    return (
+      <div className="bg-card border border-border p-3 rounded-md shadow-lg text-foreground">
+        <p className="text-sm font-semibold mb-1 flex items-center space-x-1">
+          <span>Rating:</span>
+          {renderStars()}
+        </p>
+        <p className="text-sm text-muted-foreground">Count: {payload[0].value} responses</p>
+      </div>
+    );
+  }
+
+  return null;
+};
+
 
 const GovernancePage = () => {
   const [openVersions, setOpenVersions] = useState<Set<string>>(new Set());
@@ -412,7 +447,7 @@ const GovernancePage = () => {
                                     {/* RATING: Bar Chart only */}
                                     {qStats.type === 'rating' && (
                                         <ResponsiveContainer width="100%" height={200}>
-                                            <BarChart data={qStats.data} margin={{ top: 5, right: 0, left: -5, bottom: 5 }}> {/* Adjusted margin: right: 0 */}
+                                            <BarChart data={qStats.data} margin={{ top: 5, right: 0, left: -5, bottom: 5 }}>
                                                 {/* Use CustomStarTick for yellow stars */}
                                                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} />
                                                 <YAxis 
@@ -423,8 +458,8 @@ const GovernancePage = () => {
                                                     width={30} // Set explicit width for YAxis
                                                 />
                                                 <Tooltip 
-                                                    formatter={(value, name, props) => [`${value} responses`, 'Count']}
-                                                    labelFormatter={(label) => `Rating: ${label}`}
+                                                    content={<CustomTooltip scale={scale} />} // Use CustomTooltip and pass scale
+                                                    cursor={{ fill: 'hsl(var(--muted) / 0.5)' }} // Add cursor style
                                                 />
                                                 {/* REMOVED: <Legend /> */}
                                                 <Bar dataKey="value" fill="#8884d8">

@@ -32,8 +32,8 @@ interface QuestionStats {
   questionText: string;
   type: 'rating' | 'text' | 'single_choice';
   totalResponses: number;
-  data: Array<{ name: string; value: number }>;
-  average?: number; // Added average field
+  data: Array<{ name: string; value: number; id?: string }>; // Added id for single_choice
+  average?: number;
 }
 
 interface ModuleStats {
@@ -97,8 +97,8 @@ const GovernancePage = () => {
 
     // Create a map of all question definitions from the LATEST schema for quick lookup
     const questionDefinitionsMap = new Map<string, any>();
-    (schema.modules || []).forEach(moduleDef => { // ADDED NULL CHECK
-      (moduleDef.questions || []).forEach((q: any) => { // ADDED NULL CHECK
+    (schema.modules || []).forEach(moduleDef => {
+      (moduleDef.questions || []).forEach((q: any) => {
         questionDefinitionsMap.set(q.id, { ...q, moduleId: moduleDef.id, moduleTitle: moduleDef.title });
       });
     });
@@ -153,12 +153,16 @@ const GovernancePage = () => {
             qStats.totalResponses++;
           }
 
+          // For rating, the answer is a number. For single_choice, the answer is the option ID (string).
+          const responseKey = String(userAnswer);
+
           if (questionType === 'rating' || questionType === 'single_choice') {
-            const existingDataIndex = qStats.data.findIndex(d => d.name === String(userAnswer));
+            const existingDataIndex = qStats.data.findIndex(d => d.name === responseKey);
             if (existingDataIndex !== -1) {
               qStats.data[existingDataIndex].value++;
             } else {
-              qStats.data.push({ name: String(userAnswer), value: 1 });
+              // Store the response ID/Key as the 'name' initially
+              qStats.data.push({ name: responseKey, value: 1 });
             }
           }
         }
@@ -168,9 +172,9 @@ const GovernancePage = () => {
       });
     });
 
-    // --- Phase 2: Normalize and Calculate Averages ---
+    // --- Phase 2: Normalize and Calculate Averages, Apply Labels ---
     Object.values(stats).forEach(versionStat => {
-      (schema.modules || []).forEach(moduleDef => { // ADDED NULL CHECK
+      (schema.modules || []).forEach(moduleDef => {
         const moduleId = moduleDef.id;
         if (!versionStat.modules[moduleId]) {
           versionStat.modules[moduleId] = {
@@ -180,7 +184,7 @@ const GovernancePage = () => {
             questions: {},
           };
         }
-        (moduleDef.questions || []).forEach((questionDef: any) => { // ADDED NULL CHECK
+        (moduleDef.questions || []).forEach((questionDef: any) => {
           const questionId = questionDef.id;
           const questionType = questionDef.type;
           
@@ -203,17 +207,25 @@ const GovernancePage = () => {
             let totalCount = 0;
 
             for (let i = 1; i <= scale; i++) {
-              const count = dataMap.get(i) || 0;
+              const count = dataMap.get(String(i)) || 0; // Use String(i) to match the key stored in Phase 1
               normalizedData.push({ name: getStarLabel(i), value: count });
               totalSum += i * count;
               totalCount += count;
             }
             
             qStats.data = normalizedData;
-            qStats.totalResponses = totalCount; // Recalculate total responses based on normalized data
+            qStats.totalResponses = totalCount;
             (qStats as QuestionStats).average = totalCount > 0 ? totalSum / totalCount : undefined;
           } else if (questionType === 'single_choice') {
-            // For single choice, just ensure data is sorted by name (option text)
+            // Map response IDs (stored in 'name') back to their labels from the schema
+            const optionLabelsMap = new Map((questionDef.options || []).map((opt: any) => [opt.id, opt.label]));
+            
+            qStats.data = qStats.data.map(d => ({
+              ...d,
+              name: optionLabelsMap.get(d.name) || d.name, // Replace ID with Label for display
+            }));
+            
+            // Sort by label name
             qStats.data.sort((a, b) => a.name.localeCompare(b.name));
           }
         });

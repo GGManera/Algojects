@@ -61,14 +61,18 @@ const FALLBACK_FORM_STRUCTURE = {
           "id": "navigation_continuity",
           "type": "single_choice",
           "question": "Did you perceive the navigation as continuous across columns (main → project → profile) rather than separate pages?",
-          "options": ["Yes", "Somewhat", "No"],
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "somewhat", "label": "Somewhat" },
+            { "id": "no", "label": "No" }
+          ],
           "required": true
         },
         {
           "id": "navigation_continuity_explain",
           "type": "text",
           "depends_on": "navigation_continuity",
-          "condition": "No",
+          "condition": "no", // Condition uses the ID, not the label
           "question": "What would make the navigation more intuitive for you?",
           "required": false
         },
@@ -76,14 +80,18 @@ const FALLBACK_FORM_STRUCTURE = {
           "id": "post_structure_understanding",
           "type": "single_choice",
           "question": "Did you understand the structure: reviews contain comments, and comments contain replies (no infinite rabbit holes)?",
-          "options": ["Yes", "Somewhat", "No"],
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "somewhat", "label": "Somewhat" },
+            { "id": "no", "label": "No" }
+          ],
           "required": true
         },
         {
           "id": "post_structure_rating",
           "type": "rating",
           "depends_on": "post_structure_understanding",
-          "condition": "Yes",
+          "condition": "yes", // Condition uses the ID, not the label
           "question": "How clear and organized did you find this structure?",
           "scale": 5,
           "required": false
@@ -146,7 +154,11 @@ const FALLBACK_FORM_STRUCTURE = {
           "id": "metadata_fields_clarity",
           "type": "single_choice",
           "question": "Were metadata fields (website, Asset ID, creator wallet/domain) clear to you?",
-          "options": ["Yes", "Somewhat", "No"],
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "somewhat", "label": "Somewhat" },
+            { "id": "no", "label": "No" }
+          ],
           "required": true
         },
         {
@@ -167,14 +179,22 @@ const FALLBACK_FORM_STRUCTURE = {
           "id": "data_propagation_delay",
           "type": "single_choice",
           "question": "Did you experience delay after saving data (propagation time)?",
-          "options": ["No delay", "Slight delay (acceptable)", "Noticeable delay (inconvenient)"],
+          "options": [
+            { "id": "no_delay", "label": "No delay" },
+            { "id": "slight_delay", "label": "Slight delay (acceptable)" },
+            { "id": "noticeable_delay", "label": "Noticeable delay (inconvenient)" }
+          ],
           "required": false
         },
         {
           "id": "contributor_value",
           "type": "single_choice",
           "question": "Did you feel the act of creating a project page was valuable for the ecosystem?",
-          "options": ["Yes", "Somewhat", "No"],
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "somewhat", "label": "Somewhat" },
+            { "id": "no", "label": "No" }
+          ],
           "required": false
         },
         {
@@ -194,7 +214,11 @@ const FALLBACK_FORM_STRUCTURE = {
           "id": "domain_requirement_understanding",
           "type": "single_choice",
           "question": "Did you already have an NF Domain before writing, or did the platform guide you to create one?",
-          "options": ["I already had one", "I created one after platform guidance", "I didn't understand this requirement"],
+          "options": [
+            { "id": "had_one", "label": "I already had one" },
+            { "id": "created_one", "label": "I created one after platform guidance" },
+            { "id": "didnt_understand", "label": "I didn't understand this requirement" }
+          ],
           "required": true
         },
         {
@@ -208,14 +232,22 @@ const FALLBACK_FORM_STRUCTURE = {
           "id": "fee_understanding",
           "type": "single_choice",
           "question": "Did you understand that the fee you paid goes to the AlgoJects protocol?",
-          "options": ["Yes, clearly", "Not really", "I didn’t notice"],
+          "options": [
+            { "id": "yes_clearly", "label": "Yes, clearly" },
+            { "id": "not_really", "label": "Not really" },
+            { "id": "didnt_notice", "label": "I didn’t notice" }
+          ],
           "required": true
         },
         {
           "id": "reward_model_clarity",
           "type": "single_choice",
           "question": "Did you understand the reward split for posts, comments and replies (e.g., comment split between post author and protocol)?",
-          "options": ["Yes", "Partially", "No"],
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "partially", "label": "Partially" },
+            { "id": "no", "label": "No" }
+          ],
           "required": true
         },
         {
@@ -242,14 +274,22 @@ const FALLBACK_FORM_STRUCTURE = {
           "id": "like_interaction_understanding",
           "type": "single_choice",
           "question": "When you give a like, did you understand it triggers a transaction that sends ALGO directly to the author (not to the platform)?",
-          "options": ["Yes", "Partially", "No"],
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "partially", "label": "Partially" },
+            { "id": "no", "label": "No" }
+          ],
           "required": true
         },
         {
           "id": "like_agreement",
           "type": "single_choice",
           "question": "Do you agree with the model where likes send value directly to authors and the platform receives nothing from those likes?",
-          "options": ["Agree", "Neutral", "Disagree"],
+          "options": [
+            { "id": "agree", "label": "Agree" },
+            { "id": "neutral", "label": "Neutral" },
+            { "id": "disagree", "label": "Disagree" }
+          ],
           "required": true
         },
         {
@@ -270,21 +310,33 @@ const FALLBACK_FORM_STRUCTURE = {
           "id": "curator_model_changes",
           "type": "single_choice",
           "question": "Would you support the platform taking a small fee on each like (e.g., 10%) to redistribute to top curators and platform sustainability?",
-          "options": ["Yes", "Maybe", "No"],
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "maybe", "label": "Maybe" },
+            { "id": "no", "label": "No" }
+          ],
           "required": true
         },
         {
           "id": "curator_diversity_check",
           "type": "single_choice",
           "question": "Do you think a curators' influence should be reduced if they only curate a single project or few authors?",
-          "options": ["Yes", "Neutral", "No"],
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "neutral", "label": "Neutral" },
+            { "id": "no", "label": "No" }
+          ],
           "required": true
         },
         {
           "id": "curator_activity_check",
           "type": "single_choice",
           "question": "Should curators who are inactive for a long period have reduced influence?",
-          "options": ["Yes", "Neutral", "No"],
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "neutral", "label": "Neutral" },
+            { "id": "no", "label": "No" }
+          ],
           "required": true
         },
         {

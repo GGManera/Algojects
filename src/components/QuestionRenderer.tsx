@@ -58,7 +58,7 @@ export const QuestionRenderer = React.forwardRef<HTMLDivElement, QuestionRendere
           <SingleChoiceCardGroup
             ref={ref}
             id={`question-${question.id}`}
-            options={question.options || []}
+            options={question.options || []} // Pass the array of { id, label } objects
             value={value || null}
             onChange={onChange}
             className={invalidClasses} // Apply invalid classes to the container

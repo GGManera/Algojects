@@ -16,12 +16,17 @@ import {
 } from "@/components/ui/select";
 import { CollapsibleContent } from './CollapsibleContent';
 
+interface Option {
+  id: string;
+  label: string;
+}
+
 interface Question {
   id: string;
   type: 'rating' | 'text' | 'single_choice';
   question: string;
   scale?: number;
-  options?: string[];
+  options?: Option[]; // Updated type to Option[]
   required: boolean;
   depends_on?: string;
   condition?: string;
@@ -49,8 +54,29 @@ export function QuestionEditor({ question, index, onUpdate, onRemove, onMoveUp, 
   };
 
   const handleUpdateOptions = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const options = e.target.value.split('\n').map(o => o.trim()).filter(Boolean);
+    const lines = e.target.value.split('\n');
+    const options: Option[] = [];
+    
+    lines.forEach(line => {
+      const trimmedLine = line.trim();
+      if (trimmedLine) {
+        const parts = trimmedLine.split(':').map(p => p.trim());
+        if (parts.length >= 2) {
+          // Format: ID: Label
+          options.push({ id: parts[0], label: parts.slice(1).join(':').trim() });
+        } else {
+          // Fallback if no colon is found: use the whole line as both ID and Label
+          options.push({ id: trimmedLine.toLowerCase().replace(/\s/g, '_'), label: trimmedLine });
+        }
+      }
+    });
     handleUpdate('options', options);
+  };
+  
+  // Helper to convert Option[] back to string for Textarea display
+  const optionsToString = (options: Option[] | undefined): string => {
+    if (!options) return '';
+    return options.map(opt => `${opt.id}: ${opt.label}`).join('\n');
   };
 
   return (
@@ -143,13 +169,13 @@ export function QuestionEditor({ question, index, onUpdate, onRemove, onMoveUp, 
 
           {question.type === 'single_choice' && (
             <div className="space-y-2">
-              <Label htmlFor={`q-options-${question.id}`}>Options (One per line)</Label>
+              <Label htmlFor={`q-options-${question.id}`}>Options (ID: Label, one per line)</Label>
               <Textarea
                 id={`q-options-${question.id}`}
-                value={question.options ? question.options.join('\n') : ''}
+                value={optionsToString(question.options)}
                 onChange={handleUpdateOptions}
                 className="bg-card"
-                placeholder="Option 1&#10;Option 2&#10;Option 3"
+                placeholder="yes: Yes&#10;no: No&#10;maybe: Maybe"
               />
             </div>
           )}
@@ -176,13 +202,13 @@ export function QuestionEditor({ question, index, onUpdate, onRemove, onMoveUp, 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`q-condition-${question.id}`}>Condition Value</Label>
+              <Label htmlFor={`q-condition-${question.id}`}>Condition Value (Option ID)</Label>
               <Input
                 id={`q-condition-${question.id}`}
                 value={question.condition || ''}
                 onChange={(e) => handleUpdate('condition', e.target.value || undefined)}
                 className="bg-card"
-                placeholder="e.g., No"
+                placeholder="e.g., no"
               />
             </div>
           </div>

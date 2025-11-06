@@ -4,24 +4,29 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { CheckCircle } from 'lucide-react';
 
+interface Option {
+  id: string;
+  label: string;
+}
+
 interface SingleChoiceCardGroupProps {
-  options: string[];
-  value: string | null;
+  options: Option[]; // Updated type to Option[]
+  value: string | null; // Value is now the Option ID
   onChange: (newValue: string) => void;
   disabled?: boolean;
-  className?: string; // NEW: Add className prop
+  className?: string;
 }
 
 export const SingleChoiceCardGroup = React.forwardRef<HTMLDivElement, SingleChoiceCardGroupProps>(({ options, value, onChange, disabled = false, className }, ref) => {
   return (
     <div ref={ref} className={cn("grid grid-cols-1 sm:grid-cols-2 gap-3 p-2 rounded-md border transition-colors duration-200", className)}>
       {options.map((option) => {
-        const isSelected = value === option;
+        const isSelected = value === option.id;
         return (
           <button
-            key={option}
+            key={option.id}
             type="button"
-            onClick={() => !disabled && onChange(option)}
+            onClick={() => !disabled && onChange(option.id)} // Return the ID
             disabled={disabled}
             className={cn(
               "flex items-center justify-between p-3 rounded-lg border transition-all duration-200",
@@ -30,7 +35,7 @@ export const SingleChoiceCardGroup = React.forwardRef<HTMLDivElement, SingleChoi
               isSelected ? "border-primary bg-primary/20 shadow-md" : ""
             )}
           >
-            <span>{option}</span>
+            <span>{option.label}</span> {/* Display the Label */}
             {isSelected && <CheckCircle className="h-4 w-4 text-primary ml-2" />}
           </button>
         );

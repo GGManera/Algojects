@@ -2,7 +2,7 @@ import { FormStructure } from '../src/lib/feedback-api';
 
 const BASE_FORM_STRUCTURE_TEMPLATE = {
   "form_id": "algojects_feedback_master",
-  "version": "1.3",
+  "version": "1.0",
   "feedback_version": "v1",
   "authorized_wallet": process.env.FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET",
   "project_wallet": process.env.FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET",

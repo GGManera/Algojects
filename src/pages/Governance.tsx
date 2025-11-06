@@ -201,13 +201,16 @@ const GovernancePage = () => {
           
           if (questionType === 'rating') {
             const scale = questionDef.scale || 5;
-            const dataMap = new Map(qStats.data.map(d => [parseInt(d.name, 10), d.value]));
+            // FIX: Keep dataMap keys as strings to match responseKey from Phase 1
+            const dataMap = new Map(qStats.data.map(d => [d.name, d.value])); 
             const normalizedData: Array<{ name: string; value: number }> = [];
             let totalSum = 0;
             let totalCount = 0;
 
             for (let i = 1; i <= scale; i++) {
-              const count = dataMap.get(String(i)) || 0; // Use String(i) to match the key stored in Phase 1
+              const ratingKey = String(i); // Use string key for lookup
+              const count = dataMap.get(ratingKey) || 0; 
+              
               normalizedData.push({ name: getStarLabel(i), value: count });
               totalSum += i * count;
               totalCount += count;

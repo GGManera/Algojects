@@ -235,17 +235,19 @@ export function DynamicFeedbackForm({ schema, isEditing, setIsSubmitting }: Dyna
                                 {currentQuestionNumber > 1 && (
                                     <Separator className="my-4 bg-muted-foreground/20" />
                                 )}
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-bold text-foreground">
+                                <div className="flex items-start space-x-2"> {/* Use flex container */}
+                                    <Label className="text-sm font-bold text-foreground pt-2"> {/* Added pt-2 to align number with text */}
                                         {currentQuestionNumber}.
                                     </Label>
-                                    <QuestionRenderer
-                                        ref={el => { if (el) questionRefs.current.set(question.id, el); else questionRefs.current.delete(question.id); }}
-                                        question={question}
-                                        value={responses[question.id]}
-                                        onChange={(value) => handleResponseChange(question.id, value)}
-                                        isInvalid={validationErrors[question.id]}
-                                    />
+                                    <div className="flex-1 space-y-2"> {/* Wrapper for QuestionRenderer content */}
+                                        <QuestionRenderer
+                                            ref={el => { if (el) questionRefs.current.set(question.id, el); else questionRefs.current.delete(question.id); }}
+                                            question={question}
+                                            value={responses[question.id]}
+                                            onChange={(value) => handleResponseChange(question.id, value)}
+                                            isInvalid={validationErrors[question.id]}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         );

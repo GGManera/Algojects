@@ -26,10 +26,11 @@ export const QuestionRenderer = React.forwardRef<HTMLDivElement, QuestionRendere
   switch (question.type) {
     case 'rating':
       return (
-        <div className="space-y-2" id={question.id}>
-          <Label htmlFor={`question-${question.id}`}>{labelText}</Label>
+        <div className="space-y-2 w-full" id={question.id} ref={ref}>
+          <Label htmlFor={`question-${question.id}`} className="block text-base font-normal text-foreground mb-2">
+            {labelText}
+          </Label>
           <RatingInput
-            ref={ref}
             id={`question-${question.id}`}
             scale={question.scale || 5}
             value={value}
@@ -40,10 +41,11 @@ export const QuestionRenderer = React.forwardRef<HTMLDivElement, QuestionRendere
       );
     case 'text':
       return (
-        <div className="space-y-2" id={question.id}>
-          <Label htmlFor={`question-${question.id}`}>{labelText}</Label>
+        <div className="space-y-2 w-full" id={question.id} ref={ref}>
+          <Label htmlFor={`question-${question.id}`} className="block text-base font-normal text-foreground mb-2">
+            {labelText}
+          </Label>
           <Textarea
-            ref={ref as React.Ref<HTMLTextAreaElement>} // Cast ref for textarea
             id={`question-${question.id}`}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
@@ -53,10 +55,11 @@ export const QuestionRenderer = React.forwardRef<HTMLDivElement, QuestionRendere
       );
     case 'single_choice':
       return (
-        <div className="space-y-2" id={question.id}>
-          <Label htmlFor={`question-${question.id}`}>{labelText}</Label>
+        <div className="space-y-2 w-full" id={question.id} ref={ref}>
+          <Label htmlFor={`question-${question.id}`} className="block text-base font-normal text-foreground mb-2">
+            {labelText}
+          </Label>
           <SingleChoiceCardGroup
-            ref={ref}
             id={`question-${question.id}`}
             options={question.options || []} // Pass the array of { id, label } objects
             value={value || null}

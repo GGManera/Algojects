@@ -96,9 +96,11 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
   return (
     <div className={cn(
       "fixed left-0 right-0 z-30 w-full bg-hodl-darker",
-      (isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape) // Only apply mobile portrait styles if NOT landscape
-        ? "bottom-[var(--mobile-bottom-bar-height)] border-t border-border-accent-green top-border-glow" // Mobile: border-t and top-border-glow
-        : "top-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-desktop-vertical-gap))] border-b border-border-accent-green bottom-border-glow h-[var(--dynamic-nav-buttons-height)]" // Desktop/Landscape: border-b, bottom-border-glow e altura explícita
+      // Apply fixed height to the container in both mobile portrait and desktop/landscape
+      "h-[var(--dynamic-nav-buttons-height)]",
+      (isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape) // Mobile portrait
+        ? "bottom-[var(--mobile-bottom-bar-height)] border-t border-border-accent-green top-border-glow"
+        : "top-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-desktop-vertical-gap))] border-b border-border-accent-green bottom-border-glow" // Desktop/Landscape
     )}>
       <div className="relative w-full max-w-3xl mx-auto flex justify-between items-center px-2 h-full">
         {leftButton ? (
@@ -121,15 +123,11 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
         <div className="absolute left-1/2 -translate-x-1/2 flex justify-center z-10">
           <div 
             className={cn(
-              "btn-profile !h-[21.6px] !px-[5.4px] !py-[0.9px] !w-auto !min-w-[72px] !max-w-[108px]", // Default desktop size
-              isMobile && "!h-[19.44px] !px-[4.86px] !py-[0.81px] !min-w-[64.8px] !max-w-[97.2px]" // 10% smaller on mobile
+              "btn-profile !w-auto !min-w-[72px] !max-w-[108px]", // Use default btn-profile height (2rem/32px)
             )}
             onClick={onCenterButtonClick} // NEW: Add onClick handler
           >
-            <strong className={cn(
-              "uppercase text-[8.1px]", // Updated from 7.2px to 8.1px
-              isMobile && "text-[7.29px]" // Updated from 6.48px to 7.29px
-            )}>{currentSlideName}</strong>
+            <strong className="uppercase text-[9px]">{currentSlideName}</strong>
             <div id="container-stars">
               <div id="stars"></div>
             </div>

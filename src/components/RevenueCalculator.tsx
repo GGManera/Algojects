@@ -173,7 +173,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-5 md:gap-x-4 gap-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-x-4 gap-y-4">
               {/* Total Projects */}
               <div className="flex flex-col items-center justify-center p-3 bg-muted/50 rounded-lg shadow-inner">
                 <LayoutGrid className="h-6 w-6 text-hodl-blue mb-1" />

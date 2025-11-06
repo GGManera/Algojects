@@ -199,6 +199,7 @@ const GovernancePage = () => {
             let totalSum = 0;
             let totalCount = 0;
 
+            // Generate entries for ALL possible ratings (1 to scale)
             for (let i = 1; i <= scale; i++) {
               const count = dataMap.get(i) || 0;
               normalizedData.push({ name: getStarLabel(i), value: count });
@@ -206,7 +207,7 @@ const GovernancePage = () => {
               totalCount += count;
             }
             
-            qStats.data = normalizedData;
+            qStats.data = normalizedData; // Use the normalized data with all scale points
             qStats.totalResponses = totalCount; // Recalculate total responses based on normalized data
             (qStats as QuestionStats).average = totalCount > 0 ? totalSum / totalCount : undefined;
           } else if (questionType === 'single_choice') {

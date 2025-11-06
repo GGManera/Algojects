@@ -57,7 +57,7 @@ const CustomStarTick = (props: any) => {
   const { x, y, payload } = props;
   return (
     <g transform={`translate(${x},${y})`}>
-      <text x={0} y={0} dy={16} textAnchor="middle" fill="#FFBB28" className="font-numeric text-xs"> {/* ADDED text-xs */}
+      <text x={0} y={0} dy={16} textAnchor="middle" fill="#FFBB28" className="font-numeric text-xs">
         {payload.value}
       </text>
     </g>
@@ -412,7 +412,7 @@ const GovernancePage = () => {
                                     {/* RATING: Bar Chart only */}
                                     {qStats.type === 'rating' && (
                                         <ResponsiveContainer width="100%" height={200}>
-                                            <BarChart data={qStats.data} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
+                                            <BarChart data={qStats.data} margin={{ top: 5, right: 5, left: -5, bottom: 5 }}> {/* Adjusted margin: left: -5 */}
                                                 {/* Use CustomStarTick for yellow stars */}
                                                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} />
                                                 <YAxis 

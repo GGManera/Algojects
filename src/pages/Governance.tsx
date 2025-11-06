@@ -355,11 +355,17 @@ const GovernancePage = () => {
                   <CardTitle className="text-xl text-primary">Form Version {version} ({versionStats.totalResponses} responses)</CardTitle>
                   {isVersionOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                 </CardHeader>
-                <CollapsibleContent isOpen={isVersionOpen} className="p-4 pt-0 space-y-6">
+                <CollapsibleContent isOpen={isVersionOpen} className="p-0 space-y-6 md:p-4 md:pt-0"> {/* REMOVED p-4, ADDED p-0 md:p-4 */}
                   {Object.values(versionStats.modules).map(moduleStats => {
                     const isModuleOpen = openModules.has(moduleStats.moduleId);
                     return (
-                      <Card key={moduleStats.moduleId} className="bg-muted/30 border-l-4 border-hodl-blue">
+                      <Card 
+                        key={moduleStats.moduleId} 
+                        className={cn(
+                          "bg-muted/30 border-l-4 border-hodl-blue",
+                          "rounded-none border-x-0 sm:rounded-lg sm:border-x" // REMOVE border-x-0 on mobile
+                        )}
+                      >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 cursor-pointer" onClick={() => toggleModule(moduleStats.moduleId)}>
                           <CardTitle className="text-lg text-hodl-blue">{moduleStats.moduleTitle}</CardTitle>
                           {isModuleOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -406,7 +412,7 @@ const GovernancePage = () => {
                                     {/* RATING: Bar Chart only */}
                                     {qStats.type === 'rating' && (
                                         <ResponsiveContainer width="100%" height={200}>
-                                            <BarChart data={qStats.data} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}> {/* Adjusted margin: left: -20 */}
+                                            <BarChart data={qStats.data} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}> {/* Adjusted margin: left: -10 */}
                                                 {/* Use CustomStarTick for yellow stars */}
                                                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} />
                                                 <YAxis 

@@ -1,5 +1,6 @@
 import { retryFetch } from '@/utils/api';
 import { sha256 } from 'js-sha256';
+import { FeedbackLanguage } from '@/contexts/FeedbackLanguageContext'; // Import FeedbackLanguage type
 
 // Define a estrutura básica do formulário (FormStructure)
 export interface FormStructure {
@@ -37,6 +38,14 @@ export interface FormStructure {
   rowId?: string; // NEW: Include rowId in the structure returned by GET
 }
 
+// NEW: Interface for the bilingual schema response
+export interface BilingualFormStructureResponse {
+    schema: {
+        en: FormStructure;
+        pt: FormStructure;
+    }
+}
+
 // NEW: Interface for a single feedback response entry
 export interface FeedbackResponseEntry {
   form_id: string;
@@ -49,7 +58,7 @@ export interface FeedbackResponseEntry {
 /**
  * Fetches the current master form structure JSON.
  */
-export async function fetchFormStructure(): Promise<FormStructure> {
+export async function fetchFormStructure(): Promise<BilingualFormStructureResponse> {
   const response = await retryFetch('/api/form-structure', undefined, 5);
   
   // If response is OK, parse the body as JSON
@@ -63,11 +72,11 @@ export async function fetchFormStructure(): Promise<FormStructure> {
 /**
  * Submits a user response to the Form Responses table.
  */
-export async function submitFormResponse(response: any): Promise<void> {
+export async function submitFormResponse(response: any, language: FeedbackLanguage): Promise<void> {
   const responseApi = await retryFetch('/api/form-responses', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(response),
+    body: JSON.stringify({ responseData: response, language }), // Pass responseData and language
   }, 5);
 
   // Read body only if needed for error logging, but since retryFetch handles errors, 
@@ -77,25 +86,14 @@ export async function submitFormResponse(response: any): Promise<void> {
 
 /**
  * NEW: Creates a new Form Structure JSON version via POST request.
+ * Expects an object containing both 'en' and 'pt' JSON strings.
  */
-export async function createFormStructureClient(newJsonDraft: FormStructure): Promise<void> {
-  // Remove rowId before stringifying, as it's an internal Coda ID not part of the schema
-  const { rowId, ...draftWithoutRowId } = newJsonDraft;
-  
-  // IMPORTANT FIX: Remove the `sortedKeys` parameter from JSON.stringify.
-  // Using `sortedKeys` here was causing only top-level properties to be included,
-  // making nested objects like `metadata`, `governance`, `modules` appear empty.
-  // We want a full, deep stringification of the entire object.
-  const newJsonString = JSON.stringify(draftWithoutRowId); // <--- THE CRITICAL CHANGE IS HERE
-  
+export async function createFormStructureClient(newJsonStrings: { en: string, pt: string }): Promise<void> {
   const response = await retryFetch('/api/form-structure', {
-    method: 'POST', // CHANGED to POST
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: newJsonString, // Envia a string JSON diretamente
+    body: JSON.stringify(newJsonStrings), // Send the object containing both strings
   }, 5);
-
-  // No need to call response.json() here, as retryFetch will throw on error
-  // and for success, the server just returns a message, not data to be parsed.
 }
 
 /**

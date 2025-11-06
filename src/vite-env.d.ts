@@ -12,8 +12,11 @@ interface ImportMetaEnv {
   readonly CODA_FEEDBACK_DOC_ID: string;
   readonly CODA_FORM_STRUCTURE_TABLE_ID: string;
   readonly CODA_FORM_RESPONSES_TABLE_ID: string;
-  readonly CODA_FORM_STRUCTURE_COLUMN_ID: string;
-  readonly CODA_FORM_RESPONSES_COLUMN_ID: string;
+  readonly CODA_FORM_STRUCTURE_COLUMN_ID: string; // English JSON
+  readonly CODA_FORM_STRUCTURE_PT_COLUMN_ID: string; // NEW: Portuguese JSON
+  readonly CODA_FORM_RESPONSES_COLUMN_ID: string; // English Response JSON
+  readonly CODA_FORM_RESPONSES_PT_COLUMN_ID: string; // NEW: Portuguese Response JSON
+  readonly CODA_FORM_RESPONSES_LANGUAGE_COLUMN_ID: string; // NEW: Language Column
   readonly FEEDBACK_ADMIN_WALLET: string; // Server-side admin wallet
   readonly FEEDBACK_PROJECT_WALLET: string; // Server-side project wallet
 

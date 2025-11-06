@@ -7,12 +7,17 @@ export default async function handler(
 ) {
   try {
     if (request.method === 'POST') {
-      const responseData = request.body;
+      const { responseData, language } = request.body;
+      
       if (!responseData || Object.keys(responseData).length === 0) {
         return response.status(400).json({ error: 'Missing response data in request body.' });
       }
       
-      await writeFormResponseToCoda(responseData);
+      if (language !== 'en' && language !== 'pt') {
+        return response.status(400).json({ error: 'Missing or invalid language parameter in request body. Must be "en" or "pt".' });
+      }
+      
+      await writeFormResponseToCoda(responseData, language);
       return response.status(200).json({ message: 'Form response recorded successfully.' });
     } else {
       return response.status(405).json({ error: 'Method Not Allowed' });

@@ -16,7 +16,8 @@ import { cn } from '@/lib/utils';
 import { CommitConfirmationDialog } from './CommitConfirmationDialog';
 
 interface AdminFormEditorProps {
-  currentSchema: FormStructure;
+  currentSchema: FormStructure; // English schema (used for structure editing)
+  ptSchemaDraft: FormStructure; // Portuguese schema (used for content editing in JSON mode)
   onSchemaUpdate: () => void;
 }
 
@@ -87,7 +88,7 @@ const normalizeSchema = (schema: FormStructure): FormStructure => {
 };
 
 
-export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEditorProps) {
+export function AdminFormEditor({ currentSchema, ptSchemaDraft, onSchemaUpdate }: AdminFormEditorProps) {
   const { activeAddress } = useWallet();
   const [editingMode, setEditingMode] = useState<'structured' | 'json'>('structured');
   
@@ -98,16 +99,18 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     return JSON.parse(JSON.stringify(schemaWithoutRowId)) as FormStructure;
   }, []);
 
-  // 1. Inicialização do estado com clone profundo
+  // 1. Inicialização do estado com clone profundo (usando EN como base para a estrutura)
   const [structuredDraft, setStructuredDraft] = useState<FormStructure>(() => normalizeSchema(deepCloneSchema(currentSchema)));
   
-  // State for JSON editing (synced with structuredDraft)
+  // State for JSON editing (synced with structuredDraft or ptSchemaDraft based on context)
   const [jsonDraft, setJsonDraft] = useState(JSON.stringify(currentSchema, null, 2));
+  const [jsonLanguage, setJsonLanguage] = useState<'en' | 'pt'>('en'); // Which language is currently in the JSON editor
   
   const [isJsonValid, setIsJsonValid] = useState(true);
   const [isCommitting, setIsCommitting] = useState(false);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [finalDraftToConfirm, setFinalDraftToConfirm] = useState<FormStructure | null>(null);
+  const [finalBilingualDrafts, setFinalBilingualDrafts] = useState<{ en: string, pt: string } | null>(null);
 
   const adminWallet = import.meta.env.VITE_FEEDBACK_ADMIN_WALLET;
   const projectWallet = import.meta.env.VITE_FEEDBACK_PROJECT_WALLET;
@@ -121,57 +124,77 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   // 1. Sync currentSchema -> structuredDraft on initial load/commit
   useEffect(() => {
     const clonedSchema = deepCloneSchema(currentSchema);
+    const normalizedDraft = normalizeSchema(clonedSchema);
+    setStructuredDraft(normalizedDraft);
     
-    // Check if the fetched schema is clearly incomplete (e.g., missing modules array)
-    const isSchemaIncomplete = !clonedSchema.modules || clonedSchema.modules.length === 0;
-    
-    if (isSchemaIncomplete && currentSchema.rowId) {
-        // Se incompleto mas temos rowId, inicializa com o template de fallback
-        const safeDraft = normalizeSchema({ ...FALLBACK_FORM_STRUCTURE_TEMPLATE, rowId: currentSchema.rowId } as FormStructure);
-        setStructuredDraft(safeDraft);
-        setJsonDraft(JSON.stringify(safeDraft, null, 2));
-    } else if (currentSchema.rowId) {
-        // Se completo e tem rowId, usa o esquema clonado e normalizado
-        const normalizedDraft = normalizeSchema(clonedSchema);
-        setStructuredDraft(normalizedDraft);
+    // When switching back to structured mode, default JSON view to EN
+    if (editingMode === 'structured') {
+        setJsonLanguage('en');
         setJsonDraft(JSON.stringify(currentSchema, null, 2));
     }
-  }, [currentSchema, deepCloneSchema]);
+  }, [currentSchema, deepCloneSchema, editingMode]);
 
-  // 2. Sync structuredDraft -> jsonDraft whenever structuredDraft changes
+  // 2. Sync structuredDraft -> jsonDraft whenever structuredDraft changes (only if editing EN)
   useEffect(() => {
-    try {
-      // Use o structuredDraft completo (sem rowId) para serialização
-      const { rowId, ...draftWithoutRowId } = structuredDraft;
-      // Normalize again just before stringify to ensure no empty objects sneak in from editing
-      const normalizedDraft = normalizeSchema(draftWithoutRowId as FormStructure);
-      
-      setJsonDraft(JSON.stringify(normalizedDraft, null, 2));
-      setIsJsonValid(true);
-    } catch (e) {
-      console.error("Error syncing structuredDraft to jsonDraft:", e);
+    if (editingMode === 'structured' && jsonLanguage === 'en') {
+        try {
+            const { rowId, ...draftWithoutRowId } = structuredDraft;
+            const normalizedDraft = normalizeSchema(draftWithoutRowId as FormStructure);
+            setJsonDraft(JSON.stringify(normalizedDraft, null, 2));
+            setIsJsonValid(true);
+        } catch (e) {
+            console.error("Error syncing structuredDraft to jsonDraft:", e);
+        }
     }
-  }, [structuredDraft]);
+  }, [structuredDraft, editingMode, jsonLanguage]);
 
-  // 3. Sync jsonDraft -> structuredDraft when switching from JSON mode
+  // 3. Sync JSON editor content when switching language/mode
+  useEffect(() => {
+    if (editingMode === 'json') {
+        const targetSchema = jsonLanguage === 'en' ? structuredDraft : ptSchemaDraft;
+        try {
+            // Use the current structured draft (which holds the latest EN changes) or the PT draft
+            const { rowId, ...draftWithoutRowId } = targetSchema;
+            const normalizedDraft = normalizeSchema(draftWithoutRowId as FormStructure);
+            setJsonDraft(JSON.stringify(normalizedDraft, null, 2));
+            setIsJsonValid(true);
+        } catch (e) {
+            console.error(`Error setting JSON draft for ${jsonLanguage}:`, e);
+            setIsJsonValid(false);
+        }
+    }
+  }, [editingMode, jsonLanguage, structuredDraft, ptSchemaDraft]);
+
+
+  // 4. Handle JSON change (updates the relevant draft: structuredDraft for EN, or ptSchemaDraft for PT)
   const handleJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newJson = e.target.value;
     setJsonDraft(newJson);
     try {
       const parsed = JSON.parse(newJson);
       
-      // Merge parsed JSON with existing structuredDraft to ensure all properties are kept
-      const mergedDraft: FormStructure = {
-          ...structuredDraft, // Start with the current full draft
-          ...parsed,          // Overwrite with parsed top-level fields
-          // Ensure nested objects are also merged if they exist in both
-          metadata: { ...structuredDraft.metadata, ...parsed.metadata },
-          governance: { ...structuredDraft.governance, ...parsed.governance },
-          audit: { ...structuredDraft.audit, ...parsed.audit },
-          modules: parsed.modules || structuredDraft.modules, // Modules must be replaced entirely if present
+      // We only update the content/metadata/governance fields from the JSON editor, 
+      // keeping the rowId and other internal states of the structuredDraft intact.
+      const updateDraft = (prevDraft: FormStructure) => {
+          const mergedDraft: FormStructure = {
+              ...prevDraft,
+              ...parsed,
+              metadata: { ...prevDraft.metadata, ...parsed.metadata },
+              governance: { ...prevDraft.governance, ...parsed.governance },
+              audit: { ...prevDraft.audit, ...parsed.audit },
+              modules: parsed.modules || prevDraft.modules,
+          };
+          return normalizeSchema(mergedDraft);
       };
 
-      setStructuredDraft(normalizeSchema(mergedDraft)); // Normalize the merged result
+      if (jsonLanguage === 'en') {
+          setStructuredDraft(updateDraft(structuredDraft));
+      } else {
+          // Note: We cannot directly update ptSchemaDraft state here as it's a prop.
+          // We rely on the final commit step to use the latest JSON string for PT.
+          // For now, we just validate and rely on the JSON string itself for PT content.
+      }
+
       setIsJsonValid(true);
     } catch (e) {
       setIsJsonValid(false);
@@ -237,46 +260,71 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   // --- Core Logic: Prepare Draft for Confirmation ---
 
   const prepareDraftForCommit = useCallback(() => {
-    const draftToCommit = structuredDraft;
-
-    if (!draftToCommit || !isJsonValid) {
-      showError("Invalid draft or missing Coda Row ID.");
-      return null;
+    if (!isJsonValid) {
+        showError("Cannot commit: JSON draft is invalid.");
+        return null;
     }
     
-    // 1. Normalize the draft one last time to ensure integrity
-    const normalizedDraft = normalizeSchema(draftToCommit);
-
-    // 2. Generate local hash
-    const localHash = generateLocalHash(normalizedDraft);
+    // 1. Get the latest EN draft (from structuredDraft state)
+    const enDraft = structuredDraft;
     
-    // 3. Increment version number (e.g., "1.3" -> "1.4")
-    const currentVersion = parseFloat(currentSchema.version || '1.0'); // Use currentSchema version as base
-    const newVersion = (Math.floor(currentVersion * 10) + 1) / 10;
+    // 2. Get the latest PT draft (from JSON editor if PT was selected, otherwise from prop)
+    let ptDraft: FormStructure;
+    if (editingMode === 'json' && jsonLanguage === 'pt') {
+        try {
+            ptDraft = normalizeSchema(JSON.parse(jsonDraft));
+        } catch (e) {
+            showError("Cannot commit: Portuguese JSON draft is invalid.");
+            return null;
+        }
+    } else {
+        // If not editing PT JSON, use the original PT draft (prop)
+        ptDraft = ptSchemaDraft;
+    }
 
-    // 4. Construir o finalDraft
-    const finalDraft: FormStructure = {
-      ...normalizedDraft,
-      version: newVersion.toFixed(1), // Incremented version
+    // 3. Normalize both drafts one last time
+    const normalizedEnDraft = normalizeSchema(enDraft);
+    const normalizedPtDraft = normalizeSchema(ptDraft);
+
+    // 4. Generate local hash (using EN draft as the canonical structure)
+    const localHash = generateLocalHash(normalizedEnDraft);
+    
+    // 5. Increment version number (e.g., "1.3" -> "1.4")
+    const currentVersion = parseFloat(currentSchema.version || '1.0');
+    const newVersion = (Math.floor(currentVersion * 10) + 1) / 10;
+    const newVersionString = newVersion.toFixed(1);
+    const timestamp = new Date().toISOString();
+
+    // 6. Apply new version, timestamp, and audit info to BOTH drafts
+    const applyAudit = (draft: FormStructure): FormStructure => ({
+      ...draft,
+      version: newVersionString,
       metadata: {
-          ...normalizedDraft.metadata,
-          updated_at: new Date().toISOString(),
+          ...draft.metadata,
+          updated_at: timestamp,
       },
       audit: {
         last_edit: {
           hash: localHash,
-          txid: 'LOCAL_COMMIT', // Mark as local commit
+          txid: 'LOCAL_COMMIT',
           editor_wallet: activeAddress || 'unconnected',
-          timestamp: new Date().toISOString(),
+          timestamp: timestamp,
         }
       },
-    };
-    
-    // NEW: Log the final draft before confirmation
-    console.log("[AdminFormEditor] Final Draft Prepared for Commit:", JSON.stringify(finalDraft, null, 2));
+    });
 
-    return finalDraft;
-  }, [structuredDraft, isJsonValid, activeAddress, currentSchema.version]);
+    const finalEnDraft = applyAudit(normalizedEnDraft);
+    const finalPtDraft = applyAudit(normalizedPtDraft);
+    
+    // 7. Store the final JSON strings to be sent to Coda
+    const finalEnJsonString = JSON.stringify(finalEnDraft);
+    const finalPtJsonString = JSON.stringify(finalPtDraft);
+
+    setFinalBilingualDrafts({ en: finalEnJsonString, pt: finalPtJsonString });
+    
+    // Return the EN draft for display in the confirmation dialog
+    return finalEnDraft;
+  }, [structuredDraft, ptSchemaDraft, isJsonValid, activeAddress, currentSchema.version, editingMode, jsonLanguage, jsonDraft]);
 
   const handlePrepareCommit = () => {
     const finalDraft = prepareDraftForCommit();
@@ -289,17 +337,17 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   // --- Core Logic: Execute Commit ---
 
   const handleExecuteCommit = async () => {
-    if (!finalDraftToConfirm) return;
+    if (!finalBilingualDrafts) return;
 
     setIsCommitting(true);
-    const toastId = showLoading(`Committing version ${finalDraftToConfirm.version}...`);
+    const toastId = showLoading(`Committing version ${finalDraftToConfirm?.version}...`);
 
     try {
-      // 1. Commit the final draft using the client API (which now POSTs a new row)
-      await createFormStructureClient(finalDraftToConfirm);
+      // 1. Commit the final bilingual drafts using the client API
+      await createFormStructureClient(finalBilingualDrafts);
       
       dismissToast(toastId);
-      showSuccess(`Form schema updated to version ${finalDraftToConfirm.version} successfully!`);
+      showSuccess(`Form schema updated to version ${finalDraftToConfirm?.version} successfully!`);
       setIsConfirmationOpen(false);
       onSchemaUpdate(); // Trigger parent refetch
     } catch (error) {
@@ -372,7 +420,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
 
           {editingMode === 'structured' ? (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-primary">Modules</h3>
+              <h3 className="text-lg font-semibold text-primary">Modules (Editing English Structure)</h3>
               {(structuredDraft.modules || []).map((module, index) => (
                 <ModuleEditor
                   key={module.id}
@@ -380,10 +428,10 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
                   index={index}
                   onUpdate={handleUpdateModule}
                   onRemove={handleRemoveModule}
-                  onMoveUp={handleMoveModuleUp} // NEW
-                  onMoveDown={handleMoveModuleDown} // NEW
-                  isFirst={index === 0} // NEW
-                  isLast={index === (structuredDraft.modules || []).length - 1} // NEW
+                  onMoveUp={handleMoveModuleUp}
+                  onMoveDown={handleMoveModuleDown}
+                  isFirst={index === 0}
+                  isLast={index === (structuredDraft.modules || []).length - 1}
                 />
               ))}
               <Button onClick={handleAddModule} className="w-full" disabled={!isAuthorized || isCommitting}>
@@ -391,8 +439,23 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              <Label htmlFor="json-draft">Master JSON Schema Draft</Label>
+            <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                    <h3 className="text-lg font-semibold text-primary">JSON Schema Draft</h3>
+                    <Select
+                        value={jsonLanguage}
+                        onValueChange={(value: 'en' | 'pt') => setJsonLanguage(value)}
+                        disabled={!isAuthorized || isCommitting}
+                    >
+                        <SelectTrigger className="w-[150px] bg-card">
+                            <SelectValue placeholder="Select Language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="en">English (EN)</SelectItem>
+                            <SelectItem value="pt">Português (PT)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
               <Textarea
                 id="json-draft"
                 value={jsonDraft}

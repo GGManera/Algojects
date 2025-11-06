@@ -16,6 +16,7 @@ import { ChevronDown, ChevronUp, Info, Star } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RatingInput } from './RatingInput';
 import { SingleChoiceCardGroup } from './SingleChoiceCardGroup';
+import { useFeedbackLanguage } from '@/contexts/FeedbackLanguageContext'; // Import language context
 
 interface DynamicFeedbackFormProps {
   schema: FormStructure;
@@ -80,6 +81,7 @@ QuestionRenderer.displayName = "QuestionRenderer";
 
 export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormProps) {
   const { activeAddress } = useWallet();
+  const { language } = useFeedbackLanguage(); // Get selected language
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
@@ -180,7 +182,8 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
       
       console.log("[DynamicFeedbackForm] Submitting data:", submissionData);
       
-      await submitFormResponse(submissionData);
+      // Pass the selected language to the submission API
+      await submitFormResponse(submissionData, language);
       
       dismissToast(toastId);
       showSuccess("Thank you! Your feedback has been recorded.");

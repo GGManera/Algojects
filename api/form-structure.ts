@@ -9,35 +9,32 @@ export default async function handler(
   try {
     if (request.method === 'GET') {
       console.log("[Form Structure Handler] Handling GET request.");
-      const { jsonString, rowId } = await fetchFormStructureFromCoda();
+      const { enJsonString, ptJsonString, rowId } = await fetchFormStructureFromCoda();
       console.log("[Form Structure Handler] Successfully fetched form structure.");
-      return response.status(200).json({ ...JSON.parse(jsonString), rowId });
+      
+      const enSchema = JSON.parse(enJsonString);
+      const ptSchema = JSON.parse(ptJsonString);
+
+      // Return both schemas and the rowId
+      return response.status(200).json({ 
+        schema: {
+          en: { ...enSchema, rowId },
+          pt: { ...ptSchema, rowId },
+        }
+      });
     } else if (request.method === 'POST') {
       console.log("[Form Structure Handler] Handling POST request.");
-      let newJsonString: string;
       
-      if (typeof request.body === 'string') {
-        newJsonString = request.body;
-      } else if (typeof request.body === 'object' && request.body !== null) {
-        newJsonString = JSON.stringify(request.body);
-      } else {
-        console.error("[Form Structure Handler] Error: Invalid or missing request body.");
-        return response.status(400).json({ error: 'Invalid or missing JSON string in request body.' });
+      const newJsonStrings = request.body;
+      
+      if (!newJsonStrings || typeof newJsonStrings !== 'object' || !newJsonStrings.en || !newJsonStrings.pt) {
+        console.error("[Form Structure Handler] Error: Invalid or missing JSON strings in request body.");
+        return response.status(400).json({ error: 'Missing English (en) or Portuguese (pt) JSON strings in request body.' });
       }
       
-      console.log("[Form Structure Handler] Received POST request to create new version.");
-      
-      if (!newJsonString) {
-        console.error("[Form Structure Handler] Error: newJsonString is empty after processing.");
-        return response.status(400).json({ error: 'Missing newJsonString for creation.' });
-      }
-      
-      console.log(`[Form Structure Handler] Received JSON String Length: ${newJsonString.length}`);
-      console.log(`[Form Structure Handler] Received JSON String Start (100 chars): ${newJsonString.substring(0, Math.min(newJsonString.length, 100))}`);
-      console.log(`[Form Structure Handler] Received JSON String End (100 chars): ${newJsonString.substring(Math.max(0, newJsonString.length - 100))}`);
-      console.log(`[Form Structure Handler] Full received JSON string: ${newJsonString}`);
+      console.log(`[Form Structure Handler] Received POST request to create new version. EN Length: ${newJsonStrings.en.length}, PT Length: ${newJsonStrings.pt.length}`);
 
-      await createFormStructureInCoda(newJsonString);
+      await createFormStructureInCoda(newJsonStrings);
       console.log("[Form Structure Handler] New form structure version created successfully.");
       return response.status(200).json({ message: 'New form structure version created successfully.' });
     } else {

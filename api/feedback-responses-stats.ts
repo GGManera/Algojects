@@ -12,12 +12,13 @@ export default async function handler(
   request: VercelRequest,
   response: VercelResponse,
 ) {
-  const CODA_FORM_RESPONSES_TABLE_ID = process.env.CODA_FORM_RESPONSES_TABLE_ID; // Removed VITE_
-  const CODA_COLUMN_RESPONSE_JSON = process.env.CODA_FORM_RESPONSES_COLUMN_ID; // Removed VITE_
+  const CODA_FORM_RESPONSES_TABLE_ID = process.env.CODA_FORM_RESPONSES_TABLE_ID;
+  const CODA_COLUMN_RESPONSE_JSON_EN = process.env.CODA_FORM_RESPONSES_COLUMN_ID;
+  const CODA_COLUMN_RESPONSE_JSON_PT = process.env.CODA_FORM_RESPONSES_PT_COLUMN_ID;
 
-  if (!CODA_FORM_RESPONSES_TABLE_ID || !CODA_COLUMN_RESPONSE_JSON) {
+  if (!CODA_FORM_RESPONSES_TABLE_ID || !CODA_COLUMN_RESPONSE_JSON_EN || !CODA_COLUMN_RESPONSE_JSON_PT) {
     return response.status(500).json({ 
-      error: 'Coda Feedback Responses Table ID or Column ID is not configured. Please check environment variables (CODA_FORM_RESPONSES_TABLE_ID/CODA_FORM_RESPONSES_COLUMN_ID).' // Updated error message
+      error: 'Coda Feedback Responses Table ID or Column IDs are not configured.'
     });
   }
 
@@ -26,15 +27,30 @@ export default async function handler(
       console.log("[Feedback Responses Stats API] Fetching all responses from Coda...");
       const data = await callCodaApi<{ items: CodaRow[] }>('GET', `/tables/${CODA_FORM_RESPONSES_TABLE_ID}/rows`);
       
-      const parsedResponses = data.items.map(row => {
-        const jsonString = row.values[CODA_COLUMN_RESPONSE_JSON];
-        console.log(`[Feedback Responses Stats API] Raw JSON string from Coda for row ${row.id}:`, jsonString); // NEW: Log raw JSON string
-        try {
-          return JSON.parse(jsonString);
-        } catch (e) {
-          console.error(`[Feedback Responses Stats API] Failed to parse JSON for row ${row.id}:`, e);
-          return null; // Return null for unparseable rows
+      const parsedResponses = data.items.flatMap(row => {
+        const responses: any[] = [];
+        
+        // 1. Try parsing English response
+        const enJsonString = row.values[CODA_COLUMN_RESPONSE_JSON_EN];
+        if (enJsonString) {
+          try {
+            responses.push(JSON.parse(enJsonString));
+          } catch (e) {
+            console.error(`[Feedback Responses Stats API] Failed to parse EN JSON for row ${row.id}:`, e);
+          }
         }
+        
+        // 2. Try parsing Portuguese response
+        const ptJsonString = row.values[CODA_COLUMN_RESPONSE_JSON_PT];
+        if (ptJsonString) {
+          try {
+            responses.push(JSON.parse(ptJsonString));
+          } catch (e) {
+            console.error(`[Feedback Responses Stats API] Failed to parse PT JSON for row ${row.id}:`, e);
+          }
+        }
+
+        return responses;
       }).filter(Boolean); // Filter out nulls
 
       console.log(`[Feedback Responses Stats API] Fetched ${parsedResponses.length} responses.`);

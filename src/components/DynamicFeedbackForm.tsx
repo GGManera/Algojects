@@ -12,7 +12,7 @@ import { useWallet } from '@txnlab/use-wallet-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { cn } from '@/lib/utils';
 import { CollapsibleContent } from './CollapsibleContent';
-import { ChevronDown, ChevronUp, Info, Star } from 'lucide-react';
+import { ChevronDown, ChevronUp, Info, Star, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RatingInput } from './RatingInput';
 import { SingleChoiceCardGroup } from './SingleChoiceCardGroup';

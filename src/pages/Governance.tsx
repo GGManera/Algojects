@@ -355,7 +355,7 @@ const GovernancePage = () => {
                   <CardTitle className="text-xl text-primary">Form Version {version} ({versionStats.totalResponses} responses)</CardTitle>
                   {isVersionOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                 </CardHeader>
-                <CollapsibleContent isOpen={isVersionOpen} className="p-0 space-y-6 md:p-4 md:pt-0"> {/* REMOVED p-4, ADDED p-0 md:p-4 */}
+                <CollapsibleContent isOpen={isVersionOpen} className="p-0 space-y-6 md:p-4 md:pt-0">
                   {Object.values(versionStats.modules).map(moduleStats => {
                     const isModuleOpen = openModules.has(moduleStats.moduleId);
                     return (
@@ -363,14 +363,14 @@ const GovernancePage = () => {
                         key={moduleStats.moduleId} 
                         className={cn(
                           "bg-muted/30 border-l-4 border-hodl-blue",
-                          "rounded-none border-x-0 sm:rounded-lg sm:border-x" // REMOVE border-x-0 on mobile
+                          "rounded-none border-x-0 sm:rounded-lg sm:border-x"
                         )}
                       >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 cursor-pointer" onClick={() => toggleModule(moduleStats.moduleId)}>
                           <CardTitle className="text-lg text-hodl-blue">{moduleStats.moduleTitle}</CardTitle>
                           {isModuleOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </CardHeader>
-                        <CollapsibleContent isOpen={isModuleOpen} className="p-4 pt-0 space-y-4">
+                        <CollapsibleContent isOpen={isModuleOpen} className="py-4 pt-0 space-y-4 md:p-4 md:pt-0"> {/* Adjusted padding here: py-4 pt-0 for mobile, p-4 pt-0 for desktop */}
                           {Object.entries(moduleStats.questions).map(([questionId, qStats], qIndex) => {
                             
                             // --- Filter out text questions ---
@@ -391,7 +391,7 @@ const GovernancePage = () => {
                                 : 1; // Default to 1 if no responses
 
                             return (
-                              <div key={questionId} className="border p-3 rounded-md bg-card space-y-3">
+                              <div key={questionId} className="border py-3 rounded-md bg-card space-y-3 px-4 md:p-3"> {/* Adjusted padding here: px-4 py-3 for mobile, p-3 for desktop */}
                                 <h4 className="text-md font-semibold text-foreground">{qIndex + 1}. {qStats.questionText} ({qStats.totalResponses} responses)</h4>
                                 
                                 {/* Display Average for Rating Questions */}
@@ -412,7 +412,7 @@ const GovernancePage = () => {
                                     {/* RATING: Bar Chart only */}
                                     {qStats.type === 'rating' && (
                                         <ResponsiveContainer width="100%" height={200}>
-                                            <BarChart data={qStats.data} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}> {/* Adjusted margin: left: -10 */}
+                                            <BarChart data={qStats.data} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
                                                 {/* Use CustomStarTick for yellow stars */}
                                                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} />
                                                 <YAxis 

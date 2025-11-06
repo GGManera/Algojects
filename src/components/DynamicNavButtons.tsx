@@ -1,61 +1,162 @@
 "use client";
 
 import React from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Repeat2 } from 'lucide-react';
+import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
+import { cn } from '@/lib/utils';
+import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext'; // Import useAppContextDisplayMode
 
 interface DynamicNavButtonsProps {
-  leftButton?: {
-    onClick: () => void;
-    label?: string;
-    icon?: React.ReactNode;
-    disabled?: boolean;
-  };
-  rightButton?: {
-    onClick: () => void;
-    label?: string;
-    icon?: React.ReactNode;
-    disabled?: boolean;
-  };
+  onCenterButtonClick: () => void; // NEW prop
 }
 
-const DynamicNavButtons: React.FC<DynamicNavButtonsProps> = ({
-  leftButton,
-  rightButton,
-}) => {
+export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProps) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isMobile, appDisplayMode, isDeviceLandscape } = useAppContextDisplayMode(); // Use the hook
+  const {
+    lastProjectPath,
+    lastProfilePath,
+    profile1,
+    profile2,
+    currentProfileSlot,
+    historyStack, // NEW: Access historyStack
+  } = useNavigationHistory();
+
+  // Determine if the current page is a profile page
+  const isProfilePage = location.pathname.startsWith('/profile/');
+  const isProjectPage = location.pathname.startsWith('/project/');
+  const isHomePage = location.pathname === '/';
+
+  // --- Left Button Logic ---
+  let leftButton: { label: string; path: string } | null = null;
+
+  if (isProjectPage) {
+    // Project Page: Always "Back to All Projects"
+    leftButton = { label: 'All Projects', path: '/' };
+  } else if (isProfilePage) {
+    // Profile Page: "Back to Last Project" if available, else "Back to All Projects"
+    if (lastProjectPath) {
+      leftButton = { label: lastProjectPath.label, path: lastProjectPath.path };
+    } else {
+      leftButton = { label: 'All Projects', path: '/' };
+    }
+  } else if (isHomePage) { // NEW: For home page
+    leftButton = null; // No left button on home page
+  }
+
+  // --- Right Button Logic ---
+  // Update type to include state
+  let rightButton: { label: string; path: string; action?: 'switchProfile'; state?: { initialActiveCategory: 'writing' | 'curating' } } | null = null;
+
+  if (isProjectPage) {
+    // Project Page: "Back to Last Profile" if available
+    if (lastProfilePath) {
+      rightButton = { label: 'Profile', path: lastProfilePath.path };
+      // NEW: Add state to the link
+      if (lastProfilePath.activeCategory) {
+        rightButton.state = { initialActiveCategory: lastProfilePath.activeCategory };
+      }
+    }
+  } else if (isProfilePage) {
+    // Profile Page: "Switch Profile" if two distinct profiles are stored
+    const currentProfileAddress = location.pathname.split('/')[2];
+    const otherProfile = (currentProfileSlot === 1 && profile2 && profile2.address !== currentProfileAddress)
+      ? profile2
+      : (currentProfileSlot === 2 && profile1 && profile1.address !== currentProfileAddress)
+        ? profile1
+        : null;
+
+    if (otherProfile) {
+      rightButton = { label: 'Switch Profile', path: `/profile/${otherProfile.address}`, action: 'switchProfile' };
+      // NEW: When switching profile, try to maintain the current category if available
+      const currentProfileEntry = historyStack.find(entry => entry.path === location.pathname);
+      if (currentProfileEntry?.activeCategory) {
+        rightButton.state = { initialActiveCategory: currentProfileEntry.activeCategory };
+      }
+    }
+  } else if (isHomePage) { // NEW: For home page
+    if (lastProjectPath) {
+      rightButton = { label: 'Project', path: lastProjectPath.path }; // Changed label to "Go to Project"
+    } else {
+      rightButton = null; // No right button if no last project
+    }
+  }
+
+  // --- Current Slide Name Display Logic ---
+  let currentSlideName = "Home";
+  if (isProjectPage) {
+    currentSlideName = "Project";
+  } else if (isProfilePage) {
+    currentSlideName = "Profile";
+  }
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-      <div className="relative w-full max-w-3xl mx-auto flex justify-between items-center px-2 h-16">
+    <div className={cn(
+      "fixed left-0 right-0 z-30 w-full bg-hodl-darker",
+      (isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape) // Only apply mobile portrait styles if NOT landscape
+        ? "bottom-[var(--mobile-bottom-bar-height)] border-t border-border-accent-green top-border-glow" // Mobile: border-t and top-border-glow
+        : "top-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-desktop-vertical-gap))] border-b border-border-accent-green bottom-border-glow h-[var(--dynamic-nav-buttons-height)]" // Desktop/Landscape: border-b, bottom-border-glow e altura explícita
+    )}>
+      <div className="relative w-full max-w-3xl mx-auto flex justify-between items-center px-2 h-full">
         {leftButton ? (
           <Button 
             variant="ghost" 
-            onClick={leftButton.onClick} 
-            disabled={leftButton.disabled}
-            className="flex items-center"
+            size="sm" 
+            asChild 
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground h-6 px-2" 
           >
-            {leftButton.icon || <ChevronLeft className="h-4 w-4 mr-1" />}
-            {leftButton.label}
+            <Link to={leftButton.path}>
+              <ArrowLeft className="h-4 w-4" />
+              {leftButton.label}
+            </Link>
           </Button>
         ) : (
-          <div className="w-16"></div> // Placeholder to maintain spacing if only one button
+          <div className="w-24"></div>
         )}
+
+        {/* Current Slide Name Display with btn-profile styling */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex justify-center z-10">
+          <div 
+            className={cn(
+              "btn-profile !h-[21.6px] !px-[5.4px] !py-[0.9px] !w-auto !min-w-[72px] !max-w-[108px]", // Default desktop size
+              isMobile && "!h-[19.44px] !px-[4.86px] !py-[0.81px] !min-w-[64.8px] !max-w-[97.2px]" // 10% smaller on mobile
+            )}
+            onClick={onCenterButtonClick} // NEW: Add onClick handler
+          >
+            <strong className={cn(
+              "uppercase text-[8.1px]", // Updated from 7.2px to 8.1px
+              isMobile && "text-[7.29px]" // Updated from 6.48px to 7.29px
+            )}>{currentSlideName}</strong>
+            <div id="container-stars">
+              <div id="stars"></div>
+            </div>
+            <div id="glow">
+              <div className="circle"></div>
+              <div className="circle"></div>
+            </div>
+          </div>
+        </div>
 
         {rightButton ? (
           <Button 
             variant="ghost" 
-            onClick={rightButton.onClick} 
-            disabled={rightButton.disabled}
-            className="flex items-center"
+            size="sm" 
+            asChild 
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground h-6 px-2" 
           >
-            {rightButton.label}
-            {rightButton.icon || <ChevronRight className="h-4 w-4 ml-1" />}
+            <Link to={rightButton.path} state={rightButton.state}>
+              {rightButton.label}
+              {rightButton.action === 'switchProfile' && <Repeat2 className="h-4 w-4" />}
+              {rightButton.action !== 'switchProfile' && <ArrowLeft className="h-4 w-4 rotate-180" />}
+            </Link>
           </Button>
         ) : (
-          <div className="w-16"></div> // Placeholder to maintain spacing if only one button
+          <div className="w-24"></div>
         )}
       </div>
     </div>
   );
-};
-
-export default DynamicNavButtons;
+}

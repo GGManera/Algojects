@@ -70,11 +70,14 @@ const GovernancePage = () => {
   const navigate = useNavigate();
 
   // Fetch form schema
-  const { data: schema, isLoading: schemaLoading, error: schemaError } = useQuery<FormStructure, Error>({
+  const { data: schemaResponse, isLoading: schemaLoading, error: schemaError } = useQuery<any, Error>({ // Changed type to any to handle bilingual response
     queryKey: ['formStructure'],
     queryFn: fetchFormStructure,
     staleTime: 5 * 60 * 1000,
   });
+  
+  // Use the English schema as the canonical structure for stats
+  const schema = useMemo(() => schemaResponse?.schema?.en, [schemaResponse]);
 
   // Fetch all responses
   const { data: responses, isLoading: responsesLoading, error: responsesError } = useQuery<FeedbackResponseEntry[], Error>({
@@ -94,8 +97,8 @@ const GovernancePage = () => {
 
     // Create a map of all question definitions from the LATEST schema for quick lookup
     const questionDefinitionsMap = new Map<string, any>();
-    schema.modules.forEach(moduleDef => {
-      (moduleDef.questions || []).forEach((q: any) => {
+    (schema.modules || []).forEach(moduleDef => { // ADDED NULL CHECK
+      (moduleDef.questions || []).forEach((q: any) => { // ADDED NULL CHECK
         questionDefinitionsMap.set(q.id, { ...q, moduleId: moduleDef.id, moduleTitle: moduleDef.title });
       });
     });
@@ -167,7 +170,7 @@ const GovernancePage = () => {
 
     // --- Phase 2: Normalize and Calculate Averages ---
     Object.values(stats).forEach(versionStat => {
-      schema.modules.forEach(moduleDef => {
+      (schema.modules || []).forEach(moduleDef => { // ADDED NULL CHECK
         const moduleId = moduleDef.id;
         if (!versionStat.modules[moduleId]) {
           versionStat.modules[moduleId] = {
@@ -177,7 +180,7 @@ const GovernancePage = () => {
             questions: {},
           };
         }
-        (moduleDef.questions || []).forEach((questionDef: any) => {
+        (moduleDef.questions || []).forEach((questionDef: any) => { // ADDED NULL CHECK
           const questionId = questionDef.id;
           const questionType = questionDef.type;
           

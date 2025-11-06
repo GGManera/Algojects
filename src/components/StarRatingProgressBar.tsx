@@ -23,20 +23,19 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
 
   return (
     <div className="flex flex-col space-y-2">
-      {/* Removed space-x-1 from the outermost relative container */}
-      <div className="relative flex items-center h-5" title={`Average: ${average.toFixed(1)} / ${scale}`}> {/* Adjusted height to h-5 */}
+      <div className="relative flex items-center h-5 w-fit mx-auto" title={`Average: ${average.toFixed(1)} / ${scale}`}>
         
-        {/* Background stars (unfilled) */}
-        <div className="flex absolute inset-0 items-center space-x-1">
+        {/* Background stars (unfilled) - Defines the total width */}
+        <div className="flex items-center space-x-1">
           {Array.from({ length: scale }, (_, index) => (
             <Star
               key={`bg-${index}`}
-              className="h-5 w-5 text-muted-foreground/50" /* Adjusted size to h-5 w-5 */
+              className="h-5 w-5 text-muted-foreground/50"
             />
           ))}
         </div>
 
-        {/* Foreground stars (Clipped container) */}
+        {/* Foreground stars (Clipped container) - Positioned absolutely over the background stars */}
         <div 
           className="absolute inset-0 overflow-hidden" // This container clips the content
           style={{ width: `${fillPercentage}%` }}
@@ -48,10 +47,10 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
               const isPartial = index === fullStars && fractionalPart > 0;
 
               return (
-                <div key={`fg-${index}`} className="relative h-5 w-5 flex-shrink-0"> {/* Adjusted size to h-5 w-5 */}
+                <div key={`fg-${index}`} className="relative h-5 w-5 flex-shrink-0">
                   <Star
                     className={cn(
-                      "h-5 w-5 text-yellow-400", /* Adjusted size to h-5 w-5 */
+                      "h-5 w-5 text-yellow-400",
                       isFull ? "fill-yellow-400" : ""
                     )}
                   />
@@ -61,7 +60,7 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
                       className="absolute inset-0 overflow-hidden"
                       style={{ width: `${fractionalPart * 100}%` }}
                     >
-                      <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" /> {/* Adjusted size to h-5 w-5 */}
+                      <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
                     </div>
                   )}
                 </div>
@@ -70,7 +69,7 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
           </div>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">Based on {totalResponses} responses.</p>
+      <p className="text-xs text-muted-foreground text-center">Based on {totalResponses} responses.</p>
     </div>
   );
 }

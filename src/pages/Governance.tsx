@@ -51,6 +51,18 @@ interface VersionStats {
 // Utility function to generate star labels
 const getStarLabel = (rating: number) => '★'.repeat(rating);
 
+// NEW: Custom Tick Component for XAxis to color the stars yellow
+const CustomStarTick = (props: any) => {
+  const { x, y, payload } = props;
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={0} dy={16} textAnchor="middle" fill="#FFBB28" className="font-numeric">
+        {payload.value}
+      </text>
+    </g>
+  );
+};
+
 const GovernancePage = () => {
   const [openVersions, setOpenVersions] = useState<Set<string>>(new Set());
   const [openModules, setOpenModules] = useState<Set<string>>(new Set());
@@ -345,8 +357,8 @@ const GovernancePage = () => {
                                     {qStats.type === 'rating' && (
                                         <ResponsiveContainer width="100%" height={200}>
                                             <BarChart data={qStats.data}>
-                                                {/* Use custom tick formatter for star labels */}
-                                                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
+                                                {/* Use CustomStarTick for yellow stars */}
+                                                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} />
                                                 <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
                                                 <Tooltip 
                                                     formatter={(value, name, props) => [`${value} responses`, 'Count']}

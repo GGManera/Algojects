@@ -1,0 +1,374 @@
+{
+  "form_id": "algojects_feedback_master",
+  "version": "1.6",
+  "feedback_version": "v1",
+  "authorized_wallet": "WALLET_ADDRESS_ADMIN",
+  "project_wallet": "WALLET_ADDRESS_PROJECT",
+  "hash_verification_required": true,
+  "metadata": {
+    "created_at": "2025-11-05T00:00:00Z",
+    "updated_at": "2025-11-06T01:37:06.878Z",
+    "description": "AlgoJects dynamic feedback schema. Master JSON for FormStructure stored in Coda."
+  },
+  "governance": {
+    "enabled": true,
+    "threshold_min_responses": 100,
+    "reward_eligibility": {
+      "min_posts": 2,
+      "min_balance_algo": 1,
+      "reward_amount_algo": 1
+    },
+    "versioning_policy": "questions_reach_threshold_then_archive_in_next_version"
+  },
+  "modules": [
+    {
+      "id": "general",
+      "title": "General Feedback",
+      "description": "Universal module shown to all users. Focus: navigation, clarity and basic UX.",
+      "questions": [
+        {
+          "id": "home_accessibility",
+          "type": "rating",
+          "question": "How easy was it to find and access the main page with all projects and statistics?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "project_page_access",
+          "type": "rating",
+          "question": "How easy was it to access a project's page and find its reviews?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "user_profile_access",
+          "type": "rating",
+          "question": "How easy was it to access user profile pages?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "navigation_continuity",
+          "type": "single_choice",
+          "question": "Did you feel the navigation was continuous across columns (main → project → profile) or more like separate page changes?",
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "somewhat", "label": "Somewhat" },
+            { "id": "no", "label": "No" }
+          ],
+          "required": true
+        },
+        {
+          "id": "navigation_continuity_explain",
+          "type": "text",
+          "depends_on": "navigation_continuity",
+          "condition": "no",
+          "question": "What would make the transition between navigation columns more fluid or intuitive for you?",
+          "required": false
+        },
+        {
+          "id": "post_structure_understanding",
+          "type": "single_choice",
+          "question": "Did you understand the content structure: Reviews contain Comments, and Comments contain Replies (no infinite rabbit holes)?",
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "somewhat", "label": "Somewhat" },
+            { "id": "no", "label": "No" }
+          ],
+          "required": true
+        },
+        {
+          "id": "post_structure_rating",
+          "type": "rating",
+          "depends_on": "post_structure_understanding",
+          "condition": "yes",
+          "question": "How clear and organized did you find this content structure?",
+          "scale": 5,
+          "required": false
+        },
+        {
+          "id": "platform_purpose_clarity",
+          "type": "rating",
+          "question": "How clearly did you understand the purpose of AlgoJects within the first minutes of use?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "explore_more",
+          "type": "rating",
+          "question": "After browsing, how motivated did you feel to explore more projects on the platform?",
+          "scale": 5,
+          "required": false
+        },
+        {
+          "id": "general_issues",
+          "type": "text",
+          "question": "Did anything confuse you or block you from using the platform optimally? (short answer)",
+          "required": false
+        },
+        {
+          "id": "general_overall",
+          "type": "rating",
+          "question": "Overall, how satisfied are you with navigation and structure?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "general_comments",
+          "type": "text",
+          "question": "Any additional general comments or suggestions?",
+          "required": false
+        },
+        {
+          "id": "value_proposition_met",
+          "type": "rating",
+          "question": "How reliable or useful did you find the information (Reviews/Stats) for your investment decision?",
+          "scale": 5,
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "contributor",
+      "title": "Contributor / Creator Feedback",
+      "description": "Shown to users who created project pages (contributors or project creators).",
+      "questions": [
+        {
+          "id": "project_creation_intuitiveness",
+          "type": "rating",
+          "question": "How intuitive was the process to create and submit a new project page?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "notes_section",
+          "type": "rating",
+          "question": "How useful did you find the 'notes' section (main body) to describe the project?",
+          "scale": 5,
+          "required": false
+        },
+        {
+          "id": "metadata_fields_clarity",
+          "type": "single_choice",
+          "question": "Were metadata fields (Website, Asset ID, Creator Wallet/Domain) clear to you?",
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "somewhat", "label": "Somewhat" },
+            { "id": "no", "label": "No" }
+          ],
+          "required": true
+        },
+        {
+          "id": "metadata_display_rating",
+          "type": "rating",
+          "question": "How clear was the display of metadata on the project page after creation?",
+          "scale": 5,
+          "required": false
+        },
+        {
+          "id": "metadata_editing_experience",
+          "type": "rating",
+          "question": "How easy was it to edit project metadata after creation?",
+          "scale": 5,
+          "required": false
+        },
+        {
+          "id": "data_propagation_delay",
+          "type": "single_choice",
+          "question": "Did you notice any delay in data display after saving it (propagation time)?",
+          "options": [
+            { "id": "no_delay", "label": "No delay" },
+            { "id": "slight_delay", "label": "Slight delay (acceptable)" },
+            { "id": "noticeable_delay", "label": "Noticeable delay (inconvenient)" }
+          ],
+          "required": false
+        },
+        {
+          "id": "contributor_value",
+          "type": "single_choice",
+          "question": "Did you feel the act of creating a project page was a valuable contribution to the ecosystem?",
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "somewhat", "label": "Somewhat" },
+            { "id": "no", "label": "No" }
+          ],
+          "required": false
+        },
+        {
+          "id": "contributor_additional_feedback",
+          "type": "text",
+          "question": "Any suggestions to improve the project creation/editing flow or metadata fields?",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "writer",
+      "title": "Writer Feedback",
+      "description": "Shown to users who have written posts (Reviews, Comments, or Replies.)",
+      "questions": [
+        {
+          "id": "domain_requirement_understanding",
+          "type": "single_choice",
+          "question": "Did you already have an NFDomain, or did the platform guide you to create one before posting or liking a post?",
+          "options": [
+            { "id": "had_one", "label": "I already had one" },
+            { "id": "created_one", "label": "I created one after platform guidance" },
+            { "id": "didnt_understand", "label": "I didn't understand this requirement" }
+          ],
+          "required": true
+        },
+        {
+          "id": "posting_speed",
+          "type": "rating",
+          "question": "What is your rating of the publishing speed (wallet tx time + confirmation)?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "fee_understanding",
+          "type": "single_choice",
+          "question": "Did you understand that the fee you paid on the post is intended for the AlgoJects protocol?",
+          "options": [
+            { "id": "yes_clearly", "label": "Yes, clearly" },
+            { "id": "not_really", "label": "Not really" },
+            { "id": "didnt_notice", "label": "I didn’t notice" }
+          ],
+          "required": true
+        },
+        {
+          "id": "reward_model_clarity",
+          "type": "single_choice",
+          "question": "Did you understand the reward split for posts, comments, and replies and how they are distributed?",
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "partially", "label": "Partially" },
+            { "id": "no", "label": "No" }
+          ],
+          "required": true
+        },
+        {
+          "id": "writer_usability",
+          "type": "rating",
+          "question": "Overall, how would you rate the writing and posting experience?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "writer_general_feedback",
+          "type": "text",
+          "question": "Any feedback about your writing/posting experience (UX, costs, or the domain flow)?",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "curator",
+      "title": "Curator Feedback",
+      "description": "Shown to users who performed curations (likes/endorsements). Includes perception about Curator Index and reward flows.",
+      "questions": [
+        {
+          "id": "like_interaction_understanding",
+          "type": "single_choice",
+          "question": "When you give a 'like,' did you understand it triggers a transaction that sends ALGO directly to the author (not to the platform)?",
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "partially", "label": "Partially" },
+            { "id": "no", "label": "No" }
+          ],
+          "required": true
+        },
+        {
+          "id": "like_agreement",
+          "type": "single_choice",
+          "question": "Do you agree with this model where 'likes' send value directly to authors, with the platform receiving no fee?",
+          "options": [
+            { "id": "agree", "label": "Agree" },
+            { "id": "neutral", "label": "Neutral" },
+            { "id": "disagree", "label": "Disagree" }
+          ],
+          "required": true
+        },
+        {
+          "id": "curator_index_clarity",
+          "type": "rating",
+          "question": "How clear is the concept of the **Curator Index (CIX)**, which weights curator influence based on **predictiveness, diversity, and activity**?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "curator_index_fairness",
+          "type": "rating",
+          "question": "Do you consider the CIX approach (Predictive Power + Diversity + Activity - Manipulation Penalty) fair?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "curator_model_changes",
+          "type": "single_choice",
+          "question": "Would you support the platform taking a small fee on each 'like' (e.g., 10%) to redistribute to top curators and for system sustainability?",
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "maybe", "label": "Maybe" },
+            { "id": "no", "label": "No" }
+          ],
+          "required": true
+        },
+        {
+          "id": "curator_diversity_check",
+          "type": "single_choice",
+          "question": "Do you think a curator's influence should be reduced if they only curate a single project or very few authors?",
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "neutral", "label": "Neutral" },
+            { "id": "no", "label": "No" }
+          ],
+          "required": true
+        },
+        {
+          "id": "curator_activity_check",
+          "type": "single_choice",
+          "question": "Should curators who are inactive for a long period have reduced influence?",
+          "options": [
+            { "id": "yes", "label": "Yes" },
+            { "id": "neutral", "label": "Neutral" },
+            { "id": "no", "label": "No" }
+          ],
+          "required": true
+        },
+        {
+          "id": "curator_additional_feedback",
+          "type": "text",
+          "question": "Any feedback about curation, CIX, or reward dynamics?",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "rendering_rules": {
+    "unconnected_user": {
+      "show_modules": [
+        "general"
+      ],
+      "explainers": {
+        "investor_mode": "You can browse projects without connecting your wallet. To interact (post/like/create) you'll need to connect a wallet."
+      }
+    },
+    "connected_user": {
+      "detect_roles_via_onchain": true,
+      "role_module_map": {
+        "created_project": "contributor",
+        "created_post": "writer",
+        "gave_like": "curator"
+      }
+    }
+  },
+  "audit": {
+    "last_edit": {
+      "hash": null,
+      "txid": null,
+      "editor_wallet": null,
+      "timestamp": null
+    }
+  }
+}

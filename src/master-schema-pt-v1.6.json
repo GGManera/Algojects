@@ -1,0 +1,374 @@
+{
+  "form_id": "algojects_feedback_master",
+  "version": "1.6",
+  "feedback_version": "v1",
+  "authorized_wallet": "WALLET_ADDRESS_ADMIN",
+  "project_wallet": "WALLET_ADDRESS_PROJECT",
+  "hash_verification_required": true,
+  "metadata": {
+    "created_at": "2025-11-05T00:00:00Z",
+    "updated_at": "2025-11-06T01:37:06.878Z",
+    "description": "Esquema de feedback dinâmico AlgoJects. JSON Mestre para Estrutura de Formulário armazenada em Coda."
+  },
+  "governance": {
+    "enabled": true,
+    "threshold_min_responses": 100,
+    "reward_eligibility": {
+      "min_posts": 2,
+      "min_balance_algo": 1,
+      "reward_amount_algo": 1
+    },
+    "versioning_policy": "questions_reach_threshold_then_archive_in_next_version"
+  },
+  "modules": [
+    {
+      "id": "general",
+      "title": "Feedback Geral",
+      "description": "Módulo universal mostrado a todos os usuários. Foco: navegação, clareza e UX básica.",
+      "questions": [
+        {
+          "id": "home_accessibility",
+          "type": "rating",
+          "question": "Qual a facilidade de encontrar e acessar a página principal com todos os projetos e estatísticas?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "project_page_access",
+          "type": "rating",
+          "question": "Qual a facilidade de acessar a página de um projeto e encontrar suas avaliações?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "user_profile_access",
+          "type": "rating",
+          "question": "Qual a facilidade de acessar as páginas de perfil dos usuários?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "navigation_continuity",
+          "type": "single_choice",
+          "question": "Você sentiu que a navegação foi contínua entre colunas (principal → projeto → perfil) ou mais como mudanças de página separadas?",
+          "options": [
+            { "id": "yes", "label": "Sim" },
+            { "id": "somewhat", "label": "Mais ou Menos" },
+            { "id": "no", "label": "Não" }
+          ],
+          "required": true
+        },
+        {
+          "id": "navigation_continuity_explain",
+          "type": "text",
+          "depends_on": "navigation_continuity",
+          "condition": "no",
+          "question": "O que tornaria a transição entre as colunas de navegação mais fluida ou intuitiva para você?",
+          "required": false
+        },
+        {
+          "id": "post_structure_understanding",
+          "type": "single_choice",
+          "question": "Você entendeu a estrutura de conteúdo: Avaliações contêm Comentários, e Comentários contêm Respostas (sem 'tocas de coelho' infinitas)?",
+          "options": [
+            { "id": "yes", "label": "Sim" },
+            { "id": "somewhat", "label": "Mais ou Menos" },
+            { "id": "no", "label": "Não" }
+          ],
+          "required": true
+        },
+        {
+          "id": "post_structure_rating",
+          "type": "rating",
+          "depends_on": "post_structure_understanding",
+          "condition": "yes",
+          "question": "Quão clara e organizada você achou esta estrutura de conteúdo?",
+          "scale": 5,
+          "required": false
+        },
+        {
+          "id": "platform_purpose_clarity",
+          "type": "rating",
+          "question": "Qual a clareza com que você entendeu o propósito do AlgoJects nos primeiros minutos de uso?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "explore_more",
+          "type": "rating",
+          "question": "Após navegar, qual a sua motivação para explorar mais projetos na plataforma?",
+          "scale": 5,
+          "required": false
+        },
+        {
+          "id": "general_issues",
+          "type": "text",
+          "question": "Algo te confundiu ou te impediu de usar a plataforma de forma ideal? (resposta curta)",
+          "required": false
+        },
+        {
+          "id": "general_overall",
+          "type": "rating",
+          "question": "No geral, qual o seu nível de satisfação com a navegação e a estrutura?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "general_comments",
+          "type": "text",
+          "question": "Quaisquer comentários ou sugestões gerais adicionais?",
+          "required": false
+        },
+        {
+          "id": "value_proposition_met",
+          "type": "rating",
+          "question": "Quão confiável ou útil você achou a informação (Avaliações/Estatísticas) para sua decisão de investimento?",
+          "scale": 5,
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "contributor",
+      "title": "Feedback de Colaborador / Criador",
+      "description": "Mostrado a usuários que criaram páginas de projeto (colaboradores ou criadores de projeto).",
+      "questions": [
+        {
+          "id": "project_creation_intuitiveness",
+          "type": "rating",
+          "question": "Qual a intuitividade do processo para criar e enviar uma nova página de projeto?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "notes_section",
+          "type": "rating",
+          "question": "Quão útil você achou a seção 'notas' (corpo principal) para descrever o projeto?",
+          "scale": 5,
+          "required": false
+        },
+        {
+          "id": "metadata_fields_clarity",
+          "type": "single_choice",
+          "question": "Os campos de metadados (Website, Asset ID, Creator Wallet/Domain) foram claros para você?",
+          "options": [
+            { "id": "yes", "label": "Sim" },
+            { "id": "somewhat", "label": "Mais ou Menos" },
+            { "id": "no", "label": "Não" }
+          ],
+          "required": true
+        },
+        {
+          "id": "metadata_display_rating",
+          "type": "rating",
+          "question": "Qual a clareza da exibição dos metadados na página do projeto após a criação?",
+          "scale": 5,
+          "required": false
+        },
+        {
+          "id": "metadata_editing_experience",
+          "type": "rating",
+          "question": "Qual a facilidade de editar os metadados do projeto após a criação?",
+          "scale": 5,
+          "required": false
+        },
+        {
+          "id": "data_propagation_delay",
+          "type": "single_choice",
+          "question": "Você notou algum atraso na exibição dos dados após salvá-los (tempo de propagação)?",
+          "options": [
+            { "id": "no_delay", "label": "Sem atraso" },
+            { "id": "slight_delay", "label": "Pequeno atraso (aceitável)" },
+            { "id": "noticeable_delay", "label": "Atraso perceptível (inconveniente)" }
+          ],
+          "required": false
+        },
+        {
+          "id": "contributor_value",
+          "type": "single_choice",
+          "question": "Você sentiu que o ato de criar uma página de projeto foi uma contribuição valiosa para o ecossistema?",
+          "options": [
+            { "id": "yes", "label": "Sim" },
+            { "id": "somewhat", "label": "Mais ou Menos" },
+            { "id": "no", "label": "Não" }
+          ],
+          "required": false
+        },
+        {
+          "id": "contributor_additional_feedback",
+          "type": "text",
+          "question": "Alguma sugestão para melhorar o fluxo de criação/edição de projetos ou os campos de metadados?",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "writer",
+      "title": "Feedback de Escritor/Autor",
+      "description": "Mostrado a usuários que escreveram postagens (Avaliações, Comentários ou Respostas).",
+      "questions": [
+        {
+          "id": "domain_requirement_understanding",
+          "type": "single_choice",
+          "question": "Você já tinha um NFDomain, ou a plataforma te orientou a criar um antes de postar ou 'curtir' uma postagem?",
+          "options": [
+            { "id": "had_one", "label": "Eu já tinha um" },
+            { "id": "created_one", "label": "Criei um após a orientação da plataforma" },
+            { "id": "didnt_understand", "label": "Eu não entendi este requisito" }
+          ],
+          "required": true
+        },
+        {
+          "id": "posting_speed",
+          "type": "rating",
+          "question": "Qual sua avaliação da velocidade de publicação (tempo da transação da carteira + confirmação)?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "fee_understanding",
+          "type": "single_choice",
+          "question": "Você entendeu que a taxa paga na postagem é destinada ao protocolo AlgoJects?",
+          "options": [
+            { "id": "yes_clearly", "label": "Sim, claramente" },
+            { "id": "not_really", "label": "Não muito" },
+            { "id": "didnt_notice", "label": "Eu não percebi" }
+          ],
+          "required": true
+        },
+        {
+          "id": "reward_model_clarity",
+          "type": "single_choice",
+          "question": "Você entendeu a divisão de recompensas para postagens, comentários e respostas e como elas são distribuídas?",
+          "options": [
+            { "id": "yes", "label": "Sim" },
+            { "id": "partially", "label": "Parcialmente" },
+            { "id": "no", "label": "Não" }
+          ],
+          "required": true
+        },
+        {
+          "id": "writer_usability",
+          "type": "rating",
+          "question": "No geral, como você classificaria a experiência de escrita e postagem?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "writer_general_feedback",
+          "type": "text",
+          "question": "Algum feedback sobre sua experiência de escrita/postagem (UX, custos ou o fluxo do domínio)?",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "curator",
+      "title": "Feedback de Curador",
+      "description": "Mostrado a usuários que realizaram curadorias ('likes'/apoios). Inclui percepção sobre o Índice de Curador e fluxos de recompensa.",
+      "questions": [
+        {
+          "id": "like_interaction_understanding",
+          "type": "single_choice",
+          "question": "Ao dar um 'like', você entendeu que isso aciona uma transação que envia ALGO diretamente ao autor (não à plataforma)?",
+          "options": [
+            { "id": "yes", "label": "Sim" },
+            { "id": "partially", "label": "Parcialmente" },
+            { "id": "no", "label": "Não" }
+          ],
+          "required": true
+        },
+        {
+          "id": "like_agreement",
+          "type": "single_choice",
+          "question": "Você concorda com este modelo onde os 'likes' enviam valor diretamente aos autores, sem que a plataforma receba nenhuma taxa?",
+          "options": [
+            { "id": "agree", "label": "Concordo" },
+            { "id": "neutral", "label": "Neutro" },
+            { "id": "disagree", "label": "Discordo" }
+          ],
+          "required": true
+        },
+        {
+          "id": "curator_index_clarity",
+          "type": "rating",
+          "question": "Qual a clareza do conceito do **Curator Index (CIX)**, que pondera a influência do curador com base em **poder preditivo, diversidade e atividade**?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "curator_index_fairness",
+          "type": "rating",
+          "question": "Você considera justa a abordagem do CIX (Poder Preditivo + Diversidade + Atividade - Penalidade por Manipulação)?",
+          "scale": 5,
+          "required": true
+        },
+        {
+          "id": "curator_model_changes",
+          "type": "single_choice",
+          "question": "Você apoiaria a plataforma cobrar uma pequena taxa em cada 'like' (por exemplo, 10%) para redistribuir aos principais curadores e para a sustentabilidade do sistema?",
+          "options": [
+            { "id": "yes", "label": "Sim" },
+            { "id": "maybe", "label": "Talvez" },
+            { "id": "no", "label": "Não" }
+          ],
+          "required": true
+        },
+        {
+          "id": "curator_diversity_check",
+          "type": "single_choice",
+          "question": "Você acha que a influência de um curador deveria ser reduzida se ele curar apenas um único projeto ou muito poucos autores?",
+          "options": [
+            { "id": "yes", "label": "Sim" },
+            { "id": "neutral", "label": "Neutro" },
+            { "id": "no", "label": "Não" }
+          ],
+          "required": true
+        },
+        {
+          "id": "curator_activity_check",
+          "type": "single_choice",
+          "question": "Os curadores inativos por um longo período deveriam ter sua influência reduzida?",
+          "options": [
+            { "id": "yes", "label": "Sim" },
+            { "id": "neutral", "label": "Neutro" },
+            { "id": "no", "label": "Não" }
+          ],
+          "required": true
+        },
+        {
+          "id": "curator_additional_feedback",
+          "type": "text",
+          "question": "Algum feedback sobre curadoria, CIX ou dinâmicas de recompensa?",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "rendering_rules": {
+    "unconnected_user": {
+      "show_modules": [
+        "general"
+      ],
+      "explainers": {
+        "investor_mode": "Você pode navegar pelos projetos sem conectar sua carteira. Para interagir (postar/'curtir'/criar) você precisará conectar uma carteira."
+      }
+    },
+    "connected_user": {
+      "detect_roles_via_onchain": true,
+      "role_module_map": {
+        "created_project": "contributor",
+        "created_post": "writer",
+        "gave_like": "curator"
+      }
+    }
+  },
+  "audit": {
+    "last_edit": {
+      "hash": null,
+      "txid": null,
+      "editor_wallet": null,
+      "timestamp": null
+    }
+  }
+}

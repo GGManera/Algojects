@@ -391,8 +391,8 @@ const GovernancePage = () => {
                                                     formatter={(value, name, props) => [`${value} responses`, 'Count']}
                                                     labelFormatter={(label) => `Rating: ${label}`}
                                                 />
-                                                <Legend />
-                                                <Bar dataKey="value" name="Responses" fill="#8884d8">
+                                                {/* REMOVED: <Legend /> */}
+                                                <Bar dataKey="value" fill="#8884d8">
                                                     {qStats.data.map((entry, index) => (
                                                         <Cell key={`bar-cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                     ))}

@@ -28,12 +28,12 @@ export function Footer({ className }: FooterProps) {
         <div className="flex flex-col items-center w-full max-w-md mb-2 space-y-4">
           {/* Centered grid for links */}
           <div className="grid grid-cols-2 gap-x-8 w-full max-w-[250px] mx-auto">
-            <div className="flex flex-col items-start gap-y-2"> {/* Left column */}
+            <div className="flex flex-col items-center gap-y-2"> {/* Left column - Changed to items-center */}
               <Link to="/" onClick={handleHomeClick} className="hover:text-foreground transition-colors">Home</Link>
               <Link to="/feedback" className="hover:text-foreground transition-colors">Feedback</Link>
               <Link to="/governance" className="hover:text-foreground transition-colors">Governance</Link>
             </div>
-            <div className="flex flex-col items-start gap-y-2"> {/* Right column */}
+            <div className="flex flex-col items-center gap-y-2"> {/* Right column - Changed to items-center */}
               <a
                 href="https://github.com/GGManera/Algojects"
                 target="_blank"

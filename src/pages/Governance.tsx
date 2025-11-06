@@ -48,6 +48,9 @@ interface VersionStats {
   modules: Record<string, ModuleStats>;
 }
 
+// Utility function to generate star labels
+const getStarLabel = (rating: number) => '★'.repeat(rating);
+
 const GovernancePage = () => {
   const [openVersions, setOpenVersions] = useState<Set<string>>(new Set());
   const [openModules, setOpenModules] = useState<Set<string>>(new Set());
@@ -128,7 +131,11 @@ const GovernancePage = () => {
           }
 
           const qStats = stats[version].modules[moduleId].questions[questionId];
-          qStats.totalResponses++;
+          
+          // Only count responses for chartable types
+          if (questionType !== 'text') {
+            qStats.totalResponses++;
+          }
 
           if (questionType === 'rating' || questionType === 'single_choice') {
             const existingDataIndex = qStats.data.findIndex(d => d.name === String(userAnswer));
@@ -145,6 +152,7 @@ const GovernancePage = () => {
       });
     });
 
+    // --- Phase 2: Normalize and Calculate Averages ---
     Object.values(stats).forEach(versionStat => {
       schema.modules.forEach(moduleDef => {
         const moduleId = moduleDef.id;
@@ -158,33 +166,39 @@ const GovernancePage = () => {
         }
         (moduleDef.questions || []).forEach((questionDef: any) => {
           const questionId = questionDef.id;
+          const questionType = questionDef.type;
+          
           if (!versionStat.modules[moduleId].questions[questionId]) {
             versionStat.modules[moduleId].questions[questionId] = {
               questionText: questionDef.question,
-              type: questionDef.type,
+              type: questionType,
               totalResponses: 0,
               data: [],
             };
           }
-        });
-      });
-    });
 
-    Object.values(stats).forEach(versionStat => {
-      Object.values(versionStat.modules).forEach(moduleStat => {
-        Object.values(moduleStat.questions).forEach(qStat => {
-          qStat.data.sort((a, b) => a.name.localeCompare(b.name));
+          const qStats = versionStat.modules[moduleId].questions[questionId];
           
-          // Calculate average for rating questions
-          if (qStat.type === 'rating' && qStat.totalResponses > 0) {
+          if (questionType === 'rating') {
+            const scale = questionDef.scale || 5;
+            const dataMap = new Map(qStats.data.map(d => [parseInt(d.name, 10), d.value]));
+            const normalizedData: Array<{ name: string; value: number }> = [];
             let totalSum = 0;
-            qStat.data.forEach(d => {
-              const rating = parseInt(d.name, 10);
-              if (!isNaN(rating)) {
-                totalSum += rating * d.value;
-              }
-            });
-            (qStat as QuestionStats).average = totalSum / qStat.totalResponses;
+            let totalCount = 0;
+
+            for (let i = 1; i <= scale; i++) {
+              const count = dataMap.get(i) || 0;
+              normalizedData.push({ name: getStarLabel(i), value: count });
+              totalSum += i * count;
+              totalCount += count;
+            }
+            
+            qStats.data = normalizedData;
+            qStats.totalResponses = totalCount; // Recalculate total responses based on normalized data
+            (qStats as QuestionStats).average = totalCount > 0 ? totalSum / totalCount : undefined;
+          } else if (questionType === 'single_choice') {
+            // For single choice, just ensure data is sorted by name (option text)
+            qStats.data.sort((a, b) => a.name.localeCompare(b.name));
           }
         });
       });
@@ -303,7 +317,7 @@ const GovernancePage = () => {
                         <CollapsibleContent isOpen={isModuleOpen} className="p-4 pt-0 space-y-4">
                           {Object.entries(moduleStats.questions).map(([questionId, qStats], qIndex) => {
                             
-                            // --- NEW: Filter out text questions ---
+                            // --- Filter out text questions ---
                             if (qStats.type === 'text') return null;
                             // -------------------------------------
                             
@@ -331,9 +345,13 @@ const GovernancePage = () => {
                                     {qStats.type === 'rating' && (
                                         <ResponsiveContainer width="100%" height={200}>
                                             <BarChart data={qStats.data}>
+                                                {/* Use custom tick formatter for star labels */}
                                                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
                                                 <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                                                <Tooltip />
+                                                <Tooltip 
+                                                    formatter={(value, name, props) => [`${value} responses`, 'Count']}
+                                                    labelFormatter={(label) => `Rating: ${label}`}
+                                                />
                                                 <Legend />
                                                 <Bar dataKey="value" name="Responses" fill="#8884d8">
                                                     {qStats.data.map((entry, index) => (

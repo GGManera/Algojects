@@ -51,7 +51,7 @@ interface VersionStats {
 // Utility function to generate star labels
 const getStarLabel = (rating: number) => '★'.repeat(rating);
 
-// NEW: Custom Tick Component for XAxis to color the stars yellow
+// Custom Tick Component for XAxis to color the stars yellow
 const CustomStarTick = (props: any) => {
   const { x, y, payload } = props;
   return (
@@ -250,6 +250,15 @@ const GovernancePage = () => {
     navigate('/');
   };
 
+  // Helper function to format the average rating
+  const formatAverageRating = (avg: number): string => {
+    const rounded = Math.round(avg * 10) / 10;
+    if (rounded % 1 === 0) {
+      return rounded.toFixed(0);
+    }
+    return rounded.toFixed(1);
+  };
+
   if (isLoading) {
     return (
       <div className="w-full min-h-screen flex flex-col items-center pt-12">
@@ -347,7 +356,7 @@ const GovernancePage = () => {
                                 
                                 {/* Display Average for Rating Questions */}
                                 {qStats.type === 'rating' && qStats.average !== undefined && (
-                                    <p className="text-sm text-hodl-blue font-bold">Average Rating: {qStats.average.toFixed(2)} / {scale}</p>
+                                    <p className="text-sm text-hodl-blue font-bold">Average Rating: {formatAverageRating(qStats.average)} / {scale}</p>
                                 )}
 
                                 {qStats.totalResponses > 0 ? (

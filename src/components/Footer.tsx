@@ -67,7 +67,7 @@ export function Footer({ className }: FooterProps) {
             <Link to="/feedback" className="hover:text-foreground transition-colors">Feedback</Link>
             <span className="text-border">|</span>
             <Link to="/governance" className="hover:text-foreground transition-colors">Governance</Link>
-            <span className="text-border">|</span> {/* Added separator here */}
+            <span className="text-border mr-2">|</span> {/* Added mr-2 here */}
           </div>
 
           {/* Right group of links (GitHub, Twitter) */}

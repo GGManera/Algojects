@@ -355,6 +355,9 @@ const GovernancePage = () => {
                             const maxResponses = qStats.data.length > 0 
                                 ? Math.max(...qStats.data.map(d => d.value)) 
                                 : 1; // Default to 1 if no responses
+                            
+                            // NEW: Generate explicit ticks array from 0 to maxResponses
+                            const yAxisTicks = Array.from({ length: maxResponses + 1 }, (_, i) => i);
 
                             return (
                               <div key={questionId} className="border p-3 rounded-md bg-card space-y-3">
@@ -385,13 +388,12 @@ const GovernancePage = () => {
                                                     stroke="hsl(var(--muted-foreground))" 
                                                     allowDecimals={false} 
                                                     domain={[0, maxResponses]} // Set domain from 0 to maxResponses
-                                                    tickCount={maxResponses + 1} // Ensure all integer ticks are shown
+                                                    ticks={yAxisTicks} // Use explicit ticks
                                                 />
                                                 <Tooltip 
                                                     formatter={(value, name, props) => [`${value} responses`, 'Count']}
                                                     labelFormatter={(label) => `Rating: ${label}`}
                                                 />
-                                                {/* REMOVED: <Legend /> */}
                                                 <Bar dataKey="value" fill="#8884d8">
                                                     {qStats.data.map((entry, index) => (
                                                         <Cell key={`bar-cell-${index}`} fill={COLORS[index % COLORS.length]} />

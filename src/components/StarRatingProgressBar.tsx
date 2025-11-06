@@ -34,35 +34,38 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
           ))}
         </div>
 
-        {/* Foreground stars (filled based on average) */}
+        {/* Foreground stars (Clipped container) */}
         <div 
-          className="flex absolute inset-0 items-center space-x-1 overflow-hidden"
+          className="absolute inset-0 overflow-hidden" // This container clips the content
           style={{ width: `${fillPercentage}%` }}
         >
-          {Array.from({ length: scale }, (_, index) => {
-            const isFull = index < fullStars;
-            const isPartial = index === fullStars && fractionalPart > 0;
+          {/* Inner container with the actual stars and spacing, matching the background */}
+          <div className="flex items-center space-x-1"> 
+            {Array.from({ length: scale }, (_, index) => {
+              const isFull = index < fullStars;
+              const isPartial = index === fullStars && fractionalPart > 0;
 
-            return (
-              <div key={`fg-${index}`} className="relative h-6 w-6 flex-shrink-0">
-                <Star
-                  className={cn(
-                    "h-6 w-6 text-yellow-400",
-                    isFull ? "fill-yellow-400" : ""
+              return (
+                <div key={`fg-${index}`} className="relative h-6 w-6 flex-shrink-0">
+                  <Star
+                    className={cn(
+                      "h-6 w-6 text-yellow-400",
+                      isFull ? "fill-yellow-400" : ""
+                    )}
+                  />
+                  {/* Handle fractional fill for the partial star */}
+                  {isPartial && (
+                    <div 
+                      className="absolute inset-0 overflow-hidden"
+                      style={{ width: `${fractionalPart * 100}%` }}
+                    >
+                      <Star className="h-6 w-6 text-yellow-400 fill-yellow-400" />
+                    </div>
                   )}
-                />
-                {/* Handle fractional fill for the partial star */}
-                {isPartial && (
-                  <div 
-                    className="absolute inset-0 overflow-hidden"
-                    style={{ width: `${fractionalPart * 100}%` }}
-                  >
-                    <Star className="h-6 w-6 text-yellow-400 fill-yellow-400" />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
       <p className="text-xs text-muted-foreground">Based on {totalResponses} responses.</p>

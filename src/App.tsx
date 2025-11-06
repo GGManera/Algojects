@@ -20,6 +20,7 @@ import { NavigationHistoryProvider } from "./contexts/NavigationHistoryContext";
 import NewWebsite from "./pages/NewWebsite";
 import FeedbackPage from "./pages/Feedback";
 import FeedbackStatsPage from "./pages/FeedbackStats"; // Import the new FeedbackStats page
+import Governance from "./pages/Governance"; // NEW: Import Governance page
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,8 @@ const App = () => {
                       <Route path="/feedback" element={<FeedbackPage />} />
                       {/* New Feedback Stats Route - outside the main Layout */}
                       <Route path="/feedbackstats" element={<FeedbackStatsPage />} />
+                      {/* NEW: Governance Route - outside the main Layout */}
+                      <Route path="/governance" element={<Governance />} />
                       
                       {/* Main Application Routes */}
                       <Route path="/*" element={<Layout><NewWebsite /></Layout>} />

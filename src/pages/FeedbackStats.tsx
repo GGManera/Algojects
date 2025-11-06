@@ -6,7 +6,7 @@ import { fetchFormStructure, fetchFormResponses, FormStructure, FeedbackResponse
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, ChevronDown, ChevronUp, BarChart as BarChartIcon, PieChart as PieChartIcon } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, BarChart as BarChartIcon, PieChart as PieChartIcon, Info } from 'lucide-react'; // Import Info icon
 import { cn } from '@/lib/utils';
 import { CollapsibleContent } from '@/components/CollapsibleContent';
 import {
@@ -21,6 +21,8 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
+import { StickyHeader } from '@/components/StickyHeader'; // Import StickyHeader
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 // Define colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#d0ed57'];
@@ -48,6 +50,7 @@ interface VersionStats {
 const FeedbackStatsPage = () => {
   const [openVersions, setOpenVersions] = useState<Set<string>>(new Set());
   const [openModules, setOpenModules] = useState<Set<string>>(new Set());
+  const navigate = useNavigate(); // Initialize useNavigate
 
   // Fetch form schema
   const { data: schema, isLoading: schemaLoading, error: schemaError } = useQuery<FormStructure, Error>({
@@ -210,13 +213,21 @@ const FeedbackStatsPage = () => {
     });
   };
 
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate('/'); // Navigate to the home page
+  };
+
   if (isLoading) {
     return (
-      <div className="w-full min-h-screen p-4 md:p-8 flex flex-col items-center">
-        <h1 className="text-4xl font-bold gradient-text mb-6">Feedback Statistics</h1>
-        <div className="w-full max-w-3xl space-y-4">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-64 w-full" />
+      <div className="w-full min-h-screen flex flex-col items-center pt-12"> {/* Added pt-12 for header spacing */}
+        <StickyHeader onLogoClick={handleLogoClick} /> {/* Add StickyHeader */}
+        <div className="p-4 md:p-8 w-full flex flex-col items-center"> {/* Wrapped content in a div for consistent padding */}
+          <h1 className="text-4xl font-bold gradient-text mb-6">Feedback Statistics</h1>
+          <div className="w-full max-w-3xl space-y-4">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
         </div>
       </div>
     );
@@ -224,113 +235,122 @@ const FeedbackStatsPage = () => {
 
   if (error) {
     return (
-      <div className="w-full min-h-screen p-4 md:p-8 flex flex-col items-center">
-        <h1 className="text-4xl font-bold gradient-text mb-6">Feedback Statistics</h1>
-        <Alert variant="destructive" className="w-full max-w-3xl mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error Loading Data</AlertTitle>
-          <AlertDescription>{error.message}</AlertDescription>
-        </Alert>
+      <div className="w-full min-h-screen flex flex-col items-center pt-12"> {/* Added pt-12 for header spacing */}
+        <StickyHeader onLogoClick={handleLogoClick} /> {/* Add StickyHeader */}
+        <div className="p-4 md:p-8 w-full flex flex-col items-center"> {/* Wrapped content in a div for consistent padding */}
+          <h1 className="text-4xl font-bold gradient-text mb-6">Feedback Statistics</h1>
+          <Alert variant="destructive" className="w-full max-w-3xl mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error Loading Data</AlertTitle>
+            <AlertDescription>{error.message}</AlertDescription>
+          </Alert>
+        </div>
       </div>
     );
   }
 
   if (!schema || !responses || responses.length === 0) {
     return (
-      <div className="w-full min-h-screen p-4 md:p-8 flex flex-col items-center">
-        <h1 className="text-4xl font-bold gradient-text mb-6">Feedback Statistics</h1>
-        <Alert className="w-full max-w-3xl">
-          <Info className="h-4 w-4" />
-          <AlertTitle>No Feedback Data</AlertTitle>
-          <AlertDescription>No feedback responses have been recorded yet.</AlertDescription>
-        </Alert>
+      <div className="w-full min-h-screen flex flex-col items-center pt-12"> {/* Added pt-12 for header spacing */}
+        <StickyHeader onLogoClick={handleLogoClick} /> {/* Add StickyHeader */}
+        <div className="p-4 md:p-8 w-full flex flex-col items-center"> {/* Wrapped content in a div for consistent padding */}
+          <h1 className="text-4xl font-bold gradient-text mb-6">Feedback Statistics</h1>
+          <Alert className="w-full max-w-3xl">
+            <Info className="h-4 w-4" />
+            <AlertTitle>No Feedback Data</AlertTitle>
+            <AlertDescription>No feedback responses have been recorded yet.</AlertDescription>
+          </Alert>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full min-h-screen p-4 md:p-8 flex flex-col items-center">
-      <h1 className="text-4xl font-bold gradient-text mb-6">Feedback Statistics</h1>
-      <p className="text-muted-foreground mb-8">Aggregated data from {responses.length} responses across {sortedVersions.length} form versions.</p>
+    <div className="w-full min-h-screen flex flex-col items-center pt-12"> {/* Added pt-12 for header spacing */}
+      <StickyHeader onLogoClick={handleLogoClick} /> {/* Add StickyHeader */}
+      <div className="p-4 md:p-8 w-full flex flex-col items-center"> {/* Wrapped content in a div for consistent padding */}
+        <h1 className="text-4xl font-bold gradient-text mb-6">Feedback Statistics</h1>
+        <p className="text-muted-foreground mb-8">Aggregated data from {responses.length} responses across {sortedVersions.length} form versions.</p>
 
-      <div className="w-full max-w-4xl space-y-6">
-        {sortedVersions.map(version => {
-          const versionStats = aggregatedStats[version];
-          const isVersionOpen = openVersions.has(version);
-          return (
-            <Card key={version} className="bg-card border-primary/50">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 cursor-pointer" onClick={() => toggleVersion(version)}>
-                <CardTitle className="text-xl text-primary">Form Version {version} ({versionStats.totalResponses} responses)</CardTitle>
-                {isVersionOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </CardHeader>
-              <CollapsibleContent isOpen={isVersionOpen} className="p-4 pt-0 space-y-6">
-                {Object.values(versionStats.modules).map(moduleStats => {
-                  const isModuleOpen = openModules.has(moduleStats.moduleId);
-                  return (
-                    <Card key={moduleStats.moduleId} className="bg-muted/30 border-l-4 border-hodl-blue">
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 cursor-pointer" onClick={() => toggleModule(moduleStats.moduleId)}>
-                        <CardTitle className="text-lg text-hodl-blue">{moduleStats.moduleTitle}</CardTitle>
-                        {isModuleOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </CardHeader>
-                      <CollapsibleContent isOpen={isModuleOpen} className="p-4 pt-0 space-y-4">
-                        {Object.values(moduleStats.questions).map((qStats, qIndex) => (
-                          <div key={qStats.questionText} className="border p-3 rounded-md bg-card space-y-3">
-                            <h4 className="text-md font-semibold text-foreground">{qIndex + 1}. {qStats.questionText} ({qStats.totalResponses} responses)</h4>
-                            {qStats.totalResponses > 0 ? (
-                              <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-                                {qStats.type === 'rating' || qStats.type === 'single_choice' ? (
-                                  <>
-                                    <ResponsiveContainer width="100%" height={200} className="md:w-1/2">
-                                      <PieChart>
-                                        <Pie
-                                          data={qStats.data}
-                                          cx="50%"
-                                          cy="50%"
-                                          labelLine={false}
-                                          outerRadius={80}
-                                          fill="#8884d8"
-                                          dataKey="value"
-                                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                                        >
-                                          {qStats.data.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                          ))}
-                                        </Pie>
-                                        <Tooltip />
-                                        <Legend />
-                                      </PieChart>
-                                    </ResponsiveContainer>
-                                    <ResponsiveContainer width="100%" height={200} className="md:w-1/2">
-                                      <BarChart data={qStats.data}>
-                                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                                        <YAxis stroke="hsl(var(--muted-foreground))" />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Bar dataKey="value" fill="#8884d8">
-                                          {qStats.data.map((entry, index) => (
-                                            <Cell key={`bar-cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                          ))}
-                                        </Bar>
-                                      </BarChart>
-                                    </ResponsiveContainer>
-                                  </>
-                                ) : (
-                                  <p className="text-muted-foreground">Text responses are counted but not charted here.</p>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="text-muted-foreground">No responses for this question yet.</p>
-                            )}
-                          </div>
-                        ))}
-                      </CollapsibleContent>
-                    </Card>
-                  );
-                })}
-              </CollapsibleContent>
-            </Card>
-          );
-        })}
+        <div className="w-full max-w-4xl space-y-6">
+          {sortedVersions.map(version => {
+            const versionStats = aggregatedStats[version];
+            const isVersionOpen = openVersions.has(version);
+            return (
+              <Card key={version} className="bg-card border-primary/50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 cursor-pointer" onClick={() => toggleVersion(version)}>
+                  <CardTitle className="text-xl text-primary">Form Version {version} ({versionStats.totalResponses} responses)</CardTitle>
+                  {isVersionOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                </CardHeader>
+                <CollapsibleContent isOpen={isVersionOpen} className="p-4 pt-0 space-y-6">
+                  {Object.values(versionStats.modules).map(moduleStats => {
+                    const isModuleOpen = openModules.has(moduleStats.moduleId);
+                    return (
+                      <Card key={moduleStats.moduleId} className="bg-muted/30 border-l-4 border-hodl-blue">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 cursor-pointer" onClick={() => toggleModule(moduleStats.moduleId)}>
+                          <CardTitle className="text-lg text-hodl-blue">{moduleStats.moduleTitle}</CardTitle>
+                          {isModuleOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </CardHeader>
+                        <CollapsibleContent isOpen={isModuleOpen} className="p-4 pt-0 space-y-4">
+                          {Object.values(moduleStats.questions).map((qStats, qIndex) => (
+                            <div key={qStats.questionText} className="border p-3 rounded-md bg-card space-y-3">
+                              <h4 className="text-md font-semibold text-foreground">{qIndex + 1}. {qStats.questionText} ({qStats.totalResponses} responses)</h4>
+                              {qStats.totalResponses > 0 ? (
+                                <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+                                  {qStats.type === 'rating' || qStats.type === 'single_choice' ? (
+                                    <>
+                                      <ResponsiveContainer width="100%" height={200} className="md:w-1/2">
+                                        <PieChart>
+                                          <Pie
+                                            data={qStats.data}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={false}
+                                            outerRadius={80}
+                                            fill="#8884d8"
+                                            dataKey="value"
+                                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                                          >
+                                            {qStats.data.map((entry, index) => (
+                                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                          </Pie>
+                                          <Tooltip />
+                                          <Legend />
+                                        </PieChart>
+                                      </ResponsiveContainer>
+                                      <ResponsiveContainer width="100%" height={200} className="md:w-1/2">
+                                        <BarChart data={qStats.data}>
+                                          <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
+                                          <YAxis stroke="hsl(var(--muted-foreground))" />
+                                          <Tooltip />
+                                          <Legend />
+                                          <Bar dataKey="value" fill="#8884d8">
+                                            {qStats.data.map((entry, index) => (
+                                              <Cell key={`bar-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                          </Bar>
+                                        </BarChart>
+                                      </ResponsiveContainer>
+                                    </>
+                                  ) : (
+                                    <p className="text-muted-foreground">Text responses are counted but not charted here.</p>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="text-muted-foreground">No responses for this question yet.</p>
+                              )}
+                            </div>
+                          ))}
+                        </CollapsibleContent>
+                      </Card>
+                    );
+                  })}
+                </CollapsibleContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

@@ -10,12 +10,14 @@ import { PlusCircle, Trash2, ChevronDown, ChevronUp, ArrowUp, ArrowDown } from '
 import { QuestionEditor } from './QuestionEditor';
 import { cn } from '@/lib/utils';
 import { CollapsibleContent } from './CollapsibleContent';
+import { Checkbox } from '@/components/ui/checkbox'; // Import Checkbox
 
 interface Module {
   id: string;
   title: string;
   description: string;
   questions: any[];
+  is_under_construction?: boolean; // NEW: Flag for under construction
 }
 
 interface ModuleEditorProps {
@@ -138,6 +140,18 @@ export function ModuleEditor({ module, index, onUpdate, onRemove, onMoveUp, onMo
             />
           </div>
           
+          {/* NEW: Under Construction Checkbox */}
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox
+              id={`module-construction-${index}`}
+              checked={!!module.is_under_construction}
+              onCheckedChange={(checked) => onUpdate(index, { ...module, is_under_construction: !!checked })}
+            />
+            <Label htmlFor={`module-construction-${index}`} className="text-sm font-medium text-red-400">
+              Mark as "Under Construction"
+            </Label>
+          </div>
+
           <h4 className="text-md font-semibold pt-2">Questions ({questions.length})</h4>
           <div className="space-y-4 border p-3 rounded-md bg-card">
             {questions.map((question, qIndex) => (

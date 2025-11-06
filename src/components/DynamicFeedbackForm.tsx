@@ -91,6 +91,10 @@ export function DynamicFeedbackForm({ schema, isEditing, setIsSubmitting }: Dyna
 
     // Validate all visible required questions
     for (const question of visibleQuestions) {
+      // Skip validation if the module is under construction
+      const module = filteredModules.find(m => m.id === question.moduleId);
+      if (module?.is_under_construction) continue;
+
       if (question.required) {
         const answer = responses[question.id];
         const isAnswerEmpty = (answer === undefined || answer === null || (typeof answer === 'string' && answer.trim() === ''));
@@ -208,9 +212,7 @@ export function DynamicFeedbackForm({ schema, isEditing, setIsSubmitting }: Dyna
           {(filteredModules || []).map(module => {
             const moduleQuestions = allQuestions.filter(q => q.moduleId === module.id);
             const isOpen = openModules.has(module.id);
-            
-            // Track the index of visible questions within this module
-            let visibleQuestionIndex = 0;
+            const isUnderConstruction = !!module.is_under_construction;
 
             return (
               <div key={module.id} className="space-y-4 p-4 border border-muted rounded-lg bg-muted/20">
@@ -221,37 +223,46 @@ export function DynamicFeedbackForm({ schema, isEditing, setIsSubmitting }: Dyna
                 <p className="text-sm text-muted-foreground">{module.description}</p>
                 
                 <CollapsibleContent isOpen={isOpen}>
-                    {moduleQuestions.map((question, index) => {
-                        const isVisible = visibleQuestions.some(q => q.id === question.id);
-                        
-                        if (!isVisible) return null;
-                        
-                        // Increment visible index only if the question is visible
-                        visibleQuestionIndex++;
-                        const currentQuestionNumber = visibleQuestionIndex;
+                    {isUnderConstruction ? (
+                        <Alert className="w-full bg-red-500/20 border-red-500 text-red-400">
+                            <AlertTriangle className="h-4 w-4 text-red-500" />
+                            <AlertTitle className="text-red-400">Under Construction</AlertTitle>
+                            <AlertDescription>This module is currently under construction and its content is not available.</AlertDescription>
+                        </Alert>
+                    ) : (
+                        <>
+                            {moduleQuestions.map((question, index) => {
+                                const isVisible = visibleQuestions.some(q => q.id === question.id);
+                                
+                                if (!isVisible) return null;
+                                
+                                // Increment visible index only if the question is visible
+                                const currentQuestionNumber = moduleQuestions.filter((_, i) => i <= index).filter(q => visibleQuestions.some(vq => vq.id === q.id)).length;
 
-                        return (
-                            <div key={question.id} className="pt-2">
-                                {currentQuestionNumber > 1 && (
-                                    <Separator className="my-4 bg-muted-foreground/20" />
-                                )}
-                                <div className="flex items-baseline space-x-2"> {/* Changed items-start to items-baseline */}
-                                    <Label className="text-base font-bold text-foreground">
-                                        {currentQuestionNumber}.
-                                    </Label>
-                                    <div className="flex-1 space-y-2"> {/* Wrapper for QuestionRenderer content */}
-                                        <QuestionRenderer
-                                            ref={el => { if (el) questionRefs.current.set(question.id, el); else questionRefs.current.delete(question.id); }}
-                                            question={question}
-                                            value={responses[question.id]}
-                                            onChange={(value) => handleResponseChange(question.id, value)}
-                                            isInvalid={validationErrors[question.id]}
-                                        />
+                                return (
+                                    <div key={question.id} className="pt-2">
+                                        {currentQuestionNumber > 1 && (
+                                            <Separator className="my-4 bg-muted-foreground/20" />
+                                        )}
+                                        <div className="flex items-baseline space-x-2"> {/* Changed items-start to items-baseline */}
+                                            <Label className="text-base font-bold text-foreground">
+                                                {currentQuestionNumber}.
+                                            </Label>
+                                            <div className="flex-1 space-y-2"> {/* Wrapper for QuestionRenderer content */}
+                                                <QuestionRenderer
+                                                    ref={el => { if (el) questionRefs.current.set(question.id, el); else questionRefs.current.delete(question.id); }}
+                                                    question={question}
+                                                    value={responses[question.id]}
+                                                    onChange={(value) => handleResponseChange(question.id, value)}
+                                                    isInvalid={validationErrors[question.id]}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+                                );
+                            })}
+                        </>
+                    )}
                 </CollapsibleContent>
               </div>
             );

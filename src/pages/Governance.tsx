@@ -426,7 +426,7 @@ const GovernancePage = () => {
                                                 <Pie
                                                     data={qStats.data}
                                                     cx="50%"
-                                                    cy="60%" /* Adjusted cy to shift pie down */
+                                                    cy="60%" 
                                                     labelLine={false}
                                                     outerRadius={100}
                                                     fill="#8884d8"
@@ -439,7 +439,7 @@ const GovernancePage = () => {
                                                 </Pie>
                                                 <Tooltip />
                                                 <Legend 
-                                                    wrapperStyle={{ paddingTop: '20px' }} 
+                                                    wrapperStyle={{ paddingTop: '30px' }} /* Increased padding top to 30px */
                                                 />
                                             </PieChart>
                                         </ResponsiveContainer>

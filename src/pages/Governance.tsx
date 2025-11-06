@@ -303,6 +303,10 @@ const GovernancePage = () => {
                         <CollapsibleContent isOpen={isModuleOpen} className="p-4 pt-0 space-y-4">
                           {Object.entries(moduleStats.questions).map(([questionId, qStats], qIndex) => {
                             
+                            // --- NEW: Filter out text questions ---
+                            if (qStats.type === 'text') return null;
+                            // -------------------------------------
+                            
                             // Find the original question definition using the ID
                             const originalQuestionDef = schema.modules
                                 .flatMap(m => m.questions || [])
@@ -362,10 +366,6 @@ const GovernancePage = () => {
                                                 <Legend />
                                             </PieChart>
                                         </ResponsiveContainer>
-                                    )}
-                                    
-                                    {qStats.type === 'text' && (
-                                        <p className="text-muted-foreground">Text responses are counted but not charted here.</p>
                                     )}
                                   </div>
                                 ) : (

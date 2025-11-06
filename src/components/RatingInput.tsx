@@ -23,6 +23,7 @@ export const RatingInput = React.forwardRef<HTMLDivElement, RatingInputProps>(({
     // If the clicked value is the same as the current value, deselect (set to null)
     if (newValue === value) {
       onChange(null);
+      setHoverValue(null); // NEW: Explicitly clear hover state to update visual immediately
     } else {
       onChange(newValue);
     }

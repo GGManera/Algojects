@@ -14,7 +14,7 @@ interface SingleChoiceCardGroupProps {
 
 export const SingleChoiceCardGroup = React.forwardRef<HTMLDivElement, SingleChoiceCardGroupProps>(({ options, value, onChange, disabled = false, className }, ref) => {
   return (
-    <div ref={ref} className={cn("grid grid-cols-1 sm:grid-cols-2 gap-3", className)}>
+    <div ref={ref} className={cn("grid grid-cols-1 sm:grid-cols-2 gap-3 p-2 rounded-md border transition-colors duration-200", className)}>
       {options.map((option) => {
         const isSelected = value === option;
         return (

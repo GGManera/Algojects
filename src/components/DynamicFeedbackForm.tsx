@@ -25,7 +25,9 @@ interface DynamicFeedbackFormProps {
 // Placeholder component for rendering individual questions
 const QuestionRenderer = React.forwardRef<HTMLDivElement, { question: any, value: any, onChange: (value: any) => void, isInvalid: boolean }>(({ question, value, onChange, isInvalid }, ref) => {
   const labelText = question.question + (question.required ? ' *' : ' (Optional)');
-  const inputClasses = cn(isInvalid && "border-red-500 ring-red-500");
+  
+  // Define classes for invalid state
+  const invalidClasses = isInvalid ? "border-red-500 ring-2 ring-red-500" : "border-muted";
 
   switch (question.type) {
     case 'rating':
@@ -38,7 +40,7 @@ const QuestionRenderer = React.forwardRef<HTMLDivElement, { question: any, value
             scale={question.scale || 5}
             value={value}
             onChange={onChange}
-            className={inputClasses}
+            className={invalidClasses} // Apply invalid classes to the container
           />
         </div>
       );
@@ -51,7 +53,7 @@ const QuestionRenderer = React.forwardRef<HTMLDivElement, { question: any, value
             id={`question-${question.id}`}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            className={cn("bg-muted/50 min-h-[80px]", inputClasses)}
+            className={cn("bg-muted/50 min-h-[80px]", invalidClasses)} // Apply invalid classes directly
           />
         </div>
       );
@@ -65,7 +67,7 @@ const QuestionRenderer = React.forwardRef<HTMLDivElement, { question: any, value
             options={question.options || []}
             value={value || null}
             onChange={onChange}
-            className={inputClasses}
+            className={invalidClasses} // Apply invalid classes to the container
           />
         </div>
       );
@@ -122,7 +124,7 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
     // Clear validation error for this question if it's now answered
     setValidationErrors(prev => {
       const newErrors = { ...prev };
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null && (typeof value === 'string' ? value.trim() !== '' : true)) {
         delete newErrors[questionId];
       }
       return newErrors;

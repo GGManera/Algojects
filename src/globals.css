@@ -70,10 +70,6 @@
 
     /* NEW: Bright green accent border */
     --border-accent-green: 173 76% 53%;
-    
-    /* NEW: Custom colors for Language Selector Glider */
-    --lang-us-red: 0 80% 50%;
-    --lang-br-green: 120 60% 40%;
 
     /* CSS Variables for Header Heights */
     --sticky-header-height: 48px; /* h-12 */
@@ -252,7 +248,8 @@
   }
 
   .glass-radio-group-two-items label {
-    @apply flex-1 flex items-center justify-center min-w-[80px] text-sm px-6 py-3 cursor-pointer;
+    /* Adjusted min-width from 80px to 90px */
+    @apply flex-1 flex items-center justify-center min-w-[90px] text-sm px-6 py-3 cursor-pointer;
     @apply font-semibold tracking-wide relative z-20 transition-colors duration-300 ease-in-out;
     color: var(--foreground);
   }

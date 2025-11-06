@@ -29,8 +29,8 @@ export function LanguageSelector({ disabled = false, className }: LanguageSelect
           value="en"
           id="lang-en" // Unique ID for CSS targeting
           label={
-            <span className="flex items-center justify-center gap-2">
-              <img src="/flag-us.png" alt="US Flag" className="h-5 w-5 rounded-full" />
+            <span className="flex items-center justify-center gap-2 text-xs">
+              <img src="/flag-us.png" alt="US Flag" className="h-5 w-5 rounded-full aspect-square object-cover" />
               English-US
             </span>
           }
@@ -39,8 +39,8 @@ export function LanguageSelector({ disabled = false, className }: LanguageSelect
           value="pt"
           id="lang-pt" // Unique ID for CSS targeting
           label={
-            <span className="flex items-center justify-center gap-2">
-              <img src="/flag-br.png" alt="BR Flag" className="h-5 w-5 rounded-full" />
+            <span className="flex items-center justify-center gap-2 text-xs">
+              <img src="/flag-br.png" alt="BR Flag" className="h-5 w-5 rounded-full aspect-square object-cover" />
               Português-BR
             </span>
           }

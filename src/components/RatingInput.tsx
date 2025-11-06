@@ -19,7 +19,13 @@ export const RatingInput = React.forwardRef<HTMLDivElement, RatingInputProps>(({
 
   const handleClick = (index: number) => {
     if (disabled) return;
-    onChange(index + 1);
+    const newValue = index + 1;
+    // If the clicked value is the same as the current value, deselect (set to null)
+    if (newValue === value) {
+      onChange(null);
+    } else {
+      onChange(newValue);
+    }
   };
 
   const handleMouseEnter = (index: number) => {

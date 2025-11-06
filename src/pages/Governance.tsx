@@ -327,7 +327,7 @@ const GovernancePage = () => {
   return (
     <div className="w-full min-h-screen flex flex-col items-center pt-12">
       <StickyHeader onLogoClick={handleLogoClick} />
-      <div className="py-4 md:p-8 w-full flex flex-col items-center"> {/* Removed px-4, kept py-4 */}
+      <div className="py-4 md:p-8 w-full flex flex-col items-center">
         <h1 className="text-4xl font-bold gradient-text mb-6 px-4 text-center">AlgoJects Governance & Feedback Statistics</h1>
         <p className="text-lg text-muted-foreground mb-4 text-center max-w-2xl px-4">
           This page provides insights into community feedback, which informs the ongoing governance and evolution of AlgoJects.
@@ -406,7 +406,7 @@ const GovernancePage = () => {
                                     {/* RATING: Bar Chart only */}
                                     {qStats.type === 'rating' && (
                                         <ResponsiveContainer width="100%" height={200}>
-                                            <BarChart data={qStats.data}>
+                                            <BarChart data={qStats.data} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}> {/* Adjusted margin: left: 0 */}
                                                 {/* Use CustomStarTick for yellow stars */}
                                                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} />
                                                 <YAxis 

@@ -235,8 +235,8 @@ export function DynamicFeedbackForm({ schema, isEditing, setIsSubmitting }: Dyna
                                 {currentQuestionNumber > 1 && (
                                     <Separator className="my-4 bg-muted-foreground/20" />
                                 )}
-                                <div className="flex items-start space-x-2"> {/* Use flex container */}
-                                    <Label className="text-sm font-bold text-foreground pt-2"> {/* Added pt-2 to align number with text */}
+                                <div className="flex items-baseline space-x-2"> {/* Changed items-start to items-baseline */}
+                                    <Label className="text-base font-bold text-foreground">
                                         {currentQuestionNumber}.
                                     </Label>
                                     <div className="flex-1 space-y-2"> {/* Wrapper for QuestionRenderer content */}

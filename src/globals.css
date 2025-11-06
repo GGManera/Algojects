@@ -70,6 +70,10 @@
 
     /* NEW: Bright green accent border */
     --border-accent-green: 173 76% 53%;
+    
+    /* NEW: Custom colors for Language Selector Glider */
+    --lang-us-red: 0 80% 50%;
+    --lang-br-green: 120 60% 40%;
 
     /* CSS Variables for Header Heights */
     --sticky-header-height: 48px; /* h-12 */
@@ -292,21 +296,23 @@
       0 0 10px hsl(var(--pink-400) / 0.6) inset;
   }
 
-  /* NEW: Glider for Language Selector (using new IDs) */
+  /* NEW: Glider for Language Selector (using new IDs and custom colors) */
+  /* English-US (Red) */
   #lang-en:checked ~ .glass-glider-two-items {
     transform: translateX(0%);
-    background: linear-gradient(135deg, hsl(var(--hodl-blue) / 0.55), hsl(var(--hodl-blue) / 0.8));
+    background: linear-gradient(135deg, hsl(var(--lang-us-red) / 0.55), hsl(var(--lang-us-red) / 0.8));
     box-shadow:
-      0 0 18px hsl(var(--hodl-blue) / 0.5),
-      0 0 10px hsl(var(--hodl-blue) / 0.4) inset;
+      0 0 18px hsl(var(--lang-us-red) / 0.5),
+      0 0 10px hsl(var(--lang-us-red) / 0.4) inset;
   }
 
+  /* Português-BR (Green) */
   #lang-pt:checked ~ .glass-glider-two-items {
     transform: translateX(100%);
-    background: linear-gradient(135deg, hsl(var(--gradient-end) / 0.8), hsl(var(--gradient-start) / 0.9));
+    background: linear-gradient(135deg, hsl(var(--lang-br-green) / 0.8), hsl(var(--lang-br-green) / 0.9));
     box-shadow:
-      0 0 18px hsl(var(--gradient-end) / 0.7),
-      0 0 10px hsl(var(--gradient-start) / 0.6) inset;
+      0 0 18px hsl(var(--lang-br-green) / 0.7),
+      0 0 10px hsl(var(--lang-br-green) / 0.6) inset;
   }
 
 

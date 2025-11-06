@@ -30,7 +30,8 @@ export function LanguageSelector({ disabled = false, className }: LanguageSelect
           id="lang-en" // Unique ID for CSS targeting
           label={
             <span className="flex items-center justify-center gap-2">
-              🇺🇸 English-US
+              <img src="/flag-us.png" alt="US Flag" className="h-5 w-5 rounded-full" />
+              English-US
             </span>
           }
         />
@@ -39,7 +40,8 @@ export function LanguageSelector({ disabled = false, className }: LanguageSelect
           id="lang-pt" // Unique ID for CSS targeting
           label={
             <span className="flex items-center justify-center gap-2">
-              🇧🇷 Português-BR
+              <img src="/flag-br.png" alt="BR Flag" className="h-5 w-5 rounded-full" />
+              Português-BR
             </span>
           }
         />

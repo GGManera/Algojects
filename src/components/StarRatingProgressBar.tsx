@@ -24,14 +24,14 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
   return (
     <div className="flex flex-col space-y-2">
       {/* Removed space-x-1 from the outermost relative container */}
-      <div className="relative flex items-center h-6" title={`Average: ${average.toFixed(1)} / ${scale}`}>
+      <div className="relative flex items-center h-5" title={`Average: ${average.toFixed(1)} / ${scale}`}> {/* Adjusted height to h-5 */}
         
         {/* Background stars (unfilled) */}
         <div className="flex absolute inset-0 items-center space-x-1">
           {Array.from({ length: scale }, (_, index) => (
             <Star
               key={`bg-${index}`}
-              className="h-6 w-6 text-muted-foreground/50"
+              className="h-5 w-5 text-muted-foreground/50" /* Adjusted size to h-5 w-5 */
             />
           ))}
         </div>
@@ -48,10 +48,10 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
               const isPartial = index === fullStars && fractionalPart > 0;
 
               return (
-                <div key={`fg-${index}`} className="relative h-6 w-6 flex-shrink-0">
+                <div key={`fg-${index}`} className="relative h-5 w-5 flex-shrink-0"> {/* Adjusted size to h-5 w-5 */}
                   <Star
                     className={cn(
-                      "h-6 w-6 text-yellow-400",
+                      "h-5 w-5 text-yellow-400", /* Adjusted size to h-5 w-5 */
                       isFull ? "fill-yellow-400" : ""
                     )}
                   />
@@ -61,7 +61,7 @@ export function StarRatingProgressBar({ average, scale, totalResponses }: StarRa
                       className="absolute inset-0 overflow-hidden"
                       style={{ width: `${fractionalPart * 100}%` }}
                     >
-                      <Star className="h-6 w-6 text-yellow-400 fill-yellow-400" />
+                      <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" /> {/* Adjusted size to h-5 w-5 */}
                     </div>
                   )}
                 </div>

@@ -121,14 +121,14 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
         <div className="absolute left-1/2 -translate-x-1/2 flex justify-center z-10">
           <div 
             className={cn(
-              "btn-profile !h-[36px] !px-[10px] !py-[2px] !w-auto !min-w-[90px] !max-w-[135px]", // Adjusted desktop size
-              isMobile && "!h-[32px] !px-[8px] !py-[1px] !min-w-[81px] !max-w-[121.5px]" // Adjusted mobile size
+              "btn-profile !h-[27px] !px-[7px] !py-[1px] !w-auto !min-w-[90px] !max-w-[135px]", // Adjusted desktop size
+              isMobile && "!h-[24.3px] !px-[6px] !py-[1px] !min-w-[81px] !max-w-[121.5px]" // Adjusted mobile size
             )}
             onClick={onCenterButtonClick} // NEW: Add onClick handler
           >
             <strong className={cn(
-              "uppercase text-[12px]", // Adjusted from 10px to 12px
-              isMobile && "text-[11px]" // Adjusted from 9px to 11px
+              "uppercase text-[10px]", // Adjusted from 8.1px to 10px
+              isMobile && "text-[9px]" // Adjusted from 7.29px to 9px
             )}>{currentSlideName}</strong>
             <div id="container-stars">
               <div id="stars"></div>

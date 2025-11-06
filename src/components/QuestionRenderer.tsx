@@ -17,7 +17,7 @@ interface QuestionRendererProps {
 }
 
 // Placeholder component for rendering individual questions
-const QuestionRenderer = React.forwardRef<HTMLDivElement, QuestionRendererProps>(({ question, value, onChange, isInvalid }, ref) => {
+export const QuestionRenderer = React.forwardRef<HTMLDivElement, QuestionRendererProps>(({ question, value, onChange, isInvalid }, ref) => {
   const labelText = question.question + (question.required ? ' *' : ' (Optional)');
   
   // Define classes for invalid state

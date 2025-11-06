@@ -24,6 +24,7 @@ import {
 import { StickyHeader } from '@/components/StickyHeader';
 import { useNavigate } from 'react-router-dom';
 import { StarRatingProgressBar } from '@/components/StarRatingProgressBar'; // NEW: Import StarRatingProgressBar
+import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext'; // Import useAppContextDisplayMode
 
 // Define colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#d0ed57'];
@@ -68,6 +69,7 @@ const GovernancePage = () => {
   const [openVersions, setOpenVersions] = useState<Set<string>>(new Set());
   const [openModules, setOpenModules] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+  const { isMobile } = useAppContextDisplayMode(); // Use context for mobile check
 
   // Fetch form schema
   const { data: schemaResponse, isLoading: schemaLoading, error: schemaError } = useQuery<any, Error>({ // Changed type to any to handle bilingual response
@@ -335,12 +337,21 @@ const GovernancePage = () => {
         </p>
         <p className="text-muted-foreground mb-8">Aggregated data from {responses.length} responses across {sortedVersions.length} form versions.</p>
 
-        <div className="w-full max-w-4xl space-y-6">
+        <div className={cn(
+          "w-full max-w-4xl space-y-6",
+          isMobile && "max-w-none" // Remove max-width on mobile
+        )}>
           {sortedVersions.map(version => {
             const versionStats = aggregatedStats[version];
             const isVersionOpen = openVersions.has(version);
             return (
-              <Card key={version} className="bg-card border-primary/50">
+              <Card 
+                key={version} 
+                className={cn(
+                  "bg-card border-primary/50",
+                  isMobile && "rounded-none border-l-0 border-r-0" // Remove rounded corners and side borders on mobile
+                )}
+              >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 cursor-pointer" onClick={() => toggleVersion(version)}>
                   <CardTitle className="text-xl text-primary">Form Version {version} ({versionStats.totalResponses} responses)</CardTitle>
                   {isVersionOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
@@ -380,7 +391,7 @@ const GovernancePage = () => {
                                 
                                 {/* Display Average for Rating Questions */}
                                 {qStats.type === 'rating' && qStats.average !== undefined && (
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 flex flex-col items-center"> {/* ADDED flex flex-col items-center */}
                                         <p className="text-sm text-hodl-blue font-bold">Average Rating: {formatAverageRating(qStats.average)} / {scale}</p>
                                         <StarRatingProgressBar 
                                             average={qStats.average} 
@@ -396,7 +407,7 @@ const GovernancePage = () => {
                                     {/* RATING: Bar Chart only */}
                                     {qStats.type === 'rating' && (
                                         <ResponsiveContainer width="100%" height={200}>
-                                            <BarChart data={qStats.data}>
+                                            <BarChart data={qStats.data} margin={{ top: 5, right: 0, left: 0, bottom: 5 }}> {/* Adjusted margins */}
                                                 {/* Use CustomStarTick for yellow stars */}
                                                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} />
                                                 <YAxis 
@@ -439,7 +450,7 @@ const GovernancePage = () => {
                                                 </Pie>
                                                 <Tooltip />
                                                 <Legend 
-                                                    wrapperStyle={{ paddingTop: '30px' }} /* Increased padding top to 30px */
+                                                    wrapperStyle={{ paddingTop: '30px' }} 
                                                 />
                                             </PieChart>
                                         </ResponsiveContainer>

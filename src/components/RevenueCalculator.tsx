@@ -331,7 +331,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
               </div>
 
               {/* NEW: Engagement Metrics section (right) */}
-              <div className="border-t md:border-t-0 md:border-l md:pl-6 border-border pt-4 md:pt-0 space-y-2 flex flex-col">
+              <div className="border-t md:border-t-0 md:pl-6 pt-4 md:pt-0 space-y-2 flex flex-col"> {/* Removed md:border-l border-border */}
                 <h4 className="text-lg font-semibold text-center gradient-text">Engagement Metrics</h4>
                 <div className="flex-grow flex flex-col items-center justify-center space-y-4 p-4">
                   <div className="flex items-center justify-between w-full p-2 rounded-md bg-muted/50">
@@ -379,7 +379,7 @@ export function RevenueCalculator({ className, isInsideCarousel = false, focused
               </div>
 
               {/* Top Curators Section (right) */}
-              <div className="border-t md:border-t-0 md:border-l md:pl-6 border-border pt-4 md:pt-0 space-y-2 flex flex-col">
+              <div className="border-t md:border-t-0 md:pl-6 pt-4 md:pt-0 space-y-2 flex flex-col"> {/* Removed md:border-l border-border */}
                 <h4 className="text-lg font-semibold text-center gradient-text">Top Curators</h4>
                 {topCurators.length > 0 ? (
                   <ul className="space-y-2">

@@ -127,9 +127,8 @@ const FeedbackLayout = () => {
             <StickyHeader onLogoClick={handleLogoClick} />
             
             {/* Fixed Language Selector Bar */}
-            <div className="fixed top-[var(--sticky-header-height)] left-0 right-0 z-30 bg-hodl-darker border-b border-border-accent-green h-10 flex items-center justify-center px-2 md:px-4">
-                <div className="flex items-center space-x-2 w-full max-w-3xl">
-                    <div className="flex-grow"></div> {/* Push content to the right */}
+            <div className="fixed top-[var(--sticky-header-height)] left-0 right-0 z-30 bg-hodl-darker border-b border-border-accent-green h-10 flex items-center justify-end px-2 md:px-4">
+                <div className="flex items-center space-x-2">
                     <Label htmlFor="feedback-language" className="text-sm text-muted-foreground">Language:</Label>
                     <Select
                         value={language}

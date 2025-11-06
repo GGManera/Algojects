@@ -17,73 +17,19 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RatingInput } from './RatingInput';
 import { SingleChoiceCardGroup } from './SingleChoiceCardGroup';
 import { useFeedbackLanguage } from '@/contexts/FeedbackLanguageContext'; // Import language context
+import { QuestionRenderer } from './QuestionRenderer'; // Import QuestionRenderer
 
 interface DynamicFeedbackFormProps {
   schema: FormStructure;
   isEditing: boolean;
+  setIsSubmitting: (isSubmitting: boolean) => void; // NEW PROP
 }
 
-// Placeholder component for rendering individual questions
-const QuestionRenderer = React.forwardRef<HTMLDivElement, { question: any, value: any, onChange: (value: any) => void, isInvalid: boolean }>(({ question, value, onChange, isInvalid }, ref) => {
-  const labelText = question.question + (question.required ? ' *' : ' (Optional)');
-  
-  // Define classes for invalid state
-  const invalidClasses = isInvalid ? "border-red-500 ring-2 ring-red-500" : "border-muted";
-
-  switch (question.type) {
-    case 'rating':
-      return (
-        <div className="space-y-2" id={question.id}>
-          <Label htmlFor={`question-${question.id}`}>{labelText}</Label>
-          <RatingInput
-            ref={ref}
-            id={`question-${question.id}`}
-            scale={question.scale || 5}
-            value={value}
-            onChange={onChange}
-            className={invalidClasses} // Apply invalid classes to the container
-          />
-        </div>
-      );
-    case 'text':
-      return (
-        <div className="space-y-2" id={question.id}>
-          <Label htmlFor={`question-${question.id}`}>{labelText}</Label>
-          <Textarea
-            ref={ref as React.Ref<HTMLTextAreaElement>} // Cast ref for textarea
-            id={`question-${question.id}`}
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            className={cn("bg-muted/50 min-h-[80px]", invalidClasses)} // Apply invalid classes directly
-          />
-        </div>
-      );
-    case 'single_choice':
-      return (
-        <div className="space-y-2" id={question.id}>
-          <Label htmlFor={`question-${question.id}`}>{labelText}</Label>
-          <SingleChoiceCardGroup
-            ref={ref}
-            id={`question-${question.id}`}
-            options={question.options || []}
-            value={value || null}
-            onChange={onChange}
-            className={invalidClasses} // Apply invalid classes to the container
-          />
-        </div>
-      );
-    default:
-      return <p className="text-red-500">Unsupported question type: {question.type}</p>;
-  }
-});
-
-QuestionRenderer.displayName = "QuestionRenderer";
-
-export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormProps) {
+export function DynamicFeedbackForm({ schema, isEditing, setIsSubmitting }: DynamicFeedbackFormProps) {
   const { activeAddress } = useWallet();
   const { language } = useFeedbackLanguage(); // Get selected language
   const [responses, setResponses] = useState<Record<string, any>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLocalSubmitting, setIsLocalSubmitting] = useState(false); // Local state for button/form disabling
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
   
   const isUserConnected = !!activeAddress;
@@ -103,7 +49,7 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
 
   // Initialize openModules safely, now based on filteredModules
   const initialOpenModules = useMemo(() => new Set(filteredModules.map(m => m.id)), [filteredModules]);
-  const [openModules, setOpenModules] = useState<Set<string>>(initialOpenModules);
+  const [openModules, setOpenModules] = useState<Set<string>>(() => initialOpenModules);
 
   const allQuestions = useMemo(() => {
     return (filteredModules || []).flatMap(module => (module.questions || []).map((q: any) => ({ ...q, moduleId: module.id })));
@@ -135,7 +81,8 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setIsLocalSubmitting(true);
+    setIsSubmitting(true); // Notify parent
     setValidationErrors({}); // Clear previous errors
 
     const newErrors: Record<string, boolean> = {};
@@ -165,6 +112,7 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
+      setIsLocalSubmitting(false);
       setIsSubmitting(false);
       return;
     }
@@ -193,6 +141,7 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
       console.error(error);
       showError(error instanceof Error ? error.message : "Failed to submit feedback.");
     } finally {
+      setIsLocalSubmitting(false);
       setIsSubmitting(false);
     }
   };
@@ -267,8 +216,8 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
             );
           })}
           
-          <Button type="submit" disabled={isSubmitting} className="w-full">
-            {isSubmitting ? "Submitting..." : "Submit Feedback"}
+          <Button type="submit" disabled={isLocalSubmitting} className="w-full">
+            {isLocalSubmitting ? "Submitting..." : "Submit Feedback"}
           </Button>
         </form>
       </CardContent>

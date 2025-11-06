@@ -12,6 +12,14 @@ import { cn } from '@/lib/utils';
 import { StickyHeader } from '@/components/StickyHeader';
 import { useNavigate } from 'react-router-dom';
 import { FeedbackLanguageProvider, useFeedbackLanguage } from '@/contexts/FeedbackLanguageContext'; // Import context
+import { Label } from '@/components/ui/label'; // Import Label
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"; // Import Select components
 
 // Componente interno para gerenciar o estado e renderizar o formulário
 const FeedbackContent = () => {
@@ -21,6 +29,7 @@ const FeedbackContent = () => {
   const [error, setError] = useState<string | null>(null);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
   const { language, setLanguage } = useFeedbackLanguage(); // Use language context
+  const [isSubmitting, setIsSubmitting] = useState(false); // Added isSubmitting state for Select disabled prop
 
   const adminWallet = import.meta.env.VITE_FEEDBACK_ADMIN_WALLET;
 
@@ -120,6 +129,8 @@ const FeedbackContent = () => {
             <DynamicFeedbackForm 
               schema={activeSchema} 
               isEditing={isAuthorized} 
+              // Pass setIsSubmitting down so the Select component can be disabled during submission
+              setIsSubmitting={setIsSubmitting} 
             />
           )}
         </>

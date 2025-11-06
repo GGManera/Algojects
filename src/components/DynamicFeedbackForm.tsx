@@ -18,6 +18,7 @@ import { RatingInput } from './RatingInput';
 import { SingleChoiceCardGroup } from './SingleChoiceCardGroup';
 import { useFeedbackLanguage } from '@/contexts/FeedbackLanguageContext'; // Import language context
 import { QuestionRenderer } from './QuestionRenderer'; // Import QuestionRenderer
+import { Separator } from '@/components/ui/separator'; // Import Separator
 
 interface DynamicFeedbackFormProps {
   schema: FormStructure;
@@ -205,8 +206,11 @@ export function DynamicFeedbackForm({ schema, isEditing, setIsSubmitting }: Dyna
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {(filteredModules || []).map(module => {
-            const moduleQuestions = visibleQuestions.filter(q => q.moduleId === module.id);
+            const moduleQuestions = allQuestions.filter(q => q.moduleId === module.id);
             const isOpen = openModules.has(module.id);
+            
+            // Track the index of visible questions within this module
+            let visibleQuestionIndex = 0;
 
             return (
               <div key={module.id} className="space-y-4 p-4 border border-muted rounded-lg bg-muted/20">
@@ -217,17 +221,35 @@ export function DynamicFeedbackForm({ schema, isEditing, setIsSubmitting }: Dyna
                 <p className="text-sm text-muted-foreground">{module.description}</p>
                 
                 <CollapsibleContent isOpen={isOpen}>
-                    {moduleQuestions.map(question => (
-                    <div key={question.id} className="pt-2">
-                        <QuestionRenderer
-                        ref={el => { if (el) questionRefs.current.set(question.id, el); else questionRefs.current.delete(question.id); }}
-                        question={question}
-                        value={responses[question.id]}
-                        onChange={(value) => handleResponseChange(question.id, value)}
-                        isInvalid={validationErrors[question.id]}
-                        />
-                    </div>
-                    ))}
+                    {moduleQuestions.map((question, index) => {
+                        const isVisible = visibleQuestions.some(q => q.id === question.id);
+                        
+                        if (!isVisible) return null;
+                        
+                        // Increment visible index only if the question is visible
+                        visibleQuestionIndex++;
+                        const currentQuestionNumber = visibleQuestionIndex;
+
+                        return (
+                            <div key={question.id} className="pt-2">
+                                {currentQuestionNumber > 1 && (
+                                    <Separator className="my-4 bg-muted-foreground/20" />
+                                )}
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-foreground">
+                                        {currentQuestionNumber}.
+                                    </Label>
+                                    <QuestionRenderer
+                                        ref={el => { if (el) questionRefs.current.set(question.id, el); else questionRefs.current.delete(question.id); }}
+                                        question={question}
+                                        value={responses[question.id]}
+                                        onChange={(value) => handleResponseChange(question.id, value)}
+                                        isInvalid={validationErrors[question.id]}
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
                 </CollapsibleContent>
               </div>
             );

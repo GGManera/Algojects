@@ -350,6 +350,11 @@ const GovernancePage = () => {
                             // Fallback scale if not found
                             const scale = originalQuestionDef?.scale || 5;
 
+                            // NEW: Calculate max value for YAxis domain
+                            const maxResponses = qStats.data.length > 0 
+                                ? Math.max(...qStats.data.map(d => d.value)) 
+                                : 1; // Default to 1 if no responses
+
                             return (
                               <div key={questionId} className="border p-3 rounded-md bg-card space-y-3">
                                 <h4 className="text-md font-semibold text-foreground">{qIndex + 1}. {qStats.questionText} ({qStats.totalResponses} responses)</h4>
@@ -368,7 +373,12 @@ const GovernancePage = () => {
                                             <BarChart data={qStats.data}>
                                                 {/* Use CustomStarTick for yellow stars */}
                                                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={<CustomStarTick />} />
-                                                <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+                                                <YAxis 
+                                                    stroke="hsl(var(--muted-foreground))" 
+                                                    allowDecimals={false} 
+                                                    domain={[0, maxResponses]} // Set domain from 0 to maxResponses
+                                                    tickCount={maxResponses + 1} // Ensure all integer ticks are shown
+                                                />
                                                 <Tooltip 
                                                     formatter={(value, name, props) => [`${value} responses`, 'Count']}
                                                     labelFormatter={(label) => `Rating: ${label}`}

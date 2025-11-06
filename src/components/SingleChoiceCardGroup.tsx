@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { CheckCircle } from 'lucide-react';
 
@@ -18,8 +18,29 @@ interface SingleChoiceCardGroupProps {
 }
 
 export const SingleChoiceCardGroup = React.forwardRef<HTMLDivElement, SingleChoiceCardGroupProps>(({ options, value, onChange, disabled = false, className }, ref) => {
+  
+  const gridClasses = useMemo(() => {
+    const count = options.length;
+    
+    // Default for mobile is always 1 column
+    let classes = "grid-cols-1 ";
+
+    if (count === 2 || count === 4) {
+      // 2 or 4 cards -> 2 columns on desktop (sm+)
+      classes += "sm:grid-cols-2 sm:max-w-md mx-auto";
+    } else if (count === 3 || count === 5 || count === 6) {
+      // 3, 5, or 6 cards -> 3 columns on desktop (sm+)
+      classes += "sm:grid-cols-3 sm:max-w-lg mx-auto";
+    } else {
+      // Default fallback for > 6 or other counts: 2 columns
+      classes += "sm:grid-cols-2 sm:max-w-md mx-auto";
+    }
+    
+    return classes;
+  }, [options.length]);
+
   return (
-    <div ref={ref} className={cn("grid grid-cols-1 sm:grid-cols-2 gap-3 p-2 rounded-md border transition-colors duration-200", className)}>
+    <div ref={ref} className={cn(`grid gap-3 p-2 rounded-md border transition-colors duration-200`, gridClasses, className)}>
       {options.map((option) => {
         const isSelected = value === option.id;
         return (
@@ -29,7 +50,7 @@ export const SingleChoiceCardGroup = React.forwardRef<HTMLDivElement, SingleChoi
             onClick={() => !disabled && onChange(option.id)} // Return the ID
             disabled={disabled}
             className={cn(
-              "flex items-center justify-center p-3 rounded-lg border transition-all duration-200 text-center", // Added justify-center and text-center
+              "flex items-center justify-center p-3 rounded-lg border transition-all duration-200 text-center",
               "text-sm font-medium text-foreground",
               disabled ? "bg-muted/30 border-muted-foreground/20 cursor-not-allowed" : "bg-muted/50 border-muted hover:bg-muted/70 cursor-pointer",
               isSelected ? "border-primary bg-primary/20 shadow-md" : ""

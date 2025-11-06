@@ -39,7 +39,7 @@ export const RatingInput = React.forwardRef<HTMLDivElement, RatingInputProps>(({
   };
 
   return (
-    <div ref={ref} className={cn("flex items-center space-x-1 p-2 rounded-md border transition-colors duration-200", className)}>
+    <div ref={ref} className={cn("flex items-center space-x-1 p-2 rounded-md border transition-colors duration-200", className, "justify-center")}>
       {Array.from({ length: scale }, (_, index) => (
         <Star
           key={index}

@@ -169,20 +169,37 @@ export function DynamicFeedbackForm({ schema, isEditing, setIsSubmitting }: Dyna
     );
   }
 
-  const unconnectedExplainer = schema.rendering_rules?.unconnected_user?.explainers?.investor_mode;
+  // --- NEW: Minicard Content Logic ---
+  const submitButtonText = language === 'pt' ? "Enviar" : "Submit Feedback";
+  const explainerTitle = language === 'pt' ? "Modo Explorador" : "Explorer Mode";
+  const explainerText = language === 'pt' 
+    ? "Você pode navegar pelos projetos sem conectar sua carteira. Para interagir com o protocolo (postar uma Avaliação, Comentário, Resposta ou Curtir postagens), você precisa conectar uma carteira .algo."
+    : "You can browse projects without connecting your wallet. To interact with the protocol (post a Review, Comment, Reply, or Like posts), you need to connect a .algo wallet.";
+  const explainerLinkText = language === 'pt' 
+    ? "*você pode obter e configurar seu domínio .algo em NFDomains"
+    : "*you can get and set your .algo domain to your wallet at NFDomains";
+  const explainerLinkUrl = "https://app.nf.domains";
+  // --- END NEW ---
 
   return (
     <Card className="w-full max-w-3xl mx-auto mt-8 bg-card">
       <CardHeader>
         <CardTitle className="gradient-text">AlgoJects Feedback Form - V.{schema.version}</CardTitle>
-        <CardDescription>{schema.metadata.description}</CardDescription>
+        {/* REMOVED: <CardDescription>{schema.metadata.description}</CardDescription> */}
       </CardHeader>
       <CardContent>
-        {!isUserConnected && unconnectedExplainer && (
+        {!isUserConnected && (
           <Alert className="w-full max-w-3xl bg-muted/50 border-hodl-blue text-muted-foreground mb-6">
             <Info className="h-4 w-4 text-hodl-blue" />
-            <AlertTitle className="text-hodl-blue">Investor Mode</AlertTitle>
-            <AlertDescription>{unconnectedExplainer}</AlertDescription>
+            <AlertTitle className="text-hodl-blue">{explainerTitle}</AlertTitle>
+            <AlertDescription>
+              {explainerText}
+              <p className="text-xs italic mt-1">
+                <a href={explainerLinkUrl} target="_blank" rel="noopener noreferrer" className="text-hodl-blue hover:underline">
+                  {explainerLinkText}
+                </a>
+              </p>
+            </AlertDescription>
           </Alert>
         )}
 
@@ -217,7 +234,7 @@ export function DynamicFeedbackForm({ schema, isEditing, setIsSubmitting }: Dyna
           })}
           
           <Button type="submit" disabled={isLocalSubmitting} className="w-full">
-            {isLocalSubmitting ? "Submitting..." : "Submit Feedback"}
+            {isLocalSubmitting ? (language === 'pt' ? "Enviando..." : "Submitting...") : submitButtonText}
           </Button>
         </form>
       </CardContent>

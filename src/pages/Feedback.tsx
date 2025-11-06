@@ -22,14 +22,13 @@ import {
 } from "@/components/ui/select"; // Import Select components
 
 // Componente interno para gerenciar o estado e renderizar o formulário
-const FeedbackContent = () => {
+const FeedbackContent = ({ isSubmitting, setIsSubmitting }: { isSubmitting: boolean, setIsSubmitting: (isSubmitting: boolean) => void }) => { // Receive props
   const { activeAddress } = useWallet();
   const [bilingualSchema, setBilingualSchema] = useState<BilingualFormStructureResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
-  const { language, setLanguage } = useFeedbackLanguage(); // Use language context
-  const [isSubmitting, setIsSubmitting] = useState(false); // Added isSubmitting state for Select disabled prop
+  const { language } = useFeedbackLanguage(); // Use language context
 
   const adminWallet = import.meta.env.VITE_FEEDBACK_ADMIN_WALLET;
 
@@ -69,38 +68,8 @@ const FeedbackContent = () => {
   const editingSchema = bilingualSchema?.schema.en;
   const ptSchemaDraft = bilingualSchema?.schema.pt;
 
-  // Text content based on language
-  const title = language === 'en' ? "AlgoJects Feedback Portal" : "Portal de Feedback AlgoJects";
-  const languageOptions = [
-    { value: 'en', label: 'English' },
-    { value: 'pt', label: 'Português-BR' },
-  ];
-
   return (
-    <div className="p-4 md:p-8 w-full flex flex-col items-center">
-      <h1 className="text-4xl font-bold gradient-text mb-6">{title}</h1>
-      
-      {/* Language Selector */}
-      <div className="w-full max-w-3xl flex justify-end mb-4">
-        <div className="flex items-center space-x-2">
-          <Label htmlFor="feedback-language" className="text-sm text-muted-foreground">Language:</Label>
-          <Select
-            value={language}
-            onValueChange={(value: 'en' | 'pt') => setLanguage(value)}
-            disabled={isSubmitting}
-          >
-            <SelectTrigger id="feedback-language" className="w-[150px] bg-card">
-              <SelectValue placeholder="Select Language" />
-            </SelectTrigger>
-            <SelectContent>
-              {languageOptions.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
+    <div className="p-2 md:p-4 w-full flex flex-col items-center pt-0"> {/* Reduced padding, removed h1 */}
       {loading && (
         <div className="w-full max-w-3xl space-y-4">
           <Skeleton className="h-12 w-full" />
@@ -129,7 +98,6 @@ const FeedbackContent = () => {
             <DynamicFeedbackForm 
               schema={activeSchema} 
               isEditing={isAuthorized} 
-              // Pass setIsSubmitting down so the Select component can be disabled during submission
               setIsSubmitting={setIsSubmitting} 
             />
           )}
@@ -139,22 +107,60 @@ const FeedbackContent = () => {
   );
 };
 
+const FeedbackLayout = () => {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { language, setLanguage } = useFeedbackLanguage();
+    const navigate = useNavigate();
+
+    const handleLogoClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        navigate('/');
+    };
+    
+    const languageOptions = [
+        { value: 'en', label: 'English' },
+        { value: 'pt', label: 'Português-BR' },
+    ];
+
+    return (
+        <div className="w-full min-h-screen flex flex-col items-center">
+            <StickyHeader onLogoClick={handleLogoClick} />
+            
+            {/* Fixed Language Selector Bar */}
+            <div className="fixed top-[var(--sticky-header-height)] left-0 right-0 z-30 bg-hodl-darker border-b border-border-accent-green h-10 flex items-center justify-end px-2 md:px-4">
+                <div className="flex items-center space-x-2">
+                    <Label htmlFor="feedback-language" className="text-sm text-muted-foreground">Language:</Label>
+                    <Select
+                        value={language}
+                        onValueChange={(value: 'en' | 'pt') => setLanguage(value)}
+                        disabled={isSubmitting}
+                    >
+                        <SelectTrigger id="feedback-language" className="w-[150px] bg-card">
+                            <SelectValue placeholder="Select Language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {languageOptions.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            
+            {/* Content starts below the fixed bar */}
+            <div className="pt-[calc(var(--sticky-header-height)+40px)] w-full"> {/* 40px is the height of the fixed bar */}
+                <FeedbackContent isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} />
+            </div>
+        </div>
+    );
+}
+
 // Main Feedback Page component
 const FeedbackPage = () => {
-  const navigate = useNavigate();
-
-  const handleLogoClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    navigate('/');
-  };
-
   return (
-    <div className="w-full min-h-screen flex flex-col items-center pt-12">
-      <StickyHeader onLogoClick={handleLogoClick} />
-      <FeedbackLanguageProvider>
-        <FeedbackContent />
-      </FeedbackLanguageProvider>
-    </div>
+    <FeedbackLanguageProvider>
+        <FeedbackLayout />
+    </FeedbackLanguageProvider>
   );
 };
 

@@ -123,7 +123,7 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
         <div className="absolute left-1/2 -translate-x-1/2 flex justify-center z-10">
           <div 
             className={cn(
-              "btn-profile !w-auto !min-w-[72px] !max-w-[108px]", // Use default btn-profile height (2rem/32px)
+              "btn-profile !w-auto !min-w-[72px] !max-w-[108px] !h-7", // Adjusted height to be slightly less than the bar
             )}
             onClick={onCenterButtonClick} // NEW: Add onClick handler
           >

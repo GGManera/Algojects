@@ -412,11 +412,14 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
   const cardContentMaxHeightClass = useMemo(() => {
     // Desktop/Landscape: Fixed top elements: StickyHeader (48px) + dynamic-nav-buttons-desktop-vertical-gap (12px) + DynamicNavButtons (32px) = 92px.
-    // Mobile Portrait: Fixed top elements: StickyHeader (48px). Fixed bottom elements: MobileBottomBar (64px) + DynamicNavButtons (32px) = 96px.
+    // Mobile Portrait: Fixed top elements: StickyHeader (48px).
+    // The bottom padding is handled by mainBottomPadding in Layout.tsx, so we don't subtract bottom bar heights here.
     if (isMobile && isDeviceLandscape) {
       return "max-h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
     } else if (isMobile && !isDeviceLandscape) {
-      return "max-h-[calc(100vh - var(--sticky-header-height) - var(--total-fixed-bottom-height-mobile) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
+      // In mobile portrait, only subtract the sticky header height from the top.
+      // The bottom padding is handled by the main element in Layout.tsx.
+      return "max-h-[calc(100vh - var(--sticky-header-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
     } else {
       return "max-h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
     }

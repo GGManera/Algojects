@@ -74,30 +74,21 @@
     /* CSS Variables for Header Heights */
     --sticky-header-height: 48px; /* h-12 */
     --dynamic-nav-buttons-height: 32px; /* h-8 */
-    --dynamic-nav-buttons-desktop-vertical-gap: 12px; /* Adjusted from 11px to 12px */
+    --dynamic-nav-buttons-desktop-vertical-gap: 12px;
     --mobile-bottom-bar-height: 64px; /* h-16 */
 
-    /* RECALCULATED: Total fixed height = Header (48) + Gap Above Nav (12) + Nav (32) + Gap Below Nav (12) = 104px */
-    --total-fixed-header-height: calc(
+    /* RECALCULATED: Total fixed height for desktop/landscape (StickyHeader + Gap + DynamicNavButtons) */
+    --total-fixed-top-height-desktop: calc(
       var(--sticky-header-height) + 
-      (2 * var(--dynamic-nav-buttons-desktop-vertical-gap)) +
+      var(--dynamic-nav-buttons-desktop-vertical-gap) +
       var(--dynamic-nav-buttons-height)
-    ); 
+    ); /* 48 + 12 + 32 = 92px */
 
-    /* NEW: CardContent default padding (p-6) */
-    --card-content-padding-y: 48px; /* 24px top + 24px bottom */
-
-    --total-fixed-offset-desktop: calc(
-      var(--sticky-header-height) + 
-      var(--dynamic-nav-buttons-height) +
-      (2 * var(--dynamic-nav-buttons-desktop-vertical-gap))
-    ); /* 48 + 32 + 24 = 104px (Original calculation, kept for reference) */
-
-    --total-fixed-offset-mobile: calc(
-      var(--sticky-header-height) +
+    /* RECALCULATED: Total fixed height for mobile portrait (StickyHeader + DynamicNavButtons + MobileBottomBar) */
+    --total-fixed-bottom-height-mobile: calc(
       var(--mobile-bottom-bar-height) +
       var(--dynamic-nav-buttons-height)
-    ); /* 48 + 64 + 32 = 144px */
+    ); /* 64 + 32 = 96px */
   }
 }
 
@@ -466,8 +457,9 @@
   /* NEW: Scroll margin top to account for all possible fixed headers */
   .scroll-mt-header-offset {
     scroll-margin-top: calc(
-      var(--total-fixed-header-height) + 
-      32px + /* Increased buffer to 32px (104px + 32px = 136px total margin) */
+      var(--sticky-header-height) + 
+      var(--dynamic-nav-buttons-height) +
+      var(--dynamic-nav-buttons-desktop-vertical-gap) +
       env(safe-area-inset-top)
     );
   }

@@ -411,12 +411,14 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
   const cardContentMaxHeightClass = useMemo(() => {
+    // Desktop/Landscape: Fixed top elements: StickyHeader (48px) + dynamic-nav-buttons-desktop-vertical-gap (12px) + DynamicNavButtons (32px) = 92px.
+    // Mobile Portrait: Fixed top elements: StickyHeader (48px). Fixed bottom elements: MobileBottomBar (64px) + DynamicNavButtons (32px) = 96px.
     if (isMobile && isDeviceLandscape) {
-      return "max-h-[calc(100vh-var(--sticky-header-height)-var(--dynamic-nav-buttons-height)-var(--dynamic-nav-buttons-desktop-vertical-gap)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      return "max-h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
     } else if (isMobile && !isDeviceLandscape) {
-      return "max-h-[calc(100vh-var(--sticky-header-height)-var(--dynamic-nav-buttons-height)-var(--mobile-bottom-bar-height)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      return "max-h-[calc(100vh - var(--sticky-header-height) - var(--total-fixed-bottom-height-mobile) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
     } else {
-      return "max-h-[calc(100vh-var(--sticky-header-height)-var(--dynamic-nav-buttons-height)-var(--dynamic-nav-buttons-desktop-vertical-gap)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      return "max-h-[calc(100vh - var(--total-fixed-top-height-desktop) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
     }
   }, [isMobile, isDeviceLandscape]);
 

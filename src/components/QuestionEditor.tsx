@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, PlusCircle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CollapsibleContent } from './CollapsibleContent'; // IMPORT MISSING COMPONENT
+import { CollapsibleContent } from './CollapsibleContent';
 
 interface Question {
   id: string;
@@ -32,14 +32,18 @@ interface QuestionEditorProps {
   index: number;
   onUpdate: (index: number, updatedQuestion: Question) => void;
   onRemove: (index: number) => void;
+  onMoveUp: (index: number) => void; // NEW
+  onMoveDown: (index: number) => void; // NEW
+  onAddBelow: (index: number) => void; // NEW
   moduleId: string;
+  isFirst: boolean; // NEW
+  isLast: boolean; // NEW
 }
 
-export function QuestionEditor({ question, index, onUpdate, onRemove, moduleId }: QuestionEditorProps) {
+export function QuestionEditor({ question, index, onUpdate, onRemove, onMoveUp, onMoveDown, onAddBelow, moduleId, isFirst, isLast }: QuestionEditorProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleUpdate = (field: keyof Question, value: any) => {
-    // Ensure we are creating a new object reference for the question
     const updatedQuestion = { ...question, [field]: value };
     onUpdate(index, updatedQuestion);
   };
@@ -56,7 +60,27 @@ export function QuestionEditor({ question, index, onUpdate, onRemove, moduleId }
           {index + 1}. {question.question || `[${question.type.toUpperCase()}]`}
         </h5>
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onRemove(index); }} className="h-6 w-6 text-destructive hover:text-destructive/90">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => { e.stopPropagation(); onMoveUp(index); }}
+            disabled={isFirst}
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            aria-label="Move question up"
+          >
+            <ArrowUp className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => { e.stopPropagation(); onMoveDown(index); }}
+            disabled={isLast}
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            aria-label="Move question down"
+          >
+            <ArrowDown className="h-3 w-3" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onRemove(index); }} className="h-6 w-6 text-destructive hover:text-destructive/90" aria-label="Remove question">
             <Trash2 className="h-3 w-3" />
           </Button>
           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -162,6 +186,9 @@ export function QuestionEditor({ question, index, onUpdate, onRemove, moduleId }
               />
             </div>
           </div>
+          <Button onClick={() => onAddBelow(index)} className="w-full mt-4" variant="outline">
+            <PlusCircle className="h-4 w-4 mr-2" /> Add Question Below
+          </Button>
         </div>
       </CollapsibleContent>
     </div>

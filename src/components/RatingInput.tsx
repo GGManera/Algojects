@@ -9,9 +9,10 @@ interface RatingInputProps {
   value: number | null; // Current selected rating
   onChange: (newValue: number | null) => void;
   disabled?: boolean;
+  className?: string; // NEW: Add className prop
 }
 
-export function RatingInput({ scale, value, onChange, disabled = false }: RatingInputProps) {
+export const RatingInput = React.forwardRef<HTMLDivElement, RatingInputProps>(({ scale, value, onChange, disabled = false, className }, ref) => {
   const [hoverValue, setHoverValue] = useState<number | null>(null);
 
   const displayValue = hoverValue !== null ? hoverValue : value;
@@ -32,7 +33,7 @@ export function RatingInput({ scale, value, onChange, disabled = false }: Rating
   };
 
   return (
-    <div className="flex items-center space-x-1">
+    <div ref={ref} className={cn("flex items-center space-x-1", className)}>
       {Array.from({ length: scale }, (_, index) => (
         <Star
           key={index}
@@ -50,4 +51,6 @@ export function RatingInput({ scale, value, onChange, disabled = false }: Rating
       ))}
     </div>
   );
-}
+});
+
+RatingInput.displayName = "RatingInput";

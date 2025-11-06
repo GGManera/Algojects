@@ -13,7 +13,7 @@ import { Edit, Hash, CheckCircle, ArrowRight, AlertTriangle, PlusCircle, Setting
 import { toast } from 'sonner';
 import { ModuleEditor } from './ModuleEditor';
 import { cn } from '@/lib/utils';
-import { CommitConfirmationDialog } from './CommitConfirmationDialog'; // NEW Import
+import { CommitConfirmationDialog } from './CommitConfirmationDialog';
 
 interface AdminFormEditorProps {
   currentSchema: FormStructure;
@@ -25,8 +25,8 @@ const FALLBACK_FORM_STRUCTURE_TEMPLATE: Omit<FormStructure, 'rowId'> & { rowId?:
   form_id: "algojects_feedback_master",
   version: "1.3",
   feedback_version: "v1",
-  authorized_wallet: import.meta.env.VITE_FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET", // Changed to import.meta.env
-  project_wallet: import.meta.env.VITE_FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET", // Changed to import.meta.env
+  authorized_wallet: import.meta.env.VITE_FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET",
+  project_wallet: import.meta.env.VITE_FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET",
   hash_verification_required: true,
   metadata: {
     created_at: new Date().toISOString(),
@@ -80,8 +80,8 @@ const normalizeSchema = (schema: FormStructure): FormStructure => {
     normalized.governance.reward_eligibility = normalized.governance.reward_eligibility || {};
     
     // Ensure fixed wallets are set from environment if missing in schema
-    normalized.authorized_wallet = normalized.authorized_wallet || import.meta.env.VITE_FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET"; // Changed to import.meta.env
-    normalized.project_wallet = normalized.project_wallet || import.meta.env.VITE_FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET"; // Changed to import.meta.env
+    normalized.authorized_wallet = normalized.authorized_wallet || import.meta.env.VITE_FEEDBACK_ADMIN_WALLET || "ADMIN_WALLET_NOT_SET";
+    normalized.project_wallet = normalized.project_wallet || import.meta.env.VITE_FEEDBACK_PROJECT_WALLET || "PROJECT_WALLET_NOT_SET";
 
     return normalized;
 };
@@ -106,11 +106,11 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
   
   const [isJsonValid, setIsJsonValid] = useState(true);
   const [isCommitting, setIsCommitting] = useState(false);
-  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false); // NEW State for confirmation dialog
-  const [finalDraftToConfirm, setFinalDraftToConfirm] = useState<FormStructure | null>(null); // NEW State for final draft
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [finalDraftToConfirm, setFinalDraftToConfirm] = useState<FormStructure | null>(null);
 
-  const adminWallet = import.meta.env.VITE_FEEDBACK_ADMIN_WALLET; // Changed to import.meta.env
-  const projectWallet = import.meta.env.VITE_FEEDBACK_PROJECT_WALLET; // Changed to import.meta.env
+  const adminWallet = import.meta.env.VITE_FEEDBACK_ADMIN_WALLET;
+  const projectWallet = import.meta.env.VITE_FEEDBACK_PROJECT_WALLET;
 
   const isAuthorized = useMemo(() => {
     return activeAddress === adminWallet;
@@ -123,7 +123,7 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     const clonedSchema = deepCloneSchema(currentSchema);
     
     // Check if the fetched schema is clearly incomplete (e.g., missing modules array)
-    const isSchemaIncomplete = !clonedSchema.modules || clonedSchema.modules.length === 0; // Use clonedSchema here
+    const isSchemaIncomplete = !clonedSchema.modules || clonedSchema.modules.length === 0;
     
     if (isSchemaIncomplete && currentSchema.rowId) {
         // Se incompleto mas temos rowId, inicializa com o template de fallback
@@ -202,9 +202,30 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
     };
     setStructuredDraft(prev => ({
       ...prev,
-      modules: [...(prev.modules || []), newModule] // Ensure prev.modules is an array
+      modules: [...(prev.modules || []), newModule]
     }));
   }, []);
+
+  // NEW: Functions to reorder modules
+  const handleMoveModuleUp = useCallback((index: number) => {
+    if (index === 0) return;
+    setStructuredDraft(prev => {
+      const newModules = [...(prev.modules || [])];
+      const [movedModule] = newModules.splice(index, 1);
+      newModules.splice(index - 1, 0, movedModule);
+      return { ...prev, modules: newModules };
+    });
+  }, []);
+
+  const handleMoveModuleDown = useCallback((index: number) => {
+    if (index === (structuredDraft.modules || []).length - 1) return;
+    setStructuredDraft(prev => {
+      const newModules = [...(prev.modules || [])];
+      const [movedModule] = newModules.splice(index, 1);
+      newModules.splice(index + 1, 0, movedModule);
+      return { ...prev, modules: newModules };
+    });
+  }, [structuredDraft.modules]);
   
   const handleUpdateMetadata = useCallback((key: keyof FormStructure['metadata'], value: string) => {
     setStructuredDraft(prev => ({
@@ -359,6 +380,10 @@ export function AdminFormEditor({ currentSchema, onSchemaUpdate }: AdminFormEdit
                   index={index}
                   onUpdate={handleUpdateModule}
                   onRemove={handleRemoveModule}
+                  onMoveUp={handleMoveModuleUp} // NEW
+                  onMoveDown={handleMoveModuleDown} // NEW
+                  isFirst={index === 0} // NEW
+                  isLast={index === (structuredDraft.modules || []).length - 1} // NEW
                 />
               ))}
               <Button onClick={handleAddModule} className="w-full" disabled={!isAuthorized || isCommitting}>

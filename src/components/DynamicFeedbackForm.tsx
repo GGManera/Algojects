@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { FormStructure, submitFormResponse } from '@/lib/feedback-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,7 +15,7 @@ import { CollapsibleContent } from './CollapsibleContent';
 import { ChevronDown, ChevronUp, Info, Star } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RatingInput } from './RatingInput';
-import { SingleChoiceCardGroup } from './SingleChoiceCardGroup'; // Importado o novo componente
+import { SingleChoiceCardGroup } from './SingleChoiceCardGroup';
 
 interface DynamicFeedbackFormProps {
   schema: FormStructure;
@@ -23,53 +23,67 @@ interface DynamicFeedbackFormProps {
 }
 
 // Placeholder component for rendering individual questions
-const QuestionRenderer = ({ question, value, onChange }: { question: any, value: any, onChange: (value: any) => void }) => {
-  // Simple rendering logic based on question type
+const QuestionRenderer = React.forwardRef<HTMLDivElement, { question: any, value: any, onChange: (value: any) => void, isInvalid: boolean }>(({ question, value, onChange, isInvalid }, ref) => {
+  const labelText = question.question + (question.required ? ' *' : ' (Optional)');
+  const inputClasses = cn(isInvalid && "border-red-500 ring-red-500");
+
   switch (question.type) {
     case 'rating':
       return (
-        <div className="space-y-2">
-          <Label>{question.question}</Label>
+        <div className="space-y-2" id={question.id}>
+          <Label htmlFor={`question-${question.id}`}>{labelText}</Label>
           <RatingInput
-            scale={question.scale || 5} // Default to 5 if scale is not defined
+            ref={ref}
+            id={`question-${question.id}`}
+            scale={question.scale || 5}
             value={value}
             onChange={onChange}
+            className={inputClasses}
           />
         </div>
       );
     case 'text':
       return (
-        <div className="space-y-2">
-          <Label>{question.question}</Label>
+        <div className="space-y-2" id={question.id}>
+          <Label htmlFor={`question-${question.id}`}>{labelText}</Label>
           <Textarea
+            ref={ref as React.Ref<HTMLTextAreaElement>} // Cast ref for textarea
+            id={`question-${question.id}`}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            className="bg-muted/50 min-h-[80px]"
+            className={cn("bg-muted/50 min-h-[80px]", inputClasses)}
           />
         </div>
       );
     case 'single_choice':
       return (
-        <div className="space-y-2">
-          <Label>{question.question}</Label>
+        <div className="space-y-2" id={question.id}>
+          <Label htmlFor={`question-${question.id}`}>{labelText}</Label>
           <SingleChoiceCardGroup
+            ref={ref}
+            id={`question-${question.id}`}
             options={question.options || []}
             value={value || null}
             onChange={onChange}
+            className={inputClasses}
           />
         </div>
       );
     default:
       return <p className="text-red-500">Unsupported question type: {question.type}</p>;
   }
-};
+});
+
+QuestionRenderer.displayName = "QuestionRenderer";
 
 export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormProps) {
   const { activeAddress } = useWallet();
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
   
   const isUserConnected = !!activeAddress;
+  const questionRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   // Filter modules based on connection status
   const filteredModules = useMemo(() => {
@@ -105,11 +119,52 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
 
   const handleResponseChange = (questionId: string, value: any) => {
     setResponses(prev => ({ ...prev, [questionId]: value }));
+    // Clear validation error for this question if it's now answered
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      if (value !== undefined && value !== null && value !== '') {
+        delete newErrors[questionId];
+      }
+      return newErrors;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setValidationErrors({}); // Clear previous errors
+
+    const newErrors: Record<string, boolean> = {};
+    let firstUnansweredRequiredQuestionId: string | null = null;
+
+    // Validate all visible required questions
+    for (const question of visibleQuestions) {
+      if (question.required) {
+        const answer = responses[question.id];
+        const isAnswerEmpty = (answer === undefined || answer === null || (typeof answer === 'string' && answer.trim() === ''));
+        
+        if (isAnswerEmpty) {
+          newErrors[question.id] = true;
+          if (!firstUnansweredRequiredQuestionId) {
+            firstUnansweredRequiredQuestionId = question.id;
+          }
+        }
+      }
+    }
+
+    setValidationErrors(newErrors);
+
+    if (firstUnansweredRequiredQuestionId) {
+      showError("Please answer all required questions.");
+      // Scroll to the first unanswered required question
+      const element = questionRefs.current.get(firstUnansweredRequiredQuestionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      setIsSubmitting(false);
+      return;
+    }
+
     const toastId = showLoading("Submitting your feedback...");
 
     try {
@@ -121,7 +176,7 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
         responses: responses,
       };
       
-      console.log("[DynamicFeedbackForm] Submitting data:", submissionData); // NEW: Log submission data
+      console.log("[DynamicFeedbackForm] Submitting data:", submissionData);
       
       await submitFormResponse(submissionData);
       
@@ -194,9 +249,11 @@ export function DynamicFeedbackForm({ schema, isEditing }: DynamicFeedbackFormPr
                     {moduleQuestions.map(question => (
                     <div key={question.id} className="pt-2">
                         <QuestionRenderer
+                        ref={el => { if (el) questionRefs.current.set(question.id, el); else questionRefs.current.delete(question.id); }}
                         question={question}
                         value={responses[question.id]}
                         onChange={(value) => handleResponseChange(question.id, value)}
+                        isInvalid={validationErrors[question.id]}
                         />
                     </div>
                     ))}

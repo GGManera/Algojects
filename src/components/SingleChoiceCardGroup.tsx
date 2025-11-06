@@ -9,11 +9,12 @@ interface SingleChoiceCardGroupProps {
   value: string | null;
   onChange: (newValue: string) => void;
   disabled?: boolean;
+  className?: string; // NEW: Add className prop
 }
 
-export function SingleChoiceCardGroup({ options, value, onChange, disabled = false }: SingleChoiceCardGroupProps) {
+export const SingleChoiceCardGroup = React.forwardRef<HTMLDivElement, SingleChoiceCardGroupProps>(({ options, value, onChange, disabled = false, className }, ref) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div ref={ref} className={cn("grid grid-cols-1 sm:grid-cols-2 gap-3", className)}>
       {options.map((option) => {
         const isSelected = value === option;
         return (
@@ -36,4 +37,6 @@ export function SingleChoiceCardGroup({ options, value, onChange, disabled = fal
       })}
     </div>
   );
-}
+});
+
+SingleChoiceCardGroup.displayName = "SingleChoiceCardGroup";

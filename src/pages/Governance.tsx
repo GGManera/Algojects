@@ -170,6 +170,7 @@ const GovernancePage = () => {
     const questionDefinitionsMap = new Map<string, any>();
     (schema.modules || []).forEach(moduleDef => {
       (moduleDef.questions || []).forEach((q: any) => {
+        // Store question definition including its module context
         questionDefinitionsMap.set(q.id, { ...q, moduleId: moduleDef.id, moduleTitle: moduleDef.title });
       });
     });
@@ -193,10 +194,12 @@ const GovernancePage = () => {
         if (userAnswer !== undefined && userAnswer !== null && userAnswer !== '') {
           const questionDef = questionDefinitionsMap.get(questionId);
           
-          const moduleId = questionDef?.moduleId || 'unknown_module';
-          const moduleTitle = questionDef?.moduleTitle || 'Unknown Module';
-          const questionText = questionDef?.question || `Unknown Question ID: ${questionId}`;
-          const questionType = questionDef?.type || 'text';
+          // FIX 1: Skip if the question is not defined in the current schema (prevents 'Unknown Module')
+          if (!questionDef) continue; 
+          
+          const moduleId = questionDef.moduleId;
+          const moduleTitle = questionDef.moduleTitle;
+          const questionType = questionDef.type || 'text';
 
           if (!stats[version].modules[moduleId]) {
             stats[version].modules[moduleId] = {
@@ -210,7 +213,8 @@ const GovernancePage = () => {
 
           if (!stats[version].modules[moduleId].questions[questionId]) {
             stats[version].modules[moduleId].questions[questionId] = {
-              questionText,
+              // FIX 2: Ensure questionText is correctly sourced from questionDef
+              questionText: questionDef.question, 
               type: questionType,
               totalResponses: 0,
               data: [],
@@ -247,6 +251,8 @@ const GovernancePage = () => {
     Object.values(stats).forEach(versionStat => {
       (schema.modules || []).forEach(moduleDef => {
         const moduleId = moduleDef.id;
+        
+        // Ensure module exists in stats (it might not if no responses matched any question in it)
         if (!versionStat.modules[moduleId]) {
           versionStat.modules[moduleId] = {
             moduleId,
@@ -255,10 +261,13 @@ const GovernancePage = () => {
             questions: {},
           };
         }
+        
+        // Now iterate over questions defined in the schema
         (moduleDef.questions || []).forEach((questionDef: any) => {
           const questionId = questionDef.id;
           const questionType = questionDef.type;
           
+          // Ensure question exists in stats (it might not if no responses matched it)
           if (!versionStat.modules[moduleId].questions[questionId]) {
             versionStat.modules[moduleId].questions[questionId] = {
               questionText: questionDef.question,
@@ -397,6 +406,9 @@ const GovernancePage = () => {
     );
   }
 
+  // Create a set of valid module IDs for rendering
+  const validModuleIds = new Set((schema.modules || []).map(m => m.id));
+
   return (
     <div className="w-full min-h-screen flex flex-col items-center pt-12">
       <StickyHeader onLogoClick={handleLogoClick} />
@@ -429,7 +441,9 @@ const GovernancePage = () => {
                   {isVersionOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                 </CardHeader>
                 <CollapsibleContent isOpen={isVersionOpen} className="p-0 space-y-6 md:p-4 md:pt-0">
-                  {Object.values(versionStats.modules).map(moduleStats => {
+                  {Object.values(versionStats.modules)
+                    .filter(moduleStats => validModuleIds.has(moduleStats.moduleId)) // Filter out modules not in the current schema
+                    .map(moduleStats => {
                     const isModuleOpen = openModules.has(moduleStats.moduleId);
                     return (
                       <Card 

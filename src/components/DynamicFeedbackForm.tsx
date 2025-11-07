@@ -32,6 +32,7 @@ export function DynamicFeedbackForm({ schema, isEditing, setIsSubmitting }: Dyna
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false); // Local state for button/form disabling
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
+  const [isExplainerOpen, setIsExplainerOpen] = useState(false); // NEW state for explainer
   
   const isUserConnected = !!activeAddress;
   const questionRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -194,17 +195,30 @@ export function DynamicFeedbackForm({ schema, isEditing, setIsSubmitting }: Dyna
       </CardHeader>
       <CardContent>
         {!isUserConnected && (
-          <Alert className="w-full max-w-3xl bg-muted/50 border-hodl-blue text-muted-foreground mb-6">
-            <Info className="h-4 w-4 text-hodl-blue" />
-            <AlertTitle className="text-hodl-blue">{explainerTitle}</AlertTitle>
-            <AlertDescription>
-              {explainerText}
-              <p className="text-xs italic mt-1">
-                <a href={explainerLinkUrl} target="_blank" rel="noopener noreferrer" className="text-hodl-blue hover:underline">
-                  {explainerLinkText}
-                </a>
-              </p>
-            </AlertDescription>
+          <Alert className="w-full max-w-3xl bg-muted/50 border-hodl-blue text-muted-foreground mb-6 p-0">
+            {/* Collapsible Trigger Header */}
+            <div 
+              className="flex items-center justify-between p-4 cursor-pointer"
+              onClick={() => setIsExplainerOpen(prev => !prev)}
+            >
+              <div className="flex items-center space-x-2">
+                <Info className="h-4 w-4 text-hodl-blue" />
+                <AlertTitle className="text-hodl-blue m-0">{explainerTitle}</AlertTitle>
+              </div>
+              {isExplainerOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
+            
+            {/* Collapsible Content Body */}
+            <CollapsibleContent isOpen={isExplainerOpen} className="px-4 pb-4 pt-0">
+              <AlertDescription>
+                {explainerText}
+                <p className="text-xs italic mt-1">
+                  <a href={explainerLinkUrl} target="_blank" rel="noopener noreferrer" className="text-hodl-blue hover:underline">
+                    {explainerLinkText}
+                  </a>
+                </p>
+              </AlertDescription>
+            </CollapsibleContent>
           </Alert>
         )}
 

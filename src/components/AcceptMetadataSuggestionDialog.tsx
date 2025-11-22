@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,7 @@ import { acceptMetadataSuggestionAndReward } from '@/lib/coda'; // Import the ne
 import { PaymentConfirmationDialog } from './PaymentConfirmationDialog'; // Import PaymentConfirmationDialog
 import { useSettings } from '@/hooks/useSettings';
 import { toast } from 'sonner';
+import { PROTOCOL_ADDRESS } from '@/lib/social'; // Import PROTOCOL_ADDRESS
 
 const SUGGESTION_REWARD_ALGO = 0.1;
 const TRANSACTION_TIMEOUT_MS = 60000;
@@ -95,7 +96,9 @@ export function AcceptMetadataSuggestionDialog({
   // Parse the suggested JSON content (the delta) when the dialog opens or suggestion changes
   useMemo(() => {
     try {
-      const parsed = JSON.parse(suggestion.content);
+      // IMPORTANT: Add trim() here
+      const trimmedContent = suggestion.content.trim();
+      const parsed = JSON.parse(trimmedContent);
       if (Array.isArray(parsed)) {
         setSuggestedDelta(parsed as ProjectMetadata);
         setParseError(null);

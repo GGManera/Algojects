@@ -41,7 +41,8 @@ export function ProjectMetadataSuggestionsList({
   const [isPendingListOpen, setIsPendingListOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
 
-  if (allSuggestions.length === 0) {
+  // If no user is connected and there are no suggestions, return null immediately.
+  if (!activeAddress && allSuggestions.length === 0) {
     return (
       <Alert className="bg-muted/50 border-muted text-muted-foreground">
         <Hash className="h-4 w-4" />
@@ -50,6 +51,10 @@ export function ProjectMetadataSuggestionsList({
       </Alert>
     );
   }
+  
+  // If connected but no suggestions, show the default message (handled by the return below)
+  if (allSuggestions.length === 0) return null;
+
 
   // Helper to parse the JSON delta for display
   const getDeltaPreview = (content: string) => {
@@ -61,6 +66,7 @@ export function ProjectMetadataSuggestionsList({
         return `Changes proposed for: ${titles}`;
       }
     } catch (e) {
+      // If parsing fails, return the error message
       return "Invalid JSON content (Review required)";
     }
     return "Empty or invalid suggestion content.";
@@ -132,8 +138,8 @@ export function ProjectMetadataSuggestionsList({
         </div>
       )}
       
-      {/* 3. General Pending Suggestions (Visible to ALL non-editors, including non-connected users) */}
-      {!isWhitelistedEditor && pendingSuggestions.length > 0 && (
+      {/* 3. General Pending Suggestions (Visible to ALL connected non-editors) */}
+      {activeAddress && !isWhitelistedEditor && pendingSuggestions.length > 0 && (
         <div className="space-y-2 border rounded-lg p-4 bg-muted/30 border-muted-foreground/50">
           <div 
             className="flex items-center justify-between cursor-pointer"

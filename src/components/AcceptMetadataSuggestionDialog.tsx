@@ -19,6 +19,7 @@ import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { showError, showSuccess, showLoading, dismissToast } from '@/utils/toast';
 import { useWallet } from '@txnlab/use-wallet-react';
 import { ProjectMetadata } from '@/types/project';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"; // IMPORT CORRIGIDO
 
 interface AcceptMetadataSuggestionDialogProps {
   isOpen: boolean;

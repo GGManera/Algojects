@@ -17,6 +17,7 @@ import { retryFetch } from "@/utils/api";
 import { ProjectMetadata, MetadataItem } from '@/types/project';
 import { ArrowRight, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"; // IMPORT CORRIGIDO
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const MAX_NOTE_SIZE_BYTES = 1024;

@@ -10,9 +10,9 @@ import { AlertTriangle, Hash, CheckCircle, XCircle, ChevronDown, ChevronUp, Arro
 import { cn, formatTimestamp } from '@/lib/utils';
 import { CollapsibleContent } from './CollapsibleContent';
 import { useWallet } from '@txnlab/use-wallet-react';
-import { SuggestedMetadataItem } from './SuggestedMetadataItem';
-import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { SuggestedMetadataItem } from './SuggestedMetadataItem'; // Import new component
+import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext'; // Import context
+import { ScrollArea } from '@/components/ui/scroll-area'; // Import ScrollArea
 
 interface ProjectMetadataSuggestionsListProps {
   project: Project;
@@ -33,7 +33,10 @@ export function ProjectMetadataSuggestionsList({
   const { isMobile } = useAppContextDisplayMode();
   const allSuggestions = useMemo(() => Object.values(project.proposedNoteEdits || {}), [project.proposedNoteEdits]);
   
+  // Filter suggestions based on status (currently only 'pending' is possible via on-chain note)
   const pendingSuggestions = allSuggestions.filter(s => s.status === 'pending');
+  
+  // Filter suggestions made by the current user
   const userSuggestions = useMemo(() => {
     if (!activeAddress) return [];
     return allSuggestions.filter(s => s.sender === activeAddress);
@@ -41,7 +44,7 @@ export function ProjectMetadataSuggestionsList({
 
   const [isPendingListOpen, setIsPendingListOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
-  const [expandedSuggestionId, setExpandedSuggestionId] = useState<string | null>(null);
+  const [expandedSuggestionId, setExpandedSuggestionId] = useState<string | null>(null); // NEW state for individual expansion
 
   if (!activeAddress && allSuggestions.length === 0) {
     return (
@@ -64,7 +67,7 @@ export function ProjectMetadataSuggestionsList({
         return parsed as ProjectMetadata;
       }
     } catch (e) {
-      return null;
+      // console.error("Failed to parse suggestion JSON:", e, "Raw content:", content);
     }
     return null;
   };
@@ -108,14 +111,7 @@ export function ProjectMetadataSuggestionsList({
                 
                 <div className="flex items-center space-x-2">
                     {isEditorView && (
-                        <Button 
-                            size="sm" 
-                            onClick={(e) => { 
-                                e.stopPropagation(); 
-                                onReviewSuggestion(suggestion); // Correctly triggers the modal
-                            }} 
-                            className="bg-green-600 hover:bg-green-700"
-                        >
+                        <Button size="sm" onClick={(e) => { e.stopPropagation(); onReviewSuggestion(suggestion); }} className="bg-green-600 hover:bg-green-700">
                             Review & Accept
                             <ArrowRight className="h-4 w-4 ml-2" />
                         </Button>
@@ -124,7 +120,7 @@ export function ProjectMetadataSuggestionsList({
                 </div>
             </div>
             
-            {/* Collapsible Content: Mapped Delta Fields */}
+            {/* Collapsible Content */}
             <CollapsibleContent isOpen={isExpanded}>
                 <div className="space-y-3 pt-2">
                     <h4 className="text-sm font-semibold text-primary">Suggested Changes (Delta):</h4>
@@ -141,7 +137,10 @@ export function ProjectMetadataSuggestionsList({
                         ))}
                     </div>
                     
-                    {/* Removed Raw JSON Delta */}
+                    <h4 className="text-sm font-semibold text-muted-foreground pt-2">Raw JSON Delta:</h4>
+                    <ScrollArea className="h-[100px] border rounded-md p-2 bg-muted/20 font-mono text-xs">
+                        <pre className="whitespace-pre-wrap break-all selectable-text">{suggestion.content}</pre>
+                    </ScrollArea>
                 </div>
             </CollapsibleContent>
         </div>

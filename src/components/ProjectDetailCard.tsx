@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { ProjectMetadataSuggestionForm } from "./ProjectMetadataSuggestionForm";
 import { AcceptMetadataSuggestionDialog } from "./AcceptMetadataSuggestionDialog";
 import { CollapsibleContent } from "./CollapsibleContent";
+import { MetadataSuggestionSelector } from "./MetadataSuggestionSelector"; // NEW Import
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
@@ -149,6 +150,11 @@ export function ProjectDetailCard({
   const [currentUserHolding, setCurrentUserHolding] = useState<CurrentUserProjectHolding | null>(null);
   const [tokenHoldingsLoading, setTokenHoldingsLoading] = useState(true);
   const [assetHoldersError, setAssetHoldersError] = useState<string | null>(null);
+  
+  // NEW: State to manage the specific item being edited in the suggestion form
+  const [itemToSuggestEdit, setItemToSuggestEdit] = useState<MetadataItem | undefined>(undefined);
+  const [isSuggestionSelectorOpen, setIsSuggestionSelectorOpen] = useState(false);
+
 
   const stats: ProjectStats = useMemo(() => {
     let reviewsCount = 0, commentsCount = 0, repliesCount = 0, likesCount = 0;
@@ -337,6 +343,25 @@ export function ProjectDetailCard({
 
   const handleViewModeClick = useCallback((mode: 'reviews' | 'comments' | 'replies' | 'interactions') => setViewMode(mode), []);
 
+  // --- Suggestion Selector Handlers ---
+  const handleSelectEditExisting = useCallback((item: MetadataItem) => {
+    setItemToSuggestEdit(item);
+    setIsSuggestionSelectorOpen(false);
+    setShowMetadataSuggestionForm(true);
+  }, []);
+
+  const handleSelectNewSuggestion = useCallback(() => {
+    setItemToSuggestEdit(undefined);
+    setIsSuggestionSelectorOpen(false);
+    setShowMetadataSuggestionForm(true);
+  }, []);
+
+  const handleCancelSuggestionForm = useCallback(() => {
+    setShowMetadataSuggestionForm(false);
+    setIsSuggestionSelectorOpen(true); // Go back to selector
+    setItemToSuggestEdit(undefined);
+  }, []);
+
   const StatsGrid = (
     <div className="grid gap-4 text-sm text-muted-foreground md:grid-cols-2 md:w-full">
       <div className={cn("flex flex-col items-center space-y-1 cursor-pointer transition-colors hover:bg-muted/50 rounded-lg p-2 col-span-2", viewMode === 'interactions' && "bg-primary/20 border border-primary")} onClick={() => handleViewModeClick('interactions')}>
@@ -386,13 +411,17 @@ export function ProjectDetailCard({
               if (isWhitelistedEditor) {
                 setShowProjectDetailsForm(prev => !prev);
                 setShowMetadataSuggestionForm(false);
+                setIsSuggestionSelectorOpen(false);
               } else {
-                setShowMetadataSuggestionForm(prev => !prev);
+                // Toggle the selector view
+                setIsSuggestionSelectorOpen(prev => !prev);
                 setShowProjectDetailsForm(false);
+                setShowMetadataSuggestionForm(false);
+                setItemToSuggestEdit(undefined);
               }
             }} 
             className="absolute top-2 left-2 z-10 h-8 w-8 text-muted-foreground hover:text-foreground" 
-            aria-label={isWhitelistedEditor ? "Toggle project details form" : "Toggle metadata suggestion form"}
+            aria-label={isWhitelistedEditor ? "Toggle project details form" : "Toggle metadata suggestion selector"}
           >
             <Edit className="h-4 w-4" />
           </Button>
@@ -453,13 +482,28 @@ export function ProjectDetailCard({
                 />
               </CollapsibleContent>
             ) : (
-              <CollapsibleContent isOpen={showMetadataSuggestionForm}>
-                <ProjectMetadataSuggestionForm 
-                  project={project} 
-                  onInteractionSuccess={onInteractionSuccess} 
-                  initialMetadata={projectMetadata}
-                />
-              </CollapsibleContent>
+              <>
+                {/* Suggestion Selector */}
+                <CollapsibleContent isOpen={isSuggestionSelectorOpen}>
+                  <MetadataSuggestionSelector
+                    initialMetadata={projectMetadata}
+                    onSelectEdit={handleSelectEditExisting}
+                    onSelectNew={handleSelectNewSuggestion}
+                    disabled={!activeAddress}
+                  />
+                </CollapsibleContent>
+
+                {/* Suggestion Form (Hidden until item is selected or new is chosen) */}
+                <CollapsibleContent isOpen={showMetadataSuggestionForm}>
+                  <ProjectMetadataSuggestionForm 
+                    project={project} 
+                    onInteractionSuccess={onInteractionSuccess} 
+                    initialMetadata={projectMetadata}
+                    onCancel={handleCancelSuggestionForm}
+                    initialItem={itemToSuggestEdit}
+                  />
+                </CollapsibleContent>
+              </>
             )}
           </div>
 

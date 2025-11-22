@@ -38,12 +38,18 @@ interface TransactionDisplayItem {
 interface ProjectMetadataSuggestionFormProps {
   project: Project;
   onInteractionSuccess: () => void;
-  initialMetadata: ProjectMetadata; // Still useful for context, but not for editing
+  initialMetadata: ProjectMetadata;
+  onCancel: () => void; // NEW: Prop to handle cancellation/back button
+  initialItem?: MetadataItem; // NEW: Optional item to pre-fill for editing
 }
 
-export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, initialMetadata }: ProjectMetadataSuggestionFormProps) {
-  // State now holds ONLY the items the user is suggesting to add/edit
-  const [suggestedItems, setSuggestedItems] = useState<ProjectMetadata>([]);
+export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, initialMetadata, onCancel, initialItem }: ProjectMetadataSuggestionFormProps) {
+  // Initialize state with initialItem if provided, otherwise start empty
+  const initialSuggestedItems: ProjectMetadata = useMemo(() => {
+    return initialItem ? [initialItem] : [];
+  }, [initialItem]);
+
+  const [suggestedItems, setSuggestedItems] = useState<ProjectMetadata>(initialSuggestedItems);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -54,6 +60,11 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
   const { activeAddress, transactionSigner, algodClient } = useWallet();
   const { nfd, loading: nfdLoading } = useNfd(activeAddress);
   const { settings } = useSettings();
+
+  // Reset state when initialItem changes (e.g., user selects a different item to edit)
+  useEffect(() => {
+    setSuggestedItems(initialSuggestedItems);
+  }, [initialSuggestedItems]);
 
   // Handlers now operate on suggestedItems state
   const handleUpdateMetadataItem = useCallback((index: number, field: keyof MetadataItem, value: string) => {
@@ -203,6 +214,7 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
       toast.success("Metadata suggestion submitted successfully!", { id: loadingToastIdRef.current });
       setSuggestedItems([]); // Clear form on success
       onInteractionSuccess(); // Refetch social data to see the suggestion
+      onCancel(); // Close the form
     } catch (error) {
       console.error(error);
       toast.error(error instanceof Error ? error.message : "An unknown error occurred during execution.", { id: loadingToastIdRef.current });
@@ -235,11 +247,20 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
   return (
     <>
       <div className="space-y-4">
+        <Button 
+          variant="outline" 
+          onClick={onCancel} 
+          disabled={isLoading} 
+          className="w-full justify-start text-left border-muted-foreground/50 text-muted-foreground hover:bg-muted/50"
+        >
+          <ArrowRight className="h-4 w-4 mr-2 rotate-180" /> Back to Selector
+        </Button>
+
         <Alert className="bg-muted/50 border-hodl-blue text-muted-foreground">
             <Hash className="h-4 w-4 text-hodl-blue" />
             <AlertTitle className="text-hodl-blue">Suggest Metadata Edit (Delta)</AlertTitle>
             <AlertDescription>
-                Add or edit specific metadata fields below. Only the fields you add here will be submitted as a suggestion delta. A small fee of 0.1 ALGO applies.
+                {initialItem ? `Editing existing field: ${initialItem.title}.` : "Add new metadata fields below."} Only the fields you add here will be submitted as a suggestion delta. A small fee of 0.1 ALGO applies.
             </AlertDescription>
         </Alert>
         
@@ -256,14 +277,17 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
               disabled={inputDisabled}
             />
           ))}
-          <Button
-            variant="outline"
-            onClick={handleAddMetadataItem}
-            disabled={inputDisabled}
-            className="w-full mt-2"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" /> Add New Metadata Field
-          </Button>
+          {/* Only allow adding new items if we are not in single-item edit mode */}
+          {!initialItem && (
+            <Button
+              variant="outline"
+              onClick={handleAddMetadataItem}
+              disabled={inputDisabled}
+              className="w-full mt-2"
+            >
+              <PlusCircle className="h-4 w-4 mr-2" /> Add New Metadata Field
+            </Button>
+          )}
         </div>
         
         <Button onClick={handleSubmit} disabled={canSubmit} className="w-full">

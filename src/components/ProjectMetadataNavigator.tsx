@@ -87,31 +87,42 @@ const renderMetadataItem = (
     buttonText = item.title || "Link";
   }
 
-  // Determine the onClick handler
-  const clickHandler = (e: React.MouseEvent) => {
+  // Define the action handler based on item type
+  const actionHandler = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isAssetIdItem) {
-      handleCopyClick(e, item.value, true);
-    } else if (item.type === 'url' || item.type === 'x-url' || item.value.startsWith('http')) {
+    
+    if (item.type === 'url' || item.type === 'x-url' || (item.value.startsWith('http') && !item.type)) {
+      // Action: Open URL
       window.open(item.value, '_blank');
+    } else if (item.type === 'x-url' || item.value.includes('x.com') || item.value.includes('twitter.com')) {
+      // Action: Open X URL
+      window.open(item.value, '_blank');
+    } else if (isAssetIdItem) {
+      // Action: Copy Asset ID (with reveal logic handled internally by handleCopyClick)
+      handleCopyClick(e, item.value, true);
     } else if (item.type === 'address' || item.value.length === 58) {
-      // For addresses, clicking navigates to profile
-      // Note: UserDisplay handles navigation internally if linkTo is set
+      // Action: Copy Address (Navigation is handled by UserDisplay component inside the div)
+      handleCopyClick(e, item.value, false);
     } else {
-      // Default action for text/other types is copy
+      // Default Action: Copy Value
       handleCopyClick(e, item.value, false);
     }
   };
 
-  if (item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com'))) {
+  // --- Render Logic ---
+
+  // 1. Render as a Profile Button (URL, X-URL, Asset ID)
+  if (item.type === 'url' || item.type === 'x-url' || isAssetIdItem || (item.value.startsWith('http') && !item.type)) {
     return (
       <div
         key={index}
         className={cn("btn-profile", baseItemClasses)}
-        onClick={clickHandler}
+        onClick={actionHandler} // Use the defined action handler
         data-nav-id={`meta-${item.title}-${index}`}
       >
-        <strong className="uppercase">{item.title || extractDomainFromUrl(item.value)}</strong>
+        <strong className={cn("uppercase", isNumericDisplay && "font-numeric !text-base !tracking-normal")}>
+          {buttonText}
+        </strong>
         <div id="container-stars">
           <div id="stars"></div>
         </div>
@@ -121,45 +132,17 @@ const renderMetadataItem = (
         </div>
       </div>
     );
-  } else if (item.type === 'x-url' || item.value.includes('x.com') || item.value.includes('twitter.com')) {
+  } 
+  
+  // 2. Render as a User Display Card (Address)
+  else if (item.type === 'address' || item.value.length === 58) {
     return (
-      <div
-        key={index}
-        className={cn("btn-profile", baseItemClasses)}
-        onClick={clickHandler}
+      <div 
+        key={index} 
+        className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", baseItemClasses)} 
         data-nav-id={`meta-${item.title}-${index}`}
+        onClick={actionHandler} // Use the defined action handler (will default to copy address)
       >
-        <strong className="uppercase">{item.title || extractXHandleFromUrl(item.value)}</strong>
-        <div id="container-stars">
-          <div id="stars"></div>
-        </div>
-        <div id="glow">
-          <div className="circle"></div>
-          <div className="circle"></div>
-        </div>
-      </div>
-    );
-  } else if (isAssetIdItem) { // Asset ID logic
-    return (
-      <div
-        key={index}
-        className={cn("btn-profile", baseItemClasses)}
-        onClick={clickHandler}
-        data-nav-id={`meta-${item.title}-${index}`}
-      >
-        <strong className={cn("uppercase", isNumericDisplay && "font-numeric !text-base !tracking-normal")}>{buttonText}</strong>
-        <div id="container-stars">
-          <div id="stars"></div>
-        </div>
-        <div id="glow">
-          <div className="circle"></div>
-          <div className="circle"></div>
-        </div>
-      </div>
-    );
-  } else if (item.type === 'address' || item.value.length === 58) {
-    return (
-      <div key={index} className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", baseItemClasses)} data-nav-id={`meta-${item.title}-${index}`}>
         <span className="font-semibold text-muted-foreground text-xs">{item.title || 'Address'}:</span>
         <UserDisplay
           address={item.value}
@@ -171,9 +154,17 @@ const renderMetadataItem = (
         />
       </div>
     );
-  } else {
+  } 
+  
+  // 3. Render as a Generic Text Card (Text, Asset Unit Name, etc.)
+  else {
     return (
-      <div key={index} className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", baseItemClasses)} data-nav-id={`meta-${item.title}-${index}`}>
+      <div 
+        key={index} 
+        className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center", baseItemClasses)} 
+        data-nav-id={`meta-${item.title}-${index}`}
+        onClick={actionHandler} // Use the defined action handler (will default to copy value)
+      >
         <span className="font-semibold text-muted-foreground text-xs">{item.title}:</span>
         <p className="text-sm text-foreground selectable-text">{item.value}</p>
       </div>
@@ -243,6 +234,7 @@ export function ProjectMetadataNavigator({
       const toggleExpand = () => {
         const element = document.querySelector(`[data-nav-id="${id}"]`);
         if (element) {
+          // Simulate a click on the element to trigger the actionHandler defined in renderMetadataItem
           (element as HTMLElement).click();
         }
       };
@@ -322,7 +314,7 @@ export function ProjectMetadataNavigator({
     e.stopPropagation();
     
     if (!isAssetId) {
-      // Default copy action for non-Asset ID items
+      // Default copy action for non-Asset ID items (e.g., generic text, address)
       if (value) {
         try {
           await navigator.clipboard.writeText(value);
@@ -432,15 +424,7 @@ export function ProjectMetadataNavigator({
             ),
             onMouseEnter: isAssetIdItem && !isMobile ? () => setHoveredAssetId(id) : undefined,
             onMouseLeave: isAssetIdItem && !isMobile ? () => setHoveredAssetId(null) : undefined,
-            onClick: (e: React.MouseEvent) => {
-              // Handle click for non-Asset ID items or Asset ID items on desktop (copy)
-              if (!isAssetIdItem || !isMobile) {
-                handleCopyClick(e, item.value, isAssetIdItem);
-              } else {
-                // Mobile Asset ID: use the internal click handler logic
-                handleCopyClick(e, item.value, isAssetIdItem);
-              }
-            },
+            // REMOVED the overriding onClick logic here. The onClick defined in renderMetadataItem (actionHandler) will now be used.
             onFocus: () => {
               // Ensure keyboard focus also reveals the ID on desktop
               if (isAssetIdItem && !isMobile) setHoveredAssetId(id);

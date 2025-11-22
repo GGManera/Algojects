@@ -1,23 +1,23 @@
 "use client";
 
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useWallet } from "@txnlab/use-wallet-react";
 import algosdk from "algosdk";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { PROTOCOL_ADDRESS, getNextProposedNoteEditId, generateHash } from "@/lib/social";
-import { Project, ProjectsData } from "@/types/social";
+import { Project } from "@/types/social";
 import { useNfd } from "@/hooks/useNfd";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { StyledTextarea } from "@/components/ui/StyledTextarea";
 import { PaymentConfirmationDialog } from "./PaymentConfirmationDialog";
 import { useSettings } from "@/hooks/useSettings";
 import { toast } from "sonner";
 import { retryFetch } from "@/utils/api";
 import { ProjectMetadata, MetadataItem } from '@/types/project';
-import { ArrowRight, AlertTriangle } from "lucide-react";
+import { ArrowRight, AlertTriangle, PlusCircle, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"; // IMPORT CORRIGIDO
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { MetadataItemEditor } from "./MetadataItemEditor"; // NEW Import
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const MAX_NOTE_SIZE_BYTES = 1024;
@@ -42,7 +42,8 @@ interface ProjectMetadataSuggestionFormProps {
 }
 
 export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, initialMetadata }: ProjectMetadataSuggestionFormProps) {
-  const [jsonContent, setJsonContent] = useState(JSON.stringify(initialMetadata, null, 2));
+  // State now holds the array of metadata items
+  const [metadataItems, setMetadataItems] = useState<ProjectMetadata>(initialMetadata);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -54,14 +55,36 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
   const { nfd, loading: nfdLoading } = useNfd(activeAddress);
   const { settings } = useSettings();
 
-  const isJsonValid = useMemo(() => {
-    try {
-      const parsed = JSON.parse(jsonContent);
-      return Array.isArray(parsed); // Metadata must be an array
-    } catch (e) {
-      return false;
-    }
-  }, [jsonContent]);
+  // Sync initialMetadata prop to local state when it changes (e.g., after a successful update)
+  useEffect(() => {
+    setMetadataItems(initialMetadata);
+  }, [initialMetadata]);
+
+  const handleUpdateMetadataItem = useCallback((index: number, field: keyof MetadataItem, value: string) => {
+    setMetadataItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  }, []);
+
+  const handleUpdateMetadataType = useCallback((index: number, type: MetadataItem['type']) => {
+    setMetadataItems(prev => prev.map((item, i) => i === index ? { ...item, type } : item));
+  }, []);
+
+  const handleRemoveMetadataItem = useCallback((index: number) => {
+    setMetadataItems(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleAddMetadataItem = useCallback(() => {
+    setMetadataItems(prev => [...prev, { title: 'New Field', value: '', type: 'text' }]);
+  }, []);
+
+  // Reconstruct the final JSON string from the state array
+  const finalJsonContent = useMemo(() => {
+    const cleanedItems = metadataItems.filter(item => item.title.trim() && item.value.trim());
+    return JSON.stringify(cleanedItems, null, 2);
+  }, [metadataItems]);
+
+  const isReadyToSubmit = useMemo(() => {
+    return finalJsonContent.trim() !== '[]' && finalJsonContent.trim() !== '';
+  }, [finalJsonContent]);
 
   const handleSubmit = async () => {
     const atc = await prepareTransactions();
@@ -83,8 +106,8 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
       showError("You must have an NFD to suggest metadata changes.");
       return null;
     }
-    if (!isJsonValid) {
-      showError("Invalid JSON format. Metadata must be a valid JSON array.");
+    if (!isReadyToSubmit) {
+      showError("Please add at least one valid metadata item (Title and Value required).");
       return null;
     }
 
@@ -108,7 +131,7 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
       const noteIdentifierBase = `${hash}.${project.id}.${newEditId}`;
       
       // The content is the JSON string itself
-      const contentBytes = new TextEncoder().encode(jsonContent);
+      const contentBytes = new TextEncoder().encode(finalJsonContent);
       
       // We use a special tag 'META' to distinguish this from interaction posts
       const noteIdentifierForSizing = `${noteIdentifierBase}.0 META `;
@@ -196,31 +219,54 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
   };
 
   const hasNfd = !!nfd?.name;
-  const canSubmit = !activeAddress || isLoading || nfdLoading || !hasNfd || !isJsonValid;
+  const canSubmit = !activeAddress || isLoading || nfdLoading || !hasNfd || !isReadyToSubmit;
+  const inputDisabled = !activeAddress || isLoading || nfdLoading || !hasNfd;
+
+  if (!activeAddress || !hasNfd) {
+    return (
+        <Alert className="bg-muted/50 border-hodl-blue text-muted-foreground">
+            <AlertTriangle className="h-4 w-4 text-hodl-blue" />
+            <AlertTitle className="text-hodl-blue">Connect Wallet & Get NFD</AlertTitle>
+            <AlertDescription>
+                You must connect your wallet and have an NFDomain (.algo) to suggest metadata changes.
+            </AlertDescription>
+        </Alert>
+    );
+  }
 
   return (
     <>
       <div className="space-y-4">
         <Alert className="bg-muted/50 border-hodl-blue text-muted-foreground">
-            <AlertTriangle className="h-4 w-4 text-hodl-blue" />
+            <Hash className="h-4 w-4 text-hodl-blue" />
             <AlertTitle className="text-hodl-blue">Suggest Metadata Edit (On-Chain)</AlertTitle>
             <AlertDescription>
-                Suggest changes to the project's metadata by editing the JSON array below. This suggestion is recorded on-chain and requires approval from a whitelisted editor. A small fee of 0.1 ALGO applies.
+                Edit the fields below to suggest changes to the project's metadata. This suggestion is recorded on-chain and requires approval from a whitelisted editor. A small fee of 0.1 ALGO applies.
             </AlertDescription>
         </Alert>
         
-        <Label htmlFor="metadata-json" className="text-sm font-semibold">Project Metadata JSON Array</Label>
-        <StyledTextarea
-          id="metadata-json"
-          placeholder="[ { title: 'Website', value: 'https://example.com', type: 'url' }, ... ]"
-          value={jsonContent}
-          onChange={(e) => setJsonContent(e.target.value)}
-          disabled={!activeAddress || isLoading || nfdLoading}
-          onSubmit={handleSubmit}
-          isSubmitDisabled={canSubmit}
-          className={cn("font-mono text-xs min-h-[200px]", !isJsonValid && "border-red-500")}
-        />
-        {!isJsonValid && <p className="text-xs text-red-500">Invalid JSON format. Must be a valid JSON array of objects.</p>}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Metadata Fields</h3>
+          {metadataItems.map((item, index) => (
+            <MetadataItemEditor
+              key={index}
+              item={item}
+              index={index}
+              onUpdate={handleUpdateMetadataItem}
+              onUpdateType={handleUpdateMetadataType}
+              onRemove={handleRemoveMetadataItem}
+              disabled={inputDisabled}
+            />
+          ))}
+          <Button
+            variant="outline"
+            onClick={handleAddMetadataItem}
+            disabled={inputDisabled}
+            className="w-full mt-2"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" /> Add New Metadata Field
+          </Button>
+        </div>
         
         <Button onClick={handleSubmit} disabled={canSubmit} className="w-full">
           {isLoading ? "Preparing..." : "Submit Suggestion (0.1 ALGO Fee)"}

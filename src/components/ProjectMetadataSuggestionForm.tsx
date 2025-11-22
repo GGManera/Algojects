@@ -94,8 +94,6 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
     });
   }, [onCancel]);
 
-  // Removed handleAddMetadataItem as it's no longer needed
-
   // Reconstruct the final JSON string from the state array (this is the delta)
   const finalJsonContent = useMemo(() => {
     // Only include items that have both title and value
@@ -155,8 +153,9 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
       const contentBytes = new TextEncoder().encode(finalJsonContent);
       
       // We use a special tag 'META' to distinguish this from interaction posts
-      const noteIdentifierForSizing = `${noteIdentifierBase}.0 META `;
-      const availableSpace = MAX_NOTE_SIZE_BYTES - new TextEncoder().encode(noteIdentifierForSizing).length;
+      // The identifier for sizing is now just the base + order
+      const noteIdentifierForSizing = `${noteIdentifierBase}.0 `;
+      const availableSpace = MAX_NOTE_SIZE_BYTES - new TextEncoder().encode(noteIdentifierForSizing).length - 5; // -5 for "META "
       
       const chunks: Uint8Array[] = [];
       for (let i = 0; i < contentBytes.length; i += availableSpace) {
@@ -167,8 +166,11 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
       const displayItems: TransactionDisplayItem[] = [];
 
       chunks.forEach((chunk, index) => {
-        const noteIdentifier = `${noteIdentifierBase}.${index} META`;
-        const noteText = `${noteIdentifier} ${new TextDecoder().decode(chunk)}`;
+        // Identifier for the transaction note: [Hash].[Proj].[EditId].[Order]
+        const noteIdentifier = `${noteIdentifierBase}.${index}`;
+        
+        // The actual note content starts with the META tag, followed by the chunk
+        const noteText = `${noteIdentifier} META ${new TextDecoder().decode(chunk)}`;
         const noteBytes = new TextEncoder().encode(noteText);
         
         // Only the first chunk carries the fee
@@ -290,7 +292,17 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
               disabled={inputDisabled}
             />
           ))}
-          {/* Removed the redundant Add button */}
+          {/* If in 'Add New' mode, allow adding more items */}
+          {!initialItem && (
+            <Button
+              variant="outline"
+              onClick={() => setSuggestedItems(prev => [...prev, { title: '', value: '', type: 'text' }])}
+              disabled={inputDisabled}
+              className="w-full mt-2"
+            >
+              <PlusCircle className="h-4 w-4 mr-2" /> Add Another Field
+            </Button>
+          )}
         </div>
         
         <Button onClick={handleSubmit} disabled={canSubmit} className="w-full">

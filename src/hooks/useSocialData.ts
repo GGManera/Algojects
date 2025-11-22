@@ -95,13 +95,13 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
             continue;
         }
 
-        const identifier = match[1]; // e.g., h.p1.a.0.1.1.0 or h.p1.a.0 META
-        const contentOrAction = match[2]; // e.g., LIKE or actual content
+        const identifier = match[1]; // e.g., h.p1.a.0.1.1.0 or h.p1.a.0
+        let contentOrAction = match[2]; // e.g., LIKE or actual content or META {...}
 
         // --- 1. Parse Interaction Posts (Reviews, Comments, Replies) ---
         // Check if it's a standard interaction post (7 parts max, not LIKE/UNLIKE, not META)
         const parts = identifier.split('.');
-        const isInteractionPost = parts.length >= 5 && parts.length <= 7 && !['LIKE', 'UNLIKE'].includes(contentOrAction) && !identifier.includes('META');
+        const isInteractionPost = parts.length >= 5 && parts.length <= 7 && !['LIKE', 'UNLIKE'].includes(contentOrAction) && !contentOrAction.startsWith('META');
 
         if (isInteractionPost) {
             const proj = parts[1];
@@ -177,20 +177,18 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
             itemLikeEvents[itemId].push({ sender: tx.sender, action: contentOrAction as 'LIKE' | 'UNLIKE', timestamp: tx['round-time'], txId: tx.id });
         }
         // --- 3. Parse Metadata Suggestion (META) ---
-        else if (identifier.includes('META')) {
-            // Identifier format: [Hash].[Proj].[EditId].[Order] META
-            // We need to split the identifier by '.' and remove the 'META' tag from the last part
+        else if (contentOrAction.startsWith('META')) {
+            // Identifier format: [Hash].[Proj].[EditId].[Order]
             const metaParts = identifier.split('.');
             
-            // Ensure we have at least 4 parts (Hash.Proj.EditId.Order)
-            if (metaParts.length >= 4) { 
+            // Ensure we have 4 parts (Hash.Proj.EditId.Order)
+            if (metaParts.length === 4) { 
                 const proj = metaParts[1];
                 const editId = metaParts[2];
-                const orderPart = metaParts[3];
-                
-                // The order part might contain the META tag, e.g., "0 META"
-                const orderMatch = orderPart.match(/^(\d+)/);
-                const order = orderMatch ? parseInt(orderMatch[1], 10) : NaN;
+                const order = parseInt(metaParts[3], 10); // Order is the last part of the identifier
+
+                // Extract the actual JSON content by removing "META " from the start of contentOrAction
+                const jsonContent = contentOrAction.substring(5).trim();
 
                 if (isNaN(order)) continue;
                 
@@ -206,7 +204,7 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                         content: '',
                         timestamp: tx['round-time'],
                         txId: tx.id,
-                        latestVersion: 1, // Always 1 for suggestions
+                        latestVersion: 1, // Suggestions are always version 1
                         likes: new Set(),
                         likeCount: 0,
                         likeHistory: [],
@@ -221,7 +219,7 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                 if (!multiPartContent[versionedId]) {
                     multiPartContent[versionedId] = {};
                 }
-                multiPartContent[versionedId][order] = contentOrAction;
+                multiPartContent[versionedId][order] = jsonContent; // Store the JSON chunk
                 
                 // Update metadata fields (sender, timestamp, txId) only if this is the latest transaction for this editId
                 if (tx['round-time'] > suggestion.timestamp) {

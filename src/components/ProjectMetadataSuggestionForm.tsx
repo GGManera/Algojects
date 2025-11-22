@@ -94,14 +94,7 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
     });
   }, [onCancel]);
 
-  const handleAddMetadataItem = useCallback(() => {
-    // Only allow adding if we are in multi-item mode (i.e., initialItem is defined, though we restrict this below)
-    // Given the new requirement, this button should be disabled unless we change the scope.
-    // For now, we keep the logic simple: only one item per suggestion transaction.
-    if (suggestedItems.length === 0) {
-        setSuggestedItems(prev => [...prev, { title: '', value: '', type: 'text' }]);
-    }
-  }, [suggestedItems.length]);
+  // Removed handleAddMetadataItem as it's no longer needed
 
   // Reconstruct the final JSON string from the state array (this is the delta)
   const finalJsonContent = useMemo(() => {
@@ -252,9 +245,6 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
   const canSubmit = !activeAddress || isLoading || nfdLoading || !hasNfd || !isReadyToSubmit;
   const inputDisabled = !activeAddress || isLoading || nfdLoading || !hasNfd;
   
-  // Determine if we are in single-item mode (always true now, but we check the array length)
-  const isSingleItemMode = suggestedItems.length === 1;
-
   if (!activeAddress || !hasNfd) {
     return (
         <Alert className="bg-muted/50 border-hodl-blue text-muted-foreground">
@@ -300,15 +290,7 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
               disabled={inputDisabled}
             />
           ))}
-          {/* Disable the Add button as per the requirement (one item per transaction) */}
-          <Button
-            variant="outline"
-            onClick={handleAddMetadataItem}
-            disabled={true} // Always disabled now
-            className="w-full mt-2 opacity-50 cursor-not-allowed"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" /> Add New Metadata Field (Max 1 per suggestion)
-          </Button>
+          {/* Removed the redundant Add button */}
         </div>
         
         <Button onClick={handleSubmit} disabled={canSubmit} className="w-full">

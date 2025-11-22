@@ -26,7 +26,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { toast } from 'sonner';
 import { PROTOCOL_ADDRESS } from '@/lib/social'; // Import PROTOCOL_ADDRESS
 
-const SUGGESTION_REWARD_ALGO = 0.1;
+const SUGGESTION_REWARD_ALGO = 0.2; // UPDATED to 0.2 ALGO
 const TRANSACTION_TIMEOUT_MS = 60000;
 
 interface TransactionDisplayItem {
@@ -140,7 +140,7 @@ export function AcceptMetadataSuggestionDialog({
       const suggestedParams = await algodClient.getTransactionParams().do();
       const rewardMicroAlgos = SUGGESTION_REWARD_ALGO * 1_000_000;
 
-      // 1. Payment to Proposer (0.1 ALGO reward)
+      // 1. Payment to Proposer (0.2 ALGO reward)
       const paymentToProposerTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
         sender: activeAddress,
         receiver: suggestion.sender,

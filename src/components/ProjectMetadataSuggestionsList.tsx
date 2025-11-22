@@ -6,10 +6,12 @@ import { ProjectMetadata } from '@/types/project';
 import { UserDisplay } from './UserDisplay';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Hash, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, Hash, CheckCircle, XCircle, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
 import { cn, formatTimestamp } from '@/lib/utils';
 import { CollapsibleContent } from './CollapsibleContent';
 import { useWallet } from '@txnlab/use-wallet-react';
+import { SuggestedMetadataItem } from './SuggestedMetadataItem'; // Import new component
+import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext'; // Import context
 
 interface ProjectMetadataSuggestionsListProps {
   project: Project;
@@ -27,6 +29,7 @@ export function ProjectMetadataSuggestionsList({
   onInteractionSuccess,
 }: ProjectMetadataSuggestionsListProps) {
   const { activeAddress } = useWallet();
+  const { isMobile } = useAppContextDisplayMode();
   const allSuggestions = useMemo(() => Object.values(project.proposedNoteEdits || {}), [project.proposedNoteEdits]);
   
   // Filter suggestions based on status (currently only 'pending' is possible via on-chain note)
@@ -54,26 +57,68 @@ export function ProjectMetadataSuggestionsList({
   if (allSuggestions.length === 0) return null;
 
   // Helper to clean and parse the JSON delta for display
-  const getDeltaPreview = (content: string) => {
+  const parseDelta = (content: string): ProjectMetadata | null => {
     try {
-      // 1. Trim whitespace
-      let cleanedContent = content.trim();
-      
-      // 2. Remove control characters (like newlines, tabs, etc.) that might break JSON.parse
-      // This regex removes all control characters except those explicitly allowed in JSON strings (which are escaped).
-      // Since the content is expected to be raw JSON, we remove newlines and tabs.
-      cleanedContent = cleanedContent.replace(/[\r\n\t]/g, '');
-      
+      let cleanedContent = content.trim().replace(/[\r\n\t]/g, '');
       const parsed = JSON.parse(cleanedContent); 
       if (Array.isArray(parsed) && parsed.length > 0) {
-        const titles = parsed.map(item => item.title).join(', ');
-        return `Changes proposed for: ${titles}`;
+        return parsed as ProjectMetadata;
       }
     } catch (e) {
-      console.error("Failed to parse suggestion JSON:", e, "Raw content:", content);
-      return "Invalid JSON content (Review required)";
+      // console.error("Failed to parse suggestion JSON:", e, "Raw content:", content);
     }
-    return "Empty or invalid suggestion content.";
+    return null;
+  };
+
+  const renderSuggestionItem = (suggestion: ProposedNoteEdit, isEditorView: boolean) => {
+    const delta = parseDelta(suggestion.content);
+    const isUserOwn = activeAddress === suggestion.sender;
+    
+    if (!delta) {
+        return (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-md bg-card border border-destructive/50">
+                <div className="flex flex-col space-y-1 flex-1 min-w-0">
+                    <span className="text-sm font-semibold text-destructive">Invalid JSON content (Review required)</span>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <UserDisplay address={suggestion.sender} textSizeClass="text-xs" avatarSizeClass="h-4 w-4" linkTo={`/profile/${suggestion.sender}`} />
+                        <span>{formatTimestamp(suggestion.timestamp)}</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div key={suggestion.id} className="flex flex-col space-y-3 p-3 rounded-md bg-card border border-primary/30">
+            {/* Metadata Preview (Simulated Button/Card) */}
+            <div className="grid grid-cols-2 gap-2">
+                {delta.map((item, index) => (
+                    <SuggestedMetadataItem 
+                        key={index} 
+                        item={item} 
+                        isMobile={isMobile} 
+                        className="!max-w-none" // Override max-width for grid layout
+                    />
+                ))}
+            </div>
+
+            {/* Details and Action */}
+            <div className="flex items-center justify-between pt-2 border-t border-muted">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <UserDisplay address={suggestion.sender} textSizeClass="text-xs" avatarSizeClass="h-4 w-4" linkTo={`/profile/${suggestion.sender}`} />
+                    <span>{formatTimestamp(suggestion.timestamp)}</span>
+                    {!isEditorView && !isUserOwn && <span className="text-yellow-500">Pending Review</span>}
+                </div>
+                
+                {isEditorView && (
+                    <Button size="sm" onClick={() => onReviewSuggestion(suggestion)} className="bg-green-600 hover:bg-green-700">
+                        Review & Accept
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
   };
 
   return (
@@ -91,21 +136,8 @@ export function ProjectMetadataSuggestionsList({
             {isPendingListOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
           <CollapsibleContent isOpen={isPendingListOpen}>
-            <div className="space-y-2 pt-2">
-              {pendingSuggestions.map(suggestion => (
-                <div key={suggestion.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-md bg-card border border-yellow-500/30">
-                  <div className="flex flex-col space-y-1 flex-1 min-w-0">
-                    <span className="text-sm font-semibold text-foreground truncate">{getDeltaPreview(suggestion.content)}</span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <UserDisplay address={suggestion.sender} textSizeClass="text-xs" avatarSizeClass="h-4 w-4" linkTo={`/profile/${suggestion.sender}`} />
-                        <span>{formatTimestamp(suggestion.timestamp)}</span>
-                    </div>
-                  </div>
-                  <Button size="sm" onClick={() => onReviewSuggestion(suggestion)} className="mt-2 sm:mt-0 sm:ml-4">
-                    Review & Accept
-                  </Button>
-                </div>
-              ))}
+            <div className="space-y-4 pt-2">
+              {pendingSuggestions.map(suggestion => renderSuggestionItem(suggestion, true))}
             </div>
           </CollapsibleContent>
         </div>
@@ -124,19 +156,8 @@ export function ProjectMetadataSuggestionsList({
             {isUserListOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
           <CollapsibleContent isOpen={isUserListOpen}>
-            <div className="space-y-2 pt-2">
-              {userSuggestions.map(suggestion => (
-                <div key={suggestion.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-md bg-card border border-primary/30">
-                  <div className="flex flex-col space-y-1 flex-1 min-w-0">
-                    <span className="text-sm font-semibold text-foreground truncate">{getDeltaPreview(suggestion.content)}</span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{formatTimestamp(suggestion.timestamp)}</span>
-                        <span className="text-yellow-500">Pending Review</span>
-                    </div>
-                  </div>
-                  {/* No action button for users' own suggestions */}
-                </div>
-              ))}
+            <div className="space-y-4 pt-2">
+              {userSuggestions.map(suggestion => renderSuggestionItem(suggestion, false))}
             </div>
           </CollapsibleContent>
         </div>
@@ -155,18 +176,8 @@ export function ProjectMetadataSuggestionsList({
             {isPendingListOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
           <CollapsibleContent isOpen={isPendingListOpen}>
-            <div className="space-y-2 pt-2">
-              {pendingSuggestions.map(suggestion => (
-                <div key={suggestion.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-md bg-card border border-muted-foreground/30">
-                  <div className="flex flex-col space-y-1 flex-1 min-w-0">
-                    <span className="text-sm font-semibold text-foreground truncate">{getDeltaPreview(suggestion.content)}</span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <UserDisplay address={suggestion.sender} textSizeClass="text-xs" avatarSizeClass="h-4 w-4" linkTo={`/profile/${suggestion.sender}`} />
-                        <span>{formatTimestamp(suggestion.timestamp)}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="space-y-4 pt-2">
+              {pendingSuggestions.map(suggestion => renderSuggestionItem(suggestion, false))}
             </div>
           </CollapsibleContent>
         </div>

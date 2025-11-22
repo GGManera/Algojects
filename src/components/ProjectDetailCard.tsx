@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp, DollarSign, Hash, ChevronDown, ChevronUp } from "lucide-react";
 import { UserDisplay } from "./UserDisplay";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { parseProjectMetadata, extractDomainFromUrl, extractXHandleFromUrl } from '@/lib/utils';
 import { fetchAssetBalanceAtRound } from '@/lib/allo';
@@ -137,10 +137,19 @@ export function ProjectDetailCard({
   const { transactionSigner, algodClient } = useWallet();
   const { projectDetails, loading, isRefreshing, error: detailsError, refetch: refetchProjectDetails } = useProjectDetails();
   const isLoadingDetails = loading || isRefreshing;
+  
+  // State for Admin/Whitelisted Editor Direct Edit Form
   const [showProjectDetailsForm, setShowProjectDetailsForm] = useState(false);
+  
+  // States for Regular User Suggestion Flow
   const [showMetadataSuggestionForm, setShowMetadataSuggestionForm] = useState(false);
+  const [isSuggestionSelectorOpen, setIsSuggestionSelectorOpen] = useState(false);
+  const [itemToSuggestEdit, setItemToSuggestEdit] = useState<MetadataItem | undefined>(undefined);
+  
+  // State for Pending Suggestions List (Visible to Whitelisted Editors)
   const [showPendingSuggestions, setShowPendingSuggestions] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState<ProposedNoteEdit | null>(null);
+  
   const [showThankContributorDialog, setShowThankContributorDialog] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [viewMode, setViewMode] = useState<'reviews' | 'comments' | 'replies' | 'interactions'>('reviews');
@@ -151,11 +160,6 @@ export function ProjectDetailCard({
   const [tokenHoldingsLoading, setTokenHoldingsLoading] = useState(true);
   const [assetHoldersError, setAssetHoldersError] = useState<string | null>(null);
   
-  // NEW: State to manage the specific item being edited in the suggestion form
-  const [itemToSuggestEdit, setItemToSuggestEdit] = useState<MetadataItem | undefined>(undefined);
-  const [isSuggestionSelectorOpen, setIsSuggestionSelectorOpen] = useState(false);
-
-
   const stats: ProjectStats = useMemo(() => {
     let reviewsCount = 0, commentsCount = 0, repliesCount = 0, likesCount = 0;
     const reviews = Object.values(project.reviews || {});
@@ -185,7 +189,7 @@ export function ProjectDetailCard({
 
   const currentProjectDetailsEntry = projectDetails.find(entry => entry.projectId === projectId);
   const projectMetadata: MetadataItem[] = currentProjectDetailsEntry?.projectMetadata || [];
-  const pendingSuggestions = Object.values(project.proposedNoteEdits || []);
+  const pendingSuggestions = Object.values(project.proposedNoteEdits || {});
 
   const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
   const assetId = assetIdItem?.value ? parseInt(assetIdItem.value, 10) : undefined;
@@ -362,6 +366,22 @@ export function ProjectDetailCard({
     setItemToSuggestEdit(undefined);
   }, []);
 
+  // --- Edit/Suggest Button Click Handler ---
+  const handleEditButtonClick = () => {
+    if (isWhitelistedEditor) {
+      // Whitelisted Editor: Toggle Direct Edit Form
+      setShowProjectDetailsForm(prev => !prev);
+      setShowMetadataSuggestionForm(false);
+      setIsSuggestionSelectorOpen(false);
+    } else {
+      // Regular User: Toggle Suggestion Selector
+      setIsSuggestionSelectorOpen(prev => !prev);
+      setShowProjectDetailsForm(false);
+      setShowMetadataSuggestionForm(false);
+      setItemToSuggestEdit(undefined);
+    }
+  };
+
   const StatsGrid = (
     <div className="grid gap-4 text-sm text-muted-foreground md:grid-cols-2 md:w-full">
       <div className={cn("flex flex-col items-center space-y-1 cursor-pointer transition-colors hover:bg-muted/50 rounded-lg p-2 col-span-2", viewMode === 'interactions' && "bg-primary/20 border border-primary")} onClick={() => handleViewModeClick('interactions')}>
@@ -407,19 +427,7 @@ export function ProjectDetailCard({
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => {
-              if (isWhitelistedEditor) {
-                setShowProjectDetailsForm(prev => !prev);
-                setShowMetadataSuggestionForm(false);
-                setIsSuggestionSelectorOpen(false);
-              } else {
-                // Toggle the selector view
-                setIsSuggestionSelectorOpen(prev => !prev);
-                setShowProjectDetailsForm(false);
-                setShowMetadataSuggestionForm(false);
-                setItemToSuggestEdit(undefined);
-              }
-            }} 
+            onClick={handleEditButtonClick} 
             className="absolute top-2 left-2 z-10 h-8 w-8 text-muted-foreground hover:text-foreground" 
             aria-label={isWhitelistedEditor ? "Toggle project details form" : "Toggle metadata suggestion selector"}
           >
@@ -473,17 +481,50 @@ export function ProjectDetailCard({
           {/* Metadata Edit/Suggestion Forms */}
           <div className="space-y-4">
             {isWhitelistedEditor ? (
-              <CollapsibleContent isOpen={showProjectDetailsForm}>
-                <ProjectDetailsForm 
-                  projectId={projectId} 
-                  initialProjectMetadata={projectMetadata} 
-                  projectCreatorAddress={effectiveCreatorAddress} 
-                  onProjectDetailsUpdated={handleProjectDetailsUpdated} 
-                />
-              </CollapsibleContent>
+              <>
+                {/* 1. Whitelisted Editor: Direct Edit Form */}
+                <CollapsibleContent isOpen={showProjectDetailsForm}>
+                  <ProjectDetailsForm 
+                    projectId={projectId} 
+                    initialProjectMetadata={projectMetadata} 
+                    projectCreatorAddress={effectiveCreatorAddress} 
+                    onProjectDetailsUpdated={handleProjectDetailsUpdated} 
+                  />
+                </CollapsibleContent>
+
+                {/* 2. Whitelisted Editor: Pending Suggestions List */}
+                {pendingSuggestions.length > 0 && (
+                  <div className="space-y-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowPendingSuggestions(prev => !prev)} 
+                      className="w-full justify-start text-left border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-2" /> 
+                      {pendingSuggestions.length} Pending Metadata Suggestion(s)
+                      {showPendingSuggestions ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
+                    </Button>
+                    <CollapsibleContent isOpen={showPendingSuggestions}>
+                      <div className="space-y-2 p-4 border rounded-md bg-muted/30">
+                        {pendingSuggestions.map(suggestion => (
+                          <div key={suggestion.id} className="flex items-center justify-between p-2 rounded-md bg-card border">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold">Suggestion by:</span>
+                              <UserDisplay address={suggestion.sender} textSizeClass="text-xs" avatarSizeClass="h-5 w-5" linkTo={`/profile/${suggestion.sender}`} />
+                            </div>
+                            <Button size="sm" onClick={() => setSelectedSuggestion(suggestion)}>
+                              Review
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </div>
+                )}
+              </>
             ) : (
               <>
-                {/* Suggestion Selector */}
+                {/* Regular User: Suggestion Selector */}
                 <CollapsibleContent isOpen={isSuggestionSelectorOpen}>
                   <MetadataSuggestionSelector
                     initialMetadata={projectMetadata}
@@ -493,7 +534,7 @@ export function ProjectDetailCard({
                   />
                 </CollapsibleContent>
 
-                {/* Suggestion Form (Hidden until item is selected or new is chosen) */}
+                {/* Regular User: Suggestion Form (Hidden until item is selected or new is chosen) */}
                 <CollapsibleContent isOpen={showMetadataSuggestionForm}>
                   <ProjectMetadataSuggestionForm 
                     project={project} 
@@ -506,36 +547,6 @@ export function ProjectDetailCard({
               </>
             )}
           </div>
-
-          {/* Pending Suggestions List (Visible to Whitelisted Editors) */}
-          {isWhitelistedEditor && pendingSuggestions.length > 0 && (
-            <div className="space-y-4">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowPendingSuggestions(prev => !prev)} 
-                className="w-full justify-start text-left border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
-              >
-                <AlertTriangle className="h-4 w-4 mr-2" /> 
-                {pendingSuggestions.length} Pending Metadata Suggestion(s)
-                {showPendingSuggestions ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
-              </Button>
-              <CollapsibleContent isOpen={showPendingSuggestions}>
-                <div className="space-y-2 p-4 border rounded-md bg-muted/30">
-                  {pendingSuggestions.map(suggestion => (
-                    <div key={suggestion.id} className="flex items-center justify-between p-2 rounded-md bg-card border">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-semibold">Suggestion by:</span>
-                        <UserDisplay address={suggestion.sender} textSizeClass="text-xs" avatarSizeClass="h-5 w-5" linkTo={`/profile/${suggestion.sender}`} />
-                      </div>
-                      <Button size="sm" onClick={() => setSelectedSuggestion(suggestion)}>
-                        Review
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </div>
-          )}
 
         </CardContent>
       </Card>

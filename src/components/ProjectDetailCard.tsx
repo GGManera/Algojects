@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { Project, ProjectsData, Review } from "@/types/social";
+import { Project, ProjectsData, Review, ProposedNoteEdit } from "@/types/social";
 import {
   Card,
   CardContent,
@@ -15,12 +15,12 @@ import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { ProjectDetailsForm } from "./ProjectDetailsForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp, DollarSign } from "lucide-react";
+import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp, DollarSign, Hash, ChevronDown, ChevronUp } from "lucide-react";
 import { UserDisplay } from "./UserDisplay";
 import { Button } from "./ui/button";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { parseProjectMetadata, extractDomainFromUrl, extractXHandleFromUrl } from '@/lib/utils';
-import { fetchAssetBalanceAtRound } from '@/lib/allo'; // UPDATED: Import fetchAssetBalanceAtRound
+import { fetchAssetBalanceAtRound } from '@/lib/allo';
 import { useCuratorIndex } from '@/hooks/useCuratorIndex';
 import { MetadataItem } from '@/types/project';
 import { ThankContributorDialog } from "./ThankContributorDialog";
@@ -29,6 +29,9 @@ import { useWallet } from "@txnlab/use-wallet-react";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { ProjectMetadataNavigator } from "./ProjectMetadataNavigator";
 import { cn } from '@/lib/utils';
+import { ProjectMetadataSuggestionForm } from "./ProjectMetadataSuggestionForm"; // NEW Import
+import { AcceptMetadataSuggestionDialog } from "./AcceptMetadataSuggestionDialog"; // NEW Import
+import { CollapsibleContent } from "./CollapsibleContent"; // Import CollapsibleContent
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
@@ -134,16 +137,18 @@ export function ProjectDetailCard({
   const { projectDetails, loading, isRefreshing, error: detailsError, refetch: refetchProjectDetails } = useProjectDetails();
   const isLoadingDetails = loading || isRefreshing;
   const [showProjectDetailsForm, setShowProjectDetailsForm] = useState(false);
+  const [showMetadataSuggestionForm, setShowMetadataSuggestionForm] = useState(false); // NEW State
+  const [showPendingSuggestions, setShowPendingSuggestions] = useState(false); // NEW State
+  const [selectedSuggestion, setSelectedSuggestion] = useState<ProposedNoteEdit | null>(null); // NEW State
   const [showThankContributorDialog, setShowThankContributorDialog] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [viewMode, setViewMode] = useState<'reviews' | 'comments' | 'replies' | 'interactions'>('reviews');
   const [isMetadataNavigatorFocused, setIsMetadataNavigatorFocused] = useState(false);
   const { allCuratorData } = useCuratorIndex(undefined, projectsData);
 
-  // NEW STATE for current user's holding
   const [currentUserHolding, setCurrentUserHolding] = useState<CurrentUserProjectHolding | null>(null);
   const [tokenHoldingsLoading, setTokenHoldingsLoading] = useState(true);
-  const [assetHoldersError, setAssetHoldersError] = useState<string | null>(null); // Renamed error state
+  const [assetHoldersError, setAssetHoldersError] = useState<string | null>(null);
 
   const stats: ProjectStats = useMemo(() => {
     let reviewsCount = 0, commentsCount = 0, repliesCount = 0, likesCount = 0;
@@ -174,18 +179,15 @@ export function ProjectDetailCard({
 
   const currentProjectDetailsEntry = projectDetails.find(entry => entry.projectId === projectId);
   const projectMetadata: MetadataItem[] = currentProjectDetailsEntry?.projectMetadata || [];
+  const pendingSuggestions = Object.values(project.proposedNoteEdits || {}); // NEW: Get pending suggestions
 
   const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
   const assetId = assetIdItem?.value ? parseInt(assetIdItem.value, 10) : undefined;
-  const round = project.round; // Use round directly from project
+  const round = project.round;
 
   // NEW: Effect to fetch current user's asset balance
   useEffect(() => {
-    console.log(`[ProjectDetailCard] Checking Allo API balance condition for Project ${projectId}:`);
-    console.log(`[ProjectDetailCard] activeAddress: ${activeAddress}, assetId: ${assetId}, round: ${round}`);
-
     if (!activeAddress || !assetId || !round) {
-      console.log(`[ProjectDetailCard] Skipping Allo API balance fetch: Missing activeAddress, assetId, or round.`);
       setCurrentUserHolding(null);
       setTokenHoldingsLoading(false);
       return;
@@ -222,7 +224,7 @@ export function ProjectDetailCard({
 
     getBalance();
     return () => { isMounted = false; };
-  }, [activeAddress, assetId, round, projectId, projectMetadata]); // Added projectMetadata dependency
+  }, [activeAddress, assetId, round, projectId, projectMetadata]);
 
   const currentProjectName = projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${projectId}`;
   const currentProjectDescription = projectMetadata.find(item => item.type === 'project-description')?.value;
@@ -232,15 +234,36 @@ export function ProjectDetailCard({
   const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true';
   const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true';
   const creatorWalletItem = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet');
+  const projectWalletItem = projectMetadata.find(item => item.type === 'project-wallet'); // NEW: Project Wallet Item
   const creatorWalletMetadata = creatorWalletItem?.value;
+  const projectWalletMetadata = projectWalletItem?.value; // NEW: Project Wallet Value
+  
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
-  const effectiveCreatorAddress = creatorWalletMetadata || project.creatorWallet;
+  
+  // Effective creator address is either the Creator Wallet metadata, Project Wallet metadata, or the first review sender
+  const effectiveCreatorAddress = creatorWalletMetadata || projectWalletMetadata || project.creatorWallet;
 
   const handleProjectDetailsUpdated = () => {
-    // Logic remains the same
+    refetchProjectDetails();
+    onInteractionSuccess();
   };
 
-  const isAuthorizedToClaim = activeAddress && effectiveCreatorAddress && activeAddress === effectiveCreatorAddress && !isClaimed && addedByAddress && activeAddress !== addedByAddress;
+  // --- Authorization Logic ---
+  const whitelistedEditors = useMemo(() => {
+    const editors = projectMetadata.find(item => item.type === 'whitelisted-editors')?.value || '';
+    return editors.split(',').map(addr => addr.trim()).filter(Boolean);
+  }, [projectMetadata]);
+
+  const isWhitelistedEditor = useMemo(() => {
+    if (!activeAddress) return false;
+    return whitelistedEditors.includes(activeAddress);
+  }, [activeAddress, whitelistedEditors]);
+
+  // Determine if the current user is the effective creator (for claiming)
+  const isEffectiveCreator = activeAddress && effectiveCreatorAddress && activeAddress === effectiveCreatorAddress;
+
+  // Determine if the project is claimable (creator wallet matches active address, but project is not claimed, and was added by someone else)
+  const isClaimable = isEffectiveCreator && !isClaimed && addedByAddress && activeAddress !== addedByAddress;
 
   const handleClaimProject = useCallback(async (totalRewardAlgos: number, contributorShare: number, newWhitelistedEditors: string) => {
     if (!activeAddress || !transactionSigner || !algodClient || !addedByAddress || !effectiveCreatorAddress) {
@@ -265,7 +288,6 @@ export function ProjectDetailCard({
     }
   }, [activeAddress, transactionSigner, algodClient, addedByAddress, projectId, currentProjectName, projectMetadata, refetchProjectDetails, onInteractionSuccess, effectiveCreatorAddress]);
 
-  // NEW: Use currentUserHolding for the ProjectMetadataNavigator prop
   const currentUserProjectHoldingProp = useMemo(() => {
     if (!currentUserHolding || currentUserHolding.amount === 0) return null;
     return {
@@ -273,20 +295,12 @@ export function ProjectDetailCard({
       projectName: currentProjectName,
       assetId: currentUserHolding.assetId,
       amount: currentUserHolding.amount,
-      assetUnitName: currentUserProjectHolding.assetUnitName,
+      assetUnitName: currentUserHolding.assetUnitName,
     };
   }, [currentUserHolding, projectId, currentProjectName]);
 
   const projectSourceContext = useMemo(() => ({ path: `/project/${projectId}`, label: currentProjectName }), [projectId, currentProjectName]);
   
-  // NEW: Simplified holdings maps for UserDisplay (only need to check if they hold > 0)
-  // Since we only fetch the current user's holding, we cannot determine if the addedByAddress holds the token.
-  const addedByAddressHoldings = useMemo(() => {
-    return new Map<string, number>();
-  }, []);
-  
-  const currentUserHoldsToken = !!currentUserHolding && currentUserHolding.amount > 0;
-
   const isFocused = focusedId === project.id;
   const handleToggleExpand = useCallback(() => {
     if (!isMetadataNavigatorFocused) setIsMetadataNavigatorFocused(true);
@@ -361,7 +375,7 @@ export function ProjectDetailCard({
   );
 
   return (
-    <div className="w-full">
+    <>
       <Card className={cn("bg-accent mt-8 relative transition-all duration-200", isFocused && !isMetadataNavigatorFocused ? "focus-glow-border" : "", !isFocused && "hover:focus-glow-border")} data-nav-id={project.id} onMouseEnter={() => setLastActiveId(project.id)} onMouseLeave={() => setLastActiveId(null)}>
         {activeAddress && <Button variant="ghost" size="icon" onClick={() => setShowProjectDetailsForm(prev => !prev)} className="absolute top-2 left-2 z-10 h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Toggle project details form"><Edit className="h-4 w-4" /></Button>}
         <CardContent className="space-y-4 p-4">
@@ -373,7 +387,17 @@ export function ProjectDetailCard({
                   <CardTitle className="text-4xl font-bold gradient-text">{currentProjectName}</CardTitle>
                   <CardDescription>{stats.reviewsCount} {stats.reviewsCount === 1 ? 'review' : 'reviews'} found for this project.</CardDescription>
                   {currentProjectTags && <div className="flex flex-wrap justify-center gap-2 mt-1">{currentProjectTags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => <span key={index} className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary-foreground">{tag}</span>)}</div>}
-                  {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && <div className="mt-2"><Button onClick={() => setShowThankContributorDialog(true)} disabled={isClaiming} className="bg-green-600 hover:bg-green-700 text-white"><DollarSign className="h-4 w-4 mr-2" /> Thank Contributor & Claim</Button></div>}
+                  
+                  {/* Claim Button */}
+                  {isClaimable && addedByAddress && effectiveCreatorAddress && (
+                    <div className="mt-2">
+                      <Button onClick={() => setShowThankContributorDialog(true)} disabled={isClaiming} className="bg-green-600 hover:bg-green-700 text-white">
+                        <DollarSign className="h-4 w-4 mr-2" /> Claim Project Page
+                      </Button>
+                    </div>
+                  )}
+                  {isClaimed && <p className="text-sm text-green-400 mt-2 font-semibold">Project Page Claimed</p>}
+
                   {addedByAddress && <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-1">Added by <UserDisplay address={addedByAddress} textSizeClass="text-sm" avatarSizeClass="h-6 w-6" linkTo={`/profile/${addedByAddress}`} sourceContext={projectSourceContext} isTokenHolder={false} /></div>}
                   <div className="px-2 pt-8 md:hidden">{StatsGrid}</div>
                 </CardHeader>
@@ -382,7 +406,7 @@ export function ProjectDetailCard({
                     <ProjectMetadataNavigator 
                       projectId={projectId} 
                       projectMetadata={projectMetadata} 
-                      currentUserProjectHolding={currentUserProjectHoldingProp} // UPDATED PROP
+                      currentUserProjectHolding={currentUserProjectHoldingProp}
                       tokenHoldingsLoading={tokenHoldingsLoading} 
                       projectSourceContext={projectSourceContext} 
                       isParentFocused={isFocused && !isMetadataNavigatorFocused} 
@@ -396,6 +420,56 @@ export function ProjectDetailCard({
             </div>
           </div>
           <ProjectNotesDisplay isLoadingDetails={isLoadingDetails} detailsError={detailsError} currentProjectDescription={currentProjectDescription} isCommunityNotes={isCommunityNotes} isCreatorAdded={isCreatorAdded} addedByAddress={addedByAddress} />
+          
+          {/* Metadata Suggestion Section */}
+          <div className="space-y-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowMetadataSuggestionForm(prev => !prev)} 
+              className="w-full justify-start text-left"
+            >
+              <Hash className="h-4 w-4 mr-2" /> 
+              {showMetadataSuggestionForm ? "Hide Suggestion Form" : "Suggest Metadata Changes"}
+            </Button>
+            <CollapsibleContent isOpen={showMetadataSuggestionForm}>
+              <ProjectMetadataSuggestionForm 
+                project={project} 
+                onInteractionSuccess={onInteractionSuccess} 
+                initialMetadata={projectMetadata}
+              />
+            </CollapsibleContent>
+          </div>
+
+          {/* Pending Suggestions List (Visible to Whitelisted Editors) */}
+          {isWhitelistedEditor && pendingSuggestions.length > 0 && (
+            <div className="space-y-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowPendingSuggestions(prev => !prev)} 
+                className="w-full justify-start text-left border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" /> 
+                {pendingSuggestions.length} Pending Metadata Suggestion(s)
+                {showPendingSuggestions ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
+              </Button>
+              <CollapsibleContent isOpen={showPendingSuggestions}>
+                <div className="space-y-2 p-4 border rounded-md bg-muted/30">
+                  {pendingSuggestions.map(suggestion => (
+                    <div key={suggestion.id} className="flex items-center justify-between p-2 rounded-md bg-card border">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold">Suggestion by:</span>
+                        <UserDisplay address={suggestion.sender} textSizeClass="text-xs" avatarSizeClass="h-5 w-5" linkTo={`/profile/${suggestion.sender}`} />
+                      </div>
+                      <Button size="sm" onClick={() => setSelectedSuggestion(suggestion)}>
+                        Review
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </div>
+          )}
+
           {activeAddress && showProjectDetailsForm && <ProjectDetailsForm projectId={projectId} initialProjectMetadata={projectMetadata} projectCreatorAddress={effectiveCreatorAddress} onProjectDetailsUpdated={handleProjectDetailsUpdated} />}
         </CardContent>
       </Card>
@@ -403,7 +477,35 @@ export function ProjectDetailCard({
         {sortedReviews.length > 0 ? sortedReviews.map(({ review, score }) => <ReviewItem key={review.id} review={review} project={project} onInteractionSuccess={onInteractionSuccess} interactionScore={score} projectSourceContext={projectSourceContext} allCuratorData={allCuratorData} focusedId={focusedId} registerItem={registerItem} isActive={isActive} setLastActiveId={setLastActiveId} globalViewMode={viewMode} />) : <p className="text-muted-foreground text-center">No reviews yet for this project.</p>}
         {activeAddress && <NewReviewForExistingProjectForm project={project} projectsData={projectsData} onInteractionSuccess={onInteractionSuccess} />}
       </div>
-      {isAuthorizedToClaim && addedByAddress && effectiveCreatorAddress && <ThankContributorDialog isOpen={showThankContributorDialog} onOpenChange={setShowThankContributorDialog} projectId={projectId} projectName={currentProjectName} contributorAddress={addedByAddress} projectCreatorAddress={effectiveCreatorAddress} initialMetadata={projectMetadata} onConfirm={handleClaimProject} isConfirming={isClaiming} />}
-    </div>
+      
+      {/* Dialogs */}
+      {isClaimable && addedByAddress && effectiveCreatorAddress && (
+        <ThankContributorDialog 
+          isOpen={showThankContributorDialog} 
+          onOpenChange={setShowThankContributorDialog} 
+          projectId={projectId} 
+          projectName={currentProjectName} 
+          contributorAddress={addedByAddress} 
+          projectCreatorAddress={effectiveCreatorAddress} 
+          initialMetadata={projectMetadata} 
+          onConfirm={handleClaimProject} 
+          isConfirming={isClaiming} 
+        />
+      )}
+      {selectedSuggestion && (
+        <AcceptMetadataSuggestionDialog
+          isOpen={!!selectedSuggestion}
+          onOpenChange={() => setSelectedSuggestion(null)}
+          suggestion={selectedSuggestion}
+          project={project}
+          currentProjectMetadata={projectMetadata}
+          onInteractionSuccess={() => {
+            setSelectedSuggestion(null);
+            refetchProjectDetails();
+            onInteractionSuccess();
+          }}
+        />
+      )}
+    </>
   );
 }

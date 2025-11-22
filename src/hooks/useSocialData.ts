@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { ProjectsData, Review, Comment, Reply } from '@/types/social';
+import { ProjectsData, Review, Comment, Reply, ProposedNoteEdit } from '@/types/social';
 import { PROTOCOL_ADDRESS } from '@/lib/social';
 import { retryFetch } from '@/utils/api'; // Import retryFetch
 
@@ -93,12 +93,8 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
         const contentOrAction = match[2]; // This is the actual content or "LIKE"/"UNLIKE"
         const parts = identifier.split('.');
 
-        // NEW: Log specific identifier for debugging
-        if (identifier.includes('K.d.a.1.0')) {
-            console.log(`[useSocialData] Found specific identifier: ${identifier}, content: '${contentOrAction}', txId: ${tx.id}`);
-        }
-
-        if (parts.length >= 5 && parts.length <= 7 && !['LIKE', 'UNLIKE'].includes(contentOrAction)) {
+        // --- 1. Parse Interaction Posts (Reviews, Comments, Replies) ---
+        if (parts.length >= 5 && parts.length <= 7 && !['LIKE', 'UNLIKE'].includes(contentOrAction) && !identifier.includes('META')) {
             const proj = parts[1];
             const review = parts[2];
             let comm = '0', rep = '0', ver, ord;
@@ -111,7 +107,7 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
             const version = parseInt(ver, 10);
             const order = parseInt(ord, 10);
             if (isNaN(version) || isNaN(order)) {
-                console.warn(`[useSocialData] Invalid version or order for identifier: ${identifier}`);
+                console.warn(`[useSocialData] Invalid version or order for interaction identifier: ${identifier}`);
                 continue;
             }
 
@@ -145,16 +141,9 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                     // Check if this chunk marks the post as excluded
                     if (contentOrAction === 'EXCLUDE') {
                         interaction.isExcluded = true;
-                        // If excluded, we don't need further chunks for this version
                         multiPartContent[versionedId] = { 0: 'EXCLUDE' }; 
                     } else if (interaction.isExcluded && version === interaction.latestVersion) {
-                        // If we are receiving content chunks for the current version, it means it's an edit, so un-exclude it.
                         interaction.isExcluded = false;
-                    }
-
-                    // NEW: Log when an interaction is updated
-                    if (identifier.includes('K.d.a.1.0')) {
-                        console.log(`[useSocialData] Interaction updated for ${identifier}. Content chunk: '${contentOrAction}', order: ${order}, isExcluded: ${interaction.isExcluded}`);
                     }
                 }
             };
@@ -168,7 +157,9 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                     projectFirstReviewSender[proj] = { sender: tx.sender, timestamp: tx['round-time'] };
                 }
             }
-        } else if (tx['payment-transaction'] && ['LIKE', 'UNLIKE'].includes(contentOrAction)) {
+        } 
+        // --- 2. Parse Like/Unlike Events ---
+        else if (tx['payment-transaction'] && ['LIKE', 'UNLIKE'].includes(contentOrAction)) {
             const [, identifier, action] = match;
             const idParts = identifier.split('.');
             // The item ID for likes should be the full interaction ID (e.g., proj.review.comment.reply)
@@ -178,8 +169,57 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
             if (!itemLikeEvents[itemId]) itemLikeEvents[itemId] = [];
             itemLikeEvents[itemId].push({ sender: tx.sender, action: action as 'LIKE' | 'UNLIKE', timestamp: tx['round-time'], txId: tx.id });
         }
+        // --- 3. Parse Metadata Suggestion (META) ---
+        else if (identifier.includes('META')) {
+            // Identifier format: [Hash].[Proj].[EditId].[Order] META [Content]
+            const metaParts = identifier.split('.');
+            if (metaParts.length === 4) { // [Hash].[Proj].[EditId].[Order]
+                const proj = metaParts[1];
+                const editId = metaParts[2];
+                const order = parseInt(metaParts[3], 10);
+                
+                if (!parsedProjects[proj]) parsedProjects[proj] = { id: proj, reviews: {}, proposedNoteEdits: {} };
+                
+                const fullEditId = `${proj}.${editId}`;
+                
+                if (!parsedProjects[proj].proposedNoteEdits[editId]) {
+                    parsedProjects[proj].proposedNoteEdits[editId] = {
+                        id: fullEditId,
+                        projectId: proj,
+                        sender: tx.sender,
+                        content: '',
+                        timestamp: tx['round-time'],
+                        txId: tx.id,
+                        latestVersion: 1, // Always 1 for suggestions
+                        likes: new Set(),
+                        likeCount: 0,
+                        likeHistory: [],
+                        isExcluded: false,
+                        status: 'pending', // Default status
+                    };
+                }
+                
+                const suggestion = parsedProjects[proj].proposedNoteEdits[editId];
+                const versionedId = `${suggestion.id}.1`; // Suggestions are always version 1
+                
+                if (!multiPartContent[versionedId]) {
+                    multiPartContent[versionedId] = {};
+                }
+                multiPartContent[versionedId][order] = contentOrAction;
+                
+                // Update metadata fields (sender, timestamp, txId) only if this is the latest transaction for this editId
+                if (tx['round-time'] > suggestion.timestamp) {
+                    suggestion.sender = tx.sender;
+                    suggestion.timestamp = tx['round-time'];
+                    suggestion.txId = tx.id;
+                }
+            }
+        }
     }
 
+    // --- Phase 2: Assemble Content and Process Likes ---
+    
+    // 1. Assemble Interaction Content
     Object.values(parsedProjects).forEach(proj => {
         Object.values(proj.reviews).forEach(review => {
             const assemble = (interaction: Review | Comment | Reply) => {
@@ -192,8 +232,6 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                 if (multiPartContent[versionedId]) {
                     interaction.content = Object.keys(multiPartContent[versionedId]).map(Number).sort((a, b) => a - b).map(key => multiPartContent[versionedId][key]).join('');
                 } else {
-                    // If there's no multipart content for this versionedId, it means the content was empty.
-                    // Ensure content is explicitly set to an empty string.
                     interaction.content = "";
                 }
             };
@@ -204,7 +242,20 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
             });
         });
     });
+    
+    // 2. Assemble Metadata Suggestion Content
+    Object.values(parsedProjects).forEach(proj => {
+        Object.values(proj.proposedNoteEdits).forEach(suggestion => {
+            const versionedId = `${suggestion.id}.1`;
+            if (multiPartContent[versionedId]) {
+                suggestion.content = Object.keys(multiPartContent[versionedId]).map(Number).sort((a, b) => a - b).map(key => multiPartContent[versionedId][key]).join('');
+            } else {
+                suggestion.content = "";
+            }
+        });
+    });
 
+    // 3. Process Likes (unchanged)
     Object.values(parsedProjects).forEach(proj => {
         Object.values(proj.reviews).forEach(review => {
             const processInteraction = (interaction: Review | Comment | Reply) => {
@@ -227,6 +278,7 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
         });
     });
 
+    // --- Phase 3: Final Cleanup and Metadata ---
     Object.values(parsedProjects).forEach(proj => {
         if (projectFirstReviewSender[proj.id]) proj.creatorWallet = projectFirstReviewSender[proj.id].sender;
         
@@ -235,12 +287,20 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
 
         const filteredReviews: { [reviewId: string]: Review } = {};
         Object.values(proj.reviews).forEach(review => {
-            // Keep the review ONLY if its content is not empty or whitespace-only AND it is NOT excluded.
             if (review.content.trim() !== "" && !review.isExcluded) {
                 filteredReviews[review.id.split('.')[1]] = review;
             }
         });
         proj.reviews = filteredReviews;
+        
+        // Filter out empty/invalid proposed edits
+        const filteredEdits: { [editId: string]: ProposedNoteEdit } = {};
+        Object.values(proj.proposedNoteEdits).forEach(edit => {
+            if (edit.content.trim() !== "") {
+                filteredEdits[edit.id.split('.')[1]] = edit;
+            }
+        });
+        proj.proposedNoteEdits = filteredEdits;
     });
 
     console.log("[useSocialData] Finished parseTransactions. Latest Confirmed Round:", latestConfirmedRound, "Resulting projects:", parsedProjects);

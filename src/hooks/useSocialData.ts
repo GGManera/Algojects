@@ -194,10 +194,12 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                 
                 if (!parsedProjects[proj]) parsedProjects[proj] = { id: proj, reviews: {}, proposedNoteEdits: {} };
                 
-                const fullEditId = `${proj}.${editId}`;
+                // NEW: Prefix the full ID with 'S-' to prevent collision with review/comment IDs
+                const prefixedEditId = `S-${editId}`;
+                const fullEditId = `${proj}.${prefixedEditId}`;
                 
-                if (!parsedProjects[proj].proposedNoteEdits[editId]) {
-                    parsedProjects[proj].proposedNoteEdits[editId] = {
+                if (!parsedProjects[proj].proposedNoteEdits[prefixedEditId]) {
+                    parsedProjects[proj].proposedNoteEdits[prefixedEditId] = {
                         id: fullEditId,
                         projectId: proj,
                         sender: tx.sender,
@@ -213,7 +215,7 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                     };
                 }
                 
-                const suggestion = parsedProjects[proj].proposedNoteEdits[editId];
+                const suggestion = parsedProjects[proj].proposedNoteEdits[prefixedEditId];
                 const versionedId = `${suggestion.id}.1`; // Suggestions are always version 1
                 
                 if (!multiPartContent[versionedId]) {
@@ -244,6 +246,7 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                 
                 const versionedId = `${interaction.id}.${interaction.latestVersion}`;
                 if (multiPartContent[versionedId]) {
+                    // Ensure content is assembled correctly
                     interaction.content = Object.keys(multiPartContent[versionedId]).map(Number).sort((a, b) => a - b).map(key => multiPartContent[versionedId][key]).join('');
                 } else {
                     interaction.content = "";
@@ -301,8 +304,11 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
         // Filter out empty/invalid proposed edits
         const filteredEdits: { [editId: string]: ProposedNoteEdit } = {};
         Object.values(proj.proposedNoteEdits).forEach(edit => {
+            // The key in proposedNoteEdits is the prefixed ID (e.g., S-a)
             if (edit.content.trim() !== "") {
-                filteredEdits[edit.id.split('.')[1]] = edit;
+                // Keep the prefixed ID as the key in the final map
+                const prefixedId = edit.id.split('.')[1];
+                filteredEdits[prefixedId] = edit;
             }
         });
         proj.proposedNoteEdits = filteredEdits;

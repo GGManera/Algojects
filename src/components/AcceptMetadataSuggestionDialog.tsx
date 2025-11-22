@@ -20,12 +20,12 @@ import { showError, showSuccess, showLoading, dismissToast } from '@/utils/toast
 import { useWallet } from '@txnlab/use-wallet-react';
 import { ProjectMetadata, MetadataItem } from '@/types/project';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { acceptMetadataSuggestionAndReward } from '@/lib/coda'; // Import the new function
+import { updateCodaAfterSuggestionAcceptance } from '@/lib/coda'; // Import the new function
 import { PaymentConfirmationDialog } from './PaymentConfirmationDialog'; // Import PaymentConfirmationDialog
 import { useSettings } from '@/hooks/useSettings';
 import { toast } from 'sonner';
 import { PROTOCOL_ADDRESS } from '@/lib/social'; // Import PROTOCOL_ADDRESS
-import algosdk from 'algosdk'; // <--- ADICIONADO
+import algosdk from 'algosdk';
 
 const SUGGESTION_REWARD_ALGO = 0.2; // UPDATED to 0.2 ALGO
 const TRANSACTION_TIMEOUT_MS = 60000;
@@ -197,13 +197,13 @@ export function AcceptMetadataSuggestionDialog({
     );
 
     try {
+      // Execute the on-chain transactions (Reward + ACCEPT tag)
       await Promise.race([atcToExecute.execute(algodClient, 4), timeoutPromise]);
 
       // 3. Update Coda Metadata (only after on-chain TX is confirmed)
-      await acceptMetadataSuggestionAndReward(
+      // We use the new function that only handles the Coda update
+      await updateCodaAfterSuggestionAcceptance(
         project.id,
-        suggestion.sender,
-        suggestion.txId,
         finalMergedMetadata,
         activeAddress!,
         transactionSigner!,

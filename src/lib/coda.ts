@@ -85,8 +85,6 @@ export async function thankContributorAndClaimProject(
   const contributorAmountMicroAlgos = Math.round(totalRewardMicroAlgos * (contributorShare / 100));
   const algojectsAmountMicroAlgos = totalRewardMicroAlgos - contributorAmountMicroAlgos;
 
-  const txnsToSign: TransactionDisplayItem[] = [];
-
   // 1. Payment to Contributor
   if (contributorAmountMicroAlgos > 0) {
     const paymentToContributorTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
@@ -97,7 +95,6 @@ export async function thankContributorAndClaimProject(
       note: new TextEncoder().encode(`Thanks for adding ${projectName} to AlgoJects! Here's your reward.`),
     });
     atc.addTransaction({ txn: paymentToContributorTxn, signer: transactionSigner });
-    txnsToSign.push({ type: 'pay', from: activeAddress, to: contributorAddress, amount: contributorAmountMicroAlgos, role: 'Contributor Reward' });
   }
 
   // 2. Payment to AlgoJects (Protocol) for the remaining share
@@ -110,7 +107,6 @@ export async function thankContributorAndClaimProject(
       note: new TextEncoder().encode(`Claim fee for Project ${projectId}`),
     });
     atc.addTransaction({ txn: paymentToProtocolTxn, signer: transactionSigner });
-    txnsToSign.push({ type: 'pay', from: activeAddress, to: PROTOCOL_ADDRESS, amount: algojectsAmountMicroAlgos, role: 'Protocol Fee' });
   }
 
   // 3. Data Transaction to Protocol (0 ALGO) to record the claim
@@ -124,7 +120,6 @@ export async function thankContributorAndClaimProject(
     note: new TextEncoder().encode(claimTag),
   });
   atc.addTransaction({ txn: dataTxn, signer: transactionSigner });
-  txnsToSign.push({ type: 'pay', from: activeAddress, to: PROTOCOL_ADDRESS, amount: 0, note: claimTag, role: 'Claim Data' });
 
 
   // Execute the group transaction
@@ -163,49 +158,17 @@ export async function thankContributorAndClaimProject(
 }
 
 /**
- * Handles the group transaction for accepting a metadata suggestion, rewarding the proposer,
- * and updating the project metadata in Coda.
+ * Updates Coda metadata after a suggestion has been accepted on-chain.
+ * This function performs the Proof of Ownership transaction and the Coda API call.
  */
-export async function acceptMetadataSuggestionAndReward(
+export async function updateCodaAfterSuggestionAcceptance(
   projectId: string,
-  proposerAddress: string,
-  suggestionTxId: string,
   finalMetadata: ProjectMetadata,
   activeAddress: string,
   transactionSigner: algosdk.TransactionSigner,
   algodClient: algosdk.Algodv2
 ): Promise<void> {
-  const atc = new algosdk.AtomicTransactionComposer();
-  const suggestedParams = await algodClient.getTransactionParams().do();
-
-  // 1. Payment to Proposer (0.1 ALGO reward)
-  const paymentToProposerTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-    sender: activeAddress,
-    receiver: proposerAddress,
-    amount: SUGGESTION_REWARD_MICRO_ALGOS,
-    suggestedParams,
-    note: new TextEncoder().encode(`Reward for accepted metadata suggestion (TX: ${suggestionTxId.substring(0, 10)}...)`),
-  });
-  atc.addTransaction({ txn: paymentToProposerTxn, signer: transactionSigner });
-
-  // 2. Data Transaction to Protocol (0 ALGO) to record the acceptance
-  // Tag format: ACCEPT.[Project ID].[Suggestion TXID]
-  const acceptTag = `ACCEPT.${projectId}.${suggestionTxId}`;
-  const dataTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-    sender: activeAddress,
-    receiver: PROTOCOL_ADDRESS,
-    amount: 0,
-    suggestedParams,
-    note: new TextEncoder().encode(acceptTag),
-  });
-  atc.addTransaction({ txn: dataTxn, signer: transactionSigner });
-
-  // Execute the group transaction
-  console.log(`[Coda Client] Sending group transaction for accepting suggestion for Project ${projectId}...`);
-  await atc.execute(algodClient, 4);
-  console.log(`[Coda Client] Group transaction confirmed. Updating Coda metadata.`);
-
-  // 3. Update Coda Metadata (using the final merged metadata)
+  // This function now only performs the Coda update logic, including the Proof of Ownership.
   await updateProjectDetailsClient(
     projectId,
     finalMetadata,

@@ -44,9 +44,13 @@ interface ProjectMetadataSuggestionFormProps {
 }
 
 export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, initialMetadata, onCancel, initialItem }: ProjectMetadataSuggestionFormProps) {
-  // Initialize state with initialItem if provided, otherwise start empty
+  // Initialize state with initialItem if provided, otherwise start with one empty item
   const initialSuggestedItems: ProjectMetadata = useMemo(() => {
-    return initialItem ? [initialItem] : [];
+    if (initialItem) {
+      return [initialItem];
+    }
+    // If no initial item, start with one empty item for the 'Add New' flow
+    return [{ title: '', value: '', type: 'text' }];
   }, [initialItem]);
 
   const [suggestedItems, setSuggestedItems] = useState<ProjectMetadata>(initialSuggestedItems);
@@ -80,18 +84,24 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
       const newItems = prev.filter((_, i) => i !== index);
       
       // If we are in single-item edit mode and the item is removed, go back to selector
-      if (initialItem && newItems.length === 0) {
+      // If we are in 'Add New' mode and the only item is removed, we should also go back to selector
+      if (newItems.length === 0) {
         onCancel();
         return [];
       }
       
       return newItems;
     });
-  }, [initialItem, onCancel]);
+  }, [onCancel]);
 
   const handleAddMetadataItem = useCallback(() => {
-    setSuggestedItems(prev => [...prev, { title: '', value: '', type: 'text' }]);
-  }, []);
+    // Only allow adding if we are in multi-item mode (i.e., initialItem is defined, though we restrict this below)
+    // Given the new requirement, this button should be disabled unless we change the scope.
+    // For now, we keep the logic simple: only one item per suggestion transaction.
+    if (suggestedItems.length === 0) {
+        setSuggestedItems(prev => [...prev, { title: '', value: '', type: 'text' }]);
+    }
+  }, [suggestedItems.length]);
 
   // Reconstruct the final JSON string from the state array (this is the delta)
   const finalJsonContent = useMemo(() => {
@@ -241,6 +251,9 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
   const hasNfd = !!nfd?.name;
   const canSubmit = !activeAddress || isLoading || nfdLoading || !hasNfd || !isReadyToSubmit;
   const inputDisabled = !activeAddress || isLoading || nfdLoading || !hasNfd;
+  
+  // Determine if we are in single-item mode (always true now, but we check the array length)
+  const isSingleItemMode = suggestedItems.length === 1;
 
   if (!activeAddress || !hasNfd) {
     return (
@@ -270,12 +283,12 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
             <Hash className="h-4 w-4 text-hodl-blue" />
             <AlertTitle className="text-hodl-blue">Suggest Metadata Edit (Delta)</AlertTitle>
             <AlertDescription>
-                {initialItem ? `Editing existing field: ${initialItem.title}.` : "Add new metadata fields below."} Only the fields you add here will be submitted as a suggestion delta. A small fee of 0.1 ALGO applies.
+                {initialItem ? `Editing existing field: ${initialItem.title}.` : "Adding a new metadata field."} Only the field(s) you add here will be submitted as a suggestion delta. A small fee of 0.1 ALGO applies.
             </AlertDescription>
         </Alert>
         
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Suggested Fields (Delta)</h3>
+          <h3 className="text-lg font-semibold">Suggested Field (Delta)</h3>
           {suggestedItems.map((item, index) => (
             <MetadataItemEditor
               key={index}
@@ -287,17 +300,15 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
               disabled={inputDisabled}
             />
           ))}
-          {/* Only allow adding new items if we are not in single-item edit mode */}
-          {!initialItem && (
-            <Button
-              variant="outline"
-              onClick={handleAddMetadataItem}
-              disabled={inputDisabled}
-              className="w-full mt-2"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" /> Add New Metadata Field
-            </Button>
-          )}
+          {/* Disable the Add button as per the requirement (one item per transaction) */}
+          <Button
+            variant="outline"
+            onClick={handleAddMetadataItem}
+            disabled={true} // Always disabled now
+            className="w-full mt-2 opacity-50 cursor-not-allowed"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" /> Add New Metadata Field (Max 1 per suggestion)
+          </Button>
         </div>
         
         <Button onClick={handleSubmit} disabled={canSubmit} className="w-full">

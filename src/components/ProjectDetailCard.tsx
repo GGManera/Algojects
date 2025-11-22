@@ -351,7 +351,7 @@ export function ProjectDetailCard({
   }, []);
 
   const handleSelectNewSuggestion = useCallback(() => {
-    setItemToSuggestEdit(undefined);
+    setItemToSuggestEdit(undefined); // Undefined means 'Add New' mode
     setIsSuggestionSelectorOpen(false);
     setShowMetadataSuggestionForm(true);
   }, []);

@@ -184,7 +184,7 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                 
                 if (!parsedProjects[proj].proposedNoteEdits[editId]) {
                     parsedProjects[proj].proposedNoteEdits[editId] = {
-                        id: fullEditId, // Use fullEditId as the interaction ID
+                        id: fullEditId,
                         projectId: proj,
                         sender: tx.sender,
                         content: '',
@@ -297,8 +297,7 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
         const filteredEdits: { [editId: string]: ProposedNoteEdit } = {};
         Object.values(proj.proposedNoteEdits).forEach(edit => {
             if (edit.content.trim() !== "") {
-                // Use the sequential ID (e.g., 'a', 'b') as the key for the map
-                filteredEdits[edit.id.split('.')[1]] = edit; 
+                filteredEdits[edit.id.split('.')[1]] = edit;
             }
         });
         proj.proposedNoteEdits = filteredEdits;

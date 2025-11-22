@@ -54,6 +54,7 @@ export function CommentItem({
   globalViewMode, // NEW PROP
 }: CommentItemProps) {
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
+  const [hasUserClicked, setHasUserClicked] = useState(false); // NEW: Track if user has clicked
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const [showReplyForm, setShowReplyForm] = useState(false); // NEW State for reply form
   const ref = useRef<HTMLDivElement>(null);
@@ -122,14 +123,14 @@ export function CommentItem({
     }
   }, [isHighlighted]);
 
-  // NEW: Sticky Hover Logic
+  // UPDATED: Sticky Hover Logic
   const handleMouseEnter = useCallback(() => {
     setLastActiveId(comment.id);
-    // If currently collapsed AND there are replies, expand it permanently
-    if (!areRepliesVisible && repliesCount > 0) { 
+    // Only expand on hover if the user hasn't clicked yet AND there are replies
+    if (!hasUserClicked && !areRepliesVisible && repliesCount > 0) { 
         setAreRepliesVisible(true);
     }
-  }, [comment.id, setLastActiveId, areRepliesVisible, repliesCount]);
+  }, [comment.id, setLastActiveId, areRepliesVisible, repliesCount, hasUserClicked]);
 
   const handleMouseLeave = useCallback(() => {
     setLastActiveId(null);
@@ -141,6 +142,8 @@ export function CommentItem({
       return;
     }
     if (isExcluded) return; // Prevent interaction if excluded
+    // NEW: Set clicked state and toggle expansion
+    setHasUserClicked(true);
     handleToggleExpand();
     setShowInteractionDetails(false);
   };

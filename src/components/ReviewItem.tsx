@@ -60,6 +60,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
   }, [expandCommentId, review.id]);
 
   const [isExpanded, setIsExpanded] = useState(containsTargetComment);
+  const [hasUserClicked, setHasUserClicked] = useState(false); // NEW: Track if user has clicked
   const [showAllComments, setShowAllComments] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
@@ -141,18 +142,20 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
     if ((e.target as HTMLElement).closest('button, a')) {
       return;
     }
+    // NEW: Set clicked state and toggle expansion
+    setHasUserClicked(true);
     handleToggleExpand();
     setShowInteractionDetails(false);
   };
 
-  // NEW: Sticky Hover Logic
+  // UPDATED: Sticky Hover Logic
   const handleMouseEnter = useCallback(() => {
     setLastActiveId(review.id);
-    // If currently collapsed AND there are comments, expand it permanently
-    if (!isExpanded && hasComments) { 
+    // Only expand on hover if the user hasn't clicked yet AND there are comments
+    if (!hasUserClicked && !isExpanded && hasComments) { 
         setIsExpanded(true);
     }
-  }, [review.id, setLastActiveId, isExpanded, hasComments]);
+  }, [review.id, setLastActiveId, isExpanded, hasComments, hasUserClicked]);
 
   const handleMouseLeave = useCallback(() => {
     setLastActiveId(null);

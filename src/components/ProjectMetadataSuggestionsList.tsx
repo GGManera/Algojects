@@ -10,9 +10,8 @@ import { AlertTriangle, Hash, CheckCircle, XCircle, ChevronDown, ChevronUp, Arro
 import { cn, formatTimestamp } from '@/lib/utils';
 import { CollapsibleContent } from './CollapsibleContent';
 import { useWallet } from '@txnlab/use-wallet-react';
-import { SuggestedMetadataItem } from './SuggestedMetadataItem'; // Import new component
-import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext'; // Import context
-import { ScrollArea } from '@/components/ui/scroll-area'; // Import ScrollArea
+import { SuggestedMetadataItem } from './SuggestedMetadataItem';
+import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 
 interface ProjectMetadataSuggestionsListProps {
   project: Project;
@@ -44,7 +43,6 @@ export function ProjectMetadataSuggestionsList({
 
   const [isPendingListOpen, setIsPendingListOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
-  const [expandedSuggestionId, setExpandedSuggestionId] = useState<string | null>(null); // NEW state for individual expansion
 
   if (!activeAddress && allSuggestions.length === 0) {
     return (
@@ -72,14 +70,16 @@ export function ProjectMetadataSuggestionsList({
     return null;
   };
   
-  const handleToggleSuggestion = (id: string) => {
-    setExpandedSuggestionId(prev => (prev === id ? null : id));
+  // Handle click on the suggestion item itself (only opens modal for editors)
+  const handleSuggestionClick = (suggestion: ProposedNoteEdit) => {
+    if (isWhitelistedEditor) {
+        onReviewSuggestion(suggestion);
+    }
   };
 
   const renderSuggestionItem = (suggestion: ProposedNoteEdit, isEditorView: boolean) => {
     const delta = parseDelta(suggestion.content);
     const isUserOwn = activeAddress === suggestion.sender;
-    const isExpanded = expandedSuggestionId === suggestion.id;
     
     if (!delta) {
         return (
@@ -96,53 +96,46 @@ export function ProjectMetadataSuggestionsList({
     }
 
     return (
-        <div key={suggestion.id} className="flex flex-col space-y-3 p-3 rounded-md bg-card border border-primary/30">
+        <div 
+            key={suggestion.id} 
+            className={cn(
+                "flex flex-col space-y-3 p-3 rounded-md bg-card border border-primary/30",
+                isEditorView ? "cursor-pointer hover:bg-muted/50 transition-colors" : "cursor-default"
+            )}
+            onClick={() => handleSuggestionClick(suggestion)}
+        >
             
-            {/* Header/Trigger */}
-            <div 
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => handleToggleSuggestion(suggestion.id)}
-            >
+            {/* Metadata Preview (Simulated Button/Card) */}
+            <div className="grid grid-cols-2 gap-2">
+                {delta.map((item, index) => (
+                    <SuggestedMetadataItem 
+                        key={index} 
+                        item={item} 
+                        isMobile={isMobile} 
+                        className="!max-w-none" // Override max-width for grid layout
+                    />
+                ))}
+            </div>
+
+            {/* Details and Action */}
+            <div className="flex items-center justify-between pt-2 border-t border-muted">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <UserDisplay address={suggestion.sender} textSizeClass="text-xs" avatarSizeClass="h-4 w-4" linkTo={`/profile/${suggestion.sender}`} />
                     <span>{formatTimestamp(suggestion.timestamp)}</span>
                     {!isEditorView && !isUserOwn && <span className="text-yellow-500">Pending Review</span>}
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                    {isEditorView && (
-                        <Button size="sm" onClick={(e) => { e.stopPropagation(); onReviewSuggestion(suggestion); }} className="bg-green-600 hover:bg-green-700">
-                            Review & Accept
-                            <ArrowRight className="h-4 w-4 ml-2" />
-                        </Button>
-                    )}
-                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </div>
+                {isEditorView && (
+                    <Button 
+                        size="sm" 
+                        onClick={(e) => { e.stopPropagation(); onReviewSuggestion(suggestion); }} 
+                        className="bg-green-600 hover:bg-green-700"
+                    >
+                        Review & Accept
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                )}
             </div>
-            
-            {/* Collapsible Content */}
-            <CollapsibleContent isOpen={isExpanded}>
-                <div className="space-y-3 pt-2">
-                    <h4 className="text-sm font-semibold text-primary">Suggested Changes (Delta):</h4>
-                    
-                    {/* Metadata Preview (Simulated Button/Card) */}
-                    <div className="grid grid-cols-2 gap-2">
-                        {delta.map((item, index) => (
-                            <SuggestedMetadataItem 
-                                key={index} 
-                                item={item} 
-                                isMobile={isMobile} 
-                                className="!max-w-none" // Override max-width for grid layout
-                            />
-                        ))}
-                    </div>
-                    
-                    <h4 className="text-sm font-semibold text-muted-foreground pt-2">Raw JSON Delta:</h4>
-                    <ScrollArea className="h-[100px] border rounded-md p-2 bg-muted/20 font-mono text-xs">
-                        <pre className="whitespace-pre-wrap break-all selectable-text">{suggestion.content}</pre>
-                    </ScrollArea>
-                </div>
-            </CollapsibleContent>
         </div>
     );
   };

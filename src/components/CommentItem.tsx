@@ -54,7 +54,6 @@ export function CommentItem({
   globalViewMode, // NEW PROP
 }: CommentItemProps) {
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
-  const [isHoverExpanded, setIsHoverExpanded] = useState(false); // REINTRODUCED: State for hover expansion
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const [showReplyForm, setShowReplyForm] = useState(false); // NEW State for reply form
   const ref = useRef<HTMLDivElement>(null);
@@ -87,8 +86,8 @@ export function CommentItem({
     }
   }, [globalViewMode, forcedRepliesState]);
 
-  // NEW: 3. Use local state OR hover state for rendering visibility
-  const isRepliesVisible = areRepliesVisible || isHoverExpanded; // UPDATED
+  // NEW: 3. Use local state for rendering visibility
+  const isRepliesVisible = areRepliesVisible;
 
   // NEW: Keyboard navigation state
   const isFocused = focusedId === comment.id;
@@ -123,17 +122,18 @@ export function CommentItem({
     }
   }, [isHighlighted]);
 
-  // REINTRODUCED: handleMouseEnter and handleMouseLeave
+  // NEW: Sticky Hover Logic
   const handleMouseEnter = useCallback(() => {
     setLastActiveId(comment.id);
-    if (!areRepliesVisible && repliesCount > 0) { // Only force expansion if currently collapsed by click state AND there are replies
-        setIsHoverExpanded(true);
+    // If currently collapsed AND there are replies, expand it permanently
+    if (!areRepliesVisible && repliesCount > 0) { 
+        setAreRepliesVisible(true);
     }
   }, [comment.id, setLastActiveId, areRepliesVisible, repliesCount]);
 
   const handleMouseLeave = useCallback(() => {
     setLastActiveId(null);
-    setIsHoverExpanded(false);
+    // No action here, the expansion is sticky until clicked again
   }, [setLastActiveId]);
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -173,8 +173,8 @@ export function CommentItem({
             : "bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white" // Normal style
         )}
         onClick={handleCardClick}
-        onMouseEnter={handleMouseEnter} // REINTRODUCED
-        onMouseLeave={handleMouseLeave} // REINTRODUCED
+        onMouseEnter={handleMouseEnter} // UPDATED
+        onMouseLeave={handleMouseLeave} // UPDATED
         data-nav-id={comment.id} // Add data attribute for keyboard navigation
       >
         <div className="p-3">

@@ -368,17 +368,17 @@ export function ProjectDetailCard({
 
   // --- Edit/Suggest Button Click Handler ---
   const handleEditButtonClick = () => {
+    // Close all other forms/selectors first
+    setShowProjectDetailsForm(false);
+    setShowMetadataSuggestionForm(false);
+    setIsSuggestionSelectorOpen(false);
+
     if (isWhitelistedEditor) {
       // Whitelisted Editor: Toggle Direct Edit Form
       setShowProjectDetailsForm(prev => !prev);
-      setShowMetadataSuggestionForm(false);
-      setIsSuggestionSelectorOpen(false);
     } else {
       // Regular User: Toggle Suggestion Selector
       setIsSuggestionSelectorOpen(prev => !prev);
-      setShowProjectDetailsForm(false);
-      setShowMetadataSuggestionForm(false);
-      setItemToSuggestEdit(undefined);
     }
   };
 

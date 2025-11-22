@@ -83,18 +83,27 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
             continue;
         }
         const noteContent = decodeNote(tx.note);
+        
+        // Match the identifier (everything before the first space) and the rest (content/action)
         const match = noteContent.match(/^([^ ]+) (.*)/s);
         if (!match) {
-            // console.log("[useSocialData] Skipping transaction, note does not match expected format:", noteContent);
+            // Check for 0-ALGO data transactions like CLAIM or ACCEPT
+            const dataMatch = noteContent.match(/^(CLAIM|ACCEPT)\.([^.]+)\.([^.]+)/);
+            if (dataMatch) {
+                // These are processed later if needed, but we skip them here as they don't define content/likes
+            }
             continue;
         }
 
-        const identifier = match[1];
-        const contentOrAction = match[2]; // This is the actual content or "LIKE"/"UNLIKE"
-        const parts = identifier.split('.');
+        const identifier = match[1]; // e.g., h.p1.a.0.1.1.0 or h.p1.a.0 META
+        const contentOrAction = match[2]; // e.g., LIKE or actual content
 
         // --- 1. Parse Interaction Posts (Reviews, Comments, Replies) ---
-        if (parts.length >= 5 && parts.length <= 7 && !['LIKE', 'UNLIKE'].includes(contentOrAction) && !identifier.includes('META')) {
+        // Check if it's a standard interaction post (7 parts max, not LIKE/UNLIKE, not META)
+        const parts = identifier.split('.');
+        const isInteractionPost = parts.length >= 5 && parts.length <= 7 && !['LIKE', 'UNLIKE'].includes(contentOrAction) && !identifier.includes('META');
+
+        if (isInteractionPost) {
             const proj = parts[1];
             const review = parts[2];
             let comm = '0', rep = '0', ver, ord;
@@ -160,23 +169,30 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
         } 
         // --- 2. Parse Like/Unlike Events ---
         else if (tx['payment-transaction'] && ['LIKE', 'UNLIKE'].includes(contentOrAction)) {
-            const [, identifier, action] = match;
+            // Identifier format: [Hash].[ItemId].[Version]
             const idParts = identifier.split('.');
-            // The item ID for likes should be the full interaction ID (e.g., proj.review.comment.reply)
-            // The identifier from the note is already in the format hash.itemId.version
-            // So we need to extract itemId from identifier
-            const itemId = idParts.slice(1, idParts.length - 1).join('.'); // e.g., d.a.1
+            // ItemId is parts[1] to parts[length-2]
+            const itemId = idParts.slice(1, idParts.length - 1).join('.'); 
             if (!itemLikeEvents[itemId]) itemLikeEvents[itemId] = [];
-            itemLikeEvents[itemId].push({ sender: tx.sender, action: action as 'LIKE' | 'UNLIKE', timestamp: tx['round-time'], txId: tx.id });
+            itemLikeEvents[itemId].push({ sender: tx.sender, action: contentOrAction as 'LIKE' | 'UNLIKE', timestamp: tx['round-time'], txId: tx.id });
         }
         // --- 3. Parse Metadata Suggestion (META) ---
         else if (identifier.includes('META')) {
-            // Identifier format: [Hash].[Proj].[EditId].[Order] META [Content]
+            // Identifier format: [Hash].[Proj].[EditId].[Order] META
+            // We need to split the identifier by '.' and remove the 'META' tag from the last part
             const metaParts = identifier.split('.');
-            if (metaParts.length === 4) { // [Hash].[Proj].[EditId].[Order]
+            
+            // Ensure we have at least 4 parts (Hash.Proj.EditId.Order)
+            if (metaParts.length >= 4) { 
                 const proj = metaParts[1];
                 const editId = metaParts[2];
-                const order = parseInt(metaParts[3], 10);
+                const orderPart = metaParts[3];
+                
+                // The order part might contain the META tag, e.g., "0 META"
+                const orderMatch = orderPart.match(/^(\d+)/);
+                const order = orderMatch ? parseInt(orderMatch[1], 10) : NaN;
+
+                if (isNaN(order)) continue;
                 
                 if (!parsedProjects[proj]) parsedProjects[proj] = { id: proj, reviews: {}, proposedNoteEdits: {} };
                 
@@ -222,7 +238,7 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
     // 1. Assemble Interaction Content
     Object.values(parsedProjects).forEach(proj => {
         Object.values(proj.reviews).forEach(review => {
-            const assemble = (interaction: Review | Comment | Reply) => {
+            const assemble = (interaction: Review | Comment | Reply | ProposedNoteEdit) => {
                 if (interaction.isExcluded) {
                     interaction.content = "[EXCLUDED]";
                     return;
@@ -240,22 +256,13 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                 assemble(comment);
                 Object.values(comment.replies).forEach(reply => assemble(reply));
             });
+            
+            // Assemble Proposed Edits Content
+            Object.values(proj.proposedNoteEdits).forEach(suggestion => assemble(suggestion));
         });
     });
     
-    // 2. Assemble Metadata Suggestion Content
-    Object.values(parsedProjects).forEach(proj => {
-        Object.values(proj.proposedNoteEdits).forEach(suggestion => {
-            const versionedId = `${suggestion.id}.1`;
-            if (multiPartContent[versionedId]) {
-                suggestion.content = Object.keys(multiPartContent[versionedId]).map(Number).sort((a, b) => a - b).map(key => multiPartContent[versionedId][key]).join('');
-            } else {
-                suggestion.content = "";
-            }
-        });
-    });
-
-    // 3. Process Likes (unchanged)
+    // 2. Process Likes (unchanged)
     Object.values(parsedProjects).forEach(proj => {
         Object.values(proj.reviews).forEach(review => {
             const processInteraction = (interaction: Review | Comment | Reply) => {

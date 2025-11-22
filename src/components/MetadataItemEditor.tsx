@@ -72,6 +72,7 @@ export function MetadataItemEditor({ item, index, onUpdate, onUpdateType, onRemo
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="text">Text</SelectItem>
+            <SelectItem value="project-name">Project Name</SelectItem>
             <SelectItem value="url">URL</SelectItem>
             <SelectItem value="x-url">X (Twitter) URL</SelectItem>
             <SelectItem value="asset-id">Asset ID</SelectItem>

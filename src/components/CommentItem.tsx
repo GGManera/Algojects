@@ -54,7 +54,7 @@ export function CommentItem({
   globalViewMode, // NEW PROP
 }: CommentItemProps) {
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
-  const [isHoverExpanded, setIsHoverExpanded] = useState(false); // NEW STATE for hover expansion
+  // REMOVED: const [isHoverExpanded, setIsHoverExpanded] = useState(false); 
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const [showReplyForm, setShowReplyForm] = useState(false); // NEW State for reply form
   const ref = useRef<HTMLDivElement>(null);
@@ -87,8 +87,8 @@ export function CommentItem({
     }
   }, [globalViewMode, forcedRepliesState]);
 
-  // NEW: 3. Use local state OR hover state for rendering visibility
-  const isRepliesVisible = areRepliesVisible || isHoverExpanded; // UPDATED
+  // NEW: 3. Use local state for rendering visibility
+  const isRepliesVisible = areRepliesVisible; // UPDATED: Removed isHoverExpanded
 
   // NEW: Keyboard navigation state
   const isFocused = focusedId === comment.id;
@@ -123,17 +123,7 @@ export function CommentItem({
     }
   }, [isHighlighted]);
 
-  const handleMouseEnter = useCallback(() => {
-    setLastActiveId(comment.id);
-    if (!areRepliesVisible && repliesCount > 0) { // Only force expansion if currently collapsed by click state AND there are replies
-        setIsHoverExpanded(true);
-    }
-  }, [comment.id, setLastActiveId, areRepliesVisible, repliesCount]);
-
-  const handleMouseLeave = useCallback(() => {
-    setLastActiveId(null);
-    setIsHoverExpanded(false);
-  }, [setLastActiveId]);
+  // REMOVED: handleMouseEnter and handleMouseLeave
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button, a')) {
@@ -172,8 +162,8 @@ export function CommentItem({
             : "bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white" // Normal style
         )}
         onClick={handleCardClick}
-        onMouseEnter={handleMouseEnter} // UPDATED
-        onMouseLeave={handleMouseLeave} // UPDATED
+        onMouseEnter={() => setLastActiveId(comment.id)} // Kept setLastActiveId
+        onMouseLeave={() => setLastActiveId(null)} // Kept setLastActiveId
         data-nav-id={comment.id} // Add data attribute for keyboard navigation
       >
         <div className="p-3">

@@ -60,7 +60,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
   }, [expandCommentId, review.id]);
 
   const [isExpanded, setIsExpanded] = useState(containsTargetComment);
-  const [isHoverExpanded, setIsHoverExpanded] = useState(false); // NEW STATE for hover expansion
+  // REMOVED: const [isHoverExpanded, setIsHoverExpanded] = useState(false); 
   const [showAllComments, setShowAllComments] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
@@ -103,8 +103,8 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
     }
   }, [globalViewMode, forcedExpansionState]);
 
-  // NEW: 3. Use local state OR hover state for rendering visibility
-  const isCommentsVisible = isExpanded || isHoverExpanded; // UPDATED
+  // NEW: 3. Use local state for rendering visibility
+  const isCommentsVisible = isExpanded; // UPDATED: Removed isHoverExpanded
 
   // NEW: Keyboard navigation state
   const isFocused = focusedId === review.id;
@@ -146,17 +146,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
     setShowInteractionDetails(false);
   };
 
-  const handleMouseEnter = useCallback(() => {
-    setLastActiveId(review.id);
-    if (!isExpanded && hasComments) { // Only force expansion if currently collapsed by click state AND there are comments
-        setIsHoverExpanded(true);
-    }
-  }, [review.id, setLastActiveId, isExpanded, hasComments]);
-
-  const handleMouseLeave = useCallback(() => {
-    setLastActiveId(null);
-    setIsHoverExpanded(false);
-  }, [setLastActiveId]);
+  // REMOVED: handleMouseEnter and handleMouseLeave
 
   const handleShare = async () => {
     const reviewIdLocal = review.id.split('.')[1];
@@ -193,8 +183,8 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
           !isFocused && "hover:focus-glow-border" // Apply hover focus highlight only if not already focused
         )}
         onClick={handleCardClick}
-        onMouseEnter={handleMouseEnter} // UPDATED
-        onMouseLeave={handleMouseLeave} // UPDATED
+        // REMOVED: onMouseEnter={handleMouseEnter} 
+        // REMOVED: onMouseLeave={handleMouseLeave} 
         data-nav-id={review.id} // Add data attribute for keyboard navigation
       >
         <div className="flex items-start justify-between p-2">

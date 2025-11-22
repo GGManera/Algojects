@@ -41,7 +41,6 @@ export function ProjectMetadataSuggestionsList({
   const [isPendingListOpen, setIsPendingListOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(false);
 
-  // If no user is connected and there are no suggestions, return null immediately.
   if (!activeAddress && allSuggestions.length === 0) {
     return (
       <Alert className="bg-muted/50 border-muted text-muted-foreground">
@@ -52,21 +51,26 @@ export function ProjectMetadataSuggestionsList({
     );
   }
   
-  // If connected but no suggestions, show the default message (handled by the return below)
   if (allSuggestions.length === 0) return null;
 
-
-  // Helper to parse the JSON delta for display
+  // Helper to clean and parse the JSON delta for display
   const getDeltaPreview = (content: string) => {
     try {
-      // IMPORTANT: Trim the content before parsing to remove potential leading/trailing whitespace from chunk assembly
-      const parsed = JSON.parse(content.trim()); 
+      // 1. Trim whitespace
+      let cleanedContent = content.trim();
+      
+      // 2. Remove control characters (like newlines, tabs, etc.) that might break JSON.parse
+      // This regex removes all control characters except those explicitly allowed in JSON strings (which are escaped).
+      // Since the content is expected to be raw JSON, we remove newlines and tabs.
+      cleanedContent = cleanedContent.replace(/[\r\n\t]/g, '');
+      
+      const parsed = JSON.parse(cleanedContent); 
       if (Array.isArray(parsed) && parsed.length > 0) {
         const titles = parsed.map(item => item.title).join(', ');
         return `Changes proposed for: ${titles}`;
       }
     } catch (e) {
-      // If parsing fails, return the error message
+      console.error("Failed to parse suggestion JSON:", e, "Raw content:", content);
       return "Invalid JSON content (Review required)";
     }
     return "Empty or invalid suggestion content.";

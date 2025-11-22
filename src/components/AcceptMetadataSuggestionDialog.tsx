@@ -96,9 +96,13 @@ export function AcceptMetadataSuggestionDialog({
   // Parse the suggested JSON content (the delta) when the dialog opens or suggestion changes
   useMemo(() => {
     try {
-      // IMPORTANT: Add trim() here
-      const trimmedContent = suggestion.content.trim();
-      const parsed = JSON.parse(trimmedContent);
+      // 1. Trim whitespace
+      let cleanedContent = suggestion.content.trim();
+      
+      // 2. Remove control characters (like newlines, tabs, etc.) that might break JSON.parse
+      cleanedContent = cleanedContent.replace(/[\r\n\t]/g, '');
+      
+      const parsed = JSON.parse(cleanedContent);
       if (Array.isArray(parsed)) {
         setSuggestedDelta(parsed as ProjectMetadata);
         setParseError(null);

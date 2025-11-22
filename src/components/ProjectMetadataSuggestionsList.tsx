@@ -54,7 +54,8 @@ export function ProjectMetadataSuggestionsList({
   // Helper to parse the JSON delta for display
   const getDeltaPreview = (content: string) => {
     try {
-      const parsed = JSON.parse(content);
+      // IMPORTANT: Trim the content before parsing to remove potential leading/trailing whitespace from chunk assembly
+      const parsed = JSON.parse(content.trim()); 
       if (Array.isArray(parsed) && parsed.length > 0) {
         const titles = parsed.map(item => item.title).join(', ');
         return `Changes proposed for: ${titles}`;
@@ -67,7 +68,7 @@ export function ProjectMetadataSuggestionsList({
 
   return (
     <div className="space-y-4">
-      {/* 1. Pending Suggestions (Visible only to Whitelisted Editors) */}
+      {/* 1. Pending Suggestions (Visible ONLY to Whitelisted Editors, with Review button) */}
       {isWhitelistedEditor && pendingSuggestions.length > 0 && (
         <div className="space-y-2 border rounded-lg p-4 bg-yellow-900/20 border-yellow-500/50">
           <div 
@@ -75,7 +76,7 @@ export function ProjectMetadataSuggestionsList({
             onClick={() => setIsPendingListOpen(prev => !prev)}
           >
             <h3 className="text-lg font-semibold flex items-center gap-2 text-yellow-500">
-              <AlertTriangle className="h-5 w-5" /> {pendingSuggestions.length} Pending Suggestion(s)
+              <AlertTriangle className="h-5 w-5" /> {pendingSuggestions.length} Pending Suggestion(s) (Editor View)
             </h3>
             {isPendingListOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
@@ -100,7 +101,7 @@ export function ProjectMetadataSuggestionsList({
         </div>
       )}
 
-      {/* 2. User's Own Suggestions (Visible to the user who made them) */}
+      {/* 2. User's Own Suggestions (Visible ONLY to the user who made them) */}
       {userSuggestions.length > 0 && (
         <div className="space-y-2 border rounded-lg p-4 bg-primary/10 border-primary/50">
           <div 
@@ -131,16 +132,15 @@ export function ProjectMetadataSuggestionsList({
         </div>
       )}
       
-      {/* 3. General Suggestions (Visible to everyone, showing all pending) */}
-      {/* This section is redundant if we show the user's own suggestions, but we can use it to show all pending if the user is not the admin */}
-      {!isWhitelistedEditor && !activeAddress && pendingSuggestions.length > 0 && (
+      {/* 3. General Pending Suggestions (Visible to ALL non-editors, including non-connected users) */}
+      {!isWhitelistedEditor && pendingSuggestions.length > 0 && (
         <div className="space-y-2 border rounded-lg p-4 bg-muted/30 border-muted-foreground/50">
           <div 
             className="flex items-center justify-between cursor-pointer"
             onClick={() => setIsPendingListOpen(prev => !prev)}
           >
             <h3 className="text-lg font-semibold flex items-center gap-2 text-muted-foreground">
-              <Hash className="h-5 w-5" /> Pending Suggestions ({pendingSuggestions.length})
+              <Hash className="h-5 w-5" /> Pending Suggestions ({pendingSuggestions.length}) (Public View)
             </h3>
             {isPendingListOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>

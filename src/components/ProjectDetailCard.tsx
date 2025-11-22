@@ -32,8 +32,8 @@ import { cn } from '@/lib/utils';
 import { ProjectMetadataSuggestionForm } from "./ProjectMetadataSuggestionForm";
 import { AcceptMetadataSuggestionDialog } from "./AcceptMetadataSuggestionDialog";
 import { CollapsibleContent } from "./CollapsibleContent";
-import { MetadataSuggestionSelector } from "./MetadataSuggestionSelector"; // NEW Import
-import { ProjectMetadataSuggestionsList } from "./ProjectMetadataSuggestionsList"; // NEW Import
+import { MetadataSuggestionSelector } from "./MetadataSuggestionSelector";
+import { ProjectMetadataSuggestionsList } from "./ProjectMetadataSuggestionsList";
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
@@ -495,15 +495,6 @@ export function ProjectDetailCard({
                     onProjectDetailsUpdated={handleProjectDetailsUpdated} 
                   />
                 </CollapsibleContent>
-
-                {/* 2. Whitelisted Editor: Pending Suggestions List (Always visible if pending > 0) */}
-                <ProjectMetadataSuggestionsList
-                    project={project}
-                    currentProjectMetadata={projectMetadata}
-                    onReviewSuggestion={handleReviewSuggestion}
-                    isWhitelistedEditor={isWhitelistedEditor}
-                    onInteractionSuccess={onInteractionSuccess}
-                />
               </>
             ) : (
               <>
@@ -527,17 +518,17 @@ export function ProjectDetailCard({
                     initialItem={itemToSuggestEdit}
                   />
                 </CollapsibleContent>
-                
-                {/* 3. Regular User: View Own/Pending Suggestions (Always visible if pending > 0 or user suggested) */}
-                <ProjectMetadataSuggestionsList
-                    project={project}
-                    currentProjectMetadata={projectMetadata}
-                    onReviewSuggestion={handleReviewSuggestion} // Will be ignored for non-admins
-                    isWhitelistedEditor={isWhitelistedEditor}
-                    onInteractionSuccess={onInteractionSuccess}
-                />
               </>
             )}
+            
+            {/* 3. Suggestions List (Visible to everyone, but actions only for editors) */}
+            <ProjectMetadataSuggestionsList
+                project={project}
+                currentProjectMetadata={projectMetadata}
+                onReviewSuggestion={handleReviewSuggestion}
+                isWhitelistedEditor={isWhitelistedEditor}
+                onInteractionSuccess={onInteractionSuccess}
+            />
           </div>
 
         </CardContent>

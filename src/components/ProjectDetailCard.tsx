@@ -185,7 +185,7 @@ export function ProjectDetailCard({
 
   const currentProjectDetailsEntry = projectDetails.find(entry => entry.projectId === projectId);
   const projectMetadata: MetadataItem[] = currentProjectDetailsEntry?.projectMetadata || [];
-  const pendingSuggestions = Object.values(project.proposedNoteEdits || {});
+  const pendingSuggestions = Object.values(project.proposedNoteEdits || []);
 
   const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
   const assetId = assetIdItem?.value ? parseInt(assetIdItem.value, 10) : undefined;

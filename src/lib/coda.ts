@@ -60,6 +60,7 @@ export async function updateProjectDetailsClient(
 }
 
 const MICRO_ALGOS_PER_ALGO = 1_000_000;
+const SUGGESTION_REWARD_MICRO_ALGOS = 100_000; // 0.1 ALGO
 
 /**
  * Handles the group transaction for thanking the contributor and claiming the project.
@@ -155,6 +156,59 @@ export async function thankContributorAndClaimProject(
   await updateProjectDetailsClient(
     projectId,
     updatedMetadata,
+    activeAddress,
+    transactionSigner,
+    algodClient
+  );
+}
+
+/**
+ * Handles the group transaction for accepting a metadata suggestion, rewarding the proposer,
+ * and updating the project metadata in Coda.
+ */
+export async function acceptMetadataSuggestionAndReward(
+  projectId: string,
+  proposerAddress: string,
+  suggestionTxId: string,
+  finalMetadata: ProjectMetadata,
+  activeAddress: string,
+  transactionSigner: algosdk.TransactionSigner,
+  algodClient: algosdk.Algodv2
+): Promise<void> {
+  const atc = new algosdk.AtomicTransactionComposer();
+  const suggestedParams = await algodClient.getTransactionParams().do();
+
+  // 1. Payment to Proposer (0.1 ALGO reward)
+  const paymentToProposerTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    sender: activeAddress,
+    receiver: proposerAddress,
+    amount: SUGGESTION_REWARD_MICRO_ALGOS,
+    suggestedParams,
+    note: new TextEncoder().encode(`Reward for accepted metadata suggestion (TX: ${suggestionTxId.substring(0, 10)}...)`),
+  });
+  atc.addTransaction({ txn: paymentToProposerTxn, signer: transactionSigner });
+
+  // 2. Data Transaction to Protocol (0 ALGO) to record the acceptance
+  // Tag format: ACCEPT.[Project ID].[Suggestion TXID]
+  const acceptTag = `ACCEPT.${projectId}.${suggestionTxId}`;
+  const dataTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    sender: activeAddress,
+    receiver: PROTOCOL_ADDRESS,
+    amount: 0,
+    suggestedParams,
+    note: new TextEncoder().encode(acceptTag),
+  });
+  atc.addTransaction({ txn: dataTxn, signer: transactionSigner });
+
+  // Execute the group transaction
+  console.log(`[Coda Client] Sending group transaction for accepting suggestion for Project ${projectId}...`);
+  await atc.execute(algodClient, 4);
+  console.log(`[Coda Client] Group transaction confirmed. Updating Coda metadata.`);
+
+  // 3. Update Coda Metadata (using the final merged metadata)
+  await updateProjectDetailsClient(
+    projectId,
+    finalMetadata,
     activeAddress,
     transactionSigner,
     algodClient

@@ -98,6 +98,9 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
         const identifier = match[1]; // e.g., h.p1.a.0.1.1.0 or h.p1.a.0
         let contentOrAction = match[2]; // e.g., LIKE or actual content or META {...}
 
+        // Helper to clean content chunks (removes control characters like null bytes or non-printable chars)
+        const cleanContentChunk = (chunk: string) => chunk.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
+
         // --- 1. Parse Interaction Posts (Reviews, Comments, Replies) ---
         // Check if it's a standard interaction post (7 parts max, not LIKE/UNLIKE, not META)
         const parts = identifier.split('.');
@@ -145,7 +148,9 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                     if (!multiPartContent[versionedId]) {
                         multiPartContent[versionedId] = {};
                     }
-                    multiPartContent[versionedId][order] = contentOrAction;
+                    
+                    // Clean content before storing
+                    multiPartContent[versionedId][order] = cleanContentChunk(contentOrAction);
 
                     // Check if this chunk marks the post as excluded
                     if (contentOrAction === 'EXCLUDE') {
@@ -188,7 +193,8 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                 const order = parseInt(metaParts[3], 10); // Order is the last part of the identifier
 
                 // Extract the actual JSON content by removing "META " from the start of contentOrAction
-                const jsonContent = contentOrAction.substring(5).trim();
+                const rawJsonContent = contentOrAction.substring(5);
+                const jsonContent = cleanContentChunk(rawJsonContent); // Clean content before storing
 
                 if (isNaN(order)) continue;
                 
@@ -221,7 +227,7 @@ const parseTransactions = (transactions: any[], latestConfirmedRound: number): P
                 if (!multiPartContent[versionedId]) {
                     multiPartContent[versionedId] = {};
                 }
-                multiPartContent[versionedId][order] = jsonContent; // Store the JSON chunk
+                multiPartContent[versionedId][order] = jsonContent; // Store the cleaned JSON chunk
                 
                 // Update metadata fields (sender, timestamp, txId) only if this is the latest transaction for this editId
                 if (tx['round-time'] > suggestion.timestamp) {

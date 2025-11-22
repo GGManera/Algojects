@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ProjectMetadata, MetadataItem } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CollapsibleContent } from './CollapsibleContent';
+import { Label } from '@/components/ui/label'; // ADDED Label import
 
 interface MetadataSuggestionSelectorProps {
   initialMetadata: ProjectMetadata;

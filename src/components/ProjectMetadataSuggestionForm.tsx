@@ -14,10 +14,10 @@ import { useSettings } from "@/hooks/useSettings";
 import { toast } from "sonner";
 import { retryFetch } from "@/utils/api";
 import { ProjectMetadata, MetadataItem } from '@/types/project';
-import { ArrowRight, AlertTriangle, PlusCircle, Hash } from "lucide-react";
+import { ArrowRight, AlertTriangle, PlusCircle, Hash, Edit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { MetadataItemEditor } from "./MetadataItemEditor"; // NEW Import
+import { MetadataItemEditor } from "./MetadataItemEditor";
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const MAX_NOTE_SIZE_BYTES = 1024;
@@ -38,12 +38,12 @@ interface TransactionDisplayItem {
 interface ProjectMetadataSuggestionFormProps {
   project: Project;
   onInteractionSuccess: () => void;
-  initialMetadata: ProjectMetadata;
+  initialMetadata: ProjectMetadata; // Still useful for context, but not for editing
 }
 
 export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, initialMetadata }: ProjectMetadataSuggestionFormProps) {
-  // State now holds the array of metadata items
-  const [metadataItems, setMetadataItems] = useState<ProjectMetadata>(initialMetadata);
+  // State now holds ONLY the items the user is suggesting to add/edit
+  const [suggestedItems, setSuggestedItems] = useState<ProjectMetadata>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -55,32 +55,29 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
   const { nfd, loading: nfdLoading } = useNfd(activeAddress);
   const { settings } = useSettings();
 
-  // Sync initialMetadata prop to local state when it changes (e.g., after a successful update)
-  useEffect(() => {
-    setMetadataItems(initialMetadata);
-  }, [initialMetadata]);
-
+  // Handlers now operate on suggestedItems state
   const handleUpdateMetadataItem = useCallback((index: number, field: keyof MetadataItem, value: string) => {
-    setMetadataItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+    setSuggestedItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
   }, []);
 
   const handleUpdateMetadataType = useCallback((index: number, type: MetadataItem['type']) => {
-    setMetadataItems(prev => prev.map((item, i) => i === index ? { ...item, type } : item));
+    setSuggestedItems(prev => prev.map((item, i) => i === index ? { ...item, type } : item));
   }, []);
 
   const handleRemoveMetadataItem = useCallback((index: number) => {
-    setMetadataItems(prev => prev.filter((_, i) => i !== index));
+    setSuggestedItems(prev => prev.filter((_, i) => i !== index));
   }, []);
 
   const handleAddMetadataItem = useCallback(() => {
-    setMetadataItems(prev => [...prev, { title: 'New Field', value: '', type: 'text' }]);
+    setSuggestedItems(prev => [...prev, { title: '', value: '', type: 'text' }]);
   }, []);
 
-  // Reconstruct the final JSON string from the state array
+  // Reconstruct the final JSON string from the state array (this is the delta)
   const finalJsonContent = useMemo(() => {
-    const cleanedItems = metadataItems.filter(item => item.title.trim() && item.value.trim());
+    // Only include items that have both title and value
+    const cleanedItems = suggestedItems.filter(item => item.title.trim() && item.value.trim());
     return JSON.stringify(cleanedItems, null, 2);
-  }, [metadataItems]);
+  }, [suggestedItems]);
 
   const isReadyToSubmit = useMemo(() => {
     return finalJsonContent.trim() !== '[]' && finalJsonContent.trim() !== '';
@@ -130,7 +127,7 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
       // Identifier format: [Hash].[Proj].[EditId]
       const noteIdentifierBase = `${hash}.${project.id}.${newEditId}`;
       
-      // The content is the JSON string itself
+      // The content is the JSON string itself (the delta)
       const contentBytes = new TextEncoder().encode(finalJsonContent);
       
       // We use a special tag 'META' to distinguish this from interaction posts
@@ -204,6 +201,7 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
       await Promise.race([atcToExecute.execute(algodClient, 4), timeoutPromise]);
 
       toast.success("Metadata suggestion submitted successfully!", { id: loadingToastIdRef.current });
+      setSuggestedItems([]); // Clear form on success
       onInteractionSuccess(); // Refetch social data to see the suggestion
     } catch (error) {
       console.error(error);
@@ -239,15 +237,15 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
       <div className="space-y-4">
         <Alert className="bg-muted/50 border-hodl-blue text-muted-foreground">
             <Hash className="h-4 w-4 text-hodl-blue" />
-            <AlertTitle className="text-hodl-blue">Suggest Metadata Edit (On-Chain)</AlertTitle>
+            <AlertTitle className="text-hodl-blue">Suggest Metadata Edit (Delta)</AlertTitle>
             <AlertDescription>
-                Edit the fields below to suggest changes to the project's metadata. This suggestion is recorded on-chain and requires approval from a whitelisted editor. A small fee of 0.1 ALGO applies.
+                Add or edit specific metadata fields below. Only the fields you add here will be submitted as a suggestion delta. A small fee of 0.1 ALGO applies.
             </AlertDescription>
         </Alert>
         
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Metadata Fields</h3>
-          {metadataItems.map((item, index) => (
+          <h3 className="text-lg font-semibold">Suggested Fields (Delta)</h3>
+          {suggestedItems.map((item, index) => (
             <MetadataItemEditor
               key={index}
               item={item}

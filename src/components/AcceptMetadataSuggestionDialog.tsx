@@ -18,8 +18,8 @@ import { CheckCircle, XCircle, ArrowRight, AlertTriangle } from 'lucide-react';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { showError, showSuccess, showLoading, dismissToast } from '@/utils/toast';
 import { useWallet } from '@txnlab/use-wallet-react';
-import { ProjectMetadata } from '@/types/project';
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"; // IMPORT CORRIGIDO
+import { ProjectMetadata, MetadataItem } from '@/types/project';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface AcceptMetadataSuggestionDialogProps {
   isOpen: boolean;
@@ -29,6 +29,29 @@ interface AcceptMetadataSuggestionDialogProps {
   currentProjectMetadata: ProjectMetadata;
   onInteractionSuccess: () => void;
 }
+
+// Helper function to merge delta into base metadata
+const mergeMetadata = (base: ProjectMetadata, delta: ProjectMetadata): ProjectMetadata => {
+    const newMetadata = [...base];
+    
+    delta.forEach(deltaItem => {
+        const existingIndex = newMetadata.findIndex(baseItem => 
+            baseItem.title === deltaItem.title && baseItem.type === deltaItem.type
+        );
+
+        if (existingIndex !== -1) {
+            // Update existing item
+            newMetadata[existingIndex] = deltaItem;
+        } else {
+            // Add new item
+            newMetadata.push(deltaItem);
+        }
+    });
+    
+    // Filter out items where value is empty (implying deletion/removal)
+    return newMetadata.filter(item => item.value.trim() !== '');
+};
+
 
 export function AcceptMetadataSuggestionDialog({
   isOpen,
@@ -41,29 +64,35 @@ export function AcceptMetadataSuggestionDialog({
   const { activeAddress, transactionSigner, algodClient } = useWallet();
   const { updateProjectDetails } = useProjectDetails();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [parsedMetadata, setParsedMetadata] = useState<ProjectMetadata | null>(null);
+  const [suggestedDelta, setSuggestedDelta] = useState<ProjectMetadata | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
 
-  // Parse the suggested JSON content when the dialog opens or suggestion changes
+  // Parse the suggested JSON content (the delta) when the dialog opens or suggestion changes
   useMemo(() => {
     try {
       const parsed = JSON.parse(suggestion.content);
       if (Array.isArray(parsed)) {
-        setParsedMetadata(parsed as ProjectMetadata);
+        setSuggestedDelta(parsed as ProjectMetadata);
         setParseError(null);
       } else {
-        setParsedMetadata(null);
-        setParseError("Suggested content is not a valid JSON array.");
+        setSuggestedDelta(null);
+        setParseError("Suggested content is not a valid JSON array (delta).");
       }
     } catch (e) {
-      setParsedMetadata(null);
-      setParseError("Failed to parse suggested JSON content.");
+      setSuggestedDelta(null);
+      setParseError("Failed to parse suggested JSON content (delta).");
     }
   }, [suggestion.content]);
+  
+  // Calculate the final merged metadata for preview
+  const finalMergedMetadata = useMemo(() => {
+      if (!suggestedDelta) return currentProjectMetadata;
+      return mergeMetadata(currentProjectMetadata, suggestedDelta);
+  }, [currentProjectMetadata, suggestedDelta]);
 
   const handleAccept = async () => {
-    if (!parsedMetadata || parseError) {
-      showError("Cannot accept: Invalid metadata format.");
+    if (!finalMergedMetadata || parseError) {
+      showError("Cannot accept: Invalid metadata format or parsing error.");
       return;
     }
     if (!activeAddress || !transactionSigner || !algodClient) {
@@ -75,11 +104,10 @@ export function AcceptMetadataSuggestionDialog({
     const toastId = showLoading("Accepting suggestion and updating Coda...");
 
     try {
-      // The core logic is to replace the entire project metadata with the suggested array.
-      // We rely on the suggestion form to provide a complete, valid array.
+      // Use the calculated finalMergedMetadata
       await updateProjectDetails({
         projectId: project.id,
-        newProjectMetadata: parsedMetadata,
+        newProjectMetadata: finalMergedMetadata,
       });
 
       dismissToast(toastId);
@@ -95,27 +123,19 @@ export function AcceptMetadataSuggestionDialog({
     }
   };
 
-  // NOTE: Rejection logic is currently not implemented on-chain, 
-  // but we can simulate it by simply hiding the suggestion (which requires no on-chain action).
-  const handleReject = () => {
-    // For now, rejection is a local action (closing the dialog and ignoring the suggestion).
-    // If persistent rejection is needed, it would require an on-chain transaction.
-    onOpenChange(false);
-    showSuccess("Suggestion rejected (locally).");
-  };
-
-  const jsonString = suggestion.content;
+  const deltaJsonString = suggestion.content;
   const currentJsonString = JSON.stringify(currentProjectMetadata, null, 2);
+  const mergedJsonString = JSON.stringify(finalMergedMetadata, null, 2);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] bg-card text-foreground">
+      <DialogContent className="sm:max-w-[900px] bg-card text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-primary">
             <CheckCircle className="h-5 w-5" /> Review Metadata Suggestion
           </DialogTitle>
           <DialogDescription>
-            Review the proposed metadata changes submitted by the user below. Accepting this will overwrite the current project metadata in Coda.
+            Review the proposed metadata changes (delta) and the resulting merged metadata. Accepting this will update the project metadata in Coda.
           </DialogDescription>
         </DialogHeader>
 
@@ -138,20 +158,28 @@ export function AcceptMetadataSuggestionDialog({
             </Alert>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Suggested Delta */}
+            <div className="space-y-2">
+                <h4 className="text-md font-semibold text-primary">Suggested Delta (On-Chain)</h4>
+                <ScrollArea className="h-[300px] border rounded-md p-2 bg-muted/20 font-mono text-xs">
+                    <pre className="whitespace-pre-wrap break-all">{deltaJsonString}</pre>
+                </ScrollArea>
+            </div>
+            
             {/* Current Metadata */}
             <div className="space-y-2">
-                <h4 className="text-md font-semibold text-muted-foreground">Current Metadata</h4>
+                <h4 className="text-md font-semibold text-muted-foreground">Current Metadata (Coda)</h4>
                 <ScrollArea className="h-[300px] border rounded-md p-2 bg-muted/20 font-mono text-xs">
                     <pre className="whitespace-pre-wrap break-all">{currentJsonString}</pre>
                 </ScrollArea>
             </div>
             
-            {/* Suggested Metadata */}
+            {/* Final Merged Metadata */}
             <div className="space-y-2">
-                <h4 className="text-md font-semibold text-primary">Suggested Metadata</h4>
+                <h4 className="text-md font-semibold text-green-400">Final Merged Metadata (Preview)</h4>
                 <ScrollArea className="h-[300px] border rounded-md p-2 bg-muted/20 font-mono text-xs">
-                    <pre className="whitespace-pre-wrap break-all">{jsonString}</pre>
+                    <pre className="whitespace-pre-wrap break-all">{mergedJsonString}</pre>
                 </ScrollArea>
             </div>
         </div>

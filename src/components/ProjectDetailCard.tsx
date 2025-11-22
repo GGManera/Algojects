@@ -29,9 +29,9 @@ import { useWallet } from "@txnlab/use-wallet-react";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { ProjectMetadataNavigator } from "./ProjectMetadataNavigator";
 import { cn } from '@/lib/utils';
-import { ProjectMetadataSuggestionForm } from "./ProjectMetadataSuggestionForm"; // NEW Import
-import { AcceptMetadataSuggestionDialog } from "./AcceptMetadataSuggestionDialog"; // NEW Import
-import { CollapsibleContent } from "./CollapsibleContent"; // Import CollapsibleContent
+import { ProjectMetadataSuggestionForm } from "./ProjectMetadataSuggestionForm";
+import { AcceptMetadataSuggestionDialog } from "./AcceptMetadataSuggestionDialog";
+import { CollapsibleContent } from "./CollapsibleContent";
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
@@ -137,9 +137,9 @@ export function ProjectDetailCard({
   const { projectDetails, loading, isRefreshing, error: detailsError, refetch: refetchProjectDetails } = useProjectDetails();
   const isLoadingDetails = loading || isRefreshing;
   const [showProjectDetailsForm, setShowProjectDetailsForm] = useState(false);
-  const [showMetadataSuggestionForm, setShowMetadataSuggestionForm] = useState(false); // NEW State
-  const [showPendingSuggestions, setShowPendingSuggestions] = useState(false); // NEW State
-  const [selectedSuggestion, setSelectedSuggestion] = useState<ProposedNoteEdit | null>(null); // NEW State
+  const [showMetadataSuggestionForm, setShowMetadataSuggestionForm] = useState(false);
+  const [showPendingSuggestions, setShowPendingSuggestions] = useState(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<ProposedNoteEdit | null>(null);
   const [showThankContributorDialog, setShowThankContributorDialog] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [viewMode, setViewMode] = useState<'reviews' | 'comments' | 'replies' | 'interactions'>('reviews');
@@ -179,7 +179,7 @@ export function ProjectDetailCard({
 
   const currentProjectDetailsEntry = projectDetails.find(entry => entry.projectId === projectId);
   const projectMetadata: MetadataItem[] = currentProjectDetailsEntry?.projectMetadata || [];
-  const pendingSuggestions = Object.values(project.proposedNoteEdits || {}); // NEW: Get pending suggestions
+  const pendingSuggestions = Object.values(project.proposedNoteEdits || {});
 
   const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
   const assetId = assetIdItem?.value ? parseInt(assetIdItem.value, 10) : undefined;
@@ -234,13 +234,12 @@ export function ProjectDetailCard({
   const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true';
   const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true';
   const creatorWalletItem = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet');
-  const projectWalletItem = projectMetadata.find(item => item.type === 'project-wallet'); // NEW: Project Wallet Item
+  const projectWalletItem = projectMetadata.find(item => item.type === 'project-wallet');
   const creatorWalletMetadata = creatorWalletItem?.value;
-  const projectWalletMetadata = projectWalletItem?.value; // NEW: Project Wallet Value
+  const projectWalletMetadata = projectWalletItem?.value;
   
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
   
-  // Effective creator address is either the Creator Wallet metadata, Project Wallet metadata, or the first review sender
   const effectiveCreatorAddress = creatorWalletMetadata || projectWalletMetadata || project.creatorWallet;
 
   const handleProjectDetailsUpdated = () => {
@@ -377,7 +376,28 @@ export function ProjectDetailCard({
   return (
     <>
       <Card className={cn("bg-accent mt-8 relative transition-all duration-200", isFocused && !isMetadataNavigatorFocused ? "focus-glow-border" : "", !isFocused && "hover:focus-glow-border")} data-nav-id={project.id} onMouseEnter={() => setLastActiveId(project.id)} onMouseLeave={() => setLastActiveId(null)}>
-        {activeAddress && <Button variant="ghost" size="icon" onClick={() => setShowProjectDetailsForm(prev => !prev)} className="absolute top-2 left-2 z-10 h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Toggle project details form"><Edit className="h-4 w-4" /></Button>}
+        
+        {/* Dynamic Edit/Suggest Button */}
+        {activeAddress && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => {
+              if (isWhitelistedEditor) {
+                setShowProjectDetailsForm(prev => !prev);
+                setShowMetadataSuggestionForm(false);
+              } else {
+                setShowMetadataSuggestionForm(prev => !prev);
+                setShowProjectDetailsForm(false);
+              }
+            }} 
+            className="absolute top-2 left-2 z-10 h-8 w-8 text-muted-foreground hover:text-foreground" 
+            aria-label={isWhitelistedEditor ? "Toggle project details form" : "Toggle metadata suggestion form"}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+        )}
+        
         <CardContent className="space-y-4 p-4">
           <div className="flex flex-col md:flex-row md:items-stretch md:space-x-4">
             <div className="w-full md:w-1/3 flex-col md:justify-center pb-4 md:pb-0 md:pr-4 hidden md:flex">{StatsGrid}</div>
@@ -421,23 +441,26 @@ export function ProjectDetailCard({
           </div>
           <ProjectNotesDisplay isLoadingDetails={isLoadingDetails} detailsError={detailsError} currentProjectDescription={currentProjectDescription} isCommunityNotes={isCommunityNotes} isCreatorAdded={isCreatorAdded} addedByAddress={addedByAddress} />
           
-          {/* Metadata Suggestion Section */}
+          {/* Metadata Edit/Suggestion Forms */}
           <div className="space-y-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowMetadataSuggestionForm(prev => !prev)} 
-              className="w-full justify-start text-left"
-            >
-              <Hash className="h-4 w-4 mr-2" /> 
-              {showMetadataSuggestionForm ? "Hide Suggestion Form" : "Suggest Metadata Changes"}
-            </Button>
-            <CollapsibleContent isOpen={showMetadataSuggestionForm}>
-              <ProjectMetadataSuggestionForm 
-                project={project} 
-                onInteractionSuccess={onInteractionSuccess} 
-                initialMetadata={projectMetadata}
-              />
-            </CollapsibleContent>
+            {isWhitelistedEditor ? (
+              <CollapsibleContent isOpen={showProjectDetailsForm}>
+                <ProjectDetailsForm 
+                  projectId={projectId} 
+                  initialProjectMetadata={projectMetadata} 
+                  projectCreatorAddress={effectiveCreatorAddress} 
+                  onProjectDetailsUpdated={handleProjectDetailsUpdated} 
+                />
+              </CollapsibleContent>
+            ) : (
+              <CollapsibleContent isOpen={showMetadataSuggestionForm}>
+                <ProjectMetadataSuggestionForm 
+                  project={project} 
+                  onInteractionSuccess={onInteractionSuccess} 
+                  initialMetadata={projectMetadata}
+                />
+              </CollapsibleContent>
+            )}
           </div>
 
           {/* Pending Suggestions List (Visible to Whitelisted Editors) */}
@@ -470,7 +493,6 @@ export function ProjectDetailCard({
             </div>
           )}
 
-          {activeAddress && showProjectDetailsForm && <ProjectDetailsForm projectId={projectId} initialProjectMetadata={projectMetadata} projectCreatorAddress={effectiveCreatorAddress} onProjectDetailsUpdated={handleProjectDetailsUpdated} />}
         </CardContent>
       </Card>
       <div className="space-y-6 mt-8">

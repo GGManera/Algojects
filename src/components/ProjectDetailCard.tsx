@@ -33,6 +33,7 @@ import { ProjectMetadataSuggestionForm } from "./ProjectMetadataSuggestionForm";
 import { AcceptMetadataSuggestionDialog } from "./AcceptMetadataSuggestionDialog";
 import { CollapsibleContent } from "./CollapsibleContent";
 import { MetadataSuggestionSelector } from "./MetadataSuggestionSelector"; // NEW Import
+import { ProjectMetadataSuggestionsList } from "./ProjectMetadataSuggestionsList"; // NEW Import
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
@@ -147,7 +148,6 @@ export function ProjectDetailCard({
   const [itemToSuggestEdit, setItemToSuggestEdit] = useState<MetadataItem | undefined>(undefined);
   
   // State for Pending Suggestions List (Visible to Whitelisted Editors)
-  const [showPendingSuggestions, setShowPendingSuggestions] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState<ProposedNoteEdit | null>(null);
   
   const [showThankContributorDialog, setShowThankContributorDialog] = useState(false);
@@ -189,7 +189,7 @@ export function ProjectDetailCard({
 
   const currentProjectDetailsEntry = projectDetails.find(entry => entry.projectId === projectId);
   const projectMetadata: MetadataItem[] = currentProjectDetailsEntry?.projectMetadata || [];
-  const pendingSuggestions = Object.values(project.proposedNoteEdits || {});
+  const pendingSuggestions = Object.values(project.proposedNoteEdits || []);
 
   const assetIdItem = projectMetadata.find(item => item.type === 'asset-id' || (!isNaN(parseInt(item.value)) && parseInt(item.value) > 0));
   const assetId = assetIdItem?.value ? parseInt(assetIdItem.value, 10) : undefined;
@@ -382,6 +382,10 @@ export function ProjectDetailCard({
     }
   };
 
+  const handleReviewSuggestion = useCallback((suggestion: ProposedNoteEdit) => {
+    setSelectedSuggestion(suggestion);
+  }, []);
+
   const StatsGrid = (
     <div className="grid gap-4 text-sm text-muted-foreground md:grid-cols-2 md:w-full">
       <div className={cn("flex flex-col items-center space-y-1 cursor-pointer transition-colors hover:bg-muted/50 rounded-lg p-2 col-span-2", viewMode === 'interactions' && "bg-primary/20 border border-primary")} onClick={() => handleViewModeClick('interactions')}>
@@ -492,35 +496,14 @@ export function ProjectDetailCard({
                   />
                 </CollapsibleContent>
 
-                {/* 2. Whitelisted Editor: Pending Suggestions List */}
-                {pendingSuggestions.length > 0 && (
-                  <div className="space-y-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowPendingSuggestions(prev => !prev)} 
-                      className="w-full justify-start text-left border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
-                    >
-                      <AlertTriangle className="h-4 w-4 mr-2" /> 
-                      {pendingSuggestions.length} Pending Metadata Suggestion(s)
-                      {showPendingSuggestions ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
-                    </Button>
-                    <CollapsibleContent isOpen={showPendingSuggestions}>
-                      <div className="space-y-2 p-4 border rounded-md bg-muted/30">
-                        {pendingSuggestions.map(suggestion => (
-                          <div key={suggestion.id} className="flex items-center justify-between p-2 rounded-md bg-card border">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-semibold">Suggestion by:</span>
-                              <UserDisplay address={suggestion.sender} textSizeClass="text-xs" avatarSizeClass="h-5 w-5" linkTo={`/profile/${suggestion.sender}`} />
-                            </div>
-                            <Button size="sm" onClick={() => setSelectedSuggestion(suggestion)}>
-                              Review
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  </div>
-                )}
+                {/* 2. Whitelisted Editor: Pending Suggestions List (Always visible if pending > 0) */}
+                <ProjectMetadataSuggestionsList
+                    project={project}
+                    currentProjectMetadata={projectMetadata}
+                    onReviewSuggestion={handleReviewSuggestion}
+                    isWhitelistedEditor={isWhitelistedEditor}
+                    onInteractionSuccess={onInteractionSuccess}
+                />
               </>
             ) : (
               <>
@@ -544,6 +527,15 @@ export function ProjectDetailCard({
                     initialItem={itemToSuggestEdit}
                   />
                 </CollapsibleContent>
+                
+                {/* 3. Regular User: View Own/Pending Suggestions (Always visible if pending > 0 or user suggested) */}
+                <ProjectMetadataSuggestionsList
+                    project={project}
+                    currentProjectMetadata={projectMetadata}
+                    onReviewSuggestion={handleReviewSuggestion} // Will be ignored for non-admins
+                    isWhitelistedEditor={isWhitelistedEditor}
+                    onInteractionSuccess={onInteractionSuccess}
+                />
               </>
             )}
           </div>

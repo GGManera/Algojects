@@ -76,8 +76,18 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
   }, []);
 
   const handleRemoveMetadataItem = useCallback((index: number) => {
-    setSuggestedItems(prev => prev.filter((_, i) => i !== index));
-  }, []);
+    setSuggestedItems(prev => {
+      const newItems = prev.filter((_, i) => i !== index);
+      
+      // If we are in single-item edit mode and the item is removed, go back to selector
+      if (initialItem && newItems.length === 0) {
+        onCancel();
+        return [];
+      }
+      
+      return newItems;
+    });
+  }, [initialItem, onCancel]);
 
   const handleAddMetadataItem = useCallback(() => {
     setSuggestedItems(prev => [...prev, { title: '', value: '', type: 'text' }]);

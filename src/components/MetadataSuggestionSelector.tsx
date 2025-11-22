@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { ProjectMetadata, MetadataItem } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -41,16 +41,19 @@ export function MetadataSuggestionSelector({ initialMetadata, onSelectEdit, onSe
       }));
   }, [initialMetadata]);
 
-  const handleEditExisting = () => {
+  // Effect to handle immediate form opening when an item is selected
+  useEffect(() => {
     if (selectedItemKey) {
       const selectedItem = editableMetadata.find(item => item.key === selectedItemKey);
       if (selectedItem) {
         // Pass a clean copy of the item (without the temporary 'key')
         const { key, ...cleanItem } = selectedItem;
         onSelectEdit(cleanItem);
+        // Reset selection state after triggering the action
+        setSelectedItemKey(null);
       }
     }
-  };
+  }, [selectedItemKey, editableMetadata, onSelectEdit]);
 
   return (
     <div className="space-y-4">
@@ -76,9 +79,10 @@ export function MetadataSuggestionSelector({ initialMetadata, onSelectEdit, onSe
         
         <CollapsibleContent isOpen={isEditExistingOpen}>
           <div className="space-y-3 pt-2">
+            <Label className="text-sm font-medium">Select field to edit:</Label>
             <Select
               value={selectedItemKey || undefined}
-              onValueChange={setSelectedItemKey}
+              onValueChange={setSelectedItemKey} // This triggers the useEffect above
               disabled={disabled || editableMetadata.length === 0}
             >
               <SelectTrigger className="w-full bg-muted/50">
@@ -92,13 +96,9 @@ export function MetadataSuggestionSelector({ initialMetadata, onSelectEdit, onSe
                 ))}
               </SelectContent>
             </Select>
-            <Button 
-              onClick={handleEditExisting} 
-              disabled={disabled || !selectedItemKey} 
-              className="w-full"
-            >
-              <Edit className="h-4 w-4 mr-2" /> Suggest Edit
-            </Button>
+            {editableMetadata.length === 0 && (
+                <p className="text-xs text-muted-foreground pt-2">No dynamic metadata fields are currently available for editing.</p>
+            )}
           </div>
         </CollapsibleContent>
       </div>
@@ -109,7 +109,7 @@ export function MetadataSuggestionSelector({ initialMetadata, onSelectEdit, onSe
           <PlusCircle className="h-5 w-5 text-primary" /> Add New Field
         </h3>
         <Button 
-          onClick={onSelectNew} 
+          onClick={onSelectNew} // This now directly opens the form
           disabled={disabled} 
           className="w-full"
         >

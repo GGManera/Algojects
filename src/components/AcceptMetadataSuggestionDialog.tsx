@@ -25,6 +25,7 @@ import { PaymentConfirmationDialog } from './PaymentConfirmationDialog'; // Impo
 import { useSettings } from '@/hooks/useSettings';
 import { toast } from 'sonner';
 import { PROTOCOL_ADDRESS } from '@/lib/social'; // Import PROTOCOL_ADDRESS
+import algosdk from 'algosdk'; // <--- ADICIONADO
 
 const SUGGESTION_REWARD_ALGO = 0.2; // UPDATED to 0.2 ALGO
 const TRANSACTION_TIMEOUT_MS = 60000;

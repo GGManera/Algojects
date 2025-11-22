@@ -29,22 +29,27 @@ const renderMetadataItem = (
   // Determine the text to display on the button
   let buttonText = item.title || "Link";
   let isNumericDisplay = false;
+  let isButton = false; // Flag to determine if we use btn-profile styling
 
-  if (isAssetIdItem) {
+  if (item.type === 'url' || item.type === 'x-url' || (item.value.startsWith('http') && !item.type)) {
+    buttonText = item.title || extractDomainFromUrl(item.value);
+    isButton = true;
+  } else if (isAssetIdItem) {
     buttonText = item.value;
     isNumericDisplay = true;
-  } else if (item.type === 'url') {
-    buttonText = item.title || extractDomainFromUrl(item.value);
-  } else if (item.type === 'x-url') {
-    buttonText = item.title || extractXHandleFromUrl(item.value);
+    isButton = true;
+  } else if (item.type === 'address' || item.value.length === 58) {
+    // Rendered as UserDisplay Card below
+    isButton = false;
   } else {
-    buttonText = item.title || item.value;
+    // Generic text/other types: use title/value display
+    isButton = false;
   }
 
   // --- Render Logic ---
 
   // 1. Render as a Profile Button (URL, X-URL, Asset ID)
-  if (item.type === 'url' || item.type === 'x-url' || isAssetIdItem || (item.value.startsWith('http') && !item.type)) {
+  if (isButton) {
     return (
       <div
         className={cn("btn-profile pointer-events-none opacity-80", baseItemClasses, className)}
@@ -87,7 +92,7 @@ const renderMetadataItem = (
       <div 
         className={cn("inline-flex flex-col items-center p-2 rounded-md bg-background/50 border border-border text-center pointer-events-none opacity-80", baseItemClasses, className)} 
       >
-        <span className="font-semibold text-muted-foreground text-xs">{item.title}:</span>
+        <span className="font-semibold text-muted-foreground text-xs">{item.title} ({item.type}):</span>
         <p className="text-sm text-foreground selectable-text">{item.value}</p>
       </div>
     );

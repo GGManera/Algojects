@@ -70,8 +70,8 @@ export function ProjectMetadataSuggestionsList({
     return null;
   };
   
-  // Handle click on the suggestion item itself (only opens modal for editors)
-  const handleSuggestionClick = (suggestion: ProposedNoteEdit) => {
+  // The click handler for the entire suggestion item (only relevant for editors)
+  const handleSuggestionItemClick = (suggestion: ProposedNoteEdit) => {
     if (isWhitelistedEditor) {
         onReviewSuggestion(suggestion);
     }
@@ -102,7 +102,7 @@ export function ProjectMetadataSuggestionsList({
                 "flex flex-col space-y-3 p-3 rounded-md bg-card border border-primary/30",
                 isEditorView ? "cursor-pointer hover:bg-muted/50 transition-colors" : "cursor-default"
             )}
-            onClick={() => handleSuggestionClick(suggestion)}
+            onClick={() => handleSuggestionItemClick(suggestion)} // Click on item opens modal for editors
         >
             
             {/* Metadata Preview (Simulated Button/Card) */}
@@ -128,7 +128,7 @@ export function ProjectMetadataSuggestionsList({
                 {isEditorView && (
                     <Button 
                         size="sm" 
-                        onClick={(e) => { e.stopPropagation(); onReviewSuggestion(suggestion); }} 
+                        onClick={(e) => { e.stopPropagation(); onReviewSuggestion(suggestion); }} // Button explicitly opens modal
                         className="bg-green-600 hover:bg-green-700"
                     >
                         Review & Accept

@@ -34,6 +34,7 @@ import { AcceptMetadataSuggestionDialog } from "./AcceptMetadataSuggestionDialog
 import { CollapsibleContent } from "./CollapsibleContent";
 import { MetadataSuggestionSelector } from "./MetadataSuggestionSelector";
 import { ProjectMetadataSuggestionsList } from "./ProjectMetadataSuggestionsList";
+import { useNfdResolver } from "@/hooks/useNfdResolver"; // NEW: Import useNfdResolver
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
@@ -263,10 +264,14 @@ export function ProjectDetailCard({
     return editors.split(',').map(addr => addr.trim()).filter(Boolean);
   }, [projectMetadata]);
 
+  // NEW: Resolve whitelisted editors to canonical addresses
+  const { resolvedAddresses: resolvedWhitelistedEditors, loading: resolvingEditors } = useNfdResolver(whitelistedEditors);
+
   const isWhitelistedEditor = useMemo(() => {
-    if (!activeAddress) return false;
-    return whitelistedEditors.includes(activeAddress);
-  }, [activeAddress, whitelistedEditors]);
+    if (!activeAddress || resolvingEditors) return false;
+    // Check if activeAddress is in the set of resolved addresses
+    return resolvedWhitelistedEditors.has(activeAddress);
+  }, [activeAddress, resolvedWhitelistedEditors, resolvingEditors]);
 
   // Determine if the current user is the effective creator (for claiming)
   const isEffectiveCreator = activeAddress && effectiveCreatorAddress && activeAddress === effectiveCreatorAddress;

@@ -33,6 +33,9 @@ export function MetadataItemEditor({ item, index, onUpdate, onUpdateType, onRemo
     onUpdateType(index, type as MetadataItem['type']);
   }, [index, onUpdateType]);
 
+  // Ensure the value is always a string and defaults to 'text'
+  const selectedType = item.type || 'text';
+
   return (
     <div className="flex flex-col sm:flex-row items-end gap-2 p-3 border rounded-md bg-card/50">
       <div className="flex-1 space-y-1 w-full">
@@ -60,7 +63,7 @@ export function MetadataItemEditor({ item, index, onUpdate, onUpdateType, onRemo
       <div className="w-full sm:w-[150px] space-y-1">
         <Label htmlFor={`metadata-type-${index}`} className="text-sm font-medium">Type</Label>
         <Select
-          value={item.type || 'text'}
+          value={selectedType} // Use the guaranteed string value
           onValueChange={handleUpdateType}
           disabled={disabled}
         >

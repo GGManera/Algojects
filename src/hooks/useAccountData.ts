@@ -1,3 +1,4 @@
+block) para obter o timestamp exato da criação da conta, garantindo precisão.">
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -5,18 +6,22 @@ import { retryFetch } from '@/utils/api'; // Import retryFetch
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 
-// Define a nova interface para a resposta de transações
-interface TransactionDataResponse {
-  transactions: Array<{
-    'round-time': number; // Timestamp em segundos
-    id: string;
-    // Outros campos de transação
-  }>;
+// Define interfaces para as respostas necessárias
+interface AccountDataResponse {
+  account: {
+    'created-at-round': number;
+    address: string;
+  };
   'current-round': number;
 }
 
+interface BlockDataResponse {
+  'current-round': number;
+  'timestamp': number; // Timestamp em segundos
+}
+
 interface CachedAccountCreationData {
-  timestamp: number; // Timestamp exato da primeira transação (em milissegundos)
+  timestampMs: number; // Timestamp exato da criação (em milissegundos)
   currentRound: number;
 }
 
@@ -24,7 +29,7 @@ const ACCOUNT_DATA_CACHE_KEY_PREFIX = 'accountCreationDataCache_'; // Prefix to 
 const ACCOUNT_DATA_CACHE_DURATION = 15 * 1000; // 15 seconds
 
 export function useAccountData(activeAddress: string | undefined) {
-  // Armazenamos o timestamp exato da primeira transação em milissegundos
+  // Armazenamos o timestamp exato da criação em milissegundos
   const [firstTransactionTimestampMs, setFirstTransactionTimestampMs] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +52,9 @@ export function useAccountData(activeAddress: string | undefined) {
         const cachedData: CachedAccountCreationData = JSON.parse(cachedItem);
         
         // Check cache freshness based on stored timestamp
-        isCacheStale = Date.now() - cachedData.timestamp > ACCOUNT_DATA_CACHE_DURATION;
+        isCacheStale = Date.now() - cachedData.timestampMs > ACCOUNT_DATA_CACHE_DURATION;
         
-        setFirstTransactionTimestampMs(cachedData.timestamp);
+        setFirstTransactionTimestampMs(cachedData.timestampMs);
         cacheUsed = true;
         setLoading(false);
         
@@ -68,39 +73,50 @@ export function useAccountData(activeAddress: string | undefined) {
       }
       setError(null);
       try {
-        // 1. Fetch the first transaction using limit=1 and order=asc (chronological order)
-        const url = `${INDEXER_URL}/v2/accounts/${activeAddress}/transactions?limit=1&order=asc`;
+        // --- 1. Fetch Account Details to get created-at-round ---
+        const accountUrl = `${INDEXER_URL}/v2/accounts/${activeAddress}`;
+        const accountResponse = await retryFetch(accountUrl, undefined, 5);
         
-        const response = await retryFetch(url, undefined, 5);
+        if (accountResponse.status === 404) {
+            setFirstTransactionTimestampMs(0); // Account not funded/created
+            setLoading(false);
+            return;
+        }
         
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Indexer API for account transactions responded with ${response.status}: ${errorText}`);
+        if (!accountResponse.ok) {
+          const errorText = await accountResponse.text();
+          throw new Error(`Indexer API for account details responded with ${accountResponse.status}: ${errorText}`);
         }
 
-        const data: TransactionDataResponse = await response.json();
+        const accountData: AccountDataResponse = await accountResponse.json();
+        const creationRound = accountData.account['created-at-round'];
         
-        // Log the raw response data
-        console.log(`[useAccountData] Raw Indexer response for ${activeAddress} (order=asc, limit=1):`, data);
-        
-        const firstTx = data.transactions?.[0];
-        let exactTimestampMs: number | null = null;
-
-        if (firstTx) {
-            // round-time is in seconds, convert to milliseconds
-            exactTimestampMs = firstTx['round-time'] * 1000;
-        } else {
-            // If no transactions found (e.g., account exists but has no TXs, or is unfunded)
-            exactTimestampMs = 0; 
+        if (creationRound === 0) {
+            setFirstTransactionTimestampMs(0); // Account exists but has no creation round (e.g., genesis account)
+            setLoading(false);
+            return;
         }
+
+        // --- 2. Fetch Block Timestamp using created-at-round ---
+        const blockUrl = `${INDEXER_URL}/v2/blocks/${creationRound}`;
+        const blockResponse = await retryFetch(blockUrl, undefined, 5);
+        
+        if (!blockResponse.ok) {
+            const errorText = await blockResponse.text();
+            throw new Error(`Indexer API for block ${creationRound} responded with ${blockResponse.status}: ${errorText}`);
+        }
+        
+        const blockData: BlockDataResponse = await blockResponse.json();
+        
+        // Timestamp is in seconds, convert to milliseconds
+        const exactTimestampMs = blockData.timestamp * 1000;
         
         setFirstTransactionTimestampMs(exactTimestampMs);
 
         const newCache: CachedAccountCreationData = {
-          timestamp: exactTimestampMs || 0, 
-          currentRound: data['current-round'],
+          timestampMs: exactTimestampMs, 
+          currentRound: accountData['current-round'],
         };
-        
         localStorage.setItem(cacheKey, JSON.stringify(newCache));
 
       } catch (err) {

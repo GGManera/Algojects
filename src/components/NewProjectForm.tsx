@@ -266,12 +266,12 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
   return (
     <div className="relative w-full max-w-md p-10 bg-hodl-darker box-border shadow-[0_15px_25px_rgba(0,0,0,0.6)] rounded-lg">
       
-      {/* NEW: Contribution Explanation Alert */}
+      {/* UPDATED: Contribution Explanation Alert */}
       <Alert className="bg-muted/50 border-hodl-blue text-muted-foreground mb-6">
         <Info className="h-4 w-4 text-hodl-blue" />
         <AlertTitle className="text-hodl-blue">Contribute & Earn</AlertTitle>
         <AlertDescription>
-          Contribute to your favorite projects by adding them here. Project creators can later claim administrative access to the page by rewarding you, the contributor, with a minimum of 10 ALGO.
+          Contribute to your favorite projects by adding them here. Project creators can later claim administrative access to the page by sending a minimum total reward of 10 ALGO, which they can distribute between you (the contributor) and the AlgoJects protocol.
         </AlertDescription>
       </Alert>
       
@@ -364,7 +364,8 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
           </Label>
         </div>
 
-        <div className="relative user-box">
+        {/* UPDATED: InteractionCardInput wrapped in user-box for correct label positioning */}
+        <div className="relative user-box mb-[30px]">
           <InteractionCardInput
             type="notes"
             id="projectNotes"
@@ -374,15 +375,18 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
             disabled={inputDisabled}
             onSubmit={handleSubmit}
             isSubmitDisabled={true} // Ensure submit button is disabled for this field
-            className="peer w-full py-2 text-base text-white mb-[30px] border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0 min-h-[80px]"
+            // Removed peer class from InteractionCardInput itself, as the label targets the input inside it
+            className="w-full py-2 text-base text-white border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0 min-h-[80px]"
           />
           <Label
             htmlFor="projectNotes"
+            // Apply peer class to the label to make it float based on the input's state
             className="absolute top-0 left-0 py-2 text-base text-white pointer-events-none transition-all duration-500 peer-focus:top-[-20px] peer-focus:left-0 peer-focus:text-[#bdb8b8] peer-focus:text-xs peer-valid:top-[-20px] peer-valid:left-0 peer-valid:text-[#bdb8b8] peer-valid:text-xs peer-focus:bg-hodl-darker peer-focus:px-1 peer-valid:bg-hodl-darker peer-valid:px-1"
           >
             {isCreator ? "Creator Notes" : "Contributor Notes"}
           </Label>
         </div>
+        {/* END UPDATED */}
 
         <div className="relative user-box">
           <Input

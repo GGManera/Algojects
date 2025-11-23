@@ -172,12 +172,9 @@
 @layer components {
   /* From Uiverse.io by chase2k25 - Adapted for Tailwind */
   .glass-radio-group {
-    @apply flex relative bg-white/5 rounded-xl overflow-hidden w-full;
-    backdrop-filter: blur(12px);
-    box-shadow:
-      inset 1px 1px 4px rgba(255, 255, 255, 0.2),
-      inset -1px -1px 6px rgba(0, 0, 0, 0.3),
-      0 4px 12px rgba(0, 0, 0, 0.15);
+    @apply flex relative bg-hodl-darker/50 rounded-xl overflow-hidden w-full;
+    /* backdrop-filter: blur(12px); */ /* Removed backdrop-filter */
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3); /* Adjusted shadow for dark recessed look */
   }
 
   .glass-radio-group input {
@@ -239,12 +236,9 @@
 
   /* NEW: Styles for the two-item GlassRadioGroup */
   .glass-radio-group-two-items {
-    @apply flex relative bg-white/5 rounded-xl overflow-hidden w-full;
-    backdrop-filter: blur(12px);
-    box-shadow:
-      inset 1px 1px 4px rgba(255, 255, 255, 0.2),
-      inset -1px -1px 6px rgba(0, 0, 0, 0.3),
-      0 4px 12px rgba(0, 0, 0, 0.15);
+    @apply flex relative bg-hodl-darker/50 rounded-xl overflow-hidden w-full; /* Changed background */
+    /* backdrop-filter: blur(12px); */ /* Removed backdrop-filter */
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3); /* Adjusted shadow for dark recessed look */
   }
 
   .glass-radio-group-two-items input {

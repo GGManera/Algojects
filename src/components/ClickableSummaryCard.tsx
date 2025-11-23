@@ -30,8 +30,7 @@ export function ClickableSummaryCard({ id, icon, title, value, onClick, isActive
       className={cn(
         "flex flex-col items-center justify-center p-3 rounded-lg cursor-pointer transition-colors",
         "hover:bg-muted/70",
-        // Change active background from bg-primary/20 (purple tint) to bg-muted/70 (darker gray)
-        isActive ? "bg-muted/70 border border-primary" : "bg-muted/50"
+        isActive ? "bg-primary/20 border border-primary" : "bg-muted/50"
       )}
       initial={false} // Disable initial animation for layout
       animate={{

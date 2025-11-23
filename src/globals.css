@@ -589,3 +589,23 @@
     left: 100%;
   }
 }
+
+/* Custom styles for user-box inputs */
+@layer components {
+  .user-box input,
+  .user-box select,
+  .user-box .select-trigger {
+    /* Ensure text is visible */
+    @apply text-white;
+    /* Add subtle border when not focused */
+    border-bottom: 1px solid hsl(var(--muted-foreground) / 0.5) !important;
+    transition: border-bottom-color 0.3s ease-in-out;
+  }
+
+  .user-box input:focus,
+  .user-box select:focus,
+  .user-box .select-trigger:focus {
+    /* Keep the focus color */
+    border-bottom-color: #03f40f !important;
+  }
+}

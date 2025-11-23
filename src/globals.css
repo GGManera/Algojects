@@ -380,11 +380,11 @@
   }
 
   .btn-profile .circle:nth-of-type(1) {
-    background: rgba(254, 83, 186, 0.636);
+    background: hsl(var(--border-accent-green) / 0.6); /* Changed from pink to green accent */
   }
 
   .btn-profile .circle:nth-of-type(2) {
-    background: rgba(142, 81, 234, 0.704);
+    background: hsl(var(--border-accent-green) / 0.7); /* Changed from purple to green accent */
   }
 
   .btn-profile:hover #container-stars {
@@ -405,7 +405,7 @@
   }
 
   .btn-profile:active .circle {
-    background: #fe53bb;
+    background: hsl(var(--border-accent-green)); /* Changed from #fe53bb to green accent */
   }
 
   .btn-profile #stars {

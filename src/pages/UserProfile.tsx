@@ -22,9 +22,11 @@ import { useLocation } from "react-router-dom";
 import { useAppContextDisplayMode } from "@/contexts/AppDisplayModeContext";
 import { cn } from '@/lib/utils';
 import { usePlatformAnalytics } from "@/hooks/usePlatformAnalytics";
-import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
-import { useWritingDiversity } from "@/hooks/useWritingDiversity"; // UPDATED Import
-import { UserProfileDiversityCard } from "@/components/UserProfileDiversityCard"; // NEW Import
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
+import { useWritingDiversity } from "@/hooks/useWritingDiversity";
+import { UserProfileDiversityCard } from "@/components/UserProfileDiversityCard";
+import { useAccountData } from "@/hooks/useAccountData"; // NEW: Import useAccountData
+import { UserActivityCard } from "@/components/UserActivityCard"; // NEW: Import UserActivityCard
 
 // Helper function to calculate interaction score for a review
 const getReviewInteractionScore = (review: Review): number => {
@@ -93,8 +95,7 @@ const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, u
         "block w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg shadow-none overflow-hidden mb-4 cursor-pointer transition-all duration-200", // Removed border-2 border-transparent
         "rounded-lg",
         isFocused ? "focus-glow-border" : "",
-        !isFocused && "hover:focus-glow-border",
-        isExpanded && "shadow-xl"
+        !isFocused && "hover:focus-glow-border"
       )}
       onClick={() => handleNavigateToProjectReview(project.id, review.id.split('.')[1])}
       onMouseEnter={() => setLastActiveId(review.id)} // NEW: Set active ID on mouse enter
@@ -330,6 +331,9 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
     loading: diversityLoading 
   } = useWritingDiversity(projects); // UPDATED: Use new hook
 
+  // NEW: Use useAccountData to get first transaction timestamp
+  const { firstTransactionTimestamp, loading: accountDataLoading } = useAccountData(address);
+
   // Extract current user's diversity metrics
   const userDiversityMetrics = useMemo(() => {
     if (!address) return null;
@@ -411,7 +415,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
     }
   }, [effectiveAddress, location.pathname, userProfileNfd, pushEntry, activeCategory, nfdLoading, projectDetailsLoading]); // NEW: Add projectDetailsLoading dependency
 
-  const isContentLoading = socialDataLoading || projectDetailsLoading || curatorIndexLoading || analyticsLoading || diversityLoading; // UPDATED: diversityLoading from new hook
+  const isContentLoading = socialDataLoading || projectDetailsLoading || curatorIndexLoading || analyticsLoading || diversityLoading || accountDataLoading; // UPDATED: Include accountDataLoading
   const isContentError = socialDataError || projectDetailsError || curatorIndexError || analyticsError; // NEW: Use projectDetailsError in combined error state
 
   const tabOrder = {
@@ -576,6 +580,12 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                     currentProfileActiveCategory={activeCategory}
                   />
               </div>
+
+              {/* NEW: User Activity Card */}
+              <UserActivityCard
+                firstTransactionTimestamp={firstTransactionTimestamp}
+                isLoading={accountDataLoading}
+              />
 
               <UserStatsCard
                 userAddress={effectiveAddress}

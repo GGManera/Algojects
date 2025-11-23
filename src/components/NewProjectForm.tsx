@@ -321,12 +321,10 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
           >
             Creator Wallet Address (Algorand Address)
           </Label>
-          {creatorWalletAddress.trim() && creatorWalletAddress.trim().length !== 58 && (
-            <p className="text-xs text-red-500 mt-1">Must be a valid 58-character Algorand address.</p>
-          )}
+          {/* REMOVIDO: Mensagem de erro de validação */}
         </div>
 
-        {/* CORRIGIDO: Project Wallet Address - Rótulo encurtado */}
+        {/* NEW: Project Wallet Address */}
         <div className="relative user-box">
           <Input
             id="projectWalletAddress"
@@ -342,11 +340,9 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
           >
             Project Wallet (Address, Optional)
           </Label>
-          {projectWalletAddress.trim() && projectWalletAddress.trim().length !== 58 && (
-            <p className="text-xs text-red-500 mt-1">Must be a valid 58-character Algorand address.</p>
-          )}
+          {/* REMOVIDO: Mensagem de erro de validação */}
         </div>
-        {/* FIM CORREÇÃO */}
+        {/* END NEW */}
 
         <div className="relative user-box mb-[30px]">
           <Input

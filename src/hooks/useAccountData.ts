@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { retryFetch } from '@/utils/api'; // Import retryFetch
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";

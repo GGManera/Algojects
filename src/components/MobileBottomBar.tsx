@@ -9,7 +9,6 @@ import { WalletButton } from '@txnlab/use-wallet-ui-react';
 import { AddActionSheet } from './AddActionSheet';
 import { ProjectsData } from '@/types/social';
 import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
-import { cn } from '@/lib/utils';
 
 interface MobileBottomBarProps {
   projects: ProjectsData;
@@ -46,10 +45,7 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
   const isOnOwnProfilePage = activeAddress && location.pathname.startsWith(`/profile/${activeAddress}`);
 
   return (
-    <div className={cn(
-      "fixed bottom-0 left-0 right-0 bg-hodl-darker border-t border-border-accent-green z-50 h-16 items-center md:hidden",
-      activeAddress ? "grid grid-cols-3" : "grid grid-cols-2" // Dynamic grid based on login status
-    )}>
+    <div className="fixed bottom-0 left-0 right-0 bg-hodl-darker border-t border-border-accent-green z-50 h-16 grid grid-cols-3 items-center md:hidden">
       {/* Column 1: AlgoJects Logo */}
       <Button variant="ghost" size="icon" onClick={handleHomeClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
         <img 
@@ -69,23 +65,23 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
         </AddActionSheet>
       )}
       
-      {/* Column 3 (or 2 if logged out): Profile / Wallet / Connect */}
+      {/* Column 3: Profile / Wallet / Connect */}
       {activeAddress ? (
         isOnOwnProfilePage ? (
-          // Case 3a: Logged in, on own profile -> Wallet Button (pl-10 adjustment)
-          <WalletButton className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none !bg-transparent !p-0 !shadow-none pl-10">
+          // If on own profile page, show WalletButton (opens wallet menu)
+          <WalletButton className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none !bg-transparent !p-0 !shadow-none">
             <User className="h-5 w-5" />
             <span className="text-xs whitespace-nowrap">Wallet</span>
           </WalletButton>
         ) : (
-          // Case 3b: Logged in, NOT on own profile -> Profile Button (pl-8 adjustment)
-          <Button variant="ghost" size="icon" onClick={handleProfileClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none pl-8">
+          // Otherwise, show Profile button (navigates to profile)
+          <Button variant="ghost" size="icon" onClick={handleProfileClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
             <User className="h-5 w-5" />
             <span className="text-xs">Profile</span>
           </Button>
         )
       ) : (
-        // Case 3c: Not logged in -> Connect Button (no adjustment needed, fills remaining space in grid-cols-2)
+        // If no activeAddress, show Connect Wallet button
         <WalletButton className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none !bg-transparent !p-0 !shadow-none">
           <User className="h-5 w-5" />
           <span className="text-xs whitespace-nowrap">Connect</span>

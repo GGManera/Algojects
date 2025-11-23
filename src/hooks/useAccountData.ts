@@ -1,4 +1,3 @@
-block) para obter o timestamp exato da criação da conta, garantindo precisão.">
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';

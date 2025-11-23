@@ -25,6 +25,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const newWebsiteRef = useRef<NewWebsiteRef>(null); // Ref para o componente NewWebsite
 
   const isOverallRefreshing = isRefreshingSocialData || isRefreshingProjectDetails || accountDataLoading;
+  
+  const isMobilePortrait = isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape; // NEW: Define mobile portrait mode
 
   const handleGlobalRefresh = useCallback(async () => {
     console.log("Triggering global data refresh...");
@@ -60,19 +62,24 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   // Calcula o preenchimento superior para o main
   let mainTopPadding = "pt-[calc(var(--sticky-header-height)+env(safe-area-inset-top))]";
   if (!isMobile || isDeviceLandscape) {
+    // Desktop/Landscape: StickyHeader + Gap + DynamicNavButtons
     mainTopPadding = "pt-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-height)+var(--dynamic-nav-buttons-desktop-vertical-gap)+env(safe-area-inset-top))]";
+  } else if (isMobilePortrait) {
+    // Mobile Portrait: StickyHeader is removed, DynamicNavButtons is at the bottom.
+    // Content should start right at the top (after safe area inset).
+    mainTopPadding = "pt-[env(safe-area-inset-top)]";
   }
 
   // Calcula o preenchimento inferior para o main (apenas se for mobile E portrait)
   let mainBottomPadding = "";
-  if (isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape) {
+  if (isMobilePortrait) {
     // Always use the combined height of MobileBottomBar and DynamicNavButtons
     mainBottomPadding = "pb-[calc(var(--mobile-bottom-bar-height)+var(--dynamic-nav-buttons-height)+env(safe-area-inset-bottom))]";
   }
 
   return (
     <div className="relative min-h-screen flex flex-col">
-      <StickyHeader onLogoClick={handleLogoClickAndReset} />
+      {!isMobilePortrait && <StickyHeader onLogoClick={handleLogoClickAndReset} />}
       <DynamicNavButtons onCenterButtonClick={handleCenterButtonClick} />
       <main
         className={cn(
@@ -84,7 +91,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         {/* Passando a ref para o NewWebsite */}
         {React.cloneElement(children as React.ReactElement, { ref: newWebsiteRef })}
       </main>
-      {isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape && (
+      {isMobilePortrait && (
         <MobileBottomBar
           projects={projects}
           onInteractionSuccess={handleGlobalRefresh}

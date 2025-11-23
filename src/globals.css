@@ -84,8 +84,8 @@
     /* RECALCULATED: Total fixed height for desktop/landscape (StickyHeader + Gap + DynamicNavButtons) */
     --total-fixed-top-height-desktop: calc(
       var(--sticky-header-height) + 
-      var(--dynamic-nav-buttons-desktop-vertical-gap) +
-      var(--dynamic-nav-buttons-height)
+      var(--dynamic-nav-buttons-height) +
+      var(--dynamic-nav-buttons-desktop-vertical-gap)
     ); /* 48 + 14 + 32 = 94px */
 
     /* RECALCULATED: Total fixed height for mobile portrait (StickyHeader + DynamicNavButtons + MobileBottomBar) */
@@ -493,6 +493,11 @@
       var(--dynamic-nav-buttons-desktop-vertical-gap) +
       env(safe-area-inset-top)
     );
+  }
+  
+  /* NEW: Mobile portrait scroll margin top (only safe area inset) */
+  .scroll-mt-mobile-top {
+    scroll-margin-top: env(safe-area-inset-top);
   }
 
   /* New utility class for word breaking */

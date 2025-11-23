@@ -12,6 +12,7 @@ import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { cn } from '@/lib/utils';
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
+import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext'; // NEW Import
 
 interface ProjectPageProps {
   projectId: string | undefined;
@@ -32,11 +33,15 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
   const { peekPreviousEntry } = useNavigationHistory();
   const previousEntry = peekPreviousEntry();
   const { projectDetails, loading: projectDetailsLoading, error: projectDetailsError } = useProjectDetails(); // NEW: Destructure loading and error
+  const { isMobile, appDisplayMode, isDeviceLandscape } = useAppContextDisplayMode(); // NEW: Use context hook
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const effectiveProjectId = projectId;
   const pageKey = `project-page-${effectiveProjectId}`; // Unique key for navigation hook
+
+  // NEW: Define mobile portrait mode
+  const isMobilePortrait = isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape;
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
   const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive, setFocusedId } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
@@ -168,6 +173,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
     <div id={pageKey} className={cn( // Set pageKey as ID here
       "w-full text-foreground", // Removed h-full and overflow-y-auto
       !isInsideCarousel && "max-w-3xl mx-auto",
+      isMobilePortrait ? "scroll-mt-mobile-top" : "scroll-mt-header-offset", // Apply conditional scroll margin
       isInsideCarousel ? "px-2 py-2 md:p-0" : "px-2 py-2 md:p-4" // ADDED px-2 for mobile carousel
     )}>
       <ProjectDetailCard

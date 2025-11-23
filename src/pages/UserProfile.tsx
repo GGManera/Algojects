@@ -359,7 +359,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   const prevCategoryRef = useRef("writing");
 
   const { pushEntry } = useNavigationHistory();
-  const { isMobile } = useAppContextDisplayMode();
+  const { isMobile, appDisplayMode, isDeviceLandscape } = useAppContextDisplayMode(); // NEW: Destructure display mode
 
   const effectiveAddress = address;
   const pageKey = `profile-page-${effectiveAddress}`; // Unique key for navigation hook
@@ -367,6 +367,9 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   const { nfd: userProfileNfd, loading: nfdLoading } = useNfd(effectiveAddress);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // NEW: Define mobile portrait mode
+  const isMobilePortrait = isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape;
 
   // NEW: Initialize keyboard navigation hook, dependent on isActive
   const { focusedId, registerItem, rebuildOrder, setLastActiveId, isKeyboardModeActive } = useKeyboardNavigation(isActive ? pageKey : 'inactive');
@@ -560,8 +563,9 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
 
   return (
     <div id={pageKey} className={cn( // Set pageKey as ID here
-      "w-full text-foreground scroll-mt-header-offset",
+      "w-full text-foreground",
       !isInsideCarousel && "max-w-md mx-auto",
+      isMobilePortrait ? "scroll-mt-mobile-top" : "scroll-mt-header-offset", // Apply conditional scroll margin
       isInsideCarousel ? "px-2 py-2 md:p-0 h-full" : "p-2 md:p-4 h-full overflow-y-auto" // ADDED px-2 for mobile carousel
     )}>
         <AnimatePresence mode="wait">

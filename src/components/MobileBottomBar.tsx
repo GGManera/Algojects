@@ -43,9 +43,14 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-hodl-darker border-t border-border-accent-green z-50 h-16 flex items-center justify-around md:hidden">
+      {/* Replaced Home button with AlgoJects Logo */}
       <Button variant="ghost" size="icon" onClick={handleHomeClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
-        <Home className="h-5 w-5" />
-        <span className="text-xs">Home</span>
+        <img 
+          src="/algojects-logo.png" 
+          alt="AlgoJects Logo" 
+          className="h-8 w-auto" 
+        />
+        <span className="text-xs">AlgoJects</span>
       </Button>
 
       {activeAddress && ( // Conditionally render the AddActionSheet

@@ -398,9 +398,10 @@
   }
 
   .btn-profile:active {
-    border: double 2px #fe53bb; /* Changed from 4px to 2px */
-    background-origin: border-box;
-    background-clip: content-box, border-box;
+    /* Removed explicit border and background clip changes to keep the dark background and gradient border */
+    /* border: double 2px #fe53bb; */
+    /* background-origin: border-box; */
+    /* background-clip: content-box, border-box; */
     animation: none;
   }
 

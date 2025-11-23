@@ -415,18 +415,12 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     };
   }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
-  const isMobilePortrait = isMobile && !isDeviceLandscape;
-
   const cardContentMaxHeightClass = useMemo(() => {
-    if (isMobilePortrait) {
-      // Mobile Portrait: StickyHeader is hidden. We rely on the parent <main> element's padding 
-      // to define the boundaries, so CardContent should simply fill the height.
-      return "h-full"; 
-    } else if (isMobile && isDeviceLandscape) {
-      // Mobile Landscape: StickyHeader is visible.
+    if (isMobile && isDeviceLandscape) {
       return "max-h-[calc(100vh-var(--sticky-header-height)-var(--dynamic-nav-buttons-height)-var(--dynamic-nav-buttons-desktop-vertical-gap)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+    } else if (isMobile && !isDeviceLandscape) {
+      return "max-h-[calc(100vh-var(--sticky-header-height)-var(--dynamic-nav-buttons-height)-var(--mobile-bottom-bar-height)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
     } else {
-      // Desktop: StickyHeader is visible.
       return "max-h-[calc(100vh-var(--sticky-header-height)-var(--dynamic-nav-buttons-height)-var(--dynamic-nav-buttons-desktop-vertical-gap)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
     }
   }, [isMobile, isDeviceLandscape]);
@@ -451,8 +445,8 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
               >
                 <Card className={cn(
                   "p-0 bg-card",
-                  // NEW: Remove rounded corners and border on mobile, and ensure h-full is set
-                  isMobile ? "rounded-none border-none h-full" : "rounded-lg border h-full",
+                  // NEW: Remove rounded corners and border on mobile
+                  isMobile ? "rounded-none border-none" : "rounded-lg border",
                 )}>              
                   <CardContent
                     ref={el => slideRefs.current.set(slide.type, el)}

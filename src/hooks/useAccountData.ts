@@ -23,12 +23,6 @@ interface CachedAccountCreationData {
 const ACCOUNT_DATA_CACHE_KEY_PREFIX = 'accountCreationDataCache_'; // Prefix to store per-address
 const ACCOUNT_DATA_CACHE_DURATION = 15 * 1000; // 15 seconds
 
-/**
- * Não é mais necessário, pois obteremos o timestamp exato.
- * const ALGORAND_GENESIS_TIMESTAMP_SECONDS = 1596240000; 
- * const APPROX_BLOCK_TIME_SECONDS = 3.3; 
- */
-
 export function useAccountData(activeAddress: string | undefined) {
   // Armazenamos o timestamp exato da primeira transação em milissegundos
   const [firstTransactionTimestampMs, setFirstTransactionTimestampMs] = useState<number | null>(null);
@@ -51,8 +45,10 @@ export function useAccountData(activeAddress: string | undefined) {
     if (cachedItem) {
       try {
         const cachedData: CachedAccountCreationData = JSON.parse(cachedItem);
+        
+        // Check cache freshness based on stored timestamp
         isCacheStale = Date.now() - cachedData.timestamp > ACCOUNT_DATA_CACHE_DURATION;
-
+        
         setFirstTransactionTimestampMs(cachedData.timestamp);
         cacheUsed = true;
         setLoading(false);
@@ -72,7 +68,7 @@ export function useAccountData(activeAddress: string | undefined) {
       }
       setError(null);
       try {
-        // 1. Fetch the first transaction using limit=1 and order=asc
+        // 1. Fetch the first transaction using limit=1 and order=asc (chronological order)
         const url = `${INDEXER_URL}/v2/accounts/${activeAddress}/transactions?limit=1&order=asc`;
         
         const response = await retryFetch(url, undefined, 5);
@@ -84,8 +80,8 @@ export function useAccountData(activeAddress: string | undefined) {
 
         const data: TransactionDataResponse = await response.json();
         
-        // NEW: Log the raw response data
-        console.log(`[useAccountData] Raw Indexer response for ${activeAddress}:`, data);
+        // Log the raw response data
+        console.log(`[useAccountData] Raw Indexer response for ${activeAddress} (order=asc, limit=1):`, data);
         
         const firstTx = data.transactions?.[0];
         let exactTimestampMs: number | null = null;
@@ -95,16 +91,16 @@ export function useAccountData(activeAddress: string | undefined) {
             exactTimestampMs = firstTx['round-time'] * 1000;
         } else {
             // If no transactions found (e.g., account exists but has no TXs, or is unfunded)
-            // We treat this as 'not created' or 'no activity'
             exactTimestampMs = 0; 
         }
         
         setFirstTransactionTimestampMs(exactTimestampMs);
 
         const newCache: CachedAccountCreationData = {
-          timestamp: exactTimestampMs || 0,
+          timestamp: exactTimestampMs || 0, 
           currentRound: data['current-round'],
         };
+        
         localStorage.setItem(cacheKey, JSON.stringify(newCache));
 
       } catch (err) {

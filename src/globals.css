@@ -332,13 +332,12 @@
     transition: 0.5s;
     animation: gradient_301 5s ease infinite;
     border: double 2px transparent; /* Changed from 4px to 2px */
+    /* 1. Change the border gradient to a dark color (hsl(var(--border))) */
     background-image: linear-gradient(hsl(var(--card)), hsl(var(--card))),
       linear-gradient(
         137.48deg,
-        #ffdb3b 10%,
-        #fe53bb 45%,
-        #8f51ea 67%,
-        #0044ff 87%
+        hsl(var(--border)) 10%,
+        hsl(var(--border)) 87%
       );
     background-origin: border-box;
     background-clip: content-box, border-box;
@@ -398,7 +397,8 @@
   }
 
   .btn-profile:active {
-    border: double 2px #fe53bb; /* Changed from 4px to 2px */
+    /* 2. Remove explicit border color change to keep it dark */
+    /* border: double 2px #fe53bb; <-- REMOVED */
     background-origin: border-box;
     background-clip: content-box, border-box;
     animation: none;

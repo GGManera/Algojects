@@ -5,38 +5,57 @@ import { retryFetch } from '@/utils/api'; // Import retryFetch
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 
-export interface Transaction {
-  id: string;
-  'asset-transfer-transaction'?: {
-    'asset-id': number;
-    amount: number;
-    receiver: string;
+// Define a minimal interface for the account response needed
+interface AccountDataResponse {
+  account: {
+    'created-at-round': number;
+    address: string;
+    // We don't need the full transaction list anymore
   };
-  'payment-transaction'?: {
-    amount: number;
-  };
-  'round-time': number;
-  sender: string;
-  'tx-type': string;
+  'current-round': number;
 }
 
-interface CachedAccountData {
+interface CachedAccountCreationData {
   timestamp: number;
-  transactions: Transaction[];
+  createdAtRound: number;
+  currentRound: number;
 }
 
-const ACCOUNT_DATA_CACHE_KEY_PREFIX = 'accountDataCache_'; // Prefix to store per-address
+const ACCOUNT_DATA_CACHE_KEY_PREFIX = 'accountCreationDataCache_'; // Prefix to store per-address
 const ACCOUNT_DATA_CACHE_DURATION = 15 * 1000; // 15 seconds
 
+// Algorand Genesis Timestamp (MainNet) in seconds
+const ALGORAND_GENESIS_TIMESTAMP_SECONDS = 1596240000; 
+// Approximate block time in seconds (used for estimation)
+const APPROX_BLOCK_TIME_SECONDS = 3.3; 
+
+/**
+ * Estimates the creation date based on the created-at-round.
+ * This is an approximation as Indexer does not provide the exact timestamp for creation.
+ */
+const estimateCreationDate = (createdAtRound: number): Date | null => {
+    if (createdAtRound <= 0) return null;
+    
+    // Estimate time elapsed since genesis round (round 1)
+    // We assume round 1 is at genesis timestamp.
+    const roundsSinceGenesis = createdAtRound - 1;
+    const estimatedTimeSinceGenesisSeconds = roundsSinceGenesis * APPROX_BLOCK_TIME_SECONDS;
+    
+    const estimatedTimestampSeconds = ALGORAND_GENESIS_TIMESTAMP_SECONDS + estimatedTimeSinceGenesisSeconds;
+    
+    return new Date(estimatedTimestampSeconds * 1000);
+};
+
+
 export function useAccountData(activeAddress: string | undefined) {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [createdAtRound, setCreatedAtRound] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [internalRefetchTrigger, setInternalRefetchTrigger] = useState(0); // New trigger for manual refetch
+  const [internalRefetchTrigger, setInternalRefetchTrigger] = useState(0);
 
   const fetchData = useCallback(async () => {
     if (!activeAddress) {
-      setTransactions([]);
+      setCreatedAtRound(null);
       setLoading(false);
       return;
     }
@@ -48,19 +67,16 @@ export function useAccountData(activeAddress: string | undefined) {
     const cachedItem = localStorage.getItem(cacheKey);
     if (cachedItem) {
       try {
-        const cachedData: CachedAccountData = JSON.parse(cachedItem);
+        const cachedData: CachedAccountCreationData = JSON.parse(cachedItem);
         isCacheStale = Date.now() - cachedData.timestamp > ACCOUNT_DATA_CACHE_DURATION;
 
-        setTransactions(cachedData.transactions);
+        setCreatedAtRound(cachedData.createdAtRound);
         cacheUsed = true;
         setLoading(false);
-        console.log(`[useAccountData] Using cached data for ${activeAddress}.`);
-
+        
         if (!isCacheStale) {
-          console.log(`[useAccountData] Cached data for ${activeAddress} is fresh, skipping API fetch.`);
           return;
         }
-        console.log(`[useAccountData] Cached data for ${activeAddress} is stale, initiating background refresh.`);
       } catch (e) {
         console.error(`[useAccountData] Failed to parse cache for ${activeAddress}, fetching new data.`, e);
         localStorage.removeItem(cacheKey);
@@ -73,81 +89,72 @@ export function useAccountData(activeAddress: string | undefined) {
       }
       setError(null);
       try {
-        // 1. Fetch all transactions for the user's account
-        let allTransactions: Transaction[] = [];
-        let nextToken: string | undefined = undefined;
-        // Start from a very early date to capture the first transaction
-        const afterTime = new Date("2025-01-01T00:00:00Z").toISOString(); 
+        // 1. Fetch account details using the simpler endpoint
+        const url = `${INDEXER_URL}/v2/accounts/${activeAddress}`;
+        
+        const response = await retryFetch(url, undefined, 5);
+        
+        if (response.status === 404) {
+            // Account not found (not funded yet)
+            setCreatedAtRound(0); // Use 0 to indicate not created
+            setLoading(false);
+            return;
+        }
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Indexer API for account details responded with ${response.status}: ${errorText}`);
+        }
 
-        do {
-          // NOTE: Indexer returns transactions sorted by round descending by default.
-          // We rely on fetching all transactions since 2025-01-01 to find the oldest one.
-          let url = `${INDEXER_URL}/v2/accounts/${activeAddress}/transactions?after-time=${afterTime}`;
-          if (nextToken) {
-            url += `&next=${nextToken}`;
-          }
-          
-          const response = await retryFetch(url, undefined, 5); // Increased retries
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Indexer API for transactions responded with ${response.status}: ${errorText}`);
-          }
+        const data: AccountDataResponse = await response.json();
+        const creationRound = data.account['created-at-round'];
+        
+        setCreatedAtRound(creationRound);
 
-          const data = await response.json();
-          allTransactions = allTransactions.concat(data.transactions);
-          nextToken = data['next-token'];
-
-        } while (nextToken);
-
-        setTransactions(allTransactions);
-
-        const newCache: CachedAccountData = {
+        const newCache: CachedAccountCreationData = {
           timestamp: Date.now(),
-          transactions: allTransactions,
+          createdAtRound: creationRound,
+          currentRound: data['current-round'],
         };
         localStorage.setItem(cacheKey, JSON.stringify(newCache));
 
       } catch (err) {
-        console.error("Failed to fetch account data:", err);
+        console.error("Failed to fetch account creation data:", err);
         setError(err instanceof Error ? err.message : "An unknown error occurred.");
       } finally {
         setLoading(false);
       }
     }
-  }, [activeAddress, internalRefetchTrigger]); // fetchData depends on activeAddress and internalRefetchTrigger
+  }, [activeAddress, internalRefetchTrigger]);
 
   useEffect(() => {
     fetchData();
   }, [activeAddress, internalRefetchTrigger, fetchData]);
 
   const refetch = useCallback(() => {
-    // Clear cache for the active address to force a fresh fetch
     if (activeAddress) {
       localStorage.removeItem(`${ACCOUNT_DATA_CACHE_KEY_PREFIX}${activeAddress}`);
     }
     setInternalRefetchTrigger(prev => prev + 1);
   }, [activeAddress]);
 
-  // --- NEW: Calculate First Transaction Date and Days Elapsed ---
-  const firstTransactionTimestamp = transactions.reduce((minTime, tx) => {
-    return tx['round-time'] < minTime ? tx['round-time'] : minTime;
-  }, Infinity);
+  // --- Calculate First Transaction Date and Days Elapsed ---
+  const firstTransactionDate = useMemo(() => {
+    if (createdAtRound === null || createdAtRound <= 0) return null;
+    return estimateCreationDate(createdAtRound);
+  }, [createdAtRound]);
 
-  const firstTransactionDate = firstTransactionTimestamp !== Infinity 
-    ? new Date(firstTransactionTimestamp * 1000) 
-    : null;
-
-  const daysSinceFirstTransaction = firstTransactionDate
-    ? Math.floor((Date.now() - firstTransactionDate.getTime()) / (1000 * 60 * 60 * 24))
-    : 0;
+  const daysSinceFirstTransaction = useMemo(() => {
+    if (!firstTransactionDate) return 0;
+    return Math.floor((Date.now() - firstTransactionDate.getTime()) / (1000 * 60 * 60 * 24));
+  }, [firstTransactionDate]);
   // --- END NEW ---
 
   return { 
-    transactions, 
     loading, 
     error, 
     refetch,
-    firstTransactionDate, // NEW
-    daysSinceFirstTransaction, // NEW
+    firstTransactionDate,
+    daysSinceFirstTransaction,
   };
 }

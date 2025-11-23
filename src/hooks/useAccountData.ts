@@ -107,6 +107,10 @@ export function useAccountData(activeAddress: string | undefined) {
         }
 
         const data: AccountDataResponse = await response.json();
+        
+        // NEW: Log the raw response data
+        console.log(`[useAccountData] Raw Indexer response for ${activeAddress}:`, data);
+        
         const creationRound = data.account['created-at-round'];
         
         setCreatedAtRound(creationRound);

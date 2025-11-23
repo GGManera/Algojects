@@ -1,7 +1,6 @@
-const CACHE_NAME = 'algojects-cache-v2'; // Increment version to force cache update
+const CACHE_NAME = 'algojects-cache-v3'; // Increment version to force cache update
 const urlsToCache = [
   '/',
-  '/index.html',
   '/placeholder.svg',
   '/algojects-logo.png',
   '/logo.png',
@@ -10,13 +9,15 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing v2...');
+  console.log('[Service Worker] Installing v3...');
   // Force the waiting service worker to become the active service worker
   self.skipWaiting(); 
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('[Service Worker] Opened cache');
+        // Note: index.html is intentionally excluded from pre-caching here, 
+        // as we want to fetch it from the network first in the fetch handler.
         return cache.addAll(urlsToCache);
       })
       .catch(error => {
@@ -26,7 +27,7 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating v2...');
+  console.log('[Service Worker] Activating v3...');
   // Take control of all clients immediately
   event.waitUntil(
     Promise.all([
@@ -49,21 +50,46 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET requests and ignore cross-origin requests that aren't in the cache
   if (event.request.method !== 'GET') return;
 
+  const url = new URL(event.request.url);
+  const isHtmlRequest = event.request.mode === 'navigate' || url.pathname === '/index.html' || url.pathname === '/';
+
+  if (isHtmlRequest) {
+    // Strategy: Network First, then Cache (for offline fallback)
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // If successful, cache the new version and return it
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // If network fails, fall back to cache
+          return caches.match(event.request).then(cachedResponse => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Final fallback for navigation requests if offline
+            return caches.match('/index.html');
+          });
+        })
+    );
+    return;
+  }
+
+  // For all other assets (JS, CSS, images): Cache First, then Network
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Cache hit - return the response
         if (response) {
           return response;
         }
         
-        // Not in cache - fetch from network
         return fetch(event.request).catch(() => {
-          // If fetch fails (e.g., offline), and it's a navigation request, serve the fallback index.html
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-          // Otherwise, throw the error
           throw new Error('Fetch failed and no cache fallback available.');
         });
       })

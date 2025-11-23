@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { retryFetch } from "@/utils/api";
 import { MetadataItem } from '@/types/project';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Info } from "lucide-react"; // Import Info icon
 import {
   Select,
   SelectContent,
@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"; // Import Alert components
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const MAX_NOTE_SIZE_BYTES = 1024;
@@ -264,6 +265,16 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
 
   return (
     <div className="relative w-full max-w-md p-10 bg-hodl-darker box-border shadow-[0_15px_25px_rgba(0,0,0,0.6)] rounded-lg">
+      
+      {/* NEW: Contribution Explanation Alert */}
+      <Alert className="bg-muted/50 border-hodl-blue text-muted-foreground mb-6">
+        <Info className="h-4 w-4 text-hodl-blue" />
+        <AlertTitle className="text-hodl-blue">Contribute & Earn</AlertTitle>
+        <AlertDescription>
+          Contribute to your favorite projects by adding them here. Project creators can later claim administrative access to the page by rewarding you, the contributor, with a minimum of 10 ALGO.
+        </AlertDescription>
+      </Alert>
+      
       <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
         <div className="relative user-box">
           <Input

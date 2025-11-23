@@ -86,15 +86,20 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
 
   // NEW: Função para rolar o slide ativo para o topo (chamada pelo Layout/DynamicNavButtons)
   const scrollToActiveSlideTop = useCallback(() => {
-    if (!api) return;
+    if (!api) {
+      console.log("[NewWebsite] scrollToActiveSlideTop: API not initialized.");
+      return;
+    }
     const activeSlideType = slidesConfig[api.selectedScrollSnap()]?.type;
     const activeRef = slideRefs.current.get(activeSlideType || 'home');
     
     if (activeRef) {
-      console.log(`[NewWebsite] Scrolling active slide (${activeSlideType}) to top.`);
-      activeRef.scrollTo({ top: 0, behavior: 'smooth' });
+      console.log(`[NewWebsite] scrollToActiveSlideTop: Scrolling active slide (${activeSlideType}) to top.`);
+      console.log(`[NewWebsite] activeRef details: TagName=${activeRef.tagName}, ID=${activeRef.id}, ScrollHeight=${activeRef.scrollHeight}, ScrollTop (before)=${activeRef.scrollTop}`);
+      activeRef.scrollTo({ top: 0, behavior: 'instant' }); // Changed to 'instant' for debugging
+      console.log(`[NewWebsite] ScrollTop (after)=${activeRef.scrollTop}`);
     } else {
-      console.warn(`[NewWebsite] Could not find ref for active slide type: ${activeSlideType}`);
+      console.warn(`[NewWebsite] scrollToActiveSlideTop: Could not find ref for active slide type: ${activeSlideType}`);
     }
   }, [api]);
 
@@ -103,7 +108,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     console.log("[NewWebsite] Resetting scroll position for all slides.");
     slideRefs.current.forEach(ref => {
       if (ref) {
-        ref.scrollTo({ top: 0, behavior: 'smooth' });
+        ref.scrollTo({ top: 0, behavior: 'instant' }); // Changed to 'instant' for debugging
       }
     });
     // Also reset the internal scroll trigger for the active slide components
@@ -440,13 +445,16 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
               >
                 <Card className={cn(
                   "p-0 bg-card",
-                  "rounded-none border-none"
+                  // NEW: Remove rounded corners and border on mobile
+                  isMobile ? "rounded-none border-none" : "rounded-lg border",
                 )}>              
                   <CardContent
                     ref={el => slideRefs.current.set(slide.type, el)}
                     className={cn(
                       "overflow-y-auto scrollbar-thin",
-                      cardContentMaxHeightClass
+                      cardContentMaxHeightClass,
+                      // NEW: Remove horizontal padding on mobile
+                      isMobile ? "px-0" : "px-6 py-6"
                     )}
                   >
                     <div className={cn("w-full mx-auto", slide.maxWidth)}>

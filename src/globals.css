@@ -526,6 +526,13 @@
   .top-border-glow {
     box-shadow: 0 -4px 10px -2px hsl(var(--border-accent-green) / 0.7);
   }
+  
+  /* NEW: Custom narrow breakpoint for grid transition (e.g., below 400px) */
+  @media (max-width: 400px) {
+    .grid-cols-narrow-1 {
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+  }
 }
 
 @keyframes animStar {

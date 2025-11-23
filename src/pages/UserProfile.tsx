@@ -25,6 +25,7 @@ import { usePlatformAnalytics } from "@/hooks/usePlatformAnalytics";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
 import { useWritingDiversity } from "@/hooks/useWritingDiversity"; // UPDATED Import
 import { UserProfileDiversityCard } from "@/components/UserProfileDiversityCard"; // NEW Import
+import { useAccountData } from "@/hooks/useAccountData"; // Import useAccountData
 
 // Helper function to calculate interaction score for a review
 const getReviewInteractionScore = (review: Review): number => {
@@ -93,8 +94,7 @@ const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, u
         "block w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg shadow-none overflow-hidden mb-4 cursor-pointer transition-all duration-200", // Removed border-2 border-transparent
         "rounded-lg",
         isFocused ? "focus-glow-border" : "",
-        !isFocused && "hover:focus-glow-border",
-        isExpanded && "shadow-xl"
+        !isFocused && "hover:focus-glow-border"
       )}
       onClick={() => handleNavigateToProjectReview(project.id, review.id.split('.')[1])}
       onMouseEnter={() => setLastActiveId(review.id)} // NEW: Set active ID on mouse enter
@@ -342,6 +342,13 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   }, [address, analyticsLoading, topWriters, topCurators]);
   const userAmountSpentOnLikes = userAnalytics?.amountSpentOnLikes || 0;
 
+  // NEW: Get account data for first transaction info
+  const { 
+    loading: accountDataLoading, 
+    firstTransactionDate, 
+    daysSinceFirstTransaction 
+  } = useAccountData(address);
+
   // REMOVED: const { tokenHoldings, loading: tokenHoldingsLoading, error: tokenHoldingsError } = useProfileProjectTokenHoldings(address, projects, projectDetails, round); // UPDATED HOOK NAME
   const [activeCategory, setActiveCategory] = useState<'writing' | 'curating'>(initialCategoryFromState || "writing");
   const [activeTab, setActiveTab] = useState("reviews");
@@ -411,7 +418,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
     }
   }, [effectiveAddress, location.pathname, userProfileNfd, pushEntry, activeCategory, nfdLoading, projectDetailsLoading]); // NEW: Add projectDetailsLoading dependency
 
-  const isContentLoading = socialDataLoading || projectDetailsLoading || curatorIndexLoading || analyticsLoading || diversityLoading; // UPDATED: diversityLoading from new hook
+  const isContentLoading = socialDataLoading || projectDetailsLoading || curatorIndexLoading || analyticsLoading || diversityLoading || accountDataLoading; // UPDATED: Include accountDataLoading
   const isContentError = socialDataError || projectDetailsError || curatorIndexError || analyticsError; // NEW: Use projectDetailsError in combined error state
 
   const tabOrder = {
@@ -575,6 +582,14 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                     className="flex-col space-y-2"
                     currentProfileActiveCategory={activeCategory}
                   />
+                  {/* NEW: Display First Transaction Info */}
+                  {firstTransactionDate && (
+                    <div className="mt-2 text-center text-sm text-muted-foreground">
+                      <p>First TX: {firstTransactionDate.toLocaleDateString()}</p>
+                      <p className="font-numeric text-xs">({daysSinceFirstTransaction} days ago)</p>
+                    </div>
+                  )}
+                  {/* END NEW */}
               </div>
 
               <UserStatsCard
@@ -589,8 +604,10 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                 d2DiversityProjects={userCuratorData.d2DiversityProjects}
                 d3Recency={userCuratorData.d3Recency}
                 amountSpentOnLikes={userAmountSpentOnLikes}
-                isLoading={earningsLoading || curatorIndexLoading || analyticsLoading}
+                isLoading={earningsLoading || curatorIndexLoading || analyticsLoading || accountDataLoading} // UPDATED: Include accountDataLoading
                 isInsideCarousel={isInsideCarousel}
+                firstTransactionDate={firstTransactionDate} // NEW
+                daysSinceFirstTransaction={daysSinceFirstTransaction} // NEW
               />
               
               {/* NEW: Diversity Card */}

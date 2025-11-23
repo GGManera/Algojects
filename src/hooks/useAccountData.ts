@@ -76,9 +76,12 @@ export function useAccountData(activeAddress: string | undefined) {
         // 1. Fetch all transactions for the user's account
         let allTransactions: Transaction[] = [];
         let nextToken: string | undefined = undefined;
-        const afterTime = new Date("2025-01-01T00:00:00Z").toISOString();
+        // Start from a very early date to capture the first transaction
+        const afterTime = new Date("2025-01-01T00:00:00Z").toISOString(); 
 
         do {
+          // NOTE: Indexer returns transactions sorted by round descending by default.
+          // We rely on fetching all transactions since 2025-01-01 to find the oldest one.
           let url = `${INDEXER_URL}/v2/accounts/${activeAddress}/transactions?after-time=${afterTime}`;
           if (nextToken) {
             url += `&next=${nextToken}`;
@@ -125,5 +128,26 @@ export function useAccountData(activeAddress: string | undefined) {
     setInternalRefetchTrigger(prev => prev + 1);
   }, [activeAddress]);
 
-  return { transactions, loading, error, refetch };
+  // --- NEW: Calculate First Transaction Date and Days Elapsed ---
+  const firstTransactionTimestamp = transactions.reduce((minTime, tx) => {
+    return tx['round-time'] < minTime ? tx['round-time'] : minTime;
+  }, Infinity);
+
+  const firstTransactionDate = firstTransactionTimestamp !== Infinity 
+    ? new Date(firstTransactionTimestamp * 1000) 
+    : null;
+
+  const daysSinceFirstTransaction = firstTransactionDate
+    ? Math.floor((Date.now() - firstTransactionDate.getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+  // --- END NEW ---
+
+  return { 
+    transactions, 
+    loading, 
+    error, 
+    refetch,
+    firstTransactionDate, // NEW
+    daysSinceFirstTransaction, // NEW
+  };
 }

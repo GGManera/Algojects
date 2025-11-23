@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DollarSign, Heart, FileText, MessageCircle, MessageSquare, Star, Clock, Users, LayoutGrid, TrendingUp } from "lucide-react";
+import { DollarSign, Heart, FileText, MessageCircle, MessageSquare, Star, Clock, Users, LayoutGrid, TrendingUp, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { ClickableSummaryCard } from "./ClickableSummaryCard";
@@ -24,6 +24,9 @@ interface UserStatsCardProps {
   amountSpentOnLikes: number;
   isLoading: boolean;
   isInsideCarousel?: boolean;
+  // NEW PROPS
+  firstTransactionDate: Date | null;
+  daysSinceFirstTransaction: number;
 }
 
 export function UserStatsCard({
@@ -40,6 +43,8 @@ export function UserStatsCard({
   amountSpentOnLikes,
   isLoading,
   isInsideCarousel = false,
+  firstTransactionDate, // NEW
+  daysSinceFirstTransaction, // NEW
 }: UserStatsCardProps) {
   const [expandedDetail, setExpandedDetail] = useState<string | null>(null);
   const { isMobile } = useAppContextDisplayMode();
@@ -198,6 +203,25 @@ export function UserStatsCard({
               <span className="font-numeric">{earnings.toFixed(2)} ALGO Earned</span>
               <span className="font-numeric">{amountSpentOnLikes.toFixed(2)} ALGO Spent on Likes</span>
             </div>
+            
+            {/* NEW: First Transaction Info */}
+            {firstTransactionDate && (
+              <div className="space-y-3 text-sm mt-4">
+                <h5 className="font-semibold gradient-text flex items-center gap-2">
+                  <Calendar className="h-4 w-4" /> Account Activity
+                </h5>
+                <div className="flex items-center justify-between p-2 rounded-md bg-background/50">
+                  <span>First Algorand TX Date:</span>
+                  <span className="font-numeric font-bold">{firstTransactionDate.toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-md bg-background/50">
+                  <span>Days Active:</span>
+                  <span className="font-numeric font-bold">{daysSinceFirstTransaction} days</span>
+                </div>
+              </div>
+            )}
+            {/* END NEW */}
+
             <p className="text-sm text-muted-foreground mt-4">
               This bar visualizes the balance between ALGO earned from content creation (Writer) and ALGO spent on liking others' content (Curator).
             </p>

@@ -55,42 +55,38 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
         />
       </Button>
 
-      {/* Column 2: Add Button / Placeholder */}
-      {activeAddress ? (
+      {/* Column 2: Add Button (only if connected) */}
+      {activeAddress && (
         <AddActionSheet projects={projects} onInteractionSuccess={onInteractionSuccess}>
           <Button variant="ghost" size="icon" className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
             <Plus className="h-5 w-5" />
             <span className="text-xs">Add</span>
           </Button>
         </AddActionSheet>
-      ) : (
-        <div className="h-full w-full"></div> // Placeholder to maintain column 2
       )}
       
       {/* Column 3: Profile / Wallet / Connect */}
-      <div className={activeAddress ? "flex h-full w-full justify-end items-center pr-2" : "flex h-full w-full justify-center items-center"}>
-        {activeAddress ? (
-          isOnOwnProfilePage ? (
-            // If on own profile page, show WalletButton (logged in, on profile)
-            <WalletButton className="flex flex-col justify-center items-center text-muted-foreground hover:text-foreground rounded-none !bg-transparent !p-0 !shadow-none">
-              <User className="h-5 w-5" />
-              <span className="text-xs whitespace-nowrap">Wallet</span>
-            </WalletButton>
-          ) : (
-            // Otherwise, show Profile button (logged in, not on profile)
-            <Button variant="ghost" size="icon" onClick={handleProfileClick} className="flex flex-col justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
-              <User className="h-5 w-5" />
-              <span className="text-xs">Profile</span>
-            </Button>
-          )
-        ) : (
-          // If no activeAddress, show Connect Wallet button (not logged in)
-          <WalletButton className="flex flex-col justify-center items-center text-muted-foreground hover:text-foreground rounded-none !bg-transparent !p-0 !shadow-none">
+      {activeAddress ? (
+        isOnOwnProfilePage ? (
+          // If on own profile page, show WalletButton (opens wallet menu)
+          <WalletButton className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none !bg-transparent !p-0 !shadow-none">
             <User className="h-5 w-5" />
-            <span className="text-xs whitespace-nowrap">Connect</span>
+            <span className="text-xs whitespace-nowrap">Wallet</span>
           </WalletButton>
-        )}
-      </div>
+        ) : (
+          // Otherwise, show Profile button (navigates to profile)
+          <Button variant="ghost" size="icon" onClick={handleProfileClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
+            <User className="h-5 w-5" />
+            <span className="text-xs">Profile</span>
+          </Button>
+        )
+      ) : (
+        // If no activeAddress, show Connect Wallet button
+        <WalletButton className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none !bg-transparent !p-0 !shadow-none">
+          <User className="h-5 w-5" />
+          <span className="text-xs whitespace-nowrap">Connect</span>
+        </WalletButton>
+      )}
     </div>
   );
 }

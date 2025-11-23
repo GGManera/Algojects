@@ -330,7 +330,7 @@
     backdrop-filter: blur(1rem);
     border-radius: 5rem;
     transition: 0.5s;
-    animation: gradient_301 5s ease infinite;
+    /* REMOVED: animation: gradient_301 5s ease infinite; */
     border: double 2px transparent; /* Changed from 4px to 2px */
     background-image: linear-gradient(hsl(var(--card)), hsl(var(--card))),
       linear-gradient(
@@ -342,7 +342,8 @@
       );
     background-origin: border-box;
     background-clip: content-box, border-box;
-    /* REMOVED: overflow: hidden; */
+    /* ADDED: Set background color explicitly to card color */
+    background-color: hsl(var(--card)); 
   }
 
   .btn-profile #container-stars {

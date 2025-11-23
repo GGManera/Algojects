@@ -172,6 +172,7 @@
 @layer components {
   /* From Uiverse.io by chase2k25 - Adapted for Tailwind */
   .glass-radio-group {
+    /* Base container style remains the same */
     @apply flex relative bg-white/5 rounded-xl overflow-hidden w-full;
     backdrop-filter: blur(12px);
     box-shadow:
@@ -194,6 +195,7 @@
     @apply text-white;
   }
 
+  /* MODIFIED: Remove background change on checked, keep text white (or black for platinum) */
   .glass-radio-group input:checked + label {
     @apply text-white;
   }
@@ -212,7 +214,7 @@
       box-shadow 0.4s ease-in-out;
   }
 
-  /* Update glider colors to use the new gradient */
+  /* Glider colors remain the same */
   #glass-silver:checked ~ .glass-glider {
     transform: translateX(0%);
     background: linear-gradient(135deg, hsl(var(--gradient-start) / 0.55), hsl(var(--gradient-end) / 0.8));
@@ -239,6 +241,7 @@
 
   /* NEW: Styles for the two-item GlassRadioGroup */
   .glass-radio-group-two-items {
+    /* Base container style remains the same */
     @apply flex relative bg-white/5 rounded-xl overflow-hidden w-full;
     backdrop-filter: blur(12px);
     box-shadow:
@@ -262,6 +265,7 @@
     @apply text-white;
   }
 
+  /* MODIFIED: Remove background change on checked, keep text white */
   .glass-radio-group-two-items input:checked + label {
     @apply text-white;
   }

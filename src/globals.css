@@ -348,7 +348,8 @@
 
   .btn-profile #container-stars {
     position: absolute;
-    z-index: -1;
+    /* CHANGE: Make stars visible by default */
+    z-index: 1; 
     width: 100%;
     height: 100%;
     /* ADDED: overflow: hidden and border-radius to container-stars */
@@ -356,6 +357,8 @@
     border-radius: 5rem;
     transition: 0.5s;
     backdrop-filter: blur(1rem);
+    /* ADDED: Set background color explicitly to card color */
+    background-color: hsl(var(--card)); 
   }
 
   .btn-profile strong {
@@ -389,9 +392,10 @@
     background: rgba(142, 81, 234, 0.704);
   }
 
+  /* REMOVE redundant hover styles for stars container */
   .btn-profile:hover #container-stars {
-    z-index: 1;
-    background-color: hsl(var(--card));
+    /* z-index: 1; <--- Already 1 */
+    /* background-color: hsl(var(--card)); <--- Already set */
   }
 
   .btn-profile:hover {
@@ -548,8 +552,6 @@
     transform: rotate(0);
   }
 }
-
-/* REMOVED: @keyframes gradient_301 */
 
 @keyframes pulse_3011 {
   0% {

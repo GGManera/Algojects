@@ -78,7 +78,7 @@
     /* CSS Variables for Header Heights */
     --sticky-header-height: 48px; /* h-12 */
     --dynamic-nav-buttons-height: 32px; /* h-8 */
-    --dynamic-nav-buttons-desktop-vertical-gap: 12px;
+    --dynamic-nav-buttons-desktop-vertical-gap: 14px; /* Adjusted from 12px to 14px */
     --mobile-bottom-bar-height: 64px; /* h-16 */
 
     /* RECALCULATED: Total fixed height for desktop/landscape (StickyHeader + Gap + DynamicNavButtons) */
@@ -86,7 +86,7 @@
       var(--sticky-header-height) + 
       var(--dynamic-nav-buttons-desktop-vertical-gap) +
       var(--dynamic-nav-buttons-height)
-    ); /* 48 + 12 + 32 = 92px */
+    ); /* 48 + 14 + 32 = 94px */
 
     /* RECALCULATED: Total fixed height for mobile portrait (StickyHeader + DynamicNavButtons + MobileBottomBar) */
     --total-fixed-bottom-height-mobile: calc(

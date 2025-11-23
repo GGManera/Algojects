@@ -59,8 +59,14 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
     return expandCommentId.startsWith(review.id + '.');
   }, [expandCommentId, review.id]);
 
-  const [isExpanded, setIsExpanded] = useState(containsTargetComment);
-  const [hasUserClicked, setHasUserClicked] = useState(false); // NEW: Track if user has clicked
+  // State for comment/reply visibility (sticky expansion)
+  const [isCommentsExpanded, setIsCommentsExpanded] = useState(containsTargetComment);
+  const [hasUserClickedComments, setHasUserClickedComments] = useState(false); // Track if user has clicked to expand comments
+
+  // State for long content visibility (sticky expansion)
+  const [isContentExpanded, setIsContentExpanded] = useState(false);
+  const [hasUserClickedContent, setHasUserClickedContent] = useState(false); // Track if user has clicked to expand content
+
   const [showAllComments, setShowAllComments] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
@@ -80,7 +86,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
       .sort((a, b) => b.score - a.score);
   }, [review.comments, activeAddress]);
 
-  const forcedExpansionState = useMemo(() => {
+  const forcedCommentsExpansionState = useMemo(() => {
     switch (globalViewMode) {
       case 'reviews':
         return false;
@@ -98,13 +104,13 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
 
   // NEW: 2. Synchronize local state with forced state when global mode changes
   useEffect(() => {
-    if (isExpanded !== forcedExpansionState) {
-        setIsExpanded(forcedExpansionState);
+    if (isCommentsExpanded !== forcedCommentsExpansionState) {
+        setIsCommentsExpanded(forcedCommentsExpansionState);
     }
-  }, [globalViewMode, forcedExpansionState]);
+  }, [globalViewMode, forcedCommentsExpansionState]);
 
   // NEW: 3. Use local state for rendering visibility
-  const isCommentsVisible = isExpanded;
+  const isCommentsVisible = isCommentsExpanded;
 
   // NEW: Keyboard navigation state
   const isFocused = focusedId === review.id;
@@ -114,27 +120,35 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
 
   useEffect(() => {
     if (containsTargetComment) {
-      setIsExpanded(true);
+      setIsCommentsExpanded(true);
     }
   }, [containsTargetComment]);
 
-  const handleToggleExpand = useCallback(() => {
-    setIsExpanded(prev => !prev);
+  const handleToggleCommentsExpand = useCallback(() => {
+    setIsCommentsExpanded(prev => !prev);
     setShowCommentForm(false); // Collapse form when collapsing review
+  }, []);
+
+  const handleToggleContentExpand = useCallback(() => {
+    setIsContentExpanded(prev => !prev);
   }, []);
 
   // Register item for keyboard navigation
   useEffect(() => {
-    // Use isActive as a dependency to force re-registration when the slide becomes active
-    const cleanup = registerItem(review.id, handleToggleExpand, isCommentsVisible, 'review');
+    // The keyboard action (spacebar) should toggle the primary expansion (comments)
+    const cleanup = registerItem(review.id, handleToggleCommentsExpand, isCommentsVisible, 'review');
     return cleanup;
-  }, [review.id, handleToggleExpand, isCommentsVisible, registerItem, isActive]); // Use isCommentsVisible here
+  }, [review.id, handleToggleCommentsExpand, isCommentsVisible, registerItem, isActive]); // Use isCommentsVisible here
 
   const commentsToShow = showAllComments ? sortedComments : sortedComments.slice(0, 3);
   const hasComments = sortedComments.length > 0;
 
   const isLongReview = review.content.length > CONTENT_TRUNCATE_LENGTH;
-  const displayContent = isLongReview && !isCommentsVisible
+  
+  // Determine if the content should be expanded (either by click or if comments are expanded)
+  const shouldContentBeExpanded = isContentExpanded || isCommentsVisible;
+
+  const displayContent = isLongReview && !shouldContentBeExpanded
     ? `${review.content.substring(0, CONTENT_TRUNCATE_LENGTH)}...`
     : review.content;
 
@@ -142,25 +156,51 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
     if ((e.target as HTMLElement).closest('button, a')) {
       return;
     }
-    // NEW: Set clicked state and toggle expansion
-    setHasUserClicked(true);
-    handleToggleExpand();
+    if (isExcluded) return; // Prevent interaction if excluded
+    
+    // If content is long and not expanded, prioritize content expansion
+    if (isLongReview && !shouldContentBeExpanded) {
+        setHasUserClickedContent(true);
+        handleToggleContentExpand();
+    } 
+    // If content is fully visible (or short), toggle comments expansion
+    else {
+        setHasUserClickedComments(true);
+        handleToggleCommentsExpand();
+    }
     setShowInteractionDetails(false);
   };
 
   // UPDATED: Sticky Hover Logic
   const handleMouseEnter = useCallback(() => {
     setLastActiveId(review.id);
-    // Only expand on hover if the user hasn't clicked yet AND there are comments
-    if (!hasUserClicked && !isExpanded && hasComments) { 
-        setIsExpanded(true);
+    
+    // 1. Hover to expand long content (if not already clicked)
+    if (isLongReview && !hasUserClickedContent && !shouldContentBeExpanded) {
+        setIsContentExpanded(true);
     }
-  }, [review.id, setLastActiveId, isExpanded, hasComments, hasUserClicked]);
+    
+    // 2. Hover to expand comments (if content is fully visible AND not already clicked)
+    if (!isLongReview || shouldContentBeExpanded) {
+        if (!hasUserClickedComments && !isCommentsExpanded && hasComments) { 
+            setIsCommentsExpanded(true);
+        }
+    }
+  }, [review.id, setLastActiveId, isCommentsExpanded, hasComments, hasUserClickedComments, isLongReview, shouldContentBeExpanded, hasUserClickedContent]);
 
   const handleMouseLeave = useCallback(() => {
     setLastActiveId(null);
-    // No action here, the expansion is sticky until clicked again
-  }, [setLastActiveId]);
+    
+    // 1. Collapse long content if it was expanded only by hover
+    if (isLongReview && !hasUserClickedContent && isContentExpanded) {
+        setIsContentExpanded(false);
+    }
+    
+    // 2. Collapse comments if they were expanded only by hover
+    if (!hasUserClickedComments && isCommentsExpanded && hasComments) {
+        setIsCommentsExpanded(false);
+    }
+  }, [setLastActiveId, isCommentsExpanded, hasComments, hasUserClickedComments, isLongReview, isContentExpanded]);
 
   const handleShare = async () => {
     const reviewIdLocal = review.id.split('.')[1];
@@ -222,7 +262,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
 
         <div className="px-3 pb-2">
           <p className="whitespace-pre-wrap font-semibold selectable-text">{displayContent}</p>
-          {isLongReview && !isCommentsVisible && (
+          {isLongReview && !shouldContentBeExpanded && (
             <span className="text-blue-200 font-bold mt-2 inline-block">
               Continue reading
             </span>
@@ -245,7 +285,11 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
             className="flex items-center space-x-2 hover:text-white transition-colors"
             onClick={(e) => {
               e.stopPropagation();
-              if (!isCommentsVisible) setIsExpanded(true);
+              // If comments are not visible, expand them first
+              if (!isCommentsVisible) {
+                setHasUserClickedComments(true);
+                setIsCommentsExpanded(true);
+              }
               setShowCommentForm(prev => !prev);
             }}
           >

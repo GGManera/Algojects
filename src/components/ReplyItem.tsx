@@ -38,7 +38,8 @@ interface ReplyItemProps {
 const CONTENT_TRUNCATE_LENGTH = 150;
 
 export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive, setLastActiveId }: ReplyItemProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isContentExpanded, setIsContentExpanded] = useState(false); // State for content expansion
+  const [hasUserClickedContent, setHasUserClickedContent] = useState(false); // NEW: Track if user has clicked to expand content
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { activeAddress } = useWallet(); // Get active address
@@ -60,19 +61,19 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
     }
   }, [isHighlighted]);
 
-  const handleToggleExpand = useCallback(() => {
-    setIsExpanded(prev => !prev);
+  const handleToggleContentExpand = useCallback(() => {
+    setIsContentExpanded(prev => !prev);
   }, []);
 
   // Register item for keyboard navigation
   useEffect(() => {
-    // Use isActive as a dependency to force re-registration when the slide becomes active
-    const cleanup = registerItem(reply.id, handleToggleExpand, isExpanded, 'reply');
+    // The keyboard action (spacebar) should toggle content expansion
+    const cleanup = registerItem(reply.id, handleToggleContentExpand, isContentExpanded, 'reply');
     return cleanup;
-  }, [reply.id, handleToggleExpand, isExpanded, registerItem, isActive]); // ADDED isActive
+  }, [reply.id, handleToggleContentExpand, isContentExpanded, registerItem, isActive]); // ADDED isActive
 
   const isLongReply = reply.content.length > CONTENT_TRUNCATE_LENGTH;
-  const displayContent = isLongReply && !isExpanded
+  const displayContent = isLongReply && !isContentExpanded
     ? `${reply.content.substring(0, CONTENT_TRUNCATE_LENGTH)}...`
     : reply.content;
 
@@ -81,9 +82,31 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
       return;
     }
     if (isExcluded) return; // Prevent interaction if excluded
-    handleToggleExpand();
+    
+    // Only toggle content expansion if it's a long reply
+    if (isLongReply) {
+        setHasUserClickedContent(true);
+        handleToggleContentExpand();
+    }
     setShowInteractionDetails(false);
   };
+
+  // UPDATED: Sticky Hover Logic
+  const handleMouseEnter = useCallback(() => {
+    setLastActiveId(reply.id);
+    // Only expand long content on hover if not already clicked
+    if (isLongReply && !hasUserClickedContent && !isContentExpanded) {
+        setIsContentExpanded(true);
+    }
+  }, [reply.id, setLastActiveId, isLongReply, hasUserClickedContent, isContentExpanded]);
+
+  const handleMouseLeave = useCallback(() => {
+    setLastActiveId(null);
+    // Collapse long content if it was expanded only by hover
+    if (isLongReply && !hasUserClickedContent && isContentExpanded) {
+        setIsContentExpanded(false);
+    }
+  }, [setLastActiveId, isLongReply, hasUserClickedContent, isContentExpanded]);
 
   const curatorWeightedLikeScore = useMemo(() => {
     return getCuratorWeightedLikeScore(reply, allCuratorData);
@@ -107,8 +130,8 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             : "bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black" // Normal style
         )}
         onClick={handleCardClick}
-        onMouseEnter={() => setLastActiveId(reply.id)} // NEW: Set active ID on mouse enter
-        onMouseLeave={() => setLastActiveId(null)} // NEW: Clear active ID on mouse leave
+        onMouseEnter={handleMouseEnter} // UPDATED
+        onMouseLeave={handleMouseLeave} // UPDATED
         data-nav-id={reply.id} // Add data attribute for keyboard navigation
       >
         <div className="flex items-start justify-between p-2">
@@ -138,7 +161,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
           ) : (
             <>
               <p className="whitespace-pre-wrap text-black font-semibold selectable-text">{displayContent}</p>
-              {isLongReply && !isExpanded && (
+              {isLongReply && !isContentExpanded && (
                 <span className="text-blue-700 font-bold mt-2 inline-block">
                   Continue reading
                 </span>

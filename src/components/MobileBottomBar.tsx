@@ -68,20 +68,20 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
       {/* Column 3: Profile / Wallet / Connect */}
       {activeAddress ? (
         isOnOwnProfilePage ? (
-          // If on own profile page, show WalletButton (opens wallet menu)
-          <WalletButton className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none !bg-transparent !p-0 !shadow-none">
+          // Case 3a: Logged in, on own profile -> Wallet Button (with pl-2 adjustment)
+          <WalletButton className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none !bg-transparent !p-0 !shadow-none pl-2">
             <User className="h-5 w-5" />
             <span className="text-xs whitespace-nowrap">Wallet</span>
           </WalletButton>
         ) : (
-          // Otherwise, show Profile button (navigates to profile)
-          <Button variant="ghost" size="icon" onClick={handleProfileClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
+          // Case 3b: Logged in, NOT on own profile -> Profile Button (with pl-2 adjustment)
+          <Button variant="ghost" size="icon" onClick={handleProfileClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none pl-2">
             <User className="h-5 w-5" />
             <span className="text-xs">Profile</span>
           </Button>
         )
       ) : (
-        // If no activeAddress, show Connect Wallet button
+        // Case 3c: Not logged in -> Connect Button (no adjustment needed)
         <WalletButton className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none !bg-transparent !p-0 !shadow-none">
           <User className="h-5 w-5" />
           <span className="text-xs whitespace-nowrap">Connect</span>

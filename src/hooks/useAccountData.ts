@@ -5,57 +5,40 @@ import { retryFetch } from '@/utils/api'; // Import retryFetch
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 
-// Define a minimal interface for the account response needed
-interface AccountDataResponse {
-  account: {
-    'created-at-round': number;
-    address: string;
-    // We don't need the full transaction list anymore
-  };
+// Define a nova interface para a resposta de transações
+interface TransactionDataResponse {
+  transactions: Array<{
+    'round-time': number; // Timestamp em segundos
+    id: string;
+    // Outros campos de transação
+  }>;
   'current-round': number;
 }
 
 interface CachedAccountCreationData {
-  timestamp: number;
-  createdAtRound: number;
+  timestamp: number; // Timestamp exato da primeira transação (em milissegundos)
   currentRound: number;
 }
 
 const ACCOUNT_DATA_CACHE_KEY_PREFIX = 'accountCreationDataCache_'; // Prefix to store per-address
 const ACCOUNT_DATA_CACHE_DURATION = 15 * 1000; // 15 seconds
 
-// Algorand Genesis Timestamp (MainNet) in seconds
-const ALGORAND_GENESIS_TIMESTAMP_SECONDS = 1596240000; 
-// Approximate block time in seconds (used for estimation)
-const APPROX_BLOCK_TIME_SECONDS = 3.3; 
-
 /**
- * Estimates the creation date based on the created-at-round.
- * This is an approximation as Indexer does not provide the exact timestamp for creation.
+ * Não é mais necessário, pois obteremos o timestamp exato.
+ * const ALGORAND_GENESIS_TIMESTAMP_SECONDS = 1596240000; 
+ * const APPROX_BLOCK_TIME_SECONDS = 3.3; 
  */
-const estimateCreationDate = (createdAtRound: number): Date | null => {
-    if (createdAtRound <= 0) return null;
-    
-    // Estimate time elapsed since genesis round (round 1)
-    // We assume round 1 is at genesis timestamp.
-    const roundsSinceGenesis = createdAtRound - 1;
-    const estimatedTimeSinceGenesisSeconds = roundsSinceGenesis * APPROX_BLOCK_TIME_SECONDS;
-    
-    const estimatedTimestampSeconds = ALGORAND_GENESIS_TIMESTAMP_SECONDS + estimatedTimeSinceGenesisSeconds;
-    
-    return new Date(estimatedTimestampSeconds * 1000);
-};
-
 
 export function useAccountData(activeAddress: string | undefined) {
-  const [createdAtRound, setCreatedAtRound] = useState<number | null>(null);
+  // Armazenamos o timestamp exato da primeira transação em milissegundos
+  const [firstTransactionTimestampMs, setFirstTransactionTimestampMs] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [internalRefetchTrigger, setInternalRefetchTrigger] = useState(0);
 
   const fetchData = useCallback(async () => {
     if (!activeAddress) {
-      setCreatedAtRound(null);
+      setFirstTransactionTimestampMs(null);
       setLoading(false);
       return;
     }
@@ -70,7 +53,7 @@ export function useAccountData(activeAddress: string | undefined) {
         const cachedData: CachedAccountCreationData = JSON.parse(cachedItem);
         isCacheStale = Date.now() - cachedData.timestamp > ACCOUNT_DATA_CACHE_DURATION;
 
-        setCreatedAtRound(cachedData.createdAtRound);
+        setFirstTransactionTimestampMs(cachedData.timestamp);
         cacheUsed = true;
         setLoading(false);
         
@@ -89,35 +72,37 @@ export function useAccountData(activeAddress: string | undefined) {
       }
       setError(null);
       try {
-        // 1. Fetch account details using the simpler endpoint
-        const url = `${INDEXER_URL}/v2/accounts/${activeAddress}`;
+        // 1. Fetch the first transaction using limit=1 and order=asc
+        const url = `${INDEXER_URL}/v2/accounts/${activeAddress}/transactions?limit=1&order=asc`;
         
         const response = await retryFetch(url, undefined, 5);
         
-        if (response.status === 404) {
-            // Account not found (not funded yet)
-            setCreatedAtRound(0); // Use 0 to indicate not created
-            setLoading(false);
-            return;
-        }
-        
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(`Indexer API for account details responded with ${response.status}: ${errorText}`);
+          throw new Error(`Indexer API for account transactions responded with ${response.status}: ${errorText}`);
         }
 
-        const data: AccountDataResponse = await response.json();
+        const data: TransactionDataResponse = await response.json();
         
         // NEW: Log the raw response data
         console.log(`[useAccountData] Raw Indexer response for ${activeAddress}:`, data);
         
-        const creationRound = data.account['created-at-round'];
+        const firstTx = data.transactions?.[0];
+        let exactTimestampMs: number | null = null;
+
+        if (firstTx) {
+            // round-time is in seconds, convert to milliseconds
+            exactTimestampMs = firstTx['round-time'] * 1000;
+        } else {
+            // If no transactions found (e.g., account exists but has no TXs, or is unfunded)
+            // We treat this as 'not created' or 'no activity'
+            exactTimestampMs = 0; 
+        }
         
-        setCreatedAtRound(creationRound);
+        setFirstTransactionTimestampMs(exactTimestampMs);
 
         const newCache: CachedAccountCreationData = {
-          timestamp: Date.now(),
-          createdAtRound: creationRound,
+          timestamp: exactTimestampMs || 0,
           currentRound: data['current-round'],
         };
         localStorage.setItem(cacheKey, JSON.stringify(newCache));
@@ -142,11 +127,11 @@ export function useAccountData(activeAddress: string | undefined) {
     setInternalRefetchTrigger(prev => prev + 1);
   }, [activeAddress]);
 
-  // --- Calculate First Transaction Date and Days Elapsed ---
+  // --- Calculate First Transaction Date and Days Elapsed using exact timestamp ---
   const firstTransactionDate = useMemo(() => {
-    if (createdAtRound === null || createdAtRound <= 0) return null;
-    return estimateCreationDate(createdAtRound);
-  }, [createdAtRound]);
+    if (firstTransactionTimestampMs === null || firstTransactionTimestampMs <= 0) return null;
+    return new Date(firstTransactionTimestampMs);
+  }, [firstTransactionTimestampMs]);
 
   const daysSinceFirstTransaction = useMemo(() => {
     if (!firstTransactionDate) return 0;

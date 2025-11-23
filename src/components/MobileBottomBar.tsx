@@ -78,8 +78,8 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
             <span className="text-xs whitespace-nowrap">Wallet</span>
           </WalletButton>
         ) : (
-          // Case 3b: Logged in, NOT on own profile -> Profile Button (pl-8 adjustment)
-          <Button variant="ghost" size="icon" onClick={handleProfileClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none pl-8">
+          // Case 3b: Logged in, NOT on own profile -> Profile Button (pl-6 adjustment)
+          <Button variant="ghost" size="icon" onClick={handleProfileClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none pl-6">
             <User className="h-5 w-5" />
             <span className="text-xs">Profile</span>
           </Button>

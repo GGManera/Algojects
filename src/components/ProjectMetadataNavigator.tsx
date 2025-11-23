@@ -397,7 +397,7 @@ export function ProjectMetadataNavigator({
 
   return (
     <div className="py-6 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
-      <div className="grid grid-cols-2 gap-4 text-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
         {navigableItems.map((item, index) => {
           const id = `meta-${item.title}-${index}`;
           const isItemFocused = focusedId === id;

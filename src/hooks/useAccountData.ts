@@ -77,7 +77,7 @@ export function useAccountData(activeAddress: string | undefined) {
         const accountResponse = await retryFetch(accountUrl, undefined, 5);
         
         if (accountResponse.status === 404) {
-            // Account not found/funded, treat as 0 timestamp
+            console.log(`[useAccountData] Account ${activeAddress} not found (404).`);
             setFirstTransactionTimestampMs(0); 
             setLoading(false);
             return;
@@ -89,10 +89,12 @@ export function useAccountData(activeAddress: string | undefined) {
         }
 
         const accountData: AccountDataResponse = await accountResponse.json();
+        console.log(`[useAccountData] Account Data Response for ${activeAddress}:`, accountData);
+        
         const creationRound = accountData.account['created-at-round'];
         
         if (creationRound === 0) {
-            // Account exists but has no creation round (e.g., genesis account or unfunded)
+            console.log(`[useAccountData] Account ${activeAddress} has creationRound 0.`);
             setFirstTransactionTimestampMs(0); 
             setLoading(false);
             return;
@@ -108,6 +110,7 @@ export function useAccountData(activeAddress: string | undefined) {
         }
         
         const blockData: BlockDataResponse = await blockResponse.json();
+        console.log(`[useAccountData] Block Data Response for round ${creationRound}:`, blockData);
         
         // Timestamp is in seconds, convert to milliseconds
         const exactTimestampMs = blockData.timestamp * 1000;

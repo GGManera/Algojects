@@ -50,7 +50,6 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
           alt="AlgoJects Logo" 
           className="h-8 w-auto" 
         />
-        <span className="text-xs">AlgoJects</span>
       </Button>
 
       {activeAddress && ( // Conditionally render the AddActionSheet

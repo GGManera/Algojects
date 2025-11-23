@@ -416,17 +416,12 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
   const cardContentMaxHeightClass = useMemo(() => {
-    // Determine if we are in mobile portrait mode (where StickyHeader is hidden)
-    const isMobilePortrait = isMobile && !isDeviceLandscape;
-
-    if (isMobilePortrait) {
-      // Mobile Portrait: StickyHeader is hidden. DynamicNavButtons and MobileBottomBar are at the bottom.
-      // We subtract the total height of the fixed bottom elements, plus safe area insets.
-      return "max-h-[calc(100vh - var(--dynamic-nav-buttons-height) - var(--mobile-bottom-bar-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
+    if (isMobile && isDeviceLandscape) {
+      return "max-h-[calc(100vh-var(--sticky-header-height)-var(--dynamic-nav-buttons-height)-var(--dynamic-nav-buttons-desktop-vertical-gap)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+    } else if (isMobile && !isDeviceLandscape) {
+      return "max-h-[calc(100vh-var(--sticky-header-height)-var(--dynamic-nav-buttons-height)-var(--mobile-bottom-bar-height)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
     } else {
-      // Desktop/Mobile Landscape: StickyHeader and DynamicNavButtons are at the top. MobileBottomBar is hidden.
-      // We subtract the total height of the fixed top elements, plus safe area insets.
-      return "max-h-[calc(100vh - var(--sticky-header-height) - var(--dynamic-nav-buttons-height) - var(--dynamic-nav-buttons-desktop-vertical-gap) - env(safe-area-inset-top) - env(safe-area-inset-bottom))]";
+      return "max-h-[calc(100vh-var(--sticky-header-height)-var(--dynamic-nav-buttons-height)-var(--dynamic-nav-buttons-desktop-vertical-gap)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
     }
   }, [isMobile, isDeviceLandscape]);
 

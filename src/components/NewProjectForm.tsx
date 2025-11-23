@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"; // Import Alert components
+import { cn } from '@/lib/utils'; // Import cn
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const MAX_NOTE_SIZE_BYTES = 1024;
@@ -382,8 +383,8 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
             disabled={inputDisabled}
             onSubmit={handleSubmit}
             isSubmitDisabled={true}
-            // Removemos todas as classes de 'peer' e 'user-box' daqui, confiando apenas no estilo do componente e no Label absoluto
-            className="w-full py-2 text-base text-black border-none outline-none bg-transparent focus:outline-none focus:ring-0 min-h-[80px]"
+            // Adicionamos a classe 'peer' aqui para que o Label possa ser posicionado corretamente
+            className="peer w-full py-2 text-base text-black border-none outline-none bg-transparent focus:outline-none focus:ring-0 min-h-[80px]"
           />
         </div>
 
@@ -416,7 +417,11 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
                   value={item.title}
                   onChange={(e) => handleUpdateMetadataItem(index, 'title', e.target.value)}
                   disabled={inputDisabled}
-                  className="peer w-full py-2 text-base text-white border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
+                  // Adicionando borda sutil e fundo para visibilidade
+                  className={cn(
+                    "peer w-full py-2 text-base text-white mb-[30px] border-b border-white/30 outline-none bg-hodl-darker focus:border-b-[#03f40f] focus:outline-none focus:ring-0",
+                    item.title.trim() && "border-b-[#03f40f]" // Highlight if content exists
+                  )}
                 />
                 <Label
                   htmlFor={`metadata-title-${index}`}
@@ -432,7 +437,11 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
                   value={item.value}
                   onChange={(e) => handleUpdateMetadataItem(index, 'value', e.target.value)}
                   disabled={inputDisabled}
-                  className="peer w-full py-2 text-base text-white border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
+                  // Adicionando borda sutil e fundo para visibilidade
+                  className={cn(
+                    "peer w-full py-2 text-base text-white mb-[30px] border-b border-white/30 outline-none bg-hodl-darker focus:border-b-[#03f40f] focus:outline-none focus:ring-0",
+                    item.value.trim() && "border-b-[#03f40f]" // Highlight if content exists
+                  )}
                 />
                 <Label
                   htmlFor={`metadata-value-${index}`}
@@ -448,7 +457,13 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
                   onValueChange={(value: MetadataItem['type']) => handleUpdateMetadataType(index, value)}
                   disabled={inputDisabled}
                 >
-                  <SelectTrigger id={`metadata-type-${index}`} className="w-full py-2 text-base text-white border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0">
+                  <SelectTrigger id={`metadata-type-${index}`} 
+                    // Adicionando borda sutil e fundo para visibilidade
+                    className={cn(
+                      "w-full py-2 text-base text-white border-b border-white/30 outline-none bg-hodl-darker focus:border-b-[#03f40f] focus:outline-none focus:ring-0",
+                      item.type && "border-b-[#03f40f]" // Highlight if type is selected
+                    )}
+                  >
                     <SelectValue placeholder="Select type" className="text-white" />
                   </SelectTrigger>
                   <SelectContent className="bg-hodl-darker text-white border-border">

@@ -39,6 +39,7 @@ const CONTENT_TRUNCATE_LENGTH = 150;
 
 export function ReplyItem({ reply, project, onInteractionSuccess, review, comment, projectSourceContext, allCuratorData, isHighlighted = false, focusedId, registerItem, isActive, setLastActiveId }: ReplyItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [hasUserClicked, setHasUserClicked] = useState(false); // NEW: Track if user has clicked
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { activeAddress } = useWallet(); // Get active address
@@ -72,6 +73,8 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
   }, [reply.id, handleToggleExpand, isExpanded, registerItem, isActive]); // ADDED isActive
 
   const isLongReply = reply.content.length > CONTENT_TRUNCATE_LENGTH;
+  
+  // UPDATED: Display content based on isExpanded state
   const displayContent = isLongReply && !isExpanded
     ? `${reply.content.substring(0, CONTENT_TRUNCATE_LENGTH)}...`
     : reply.content;
@@ -81,9 +84,25 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
       return;
     }
     if (isExcluded) return; // Prevent interaction if excluded
+    // NEW: Set clicked state and toggle expansion
+    setHasUserClicked(true);
     handleToggleExpand();
     setShowInteractionDetails(false);
   };
+
+  // UPDATED: Sticky Hover Logic
+  const handleMouseEnter = useCallback(() => {
+    setLastActiveId(reply.id);
+    // Only expand on hover if the user hasn't clicked yet AND the reply is long
+    if (!hasUserClicked && !isExpanded && isLongReply) { 
+        setIsExpanded(true);
+    }
+  }, [reply.id, setLastActiveId, isExpanded, isLongReply, hasUserClicked]);
+
+  const handleMouseLeave = useCallback(() => {
+    setLastActiveId(null);
+    // No action here, the expansion is sticky until clicked again
+  }, [setLastActiveId]);
 
   const curatorWeightedLikeScore = useMemo(() => {
     return getCuratorWeightedLikeScore(reply, allCuratorData);
@@ -107,8 +126,8 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
             : "bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black" // Normal style
         )}
         onClick={handleCardClick}
-        onMouseEnter={() => setLastActiveId(reply.id)} // NEW: Set active ID on mouse enter
-        onMouseLeave={() => setLastActiveId(null)} // NEW: Clear active ID on mouse leave
+        onMouseEnter={handleMouseEnter} // UPDATED
+        onMouseLeave={handleMouseLeave} // UPDATED
         data-nav-id={reply.id} // Add data attribute for keyboard navigation
       >
         <div className="flex items-start justify-between p-2">

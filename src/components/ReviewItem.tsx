@@ -134,7 +134,9 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
   const hasComments = sortedComments.length > 0;
 
   const isLongReview = review.content.length > CONTENT_TRUNCATE_LENGTH;
-  const displayContent = isLongReview && !isCommentsVisible
+  
+  // UPDATED: Display content based on isExpanded state
+  const displayContent = isLongReview && !isExpanded
     ? `${review.content.substring(0, CONTENT_TRUNCATE_LENGTH)}...`
     : review.content;
 
@@ -145,17 +147,18 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
     // NEW: Set clicked state and toggle expansion
     setHasUserClicked(true);
     handleToggleExpand();
+    setShowCommentForm(false); // Close comment form on click
     setShowInteractionDetails(false);
   };
 
   // UPDATED: Sticky Hover Logic
   const handleMouseEnter = useCallback(() => {
     setLastActiveId(review.id);
-    // Only expand on hover if the user hasn't clicked yet AND there are comments
-    if (!hasUserClicked && !isExpanded && hasComments) { 
+    // Only expand on hover if the user hasn't clicked yet AND (there are comments OR the review is long)
+    if (!hasUserClicked && !isExpanded && (hasComments || isLongReview)) { 
         setIsExpanded(true);
     }
-  }, [review.id, setLastActiveId, isExpanded, hasComments, hasUserClicked]);
+  }, [review.id, setLastActiveId, isExpanded, hasComments, isLongReview, hasUserClicked]);
 
   const handleMouseLeave = useCallback(() => {
     setLastActiveId(null);
@@ -222,7 +225,7 @@ export function ReviewItem({ review, project, onInteractionSuccess, interactionS
 
         <div className="px-3 pb-2">
           <p className="whitespace-pre-wrap font-semibold selectable-text">{displayContent}</p>
-          {isLongReview && !isCommentsVisible && (
+          {isLongReview && !isExpanded && (
             <span className="text-blue-200 font-bold mt-2 inline-block">
               Continue reading
             </span>

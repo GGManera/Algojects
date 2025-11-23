@@ -364,8 +364,15 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
           </Label>
         </div>
 
-        {/* UPDATED: InteractionCardInput wrapped in user-box for correct label positioning */}
-        <div className="relative user-box mb-[30px]">
+        {/* CORRIGIDO: Envolvemos a InteractionCardInput e o Label em uma div relativa, e ajustamos o Label para flutuar acima. */}
+        <div className="relative mb-[30px]">
+          <Label
+            htmlFor="projectNotes"
+            // Ajustamos as classes para que o Label flutue acima da InteractionCardInput
+            className="absolute top-[-20px] left-0 py-0 text-xs text-[#bdb8b8] pointer-events-none transition-all duration-500 bg-hodl-darker px-1 z-10"
+          >
+            {isCreator ? "Creator Notes" : "Contributor Notes"}
+          </Label>
           <InteractionCardInput
             type="notes"
             id="projectNotes"
@@ -374,19 +381,11 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
             onChange={(e) => setProjectNotes(e.target.value)}
             disabled={inputDisabled}
             onSubmit={handleSubmit}
-            isSubmitDisabled={true} // Ensure submit button is disabled for this field
-            // Removed peer class from InteractionCardInput itself, as the label targets the input inside it
-            className="w-full py-2 text-base text-white border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0 min-h-[80px]"
+            isSubmitDisabled={true}
+            // Removemos todas as classes de 'peer' e 'user-box' daqui, confiando apenas no estilo do componente e no Label absoluto
+            className="w-full py-2 text-base text-black border-none outline-none bg-transparent focus:outline-none focus:ring-0 min-h-[80px]"
           />
-          <Label
-            htmlFor="projectNotes"
-            // Apply peer class to the label to make it float based on the input's state
-            className="absolute top-0 left-0 py-2 text-base text-white pointer-events-none transition-all duration-500 peer-focus:top-[-20px] peer-focus:left-0 peer-focus:text-[#bdb8b8] peer-focus:text-xs peer-valid:top-[-20px] peer-valid:left-0 peer-valid:text-[#bdb8b8] peer-valid:text-xs peer-focus:bg-hodl-darker peer-focus:px-1 peer-valid:bg-hodl-darker peer-valid:px-1"
-          >
-            {isCreator ? "Creator Notes" : "Contributor Notes"}
-          </Label>
         </div>
-        {/* END UPDATED */}
 
         <div className="relative user-box">
           <Input

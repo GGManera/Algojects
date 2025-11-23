@@ -50,15 +50,18 @@ export function useAccountData(activeAddress: string | undefined) {
       try {
         const cachedData: CachedAccountCreationData = JSON.parse(cachedItem);
         
-        // Check cache freshness based on stored timestamp
-        isCacheStale = Date.now() - cachedData.timestampMs > ACCOUNT_DATA_CACHE_DURATION;
-        
-        // NEW: If timestamp is 0 (meaning account not found/funded previously), treat as stale to retry fetch
-        if (cachedData.timestampMs === 0) {
+        // Check if timestamp is a valid, positive number
+        const isValidTimestamp = typeof cachedData.timestampMs === 'number' && cachedData.timestampMs > 0;
+
+        if (isValidTimestamp) {
+            // Check cache freshness based on stored timestamp
+            isCacheStale = Date.now() - cachedData.timestampMs > ACCOUNT_DATA_CACHE_DURATION;
+        } else {
+            // If timestamp is 0 or invalid, it's always stale (needs refetch)
             isCacheStale = true;
         }
         
-        setFirstTransactionTimestampMs(cachedData.timestampMs);
+        setFirstTransactionTimestampMs(isValidTimestamp ? cachedData.timestampMs : 0);
         cacheUsed = true;
         setLoading(false);
         

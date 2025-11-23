@@ -535,7 +535,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
         <div className={cn(
           "w-full h-full flex items-center justify-center",
           !isInsideCarousel && "max-w-md mx-auto",
-          isInsideCarousel ? "p-0 md:p-0" : "p-2 md:p-4"
+          isInsideCarousel ? "px-2 py-2 md:p-0" : "p-2 md:p-4" // ADDED px-2 for mobile carousel
         )}>
             <p className="text-muted-foreground">Connect your wallet or select a user to view their profile.</p>
         </div>
@@ -547,7 +547,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
       <div className={cn(
         "w-full",
         !isInsideCarousel && "max-w-md mx-auto",
-        isInsideCarousel ? "p-0 md:p-0" : "p-2 md:p-4"
+        isInsideCarousel ? "px-2 py-2 md:p-0" : "p-2 md:p-4" // ADDED px-2 for mobile carousel
       )}>
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -562,7 +562,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
     <div id={pageKey} className={cn( // Set pageKey as ID here
       "w-full text-foreground scroll-mt-header-offset",
       !isInsideCarousel && "max-w-md mx-auto",
-      isInsideCarousel ? "p-0 md:p-0 h-full" : "p-2 md:p-4 h-full overflow-y-auto"
+      isInsideCarousel ? "px-2 py-2 md:p-0 h-full" : "p-2 md:p-4 h-full overflow-y-auto" // ADDED px-2 for mobile carousel
     )}>
         <AnimatePresence mode="wait">
           <div className="overflow-hidden">

@@ -150,7 +150,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
   return (
     <div id={pageKey} ref={projectsPageRef} className={cn(
       "flex flex-col items-center text-foreground space-y-4 relative scroll-mt-header-offset", // Removed h-full and overflow-y-auto
-      isInsideCarousel ? "px-0 md:px-0" : "px-2 md:px-4"
+      isInsideCarousel ? "px-2 md:px-0" : "px-2 md:px-4" // ADDED px-2 for mobile carousel
     )}>
       <HeroSection 
         heroLogoRef={heroLogoRef} 

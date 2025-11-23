@@ -53,11 +53,17 @@ export function useAccountData(activeAddress: string | undefined) {
         // Check cache freshness based on stored timestamp
         isCacheStale = Date.now() - cachedData.timestampMs > ACCOUNT_DATA_CACHE_DURATION;
         
+        // NEW: If timestamp is 0 (meaning account not found/funded previously), treat as stale to retry fetch
+        if (cachedData.timestampMs === 0) {
+            isCacheStale = true;
+        }
+        
         setFirstTransactionTimestampMs(cachedData.timestampMs);
         cacheUsed = true;
         setLoading(false);
         
         if (!isCacheStale) {
+          console.log(`[useAccountData] Using fresh cache for ${activeAddress}. Timestamp: ${cachedData.timestampMs}`);
           return;
         }
       } catch (e) {

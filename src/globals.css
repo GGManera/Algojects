@@ -327,7 +327,7 @@
     height: 2rem; /* Adjusted height */
     background-size: 300% 300%;
     cursor: pointer;
-    backdrop-filter: blur(1rem);
+    /* REMOVED: backdrop-filter: blur(1rem); */
     border-radius: 5rem;
     transition: 0.5s;
     /* REMOVED: animation: gradient_301 5s ease infinite; */
@@ -549,19 +549,7 @@
   }
 }
 
-@keyframes gradient_301 {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
+/* REMOVED: @keyframes gradient_301 */
 
 @keyframes pulse_3011 {
   0% {

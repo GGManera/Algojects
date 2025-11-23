@@ -276,14 +276,14 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
       </Alert>
       
       <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-        <div className="relative user-box mb-[30px]">
+        <div className="relative user-box">
           <Input
             id="projectName"
             placeholder="" // Placeholder is handled by label
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             disabled={inputDisabled}
-            className="peer w-full py-2 text-base text-white border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
+            className="peer w-full py-2 text-base text-white mb-[30px] border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
             // Removed 'required' attribute
           />
           <Label
@@ -305,14 +305,14 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
           <Label htmlFor="isCreator" className="text-white text-sm">I'm this Project's Creator</Label>
         </div>
 
-        <div className="relative user-box mb-[30px]">
+        <div className="relative user-box">
           <Input
             id="creatorWalletAddress"
             placeholder=""
             value={creatorWalletAddress}
             onChange={(e) => setCreatorWalletAddress(e.target.value)}
             disabled={inputDisabled}
-            className="peer w-full py-2 text-base text-white border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
+            className="peer w-full py-2 text-base text-white mb-[30px] border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
           />
           <Label
             htmlFor="creatorWalletAddress"
@@ -326,14 +326,14 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
         </div>
 
         {/* NEW: Project Wallet Address */}
-        <div className="relative user-box mb-[30px]">
+        <div className="relative user-box">
           <Input
             id="projectWalletAddress"
             placeholder=""
             value={projectWalletAddress}
             onChange={(e) => setProjectWalletAddress(e.target.value)}
             disabled={inputDisabled}
-            className="peer w-full py-2 text-base text-white border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
+            className="peer w-full py-2 text-base text-white mb-[30px] border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
           />
           <Label
             htmlFor="projectWalletAddress"
@@ -364,11 +364,12 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
           </Label>
         </div>
 
-        {/* CORRIGIDO: InteractionCardInput agora é um irmão do Label, e a div externa controla o user-box. */}
-        <div className="relative user-box mb-[30px]">
+        {/* CORRIGIDO: Envolvemos a InteractionCardInput e o Label em uma div relativa, e ajustamos o Label para flutuar acima. */}
+        <div className="relative mb-[30px]">
           <Label
             htmlFor="projectNotes"
-            className="absolute top-0 left-0 py-2 text-base text-white pointer-events-none transition-all duration-500 peer-focus:top-[-20px] peer-focus:left-0 peer-focus:text-[#bdb8b8] peer-focus:text-xs peer-valid:top-[-20px] peer-valid:left-0 peer-valid:text-[#bdb8b8] peer-valid:text-xs peer-focus:bg-hodl-darker peer-focus:px-1 peer-valid:bg-hodl-darker peer-valid:px-1"
+            // Ajustamos as classes para que o Label flutue acima da InteractionCardInput
+            className="absolute top-[-20px] left-0 py-0 text-xs text-[#bdb8b8] pointer-events-none transition-all duration-500 bg-hodl-darker px-1 z-10"
           >
             {isCreator ? "Creator Notes" : "Contributor Notes"}
           </Label>
@@ -381,20 +382,19 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
             disabled={inputDisabled}
             onSubmit={handleSubmit}
             isSubmitDisabled={true}
-            // Adicionamos a classe 'peer' de volta ao InteractionCardInput para que o Label possa rastrear seu estado.
-            // Também ajustamos as classes de estilo para que ele se comporte como um input de linha única, mas com altura maior.
-            className="peer w-full py-2 text-base text-black border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0 min-h-[80px]"
+            // Removemos todas as classes de 'peer' e 'user-box' daqui, confiando apenas no estilo do componente e no Label absoluto
+            className="w-full py-2 text-base text-black border-none outline-none bg-transparent focus:outline-none focus:ring-0 min-h-[80px]"
           />
         </div>
 
-        <div className="relative user-box mb-[30px]">
+        <div className="relative user-box">
           <Input
             id="whitelistedEditors"
             placeholder=""
             value={whitelistedEditors}
             onChange={(e) => setWhitelistedEditors(e.target.value)}
             disabled={inputDisabled}
-            className="peer w-full py-2 text-base text-white border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
+            className="peer w-full py-2 text-base text-white mb-[30px] border-none border-b border-white outline-none bg-transparent focus:border-b-[#03f40f] focus:outline-none focus:ring-0"
           />
           <Label
             htmlFor="whitelistedEditors"

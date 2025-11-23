@@ -1,4 +1,3 @@
-block) para obter o timestamp exato da criação da conta, usando created-at-round.">
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';

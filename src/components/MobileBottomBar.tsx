@@ -45,8 +45,8 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
   const isOnOwnProfilePage = activeAddress && location.pathname.startsWith(`/profile/${activeAddress}`);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-hodl-darker border-t border-border-accent-green z-50 h-16 flex items-center justify-around md:hidden">
-      {/* Replaced Home button with AlgoJects Logo */}
+    <div className="fixed bottom-0 left-0 right-0 bg-hodl-darker border-t border-border-accent-green z-50 h-16 grid grid-cols-3 items-center md:hidden">
+      {/* Column 1: AlgoJects Logo */}
       <Button variant="ghost" size="icon" onClick={handleHomeClick} className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
         <img 
           src="/algojects-logo.png" 
@@ -55,7 +55,8 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
         />
       </Button>
 
-      {activeAddress && ( // Conditionally render the AddActionSheet
+      {/* Column 2: Add Button (only if connected) */}
+      {activeAddress && (
         <AddActionSheet projects={projects} onInteractionSuccess={onInteractionSuccess}>
           <Button variant="ghost" size="icon" className="flex flex-col h-full w-full justify-center items-center text-muted-foreground hover:text-foreground rounded-none">
             <Plus className="h-5 w-5" />
@@ -63,7 +64,8 @@ export function MobileBottomBar({ projects, onInteractionSuccess }: MobileBottom
           </Button>
         </AddActionSheet>
       )}
-
+      
+      {/* Column 3: Profile / Wallet / Connect */}
       {activeAddress ? (
         isOnOwnProfilePage ? (
           // If on own profile page, show WalletButton (opens wallet menu)

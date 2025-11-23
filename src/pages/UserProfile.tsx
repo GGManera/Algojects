@@ -585,7 +585,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                   {/* NEW: Display First Transaction Info */}
                   {firstTransactionDate && (
                     <div className="mt-2 text-center text-sm text-muted-foreground">
-                      <p>First TX: {firstTransactionDate.toLocaleDateString()}</p>
+                      <p>Algorand citizen since: {firstTransactionDate.toLocaleDateString()}</p>
                       <p className="font-numeric text-xs">({daysSinceFirstTransaction} days ago)</p>
                     </div>
                   )}

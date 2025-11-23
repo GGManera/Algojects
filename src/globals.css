@@ -173,7 +173,6 @@
   /* From Uiverse.io by chase2k25 - Adapted for Tailwind */
   .glass-radio-group {
     @apply flex relative bg-hodl-darker/50 rounded-xl overflow-hidden w-full;
-    /* backdrop-filter: blur(12px); */ /* Removed backdrop-filter */
     box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3); /* Adjusted shadow for dark recessed look */
   }
 
@@ -185,6 +184,8 @@
     @apply flex-1 flex items-center justify-center min-w-[80px] text-sm px-6 py-3 cursor-pointer;
     @apply font-semibold tracking-wide relative z-20 transition-colors duration-300 ease-in-out;
     color: var(--foreground);
+    /* NEW: Ensure unselected labels are dark */
+    background-color: hsl(var(--hodl-darker) / 0.5); 
   }
 
   .glass-radio-group label:hover {
@@ -193,6 +194,8 @@
 
   .glass-radio-group input:checked + label {
     @apply text-white;
+    /* NEW: Ensure checked label is transparent so the glider shows through */
+    background-color: transparent; 
   }
 
   /* Specific override for the 'platinum' (Replies) item when checked */
@@ -237,7 +240,6 @@
   /* NEW: Styles for the two-item GlassRadioGroup */
   .glass-radio-group-two-items {
     @apply flex relative bg-hodl-darker/50 rounded-xl overflow-hidden w-full; /* Changed background */
-    /* backdrop-filter: blur(12px); */ /* Removed backdrop-filter */
     box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3); /* Adjusted shadow for dark recessed look */
   }
 
@@ -250,6 +252,8 @@
     @apply flex-1 flex items-center justify-center min-w-[90px] text-sm px-6 py-3 cursor-pointer;
     @apply font-semibold tracking-wide relative z-20 transition-colors duration-300 ease-in-out;
     color: var(--foreground);
+    /* NEW: Ensure unselected labels are dark */
+    background-color: hsl(var(--hodl-darker) / 0.5); 
   }
 
   .glass-radio-group-two-items label:hover {
@@ -258,6 +262,8 @@
 
   .glass-radio-group-two-items input:checked + label {
     @apply text-white;
+    /* NEW: Ensure checked label is transparent so the glider shows through */
+    background-color: transparent; 
   }
 
   /* Specific override for the 'lang-pt' item when checked (if needed for light background) */

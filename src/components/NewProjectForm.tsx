@@ -326,7 +326,7 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
           )}
         </div>
 
-        {/* NEW: Project Wallet Address */}
+        {/* CORRIGIDO: Project Wallet Address - Rótulo encurtado */}
         <div className="relative user-box">
           <Input
             id="projectWalletAddress"
@@ -340,13 +340,13 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
             htmlFor="projectWalletAddress"
             className="absolute top-0 left-0 py-2 text-base text-white pointer-events-none transition-all duration-500 peer-focus:top-[-20px] peer-focus:left-0 peer-focus:text-[#bdb8b8] peer-focus:text-xs peer-valid:top-[-20px] peer-valid:left-0 peer-valid:text-[#bdb8b8] peer-valid:text-xs peer-focus:bg-hodl-darker peer-focus:px-1 peer-valid:bg-hodl-darker peer-valid:px-1"
           >
-            Project Wallet Address (Algorand Address, Optional)
+            Project Wallet (Address, Optional)
           </Label>
           {projectWalletAddress.trim() && projectWalletAddress.trim().length !== 58 && (
             <p className="text-xs text-red-500 mt-1">Must be a valid 58-character Algorand address.</p>
           )}
         </div>
-        {/* END NEW */}
+        {/* FIM CORREÇÃO */}
 
         <div className="relative user-box mb-[30px]">
           <Input
@@ -365,11 +365,10 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
           </Label>
         </div>
 
-        {/* CORRIGIDO: Envolvemos a InteractionCardInput e o Label em uma div relativa, e ajustamos o Label para flutuar acima. */}
+        {/* CORRIGIDO: InteractionCardInput wrapped in relative div */}
         <div className="relative mb-[30px]">
           <Label
             htmlFor="projectNotes"
-            // Ajustamos as classes para que o Label flutue acima da InteractionCardInput
             className="absolute top-[-20px] left-0 py-0 text-xs text-[#bdb8b8] pointer-events-none transition-all duration-500 bg-hodl-darker px-1 z-10"
           >
             {isCreator ? "Creator Notes" : "Contributor Notes"}
@@ -383,7 +382,6 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
             disabled={inputDisabled}
             onSubmit={handleSubmit}
             isSubmitDisabled={true}
-            // Adicionamos a classe 'peer' aqui para que o Label possa ser posicionado corretamente
             className="peer w-full py-2 text-base text-black border-none outline-none bg-transparent focus:outline-none focus:ring-0 min-h-[80px]"
           />
         </div>

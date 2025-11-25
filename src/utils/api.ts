@@ -18,7 +18,8 @@ export async function retryFetch(
           throw new Error(errorMessage); // Throw the error with the consumed body content
         }
       }
-      return response; // If OK, return the response object
+      // If OK, return a clone of the response object to ensure the original body is not disturbed
+      return response.clone(); 
     } catch (error) {
       console.error(`Fetch attempt ${i + 1} caught an error:`, error);
       if (i < retries - 1) {

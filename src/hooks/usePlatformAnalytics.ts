@@ -52,7 +52,8 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
   const { allCuratorData, loading: curatorIndexLoading, error: curatorIndexError } = useCuratorIndex(undefined, projectsData);
 
   const analytics = useMemo(() => {
-    if (!projectsData || curatorIndexLoading) {
+    // Ensure projectsData is not empty and curator index calculation is complete
+    if (!projectsData || Object.keys(projectsData).length === 0 || curatorIndexLoading) {
       return {
         totalProjects: 0,
         totalReviews: 0, totalComments: 0, totalReplies: 0,
@@ -104,7 +105,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
         // Calculate amount spent on likes for users who liked this review
         review.likeHistory.filter(event => event.action === 'LIKE').forEach(likeEvent => {
           const curatorAddress = likeEvent.sender;
-          if (curatorAddress === review.sender) return; // Cannot like own content
+          if (curatorAddress === review.sender) return; // Curators cannot like their own content
           initializeUserMaps(curatorAddress);
           userAmountSpentOnLikesMap.set(curatorAddress, (userAmountSpentOnLikesMap.get(curatorAddress) || 0) + LIKE_REVIEW_COST);
         });
@@ -125,7 +126,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
           // Calculate amount spent on likes for users who liked this comment
           comment.likeHistory.filter(event => event.action === 'LIKE').forEach(likeEvent => {
             const curatorAddress = likeEvent.sender;
-            if (curatorAddress === comment.sender) return; // Cannot like own content
+            if (curatorAddress === comment.sender) return; // Curators cannot like own content
             initializeUserMaps(curatorAddress);
             userAmountSpentOnLikesMap.set(curatorAddress, (userAmountSpentOnLikesMap.get(curatorAddress) || 0) + LIKE_COMMENT_COST);
           });
@@ -149,7 +150,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
             // Calculate amount spent on likes for users who liked this reply
             reply.likeHistory.filter(event => event.action === 'LIKE').forEach(likeEvent => {
               const curatorAddress = likeEvent.sender;
-              if (curatorAddress === reply.sender) return; // Cannot like own content
+              if (curatorAddress === reply.sender) return; // Curators cannot like their own content
               initializeUserMaps(curatorAddress);
               userAmountSpentOnLikesMap.set(curatorAddress, (userAmountSpentOnLikesMap.get(curatorAddress) || 0) + LIKE_REPLY_COST);
             });
@@ -233,6 +234,7 @@ export function usePlatformAnalytics(projectsData: ProjectsData): PlatformAnalyt
   }, [projectsData, allCuratorData, curatorIndexLoading]);
 
   useEffect(() => {
+    // The overall loading state is true if either dependency is loading OR if the memoized calculation hasn't finished yet (analytics.loading)
     setLoading(analytics.loading || curatorIndexLoading);
     setError(analytics.error || curatorIndexError);
   }, [analytics, curatorIndexLoading, curatorIndexError]);

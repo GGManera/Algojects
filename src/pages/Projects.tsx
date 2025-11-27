@@ -163,7 +163,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
       />
 
       <RevenueCalculator 
-        className="mt-0 mb-8" // Kept mb-8 on RevenueCalculator
+        className="mt-0" // Removed mb-8
         isInsideCarousel={isInsideCarousel} 
         focusedId={focusedId}
         registerItem={registerItem}
@@ -173,25 +173,27 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
       />
 
       {shouldShowAddProjectButton && activeAddress && (
-        <button
-          className="btn-profile mx-auto mb-4" // REDUZIDO mb-8 para mb-4
-          onClick={() => setShowNewProjectDialog(true)}
-          disabled={!activeAddress}
-        >
-          <strong className="uppercase">Add Project</strong>
-          <Plus className="h-4 w-4 text-white ml-2" />
-          <div id="container-stars">
-            <div id="stars"></div>
-          </div>
-          <div id="glow">
-            <div className="circle"></div>
-            <div className="circle"></div>
-          </div>
-        </button>
+        <div className="my-8"> {/* NEW: Container with vertical margin (my-8) */}
+          <button
+            className="btn-profile mx-auto" // Removed mb-4
+            onClick={() => setShowNewProjectDialog(true)}
+            disabled={!activeAddress}
+          >
+            <strong className="uppercase">Add Project</strong>
+            <Plus className="h-4 w-4 text-white ml-2" />
+            <div id="container-stars">
+              <div id="stars"></div>
+            </div>
+            <div id="glow">
+              <div className="circle"></div>
+              <div className="circle"></div>
+            </div>
+          </button>
+        </div>
       )}
       
-      {/* UPDATED: All Projects Title - REDUZIDO mt-12 para mt-8 */}
-      <h2 className="text-4xl font-bold gradient-text mt-8 mb-2">All Projects</h2>
+      {/* UPDATED: All Projects Title - Removed mt-8 */}
+      <h2 className="text-4xl font-bold gradient-text mb-2">All Projects</h2>
 
       <div className={cn(
         "w-full flex flex-col items-center",

@@ -235,7 +235,12 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
       }
 
       // NOTE: We no longer need the proof transaction here, as the initial payment is enough.
-      await updateProjectDetails(newProjectId, fullProjectMetadata);
+      // FIX: Pass the required object structure to updateProjectDetails (mutateAsync)
+      await updateProjectDetails({
+        projectId: newProjectId,
+        newProjectMetadata: fullProjectMetadata
+      });
+      
       toast.success("Your new project has been added!", { id: loadingToastIdRef.current });
       setProjectName("");
       setProjectNotes("");

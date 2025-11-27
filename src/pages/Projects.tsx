@@ -147,6 +147,8 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
     });
   }, [projects]);
 
+  const isButtonRendered = shouldShowAddProjectButton && activeAddress;
+
   return (
     <div id={pageKey} ref={projectsPageRef} className={cn(
       "flex flex-col items-center text-foreground relative scroll-mt-header-offset", // Removed space-y-4
@@ -172,8 +174,8 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         rebuildOrder={rebuildOrder} // NEW: Pass rebuildOrder
       />
 
-      {shouldShowAddProjectButton && activeAddress && (
-        <div className="my-8"> {/* NEW: Container with vertical margin (my-8) */}
+      {isButtonRendered ? (
+        <div className="my-8"> {/* Container with vertical margin (my-8) */}
           <button
             className="btn-profile mx-auto" // Removed mb-4
             onClick={() => setShowNewProjectDialog(true)}
@@ -190,10 +192,15 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
             </div>
           </button>
         </div>
+      ) : (
+        <div className="mt-8"></div> // Placeholder for spacing when button is hidden
       )}
       
-      {/* UPDATED: All Projects Title - Removed mt-8 */}
-      <h2 className="text-4xl font-bold gradient-text mb-2">All Projects</h2>
+      {/* UPDATED: All Projects Title - Removed mt-8, conditional spacing handled by the element above */}
+      <h2 className={cn(
+        "text-4xl font-bold gradient-text mb-2",
+        !isButtonRendered && "mt-8" // Apply mt-8 only if the button container was NOT rendered
+      )}>All Projects</h2>
 
       <div className={cn(
         "w-full flex flex-col items-center",

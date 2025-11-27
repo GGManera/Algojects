@@ -19,6 +19,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from '@/lib/utils';
 import { HeroSection } from "@/components/HeroSection";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
+import { ProjectTagFilter } from "@/components/ProjectTagFilter"; // NEW Import
 
 interface ProjectsProps {
   isInsideCarousel?: boolean;
@@ -30,12 +31,13 @@ interface ProjectsProps {
 
 const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop }: ProjectsProps) => {
   const { projects, loading: socialDataLoading, error: socialDataError, isRefreshing: isRefreshingSocialData } = useSocialData(); // NEW: Destructure loading and error
-  const { isRefreshing: isRefreshingProjectDetails, loading: projectDetailsLoading, error: projectDetailsError } = useProjectDetails(); // NEW: Destructure loading and error
+  const { projectDetails, loading: projectDetailsLoading, error: projectDetailsError, isRefreshing: isRefreshingProjectDetails } = useProjectDetails(); // NEW: Destructure loading and error
   const { activeAddress } = useWallet();
   const { isMobile, appDisplayMode } = useAppContextDisplayMode();
   const { setHeroLogoVisibility } = useHeroLogoVisibility();
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
   const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
+  const [selectedTags, setSelectedTags] = useState<string[]>([]); // NEW State for selected tags
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -110,8 +112,9 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
 
   const shouldShowAddProjectButton = !isMobile || appDisplayMode === 'landscape';
 
-  const sortedProjects = useMemo(() => {
+  const sortedAndFilteredProjects = useMemo(() => {
     const projectList = Object.values(projects);
+    
     const calculateProjectInteractionScore = (project: Project): number => {
       let totalReviews = 0;
       let commentsCount = 0;
@@ -140,12 +143,28 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
       return totalReviews + commentsCount + repliesCount + likesCount;
     };
 
-    return projectList.sort((a, b) => {
+    // 1. Filtering
+    const filteredProjects = projectList.filter(project => {
+      if (selectedTags.length === 0) return true; // No filter applied
+
+      const projectDetail = projectDetails.find(pd => pd.projectId === project.id);
+      const projectTagsItem = projectDetail?.projectMetadata.find(item => item.type === 'tags');
+      
+      if (!projectTagsItem || !projectTagsItem.value) return false; // Project has no tags, filter it out
+
+      const projectTags = projectTagsItem.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+      
+      // Check if the project has ALL of the selected tags
+      return selectedTags.every(selectedTag => projectTags.includes(selectedTag));
+    });
+
+    // 2. Sorting
+    return filteredProjects.sort((a, b) => {
       const scoreA = calculateProjectInteractionScore(a);
       const scoreB = calculateProjectInteractionScore(b);
       return scoreB - scoreA;
     });
-  }, [projects]);
+  }, [projects, projectDetails, selectedTags]); // Added selectedTags dependency
 
   const isButtonRendered = shouldShowAddProjectButton && activeAddress;
 
@@ -202,6 +221,14 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         !isButtonRendered && "mt-8" // Apply mt-8 only if the button container was NOT rendered
       )}>All Projects</h2>
 
+      {/* NEW: Project Tag Filter */}
+      <ProjectTagFilter
+        projects={projects}
+        projectDetails={projectDetails}
+        isLoading={isOverallLoading}
+        onFilterChange={setSelectedTags}
+      />
+
       <div className={cn(
         "w-full flex flex-col items-center",
         !isInsideCarousel && "max-w-4xl"
@@ -225,21 +252,27 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         )}
         {!isOverallLoading && !isOverallError && !isOverallRefreshing && ( // NEW: Use combined loading and error states
           <div className="w-full space-y-4 flex flex-col items-center">
-            {sortedProjects.map(project => (
-              <ProjectSummaryCard
-                key={project.id}
-                project={project}
-                isExpanded={expandedProjectIds.has(project.id)}
-                onToggleExpand={handleToggleExpand}
-                cardRef={(el) => projectCardRefs.current.set(project.id, el)}
-                isInsideCarousel={isInsideCarousel}
-                focusedId={focusedId}
-                registerItem={registerItem}
-                rebuildOrder={rebuildOrder} // NEW: Pass rebuildOrder
-                isActive={isActive}
-                setLastActiveId={setLastActiveId}
-              />
-            ))}
+            {sortedAndFilteredProjects.length > 0 ? (
+              sortedAndFilteredProjects.map(project => (
+                <ProjectSummaryCard
+                  key={project.id}
+                  project={project}
+                  isExpanded={expandedProjectIds.has(project.id)}
+                  onToggleExpand={handleToggleExpand}
+                  cardRef={(el) => projectCardRefs.current.set(project.id, el)}
+                  isInsideCarousel={isInsideCarousel}
+                  focusedId={focusedId}
+                  registerItem={registerItem}
+                  rebuildOrder={rebuildOrder} // NEW: Pass rebuildOrder
+                  isActive={isActive}
+                  setLastActiveId={setLastActiveId}
+                />
+              ))
+            ) : (
+              <p className="text-muted-foreground text-center py-8">
+                No projects match the selected tags.
+              </p>
+            )}
           </div>
         )}
       </div>

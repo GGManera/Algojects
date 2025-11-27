@@ -223,7 +223,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         <div className="mt-8"></div> // Placeholder for spacing when button is hidden
       )}
       
-      {/* Container for Title and Separator */}
+      {/* Container for Title and Separator - Adjusted for fixed height and centered content */}
       <div className="flex flex-col items-center w-full max-w-3xl mx-auto">
         <h2 
           className={cn(
@@ -236,21 +236,23 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
           All Projects
         </h2>
         
-        {/* NEW: Horizontal line when filter is active */}
-        <AnimatePresence>
-          {isFilterActive && (
-            <motion.div
-              key="filter-separator"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: '100%', opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="w-fit mx-auto mt-1 mb-4" // Use w-fit and adjust margins
-            >
-              <Separator className="bg-border-accent-green h-[2px]" />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* NEW: Horizontal line when filter is active - Fixed height container */}
+        <div className="w-full flex justify-center min-h-[1.5rem] mb-4"> {/* min-h-[1.5rem] reserves space, mb-4 pushes down the filter cards */}
+          <AnimatePresence>
+            {isFilterActive && (
+              <motion.div
+                key="filter-separator"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: '100%', opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="w-full max-w-xs" // Use max-w-xs (320px) or similar to constrain width
+              >
+                <Separator className="bg-border-accent-green h-[2px]" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* NEW: Project Tag Filter (Now inline) */}

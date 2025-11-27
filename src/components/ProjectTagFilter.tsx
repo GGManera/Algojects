@@ -74,15 +74,17 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
   return (
     <Card className="w-full max-w-3xl mx-auto mb-8 bg-card border-border">
       <CardHeader 
-        className="flex flex-row items-center justify-between space-y-0 p-4 cursor-pointer"
+        className="flex flex-col items-center justify-center space-y-0 py-4 cursor-pointer relative"
         onClick={() => setIsOpen(prev => !prev)}
       >
-        <CardTitle className="text-lg flex items-center gap-2 gradient-text flex-1 justify-center">
+        <CardTitle className="text-lg flex items-center gap-2 gradient-text">
           <Tag className="h-5 w-5" /> Filter by Tags
         </CardTitle>
+        
+        {/* Chevron and Count positioned absolutely on the right */}
         <div className="flex items-center space-x-2 absolute right-4 top-1/2 -translate-y-1/2">
           {selectedCount > 0 && (
-            <span className="text-sm font-semibold text-muted-foreground">
+            <span className="text-sm font-semibold text-muted-foreground hidden sm:inline">
               {selectedCount} selected
             </span>
           )}

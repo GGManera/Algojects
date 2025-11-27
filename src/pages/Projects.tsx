@@ -189,6 +189,9 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
           </div>
         </button>
       )}
+      
+      {/* NEW: All Projects Title */}
+      <h2 className="text-2xl font-bold gradient-text mt-4 mb-2">All Projects</h2>
 
       <div className={cn(
         "w-full flex flex-col items-center",

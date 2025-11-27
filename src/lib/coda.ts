@@ -22,29 +22,14 @@ export async function fetchProjectDetailsClient(): Promise<ProjectDetailsEntry[]
 export async function updateProjectDetailsClient(
   projectId: string, 
   projectMetadata: ProjectMetadata, // Now takes the full metadata array
-  activeAddress: string, // NEW: Active wallet address
-  transactionSigner: algosdk.TransactionSigner, // NEW: Transaction signer
-  algodClient: algosdk.Algodv2 // NEW: Algod client
+  activeAddress: string, // NEW: Active wallet address (kept for logging/context)
+  transactionSigner: algosdk.TransactionSigner, // NEW: Transaction signer (kept for logging/context)
+  algodClient: algosdk.Algodv2 // NEW: Algod client (kept for logging/context)
 ): Promise<void> {
-  // 1. Create and send an arbitrary transaction for proof of ownership
-  const atc = new algosdk.AtomicTransactionComposer();
-  const suggestedParams = await algodClient.getTransactionParams().do();
-
-  const proofTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-    sender: activeAddress,
-    receiver: activeAddress, // Send to self
-    amount: 0, // 0 ALGO
-    suggestedParams,
-    note: new TextEncoder().encode(`Coda Interaction Proof for Project ${projectId}`),
-  });
-
-  atc.addTransaction({ txn: proofTxn, signer: transactionSigner });
-
-  console.log(`[Coda Client] Sending proof transaction for Project ${projectId}...`);
-  await atc.execute(algodClient, 4); // Wait for 4 rounds for confirmation
-  console.log(`[Coda Client] Proof transaction confirmed for Project ${projectId}. Proceeding with Coda update.`);
-
-  // 2. Proceed with the Coda API call
+  // 1. Proceed with the Coda API call
+  // NOTE: The proof of ownership transaction is now expected to be handled by the caller
+  // (e.g., ProjectDetailsForm or AcceptMetadataSuggestionDialog) before calling this function.
+  
   const response = await fetch('/api/project-details', {
     method: 'POST',
     headers: {
@@ -169,6 +154,8 @@ export async function updateCodaAfterSuggestionAcceptance(
   algodClient: algosdk.Algodv2
 ): Promise<void> {
   // This function now only performs the Coda update logic, including the Proof of Ownership.
+  // NOTE: The proof of ownership transaction is now expected to be handled by the caller
+  // (AcceptMetadataSuggestionDialog) before calling this function.
   await updateProjectDetailsClient(
     projectId,
     finalMetadata,

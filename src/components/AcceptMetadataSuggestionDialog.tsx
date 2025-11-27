@@ -161,12 +161,24 @@ export function AcceptMetadataSuggestionDialog({
         note: new TextEncoder().encode(acceptTag),
       });
       atc.addTransaction({ txn: dataTxn, signer: transactionSigner });
+      
+      // 3. Proof of Ownership Transaction (0 ALGO to self) for Coda authentication
+      const proofTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+        sender: activeAddress,
+        receiver: activeAddress, // Send to self
+        amount: 0, // 0 ALGO
+        suggestedParams,
+        note: new TextEncoder().encode(`Coda Interaction Proof for Project ${project.id}`),
+      });
+      atc.addTransaction({ txn: proofTxn, signer: transactionSigner });
+
 
       dismissToast(toastId);
       setPreparedAtc(atc);
       setTransactionsToConfirm([
         { type: 'pay', from: activeAddress, to: suggestion.sender, amount: rewardMicroAlgos, role: 'Suggestion Reward' },
         { type: 'pay', from: activeAddress, to: PROTOCOL_ADDRESS, amount: 0, note: acceptTag, role: 'Acceptance Data' },
+        { type: 'pay', from: activeAddress, to: activeAddress, amount: 0, note: `Coda Interaction Proof...`, role: 'Coda Proof' },
       ]);
 
       if (settings.showTransactionConfirmation) {
@@ -197,10 +209,10 @@ export function AcceptMetadataSuggestionDialog({
     );
 
     try {
-      // Execute the on-chain transactions (Reward + ACCEPT tag)
+      // Execute the on-chain transactions (Reward + ACCEPT tag + Coda Proof)
       await Promise.race([atcToExecute.execute(algodClient, 4), timeoutPromise]);
 
-      // 3. Update Coda Metadata (only after on-chain TX is confirmed)
+      // 4. Update Coda Metadata (only after on-chain TX is confirmed)
       // We use the new function that only handles the Coda update
       await updateCodaAfterSuggestionAcceptance(
         project.id,

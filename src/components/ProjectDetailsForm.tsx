@@ -25,6 +25,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { fetchAccountAssetHoldings } from '@/utils/algorand'; // NEW: Import fetchAccountAssetHoldings
 import { retryFetch } from "@/utils/api"; // Import retryFetch
+import algosdk from "algosdk"; // Import algosdk
 
 const DESCRIPTION_MAX_LENGTH = 2048;
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud"; // Define INDEXER_URL
@@ -45,7 +46,7 @@ export function ProjectDetailsForm({
   const [metadataItems, setMetadataItems] = useState<ProjectMetadata>(initialProjectMetadata);
   const [projectTags, setProjectTags] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { activeAddress } = useWallet();
+  const { activeAddress, transactionSigner, algodClient } = useWallet(); // NEW: Get transactionSigner and algodClient
   const { updateProjectDetails, loading: detailsLoadingState, isRefreshing: detailsRefreshingState } = useProjectDetails(); // NEW: Destructure updateProjectDetails
   const isProjectDetailsFetching = detailsLoadingState || detailsRefreshingState;
 
@@ -180,7 +181,7 @@ export function ProjectDetailsForm({
   };
 
   const handleSubmit = async () => {
-    if (!activeAddress) {
+    if (!activeAddress || !transactionSigner || !algodClient) {
       showError("Please connect your wallet to update project details.");
       return;
     }
@@ -215,12 +216,30 @@ export function ProjectDetailsForm({
     const toastId = showLoading("Updating project details...");
 
     try {
-      // 1. Collect all dynamic metadata items that have content
+      // 1. Create and send the 0 ALGO proof transaction
+      const atc = new algosdk.AtomicTransactionComposer();
+      const suggestedParams = await algodClient.getTransactionParams().do();
+
+      const proofTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+        sender: activeAddress,
+        receiver: activeAddress, // Send to self
+        amount: 0, // 0 ALGO
+        suggestedParams,
+        note: new TextEncoder().encode(`Coda Interaction Proof for Project ${projectId}`),
+      });
+
+      atc.addTransaction({ txn: proofTxn, signer: transactionSigner });
+
+      console.log(`[ProjectDetailsForm] Sending proof transaction for Project ${projectId}...`);
+      await atc.execute(algodClient, 4); // Wait for 4 rounds for confirmation
+      console.log(`[ProjectDetailsForm] Proof transaction confirmed. Proceeding with Coda update.`);
+
+      // 2. Collect all dynamic metadata items that have content
       const dynamicItemsToSend: ProjectMetadata = dynamicMetadataItems
         .filter(item => item.title.trim() && item.value.trim())
         .map(item => ({ ...item, type: item.type || 'text' }));
 
-      // 2. Define all fixed metadata items based on current local state
+      // 3. Define all fixed metadata items based on current local state
       const finalCreatorWalletValue = creatorWalletContent.trim();
       const finalProjectWalletValue = projectWalletContent.trim(); // NEW: Project Wallet value
       const finalAssetIdValue = assetIdContent.trim(); // NEW: Asset ID value
@@ -274,9 +293,10 @@ export function ProjectDetailsForm({
         ...(finalAssetUnitNameValue ? [{ title: 'Asset Unit Name', value: finalAssetUnitNameValue, type: 'asset-unit-name' as const }] : []),
       ].filter(item => item.value.trim() || ['is-creator-added', 'is-community-notes', 'is-claimed'].includes(item.type || ''));
 
-      // 3. Combine all items, filtering out any fixed items that are empty (except boolean flags)
+      // 4. Combine all items, filtering out any fixed items that are empty (except boolean flags)
       const finalMetadata: ProjectMetadata = [...fixedItems, ...dynamicItemsToSend];
 
+      // 5. Update Coda
       await updateProjectDetails({
         projectId,
         newProjectMetadata: finalMetadata

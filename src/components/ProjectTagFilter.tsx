@@ -50,13 +50,13 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
   }, [projectDetails]);
 
   // 2. Handle tag selection change
-  const handleTagToggle = useCallback((tag: string, isChecked: boolean) => {
+  const handleTagToggle = useCallback((tag: string) => {
     setSelectedTags(prev => {
       const newSet = new Set(prev);
-      if (isChecked) {
-        newSet.add(tag);
-      } else {
+      if (newSet.has(tag)) {
         newSet.delete(tag);
+      } else {
+        newSet.add(tag);
       }
       onFilterChange(Array.from(newSet));
       return newSet;
@@ -77,7 +77,7 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
         className="flex flex-row items-center justify-between space-y-0 p-4 cursor-pointer"
         onClick={() => setIsOpen(prev => !prev)}
       >
-        <CardTitle className="text-lg flex items-center gap-2 text-primary">
+        <CardTitle className="text-lg flex items-center gap-2 gradient-text">
           <Tag className="h-5 w-5" /> Filter by Tags
         </CardTitle>
         <div className="flex items-center space-x-2">
@@ -112,34 +112,28 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
                 )}
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {allTagsData.map(({ tag, count }) => (
-                  <div 
-                    key={tag} 
-                    className={cn(
-                      "flex items-center justify-between p-2 rounded-md border cursor-pointer transition-colors",
-                      selectedTags.has(tag) ? "bg-primary/20 border-primary" : "bg-muted/30 border-muted hover:bg-muted/50"
-                    )}
-                    onClick={() => handleTagToggle(tag, !selectedTags.has(tag))}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`tag-${tag}`}
-                        checked={selectedTags.has(tag)}
-                        onCheckedChange={(checked) => handleTagToggle(tag, !!checked)}
-                        className={cn(
-                          "data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
-                          selectedTags.has(tag) ? "border-primary" : "border-muted-foreground"
-                        )}
-                      />
-                      <Label htmlFor={`tag-${tag}`} className="text-sm font-medium capitalize cursor-pointer">
+                {allTagsData.map(({ tag, count }) => {
+                  const isSelected = selectedTags.has(tag);
+                  return (
+                    <button 
+                      key={tag} 
+                      type="button"
+                      className={cn(
+                        "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all duration-200",
+                        "bg-muted/30 border-muted hover:bg-muted/50",
+                        isSelected ? "focus-glow-border !border-border-accent-green" : ""
+                      )}
+                      onClick={() => handleTagToggle(tag)}
+                    >
+                      <span className="text-sm font-medium capitalize">
                         {tag}
-                      </Label>
-                    </div>
-                    <span className="font-numeric text-xs text-muted-foreground flex items-center gap-1">
-                      <LayoutGrid className="h-3 w-3" /> {count}
-                    </span>
-                  </div>
-                ))}
+                      </span>
+                      <span className="font-numeric text-xs text-muted-foreground flex items-center gap-1">
+                        <LayoutGrid className="h-3 w-3" /> {count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

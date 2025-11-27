@@ -400,22 +400,21 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
           </Label>
         </div>
 
-        {/* Dynamic Metadata Fields */}
+        {/* Dynamic Metadata Fields - CORRIGIDO O LAYOUT */}
         <div className="space-y-4 mb-[30px]">
           <h3 className="text-lg font-semibold text-white">Additional Metadata</h3>
           {metadataItems.map((item, index) => (
-            <div key={index} className="flex flex-col sm:flex-row items-end gap-2">
-              <div className="flex-1 relative user-box w-full">
+            <div key={index} className="flex flex-col sm:flex-row items-center gap-2">
+              <div className="flex-1 relative w-full">
                 <Input
                   id={`metadata-title-${index}`}
                   placeholder=""
                   value={item.title}
                   onChange={(e) => handleUpdateMetadataItem(index, 'title', e.target.value)}
                   disabled={inputDisabled}
-                  // Adicionando borda sutil e fundo para visibilidade
                   className={cn(
-                    "peer w-full py-2 text-base text-white mb-[30px] border-b border-white/30 outline-none bg-hodl-darker focus:border-b-[#03f40f] focus:outline-none focus:ring-0",
-                    item.title.trim() && "border-b-[#03f40f]" // Highlight if content exists
+                    "peer w-full py-2 text-base text-white border-b border-white/30 outline-none bg-hodl-darker focus:border-b-[#03f40f] focus:outline-none focus:ring-0",
+                    item.title.trim() && "border-b-[#03f40f]"
                   )}
                 />
                 <Label
@@ -425,17 +424,16 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
                   Title
                 </Label>
               </div>
-              <div className="flex-1 relative user-box w-full">
+              <div className="flex-1 relative w-full">
                 <Input
                   id={`metadata-value-${index}`}
                   placeholder=""
                   value={item.value}
                   onChange={(e) => handleUpdateMetadataItem(index, 'value', e.target.value)}
                   disabled={inputDisabled}
-                  // Adicionando borda sutil e fundo para visibilidade
                   className={cn(
-                    "peer w-full py-2 text-base text-white mb-[30px] border-b border-white/30 outline-none bg-hodl-darker focus:border-b-[#03f40f] focus:outline-none focus:ring-0",
-                    item.value.trim() && "border-b-[#03f40f]" // Highlight if content exists
+                    "peer w-full py-2 text-base text-white border-b border-white/30 outline-none bg-hodl-darker focus:border-b-[#03f40f] focus:outline-none focus:ring-0",
+                    item.value.trim() && "border-b-[#03f40f]"
                   )}
                 />
                 <Label
@@ -445,7 +443,7 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
                   Value
                 </Label>
               </div>
-              <div className="w-full sm:w-[150px] relative user-box">
+              <div className="w-full sm:w-[150px] relative">
                 <Label htmlFor={`metadata-type-${index}`} className="text-white text-xs absolute top-[-20px] left-0 bg-hodl-darker px-1">Type</Label>
                 <Select
                   value={item.type || 'text'}
@@ -453,10 +451,9 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
                   disabled={inputDisabled}
                 >
                   <SelectTrigger id={`metadata-type-${index}`} 
-                    // Adicionando borda sutil e fundo para visibilidade
                     className={cn(
                       "w-full py-2 text-base text-white border-b border-white/30 outline-none bg-hodl-darker focus:border-b-[#03f40f] focus:outline-none focus:ring-0",
-                      item.type && "border-b-[#03f40f]" // Highlight if type is selected
+                      item.type && "border-b-[#03f40f]"
                     )}
                   >
                     <SelectValue placeholder="Select type" className="text-white" />
@@ -467,22 +464,24 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
                     <SelectItem value="x-url" className="hover:bg-muted/50">X (Twitter) URL</SelectItem>
                     <SelectItem value="asset-id" className="hover:bg-muted/50">Asset ID</SelectItem>
                     <SelectItem value="address" className="hover:bg-muted/50">Address</SelectItem>
-                    <SelectItem value="asset-unit-name" className="hover:bg-muted/50">Asset Unit Name</SelectItem> {/* NEW */}
+                    <SelectItem value="asset-unit-name" className="hover:bg-muted/50">Asset Unit Name</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Button
+                type="button" // Ensure this is type button
                 variant="ghost"
                 size="icon"
                 onClick={() => handleRemoveMetadataItem(index)}
                 disabled={inputDisabled}
-                className="text-destructive hover:text-destructive/90"
+                className="text-destructive hover:text-destructive/90 flex-shrink-0"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           ))}
           <Button
+            type="button" // Ensure this is type button
             variant="outline"
             onClick={handleAddMetadataItem}
             disabled={inputDisabled}

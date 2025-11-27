@@ -5,7 +5,7 @@ import { useSocialData } from "@/hooks/useSocialData";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Plus, LayoutGrid } from "lucide-react";
+import { AlertTriangle, Plus, LayoutGrid, X } from "lucide-react"; // Import X icon
 import { ProjectSummaryCard } from "@/components/ProjectSummaryCard";
 import { useWallet } from '@txnlab/use-wallet-react';
 import { AnimatedTitle } from "@/components/AnimatedTitle";
@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { HeroSection } from "@/components/HeroSection";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { ProjectTagFilter } from "@/components/ProjectTagFilter"; // NEW Import
+import { Button } from "@/components/ui/button"; // Import Button
 
 interface ProjectsProps {
   isInsideCarousel?: boolean;
@@ -112,37 +113,37 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
 
   const shouldShowAddProjectButton = !isMobile || appDisplayMode === 'landscape';
 
+  const calculateProjectInteractionScore = (project: Project): number => {
+    let totalReviews = 0;
+    let commentsCount = 0;
+    let repliesCount = 0;
+    let likesCount = 0;
+
+    const reviews = Object.values(project.reviews || {});
+    totalReviews = reviews.length;
+
+    reviews.forEach(review => {
+      likesCount += review.likeCount || 0;
+      const comments = Object.values(review.comments || {});
+      commentsCount += comments.length;
+
+      comments.forEach(comment => {
+        likesCount += comment.likeCount || 0;
+        const replies = Object.values(comment.replies || {});
+        repliesCount += replies.length;
+
+        replies.forEach(reply => {
+          likesCount += reply.likeCount || 0;
+        });
+      });
+    });
+
+    return totalReviews + commentsCount + repliesCount + likesCount;
+  };
+
   const sortedAndFilteredProjects = useMemo(() => {
     const projectList = Object.values(projects);
     
-    const calculateProjectInteractionScore = (project: Project): number => {
-      let totalReviews = 0;
-      let commentsCount = 0;
-      let repliesCount = 0;
-      let likesCount = 0;
-
-      const reviews = Object.values(project.reviews || {});
-      totalReviews = reviews.length;
-
-      reviews.forEach(review => {
-        likesCount += review.likeCount || 0;
-        const comments = Object.values(review.comments || {});
-        commentsCount += comments.length;
-
-        comments.forEach(comment => {
-          likesCount += comment.likeCount || 0;
-          const replies = Object.values(comment.replies || {});
-          repliesCount += replies.length;
-
-          replies.forEach(reply => {
-            likesCount += reply.likeCount || 0;
-          });
-        });
-      });
-
-      return totalReviews + commentsCount + repliesCount + likesCount;
-    };
-
     // 1. Filtering
     const filteredProjects = projectList.filter(project => {
       if (selectedTags.length === 0) return true; // No filter applied
@@ -167,6 +168,11 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
   }, [projects, projectDetails, selectedTags]); // Added selectedTags dependency
 
   const isButtonRendered = shouldShowAddProjectButton && activeAddress;
+  
+  // NEW: Handle clear all filters
+  const handleClearAllTags = useCallback(() => {
+    setSelectedTags([]);
+  }, []);
 
   return (
     <div id={pageKey} ref={projectsPageRef} className={cn(
@@ -215,11 +221,24 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         <div className="mt-8"></div> // Placeholder for spacing when button is hidden
       )}
       
-      {/* UPDATED: All Projects Title - Removed mt-8, conditional spacing handled by the element above */}
-      <h2 className={cn(
-        "text-4xl font-bold gradient-text mb-4", // Increased mb to 4
-        !isButtonRendered && "mt-8" // Apply mt-8 only if the button container was NOT rendered
-      )}>All Projects</h2>
+      {/* UPDATED: All Projects Title with Clear Filters Button */}
+      <div className="flex items-center mb-4">
+        <h2 className={cn(
+          "text-4xl font-bold gradient-text",
+          !isButtonRendered && "mt-8"
+        )}>All Projects</h2>
+        {selectedTags.length > 0 && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleClearAllTags} 
+            className="ml-2 h-8 w-8 text-destructive hover:bg-destructive/20"
+            title={`Clear ${selectedTags.length} filter(s)`}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
 
       {/* NEW: Project Tag Filter (Now inline) */}
       <ProjectTagFilter

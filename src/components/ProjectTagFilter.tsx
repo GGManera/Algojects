@@ -60,7 +60,7 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
     });
   }, [onFilterChange]);
   
-  // 3. Handle clear all filters
+  // 3. Handle clear all filters (kept for internal dialog use, but main clear is handled by parent)
   const handleClearAll = useCallback(() => {
     setSelectedTags(new Set());
     onFilterChange([]);
@@ -89,16 +89,7 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
 
   return (
     <div className="w-full max-w-3xl mx-auto">
-      {selectedCount > 0 && (
-        <div className="flex justify-between items-center mb-4 p-2 rounded-lg bg-muted/50 border border-border">
-          <p className="text-sm text-muted-foreground">
-            Filtering by <span className="font-semibold text-primary">{selectedCount} tag(s)</span>.
-          </p>
-          <Button variant="link" size="sm" onClick={handleClearAll} className="p-0 h-auto text-destructive">
-            Clear All
-          </Button>
-        </div>
-      )}
+      {/* REMOVED: Filter status display div */}
       
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {/* Render Top 5 Tags */}

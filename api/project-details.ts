@@ -147,7 +147,15 @@ export default async function handler(
       const projectDetails = await fetchProjectDetailsFromCoda();
       return response.status(200).json({ projectDetails });
     } else if (request.method === 'POST') {
-      const { projectId, projectMetadata } = request.body; // Now expects projectMetadata directly
+      // Ensure request.body is an object before destructuring
+      const body = request.body || {};
+      const { projectId, projectMetadata } = body; 
+      
+      // Log the received data for debugging
+      console.log(`[Vercel API Handler] Received projectId: ${projectId}`);
+      console.log(`[Vercel API Handler] Received projectMetadata type: ${typeof projectMetadata}`);
+      console.log(`[Vercel API Handler] Received projectMetadata length: ${Array.isArray(projectMetadata) ? projectMetadata.length : 'N/A'}`);
+
       if (!projectId || projectMetadata === undefined) {
         return response.status(400).json({ error: 'Missing projectId or projectMetadata in request body.' });
       }

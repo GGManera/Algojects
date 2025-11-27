@@ -2,13 +2,12 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Tag, LayoutGrid, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Tag, LayoutGrid, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ProjectsData } from '@/types/social';
 import { ProjectDetailsEntry } from '../../api/project-details';
 import { AllTagsDialog } from './AllTagsDialog'; // Import the new dialog
 import { Skeleton } from './ui/skeleton';
-import { AnimatePresence, motion } from 'framer-motion'; // Import motion for smooth transition
 
 interface ProjectTagFilterProps {
   projects: ProjectsData;
@@ -61,7 +60,7 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
     });
   }, [onFilterChange]);
   
-  // 3. Handle clear all filters
+  // 3. Handle clear all filters (kept internal for dialog use, but removed from external display)
   const handleClearAll = useCallback(() => {
     setSelectedTags(new Set());
     onFilterChange([]);
@@ -89,31 +88,8 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto relative">
-      
-      {/* NEW: Clear Filter Button (Minimalist 'X') */}
-      <AnimatePresence>
-        {selectedCount > 0 && (
-          <motion.div
-            key="clear-filter-button"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
-            className="absolute -top-10 right-0 z-10"
-          >
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleClearAll} 
-              className="h-8 w-8 text-destructive hover:bg-destructive/20"
-              title={`Clear ${selectedCount} active filter(s)`}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className="w-full max-w-3xl mx-auto">
+      {/* Removed filter status bar/X button */}
       
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {/* Render Top 5 Tags */}

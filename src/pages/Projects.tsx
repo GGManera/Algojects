@@ -167,6 +167,11 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
   }, [projects, projectDetails, selectedTags]); // Added selectedTags dependency
 
   const isButtonRendered = shouldShowAddProjectButton && activeAddress;
+  
+  // NEW: Function to clear all filters
+  const handleClearAllFilters = useCallback(() => {
+    setSelectedTags([]);
+  }, []);
 
   return (
     <div id={pageKey} ref={projectsPageRef} className={cn(
@@ -215,11 +220,17 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         <div className="mt-8"></div> // Placeholder for spacing when button is hidden
       )}
       
-      {/* UPDATED: All Projects Title - Removed mt-8, conditional spacing handled by the element above */}
-      <h2 className={cn(
-        "text-4xl font-bold gradient-text mb-4", // Increased mb to 4
-        !isButtonRendered && "mt-8" // Apply mt-8 only if the button container was NOT rendered
-      )}>All Projects</h2>
+      {/* UPDATED: All Projects Title - Added cursor-pointer and onClick handler */}
+      <h2 
+        className={cn(
+          "text-4xl font-bold gradient-text mb-4 cursor-pointer", // Increased mb to 4
+          !isButtonRendered && "mt-8" // Apply mt-8 only if the button container was NOT rendered
+        )}
+        onClick={handleClearAllFilters}
+        title={selectedTags.length > 0 ? "Click to clear filters" : "All Projects"}
+      >
+        All Projects
+      </h2>
 
       {/* NEW: Project Tag Filter (Now inline) */}
       <ProjectTagFilter

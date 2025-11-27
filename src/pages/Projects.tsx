@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { HeroSection } from "@/components/HeroSection";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { ProjectTagFilter } from "@/components/ProjectTagFilter"; // NEW Import
+import { Separator } from "@/components/ui/separator"; // NEW Import
 
 interface ProjectsProps {
   isInsideCarousel?: boolean;
@@ -173,6 +174,8 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
     setSelectedTags([]);
   }, []);
 
+  const isFilterActive = selectedTags.length > 0;
+
   return (
     <div id={pageKey} ref={projectsPageRef} className={cn(
       "flex flex-col items-center text-foreground relative scroll-mt-header-offset", // Removed space-y-4
@@ -227,10 +230,26 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
           !isButtonRendered && "mt-8" // Apply mt-8 only if the button container was NOT rendered
         )}
         onClick={handleClearAllFilters}
-        title={selectedTags.length > 0 ? "Click to clear filters" : "All Projects"}
+        title={isFilterActive ? "Click to clear filters" : "All Projects"}
       >
         All Projects
       </h2>
+      
+      {/* NEW: Horizontal line when filter is active */}
+      <AnimatePresence>
+        {isFilterActive && (
+          <motion.div
+            key="filter-separator"
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: '100%', opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="w-full max-w-3xl mx-auto mb-4"
+          >
+            <Separator className="bg-border-accent-green h-[2px]" />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* NEW: Project Tag Filter (Now inline) */}
       <ProjectTagFilter
@@ -238,6 +257,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         projectDetails={projectDetails}
         isLoading={isOverallLoading}
         onFilterChange={setSelectedTags}
+        selectedTags={new Set(selectedTags)} // Pass selectedTags as a Set for visual state
       />
 
       <div className={cn(

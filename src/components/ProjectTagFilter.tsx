@@ -14,6 +14,7 @@ interface ProjectTagFilterProps {
   projectDetails: ProjectDetailsEntry[];
   isLoading: boolean;
   onFilterChange: (selectedTags: string[]) => void;
+  selectedTags: Set<string>; // NEW: Receive selectedTags as a Set for visual state
 }
 
 interface TagData {
@@ -21,8 +22,7 @@ interface TagData {
   count: number;
 }
 
-export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilterChange }: ProjectTagFilterProps) {
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilterChange, selectedTags }: ProjectTagFilterProps) {
   const [isAllTagsDialogOpen, setIsAllTagsDialogOpen] = useState(false);
 
   // 1. Extract all unique tags and count projects for each (sorted by count descending)
@@ -48,27 +48,24 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
 
   // 2. Handle tag selection change
   const handleTagToggle = useCallback((tag: string) => {
-    setSelectedTags(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(tag)) {
-        newSet.delete(tag);
-      } else {
-        newSet.add(tag);
-      }
-      onFilterChange(Array.from(newSet));
-      return newSet;
-    });
-  }, [onFilterChange]);
+    // We rely on the parent (Projects.tsx) to manage the actual state array, 
+    // so we calculate the next state and pass it up.
+    const newSet = new Set(selectedTags);
+    if (newSet.has(tag)) {
+      newSet.delete(tag);
+    } else {
+      newSet.add(tag);
+    }
+    onFilterChange(Array.from(newSet));
+  }, [onFilterChange, selectedTags]);
   
-  // 3. Handle clear all filters (kept internal for dialog use, but removed from external display)
+  // 3. Handle clear all filters (used internally by the dialog)
   const handleClearAll = useCallback(() => {
-    setSelectedTags(new Set());
     onFilterChange([]);
   }, [onFilterChange]);
 
   const topFiveTags = useMemo(() => allTagsData.slice(0, 5), [allTagsData]);
   const hasMoreTags = allTagsData.length > 5;
-  const selectedCount = selectedTags.size;
 
   if (isLoading) {
     return (
@@ -89,7 +86,6 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
 
   return (
     <div className="w-full max-w-3xl mx-auto">
-      {/* Removed filter status bar/X button */}
       
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {/* Render Top 5 Tags */}

@@ -264,13 +264,10 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         selectedTags={new Set(selectedTags)} // Pass selectedTags as a Set for visual state
       />
 
-      <motion.div 
-        layout // Apply layout animation here
-        className={cn(
-          "w-full flex flex-col items-center mt-4", // Added mt-4 for spacing below the filter
-          !isInsideCarousel && "max-w-4xl"
-        )}
-      >
+      <div className={cn(
+        "w-full flex flex-col items-center mt-4", // Added mt-4 for spacing below the filter
+        !isInsideCarousel && "max-w-4xl"
+      )}>
         {(isOverallLoading || isOverallRefreshing) && ( // NEW: Use combined loading state
           <div className={cn(
             "space-y-4 w-full",
@@ -313,7 +310,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
             )}
           </div>
         )}
-      </motion.div>
+      </div>
 
       <NewProjectDialog
         isOpen={showNewProjectDialog}

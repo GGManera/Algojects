@@ -223,33 +223,35 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         <div className="mt-8"></div> // Placeholder for spacing when button is hidden
       )}
       
-      {/* UPDATED: All Projects Title - Added cursor-pointer and onClick handler */}
-      <h2 
-        className={cn(
-          "text-4xl font-bold gradient-text mb-4 cursor-pointer", // Increased mb to 4
-          !isButtonRendered && "mt-8" // Apply mt-8 only if the button container was NOT rendered
-        )}
-        onClick={handleClearAllFilters}
-        title={isFilterActive ? "Click to clear filters" : "All Projects"}
-      >
-        All Projects
-      </h2>
-      
-      {/* NEW: Horizontal line when filter is active */}
-      <AnimatePresence>
-        {isFilterActive && (
-          <motion.div
-            key="filter-separator"
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: '100%', opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="w-full max-w-3xl mx-auto mb-4"
-          >
-            <Separator className="bg-border-accent-green h-[2px]" />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Container for Title and Separator */}
+      <div className="flex flex-col items-center w-full max-w-3xl mx-auto">
+        <h2 
+          className={cn(
+            "text-4xl font-bold gradient-text mb-0 cursor-pointer", // Removed mb-4, set mb-0
+            !isButtonRendered && "mt-8" // Apply mt-8 only if the button container was NOT rendered
+          )}
+          onClick={handleClearAllFilters}
+          title={isFilterActive ? "Click to clear filters" : "All Projects"}
+        >
+          All Projects
+        </h2>
+        
+        {/* NEW: Horizontal line when filter is active */}
+        <AnimatePresence>
+          {isFilterActive && (
+            <motion.div
+              key="filter-separator"
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: '100%', opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="w-fit mx-auto mt-1 mb-4" // Use w-fit and adjust margins
+            >
+              <Separator className="bg-border-accent-green h-[2px]" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* NEW: Project Tag Filter (Now inline) */}
       <ProjectTagFilter

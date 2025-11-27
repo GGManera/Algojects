@@ -217,11 +217,11 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
       
       {/* UPDATED: All Projects Title - Removed mt-8, conditional spacing handled by the element above */}
       <h2 className={cn(
-        "text-4xl font-bold gradient-text mb-2",
+        "text-4xl font-bold gradient-text mb-4", // Increased mb to 4
         !isButtonRendered && "mt-8" // Apply mt-8 only if the button container was NOT rendered
       )}>All Projects</h2>
 
-      {/* NEW: Project Tag Filter */}
+      {/* NEW: Project Tag Filter (Now inline) */}
       <ProjectTagFilter
         projects={projects}
         projectDetails={projectDetails}
@@ -230,7 +230,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
       />
 
       <div className={cn(
-        "w-full flex flex-col items-center",
+        "w-full flex flex-col items-center mt-4", // Added mt-4 for spacing below the filter
         !isInsideCarousel && "max-w-4xl"
       )}>
         {(isOverallLoading || isOverallRefreshing) && ( // NEW: Use combined loading state

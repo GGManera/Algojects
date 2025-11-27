@@ -1,15 +1,12 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Tag, LayoutGrid } from 'lucide-react';
-import { CollapsibleContent } from './CollapsibleContent';
+import { ChevronDown, ChevronUp, Tag, LayoutGrid, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Project, ProjectsData } from '@/types/social';
+import { ProjectsData } from '@/types/social';
 import { ProjectDetailsEntry } from '../../api/project-details';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { AllTagsDialog } from './AllTagsDialog'; // Import the new dialog
 import { Skeleton } from './ui/skeleton';
 
 interface ProjectTagFilterProps {
@@ -25,10 +22,10 @@ interface TagData {
 }
 
 export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilterChange }: ProjectTagFilterProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [isAllTagsDialogOpen, setIsAllTagsDialogOpen] = useState(false);
 
-  // 1. Extract all unique tags and count projects for each
+  // 1. Extract all unique tags and count projects for each (sorted by count descending)
   const allTagsData: TagData[] = useMemo(() => {
     const tagCounts = new Map<string, number>();
     
@@ -69,78 +66,87 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
     onFilterChange([]);
   }, [onFilterChange]);
 
+  const topFiveTags = useMemo(() => allTagsData.slice(0, 5), [allTagsData]);
+  const hasMoreTags = allTagsData.length > 5;
   const selectedCount = selectedTags.size;
 
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-3xl mx-auto mb-8 grid grid-cols-3 sm:grid-cols-6 gap-3">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+
+  if (allTagsData.length === 0) {
+    return null;
+  }
+
   return (
-    <Card className="w-full max-w-3xl mx-auto mb-8 bg-card border-border">
-      <CardHeader 
-        className="flex flex-col items-center justify-center space-y-0 py-4 cursor-pointer relative"
-        onClick={() => setIsOpen(prev => !prev)}
-      >
-        <CardTitle className="text-lg flex items-center gap-2 gradient-text">
-          <Tag className="h-5 w-5" /> Filter by Tags
-        </CardTitle>
-        
-        {/* Chevron and Count positioned absolutely on the right */}
-        <div className="flex items-center space-x-2 absolute right-4 top-1/2 -translate-y-1/2">
-          {selectedCount > 0 && (
-            <span className="text-sm font-semibold text-muted-foreground hidden sm:inline">
-              {selectedCount} selected
-            </span>
-          )}
-          {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+    <div className="w-full max-w-3xl mx-auto mb-8">
+      {selectedCount > 0 && (
+        <div className="flex justify-between items-center mb-4 p-2 rounded-lg bg-muted/50 border border-border">
+          <p className="text-sm text-muted-foreground">
+            Filtering by <span className="font-semibold text-primary">{selectedCount} tag(s)</span>.
+          </p>
+          <Button variant="link" size="sm" onClick={handleClearAll} className="p-0 h-auto text-destructive">
+            Clear All
+          </Button>
         </div>
-      </CardHeader>
+      )}
       
-      <CollapsibleContent isOpen={isOpen}>
-        <CardContent className="pt-0 pb-4">
-          {isLoading ? (
-            <div className="grid grid-cols-2 gap-4">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-            </div>
-          ) : allTagsData.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No tags found across all projects.</p>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">Select one or more tags to filter the project list.</p>
-                {selectedCount > 0 && (
-                  <Button variant="link" size="sm" onClick={handleClearAll} className="p-0 h-auto text-destructive">
-                    Clear All ({selectedCount})
-                  </Button>
-                )}
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {allTagsData.map(({ tag, count }) => {
-                  const isSelected = selectedTags.has(tag);
-                  return (
-                    <button 
-                      key={tag} 
-                      type="button"
-                      className={cn(
-                        "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all duration-200",
-                        "bg-muted/30 border-muted hover:bg-muted/50",
-                        isSelected ? "focus-glow-border !border-border-accent-green" : ""
-                      )}
-                      onClick={() => handleTagToggle(tag)}
-                    >
-                      <span className="text-sm font-medium capitalize">
-                        {tag}
-                      </span>
-                      <span className="font-numeric text-xs text-muted-foreground flex items-center gap-1">
-                        <LayoutGrid className="h-3 w-3" /> {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </CollapsibleContent>
-    </Card>
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+        {/* Render Top 5 Tags */}
+        {topFiveTags.map(({ tag, count }) => {
+          const isSelected = selectedTags.has(tag);
+          return (
+            <button 
+              key={tag} 
+              type="button"
+              className={cn(
+                "flex flex-col items-center justify-center p-2 rounded-lg border cursor-pointer transition-all duration-200 h-full min-h-10",
+                "bg-muted/30 border-muted hover:bg-muted/50",
+                isSelected ? "focus-glow-border !border-border-accent-green" : ""
+              )}
+              onClick={() => handleTagToggle(tag)}
+            >
+              <span className="text-sm font-medium capitalize leading-tight text-center">
+                {tag}
+              </span>
+              <span className="font-numeric text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                <LayoutGrid className="h-3 w-3" /> {count}
+              </span>
+            </button>
+          );
+        })}
+        
+        {/* Render All Tags Button (6th item) */}
+        {hasMoreTags && (
+          <button
+            type="button"
+            className="flex flex-col items-center justify-center p-2 rounded-lg border cursor-pointer transition-all duration-200 h-full min-h-10 bg-primary/20 border-primary/50 hover:bg-primary/30 text-primary"
+            onClick={() => setIsAllTagsDialogOpen(true)}
+          >
+            <Search className="h-4 w-4" />
+            <span className="text-sm font-medium leading-tight text-center mt-0.5">
+              All Tags
+            </span>
+          </button>
+        )}
+      </div>
+      
+      <AllTagsDialog
+        isOpen={isAllTagsDialogOpen}
+        onOpenChange={setIsAllTagsDialogOpen}
+        allTagsData={allTagsData}
+        selectedTags={selectedTags}
+        onTagToggle={handleTagToggle}
+      />
+    </div>
   );
 }

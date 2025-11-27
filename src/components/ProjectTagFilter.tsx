@@ -72,7 +72,7 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-3xl mx-auto mb-8 grid grid-cols-3 sm:grid-cols-6 gap-3">
+      <div className="w-full max-w-3xl mx-auto grid grid-cols-3 sm:grid-cols-6 gap-3">
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
@@ -88,7 +88,7 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto mb-8">
+    <div className="w-full max-w-3xl mx-auto">
       {selectedCount > 0 && (
         <div className="flex justify-between items-center mb-4 p-2 rounded-lg bg-muted/50 border border-border">
           <p className="text-sm text-muted-foreground">

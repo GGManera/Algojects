@@ -433,8 +433,8 @@ export function ProjectDetailCard({
         "bg-accent mt-8 relative transition-all duration-200", 
         isFocused && !isMetadataNavigatorFocused ? "focus-glow-border" : "", 
         !isFocused && "hover:focus-glow-border",
-        // NEW: Remove rounded corners and horizontal border/margin on mobile
-        isInsideCarousel && "rounded-none border-x-0",
+        // FIX: Apply rounded corners and border only on desktop (md+)
+        "rounded-none border-x-0 md:rounded-lg md:border-x",
       )} data-nav-id={project.id} onMouseEnter={() => setLastActiveId(project.id)} onMouseLeave={() => setLastActiveId(null)}>
         
         {/* Dynamic Edit/Suggest Button */}

@@ -446,7 +446,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
               >
                 <Card className={cn(
                   "p-0 bg-card",
-                  // NEW: Remove rounded corners and border on mobile
+                  // FIX: Remove rounded corners and border on mobile
                   isMobile ? "rounded-none border-none" : "rounded-lg border",
                 )}>              
                   <CardContent
@@ -454,7 +454,7 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
                     className={cn(
                       "overflow-y-auto scrollbar-thin",
                       cardContentMaxHeightClass,
-                      // NEW: Remove horizontal padding on mobile
+                      // FIX: Remove horizontal padding on mobile (px-0)
                       isMobile ? "px-0" : "px-6 py-6"
                     )}
                   >

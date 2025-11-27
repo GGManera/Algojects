@@ -190,8 +190,8 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         </button>
       )}
       
-      {/* UPDATED: All Projects Title */}
-      <h2 className="text-3xl font-bold gradient-text mt-8 mb-2">All Projects</h2>
+      {/* NEW: All Projects Title */}
+      <h2 className="text-2xl font-bold gradient-text mt-4 mb-2">All Projects</h2>
 
       <div className={cn(
         "w-full flex flex-col items-center",

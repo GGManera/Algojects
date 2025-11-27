@@ -163,7 +163,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
       />
 
       <RevenueCalculator 
-        className="mt-0 mb-8" // Added mb-8
+        className="mt-0 mb-8" // Kept mb-8 on RevenueCalculator
         isInsideCarousel={isInsideCarousel} 
         focusedId={focusedId}
         registerItem={registerItem}
@@ -174,7 +174,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
 
       {shouldShowAddProjectButton && activeAddress && (
         <button
-          className="btn-profile mx-auto mb-8" // Added mb-8
+          className="btn-profile mx-auto mb-4" // REDUZIDO mb-8 para mb-4
           onClick={() => setShowNewProjectDialog(true)}
           disabled={!activeAddress}
         >
@@ -190,8 +190,8 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         </button>
       )}
       
-      {/* UPDATED: All Projects Title */}
-      <h2 className="text-4xl font-bold gradient-text mt-12 mb-2">All Projects</h2>
+      {/* UPDATED: All Projects Title - REDUZIDO mt-12 para mt-8 */}
+      <h2 className="text-4xl font-bold gradient-text mt-8 mb-2">All Projects</h2>
 
       <div className={cn(
         "w-full flex flex-col items-center",

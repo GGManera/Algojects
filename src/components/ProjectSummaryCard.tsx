@@ -128,6 +128,9 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
   const isCreatorAdded = projectMetadata.find(item => item.type === 'is-creator-added')?.value === 'true';
   const addedByAddressCoda = projectMetadata.find(item => item.type === 'added-by-address')?.value;
   const isClaimed = projectMetadata.find(item => item.type === 'is-claimed')?.value === 'true'; // NEW: Check if claimed
+  
+  // NEW: Find Asset Unit Name
+  const assetUnitName = projectMetadata.find(item => item.type === 'asset-unit-name')?.value;
 
   // Determine the address that added the project, prioritizing Coda metadata but falling back to on-chain creator wallet
   const addedByAddress = addedByAddressCoda || project.creatorWallet;
@@ -201,8 +204,8 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
     // Base classes for centering and max width
     const baseItemClasses = "w-full max-w-[180px] mx-auto";
 
-    // Skip rendering of "fixed" metadata items here
-    if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'].includes(item.type || '') || (item.type === 'address' && item.title === 'Creator Wallet')) {
+    // Skip rendering of "fixed" metadata items here, including asset-unit-name and roadmap-data
+    if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet', 'asset-unit-name', 'roadmap-data'].includes(item.type || '') || (item.type === 'address' && item.title === 'Creator Wallet')) {
       return null;
     }
 
@@ -243,6 +246,11 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
         </div>
       );
     } else if (item.type === 'asset-id') { // Keep asset-id type, but simplify display
+      
+      // NEW LOGIC: Use Asset Unit Name if available
+      const displayUnitName = assetUnitName ? `$${assetUnitName}` : (copiedMessage || item.title || "Asset ID");
+      const isNumericDisplay = !!assetUnitName; // Use numeric display style if unit name is present
+
       return (
         <div
           key={index}
@@ -250,7 +258,9 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
           onClick={(e) => handleCopyClick(e, item.value)}
           data-nav-id={`meta-${item.title}-${index}`}
         >
-          <strong className="uppercase">{copiedMessage || item.title || "Asset ID"}</strong>
+          <strong className={cn("uppercase", isNumericDisplay && "font-numeric !text-base !tracking-normal")}>
+            {displayUnitName}
+          </strong>
           <div id="container-stars">
             <div id="stars"></div>
           </div>
@@ -274,8 +284,9 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
           <p className="text-sm text-foreground selectable-text">{item.value}</p>
         </div>
       );
-    }
-  };
+    );
+  }
+};
 
   return (
     <motion.div

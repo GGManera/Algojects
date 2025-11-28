@@ -26,9 +26,10 @@ import { cn } from "@/lib/utils";
 import { fetchAccountAssetHoldings } from '@/utils/algorand'; // NEW: Import fetchAccountAssetHoldings
 import { retryFetch } from "@/utils/api"; // Import retryFetch
 import algosdk from "algosdk"; // Import algosdk
+import { RoadmapEditor } from "./RoadmapEditor"; // NEW: Import RoadmapEditor
 
+const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 const DESCRIPTION_MAX_LENGTH = 2048;
-const INDEXER_URL = "https://mainnet-idx.algonode.cloud"; // Define INDEXER_URL
 
 interface ProjectDetailsFormProps {
   projectId: string;
@@ -45,9 +46,10 @@ export function ProjectDetailsForm({
 }: ProjectDetailsFormProps) {
   const [metadataItems, setMetadataItems] = useState<ProjectMetadata>(initialProjectMetadata);
   const [projectTags, setProjectTags] = useState("");
+  const [roadmapJson, setRoadmapJson] = useState<string>('[]'); // NEW: State for roadmap JSON string
   const [isLoading, setIsLoading] = useState(false);
-  const { activeAddress, transactionSigner, algodClient } = useWallet(); // NEW: Get transactionSigner and algodClient
-  const { updateProjectDetails, loading: detailsLoadingState, isRefreshing: detailsRefreshingState } = useProjectDetails(); // NEW: Destructure updateProjectDetails
+  const { activeAddress, transactionSigner, algodClient } = useWallet();
+  const { updateProjectDetails, loading: detailsLoadingState, isRefreshing: detailsRefreshingState } = useProjectDetails();
   const isProjectDetailsFetching = detailsLoadingState || detailsRefreshingState;
 
   // Helper to find a metadata item by type OR title (for non-standard fields like 'Creator Wallet')
@@ -80,14 +82,17 @@ export function ProjectDetailsForm({
   const addedByAddress = findMetadataItem('added-by-address')?.value;
   const isCommunityNotes = findMetadataItem('is-community-notes')?.value === 'true';
   const isClaimed = findMetadataItem('is-claimed')?.value === 'true';
-  const creatorWalletContent = findMetadataItem('address', 'Creator Wallet')?.value || ''; // Look for type 'address' AND title 'Creator Wallet'
-  const projectWalletContent = findMetadataItem('project-wallet')?.value || ''; // NEW: Project Wallet
-  const assetIdContent = findMetadataItem('asset-id')?.value || ''; // NEW: Asset ID
-  const assetUnitNameContent = findMetadataItem('asset-unit-name')?.value || ''; // NEW: Asset Unit Name
+  const creatorWalletContent = findMetadataItem('address', 'Creator Wallet')?.value || '';
+  const projectWalletContent = findMetadataItem('project-wallet')?.value || '';
+  const assetIdContent = findMetadataItem('asset-id')?.value || '';
+  const assetUnitNameContent = findMetadataItem('asset-unit-name')?.value || '';
+  // NEW: Extract initial roadmap data
+  const initialRoadmapJson = findMetadataItem('roadmap-data')?.value || '[]';
+
 
   // Filter out the "fixed" metadata items from the dynamic list for rendering
   const fixedTypesAndTitles = useMemo(() => new Set([
-    'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'Creator Wallet', 'project-wallet', 'asset-id', 'asset-unit-name'
+    'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'Creator Wallet', 'project-wallet', 'asset-id', 'asset-unit-name', 'roadmap-data' // NEW: Added roadmap-data
   ]), []);
 
   const dynamicMetadataItems = useMemo(() => {
@@ -133,11 +138,9 @@ export function ProjectDetailsForm({
   }, [dynamicMetadataItems]);
 
   // Determine the effective list of inputs for NFD resolution for authorization
-  // We still need NFD resolution for whitelisted editors
   const effectiveAuthInputs = useMemo(() => {
     const authAddresses: string[] = [];
     
-    // Only include wallet contents if they look like an address
     if (isValidAlgorandAddress(creatorWalletContent)) {
       authAddresses.push(creatorWalletContent);
     }
@@ -171,6 +174,10 @@ export function ProjectDetailsForm({
     } else {
       setProjectTags("");
     }
+    
+    // NEW: Initialize roadmap JSON state
+    const initialRoadmapItem = initialProjectMetadata.find(item => item.type === 'roadmap-data');
+    setRoadmapJson(initialRoadmapItem?.value || '[]');
   }, [initialProjectMetadata]);
 
   // Determine if the current user is authorized to edit
@@ -241,9 +248,9 @@ export function ProjectDetailsForm({
 
       // 3. Define all fixed metadata items based on current local state
       const finalCreatorWalletValue = creatorWalletContent.trim();
-      const finalProjectWalletValue = projectWalletContent.trim(); // NEW: Project Wallet value
-      const finalAssetIdValue = assetIdContent.trim(); // NEW: Asset ID value
-      let finalAssetUnitNameValue = assetUnitNameContent.trim(); // NEW: Asset Unit Name value
+      const finalProjectWalletValue = projectWalletContent.trim();
+      const finalAssetIdValue = assetIdContent.trim();
+      let finalAssetUnitNameValue = assetUnitNameContent.trim();
 
       // NEW: If Asset ID is provided, try to fetch its unit-name if not already set or if assetId changed
       if (finalAssetIdValue) {
@@ -253,26 +260,26 @@ export function ProjectDetailsForm({
 
         if (assetIdNum > 0 && (finalAssetIdValue !== currentAssetIdInMetadata || !finalAssetUnitNameValue || finalAssetUnitNameValue !== currentAssetUnitNameInMetadata)) {
           try {
-            const response = await retryFetch(`${INDEXER_URL}/v2/assets/${assetIdNum}`, undefined, 5); // Increased retries
+            const response = await retryFetch(`${INDEXER_URL}/v2/assets/${assetIdNum}`, undefined, 5);
             if (response.ok) {
               const data = await response.json();
               const unitName = data.asset.params['unit-name'];
               if (unitName) {
                 finalAssetUnitNameValue = unitName;
               } else {
-                finalAssetUnitNameValue = ''; // Clear if unit name is missing
+                finalAssetUnitNameValue = '';
               }
             } else {
               console.warn(`Failed to fetch unit-name for asset ID ${assetIdNum}. Status: ${response.status}`);
-              finalAssetUnitNameValue = ''; // Clear if fetch fails
+              finalAssetUnitNameValue = '';
             }
           } catch (e) {
             console.error(`Error fetching unit-name for asset ID ${assetIdNum}:`, e);
-            finalAssetUnitNameValue = ''; // Clear on error
+            finalAssetUnitNameValue = '';
           }
         }
       } else {
-        finalAssetUnitNameValue = ''; // Clear unit name if asset ID is removed
+        finalAssetUnitNameValue = '';
       }
       
       const fixedItems: ProjectMetadata = [
@@ -284,6 +291,8 @@ export function ProjectDetailsForm({
         { title: 'Added By Address', value: addedByAddress || '', type: 'added-by-address' },
         { title: 'Is Community Notes', value: isCommunityNotes ? 'true' : 'false', type: 'is-community-notes' },
         { title: 'Is Claimed', value: isClaimed ? 'true' : 'false', type: 'is-claimed' },
+        // NEW: Roadmap Data
+        { title: 'Roadmap', value: roadmapJson, type: 'roadmap-data' },
         // Creator Wallet: Use the raw content, validated as an address above
         ...(finalCreatorWalletValue ? [{ title: 'Creator Wallet', value: finalCreatorWalletValue, type: 'address' as const }] : []),
         // NEW: Project Wallet
@@ -291,9 +300,9 @@ export function ProjectDetailsForm({
         // NEW: Asset ID and Asset Unit Name
         ...(finalAssetIdValue ? [{ title: 'Asset ID', value: finalAssetIdValue, type: 'asset-id' as const }] : []),
         ...(finalAssetUnitNameValue ? [{ title: 'Asset Unit Name', value: finalAssetUnitNameValue, type: 'asset-unit-name' as const }] : []),
-      ].filter(item => item.value.trim() || ['is-creator-added', 'is-community-notes', 'is-claimed'].includes(item.type || ''));
+      ].filter(item => item.value.trim() || ['is-creator-added', 'is-community-notes', 'is-claimed', 'roadmap-data'].includes(item.type || '')); // Ensure roadmap-data is kept even if empty JSON
 
-      // 4. Combine all items, filtering out any fixed items that are empty (except boolean flags)
+      // 4. Combine all items, filtering out any fixed items that are empty (except boolean flags and roadmap-data)
       const finalMetadata: ProjectMetadata = [...fixedItems, ...dynamicItemsToSend];
 
       // 5. Update Coda
@@ -313,9 +322,9 @@ export function ProjectDetailsForm({
     }
   };
 
-  const isProjectWalletValid = !projectWalletContent.trim() || isValidAlgorandAddress(projectWalletContent); // NEW validation
-  const isCreatorWalletValid = !creatorWalletContent.trim() || isValidAlgorandAddress(creatorWalletContent); // Existing validation
-  const isAssetIdValid = !assetIdContent.trim() || (parseInt(assetIdContent, 10) > 0); // NEW validation
+  const isProjectWalletValid = !projectWalletContent.trim() || isValidAlgorandAddress(projectWalletContent);
+  const isCreatorWalletValid = !creatorWalletContent.trim() || isValidAlgorandAddress(creatorWalletContent);
+  const isAssetIdValid = !assetIdContent.trim() || (parseInt(assetIdContent, 10) > 0);
 
   const canSubmit = !activeAddress || isLoading || !isAuthorized() || resolvingAuthNfds || isProjectDetailsFetching || !isCreatorWalletValid || !isProjectWalletValid || !isAssetIdValid;
   const inputDisabled = !activeAddress || isLoading || resolvingAuthNfds || isProjectDetailsFetching;
@@ -393,7 +402,7 @@ export function ProjectDetailsForm({
             id="projectTags"
             placeholder="e.g., DeFi, NFT, Gaming"
             value={projectTags}
-            onChange={(e) => setProjectTags(e.target.value)} // Tags are handled via local state and then merged in handleSubmit
+            onChange={(e) => setProjectTags(e.target.value)}
             disabled={inputDisabled}
             className="bg-muted/50"
           />
@@ -440,7 +449,7 @@ export function ProjectDetailsForm({
           )}
         </div>
 
-        {/* NEW Fixed Field: Project Wallet */}
+        {/* Fixed Field: Project Wallet */}
         <div className="relative">
           <Label htmlFor="projectWallet" className="text-white text-xs absolute top-[-20px] left-0 bg-hodl-darker px-1">Project Wallet (Algorand Address)</Label>
           <Input
@@ -458,9 +467,8 @@ export function ProjectDetailsForm({
             <p className="text-xs text-red-500 mt-1">Must be a valid 58-character Algorand address.</p>
           )}
         </div>
-        {/* END NEW */}
 
-        {/* NEW Fixed Field: Asset ID */}
+        {/* Fixed Field: Asset ID */}
         <div className="relative">
           <Label htmlFor="assetId" className="text-white text-xs absolute top-[-20px] left-0 bg-hodl-darker px-1">Associated Asset ID (Optional)</Label>
           <Input
@@ -479,6 +487,13 @@ export function ProjectDetailsForm({
             <p className="text-xs text-red-500 mt-1">Asset ID must be a positive integer.</p>
           )}
         </div>
+        
+        {/* NEW: Roadmap Editor Integration */}
+        <RoadmapEditor
+          initialRoadmapJson={initialRoadmapJson}
+          onRoadmapChange={setRoadmapJson}
+          disabled={inputDisabled}
+        />
         {/* END NEW */}
 
         {/* Dynamic Metadata Fields */}
@@ -524,7 +539,7 @@ export function ProjectDetailsForm({
                     <SelectItem value="x-url">X (Twitter) URL</SelectItem>
                     <SelectItem value="asset-id">Asset ID</SelectItem>
                     <SelectItem value="address">Address</SelectItem>
-                    <SelectItem value="asset-unit-name">Asset Unit Name</SelectItem> {/* NEW */}
+                    <SelectItem value="asset-unit-name">Asset Unit Name</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

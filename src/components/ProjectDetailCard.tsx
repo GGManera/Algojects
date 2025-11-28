@@ -15,7 +15,7 @@ import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { ProjectDetailsForm } from "./ProjectDetailsForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp, DollarSign, Hash, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, Link as LinkIcon, Copy, Gem, UserCircle, X, Edit, Heart, MessageCircle, MessageSquare, FileText, TrendingUp, DollarSign, Hash, ChevronDown, ChevronUp, Calendar } from "lucide-react"; // NEW: Import Calendar
 import { UserDisplay } from "./UserDisplay";
 import { Button } from "@/components/ui/button";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
@@ -34,7 +34,8 @@ import { AcceptMetadataSuggestionDialog } from "./AcceptMetadataSuggestionDialog
 import { CollapsibleContent } from "./CollapsibleContent";
 import { MetadataSuggestionSelector } from "./MetadataSuggestionSelector";
 import { ProjectMetadataSuggestionsList } from "./ProjectMetadataSuggestionsList";
-import { useNfdResolver } from "@/hooks/useNfdResolver"; // NEW: Import useNfdResolver
+import { useNfdResolver } from "@/hooks/useNfdResolver";
+import { RoadmapDisplay } from "./RoadmapDisplay"; // NEW: Import RoadmapDisplay
 
 const INDEXER_URL = "https://mainnet-idx.algode.cloud";
 
@@ -155,6 +156,7 @@ export function ProjectDetailCard({
   const [isClaiming, setIsClaiming] = useState(false);
   const [viewMode, setViewMode] = useState<'reviews' | 'comments' | 'replies' | 'interactions'>('reviews');
   const [isMetadataNavigatorFocused, setIsMetadataNavigatorFocused] = useState(false);
+  const [isRoadmapExpanded, setIsRoadmapExpanded] = useState(false); // NEW: State for roadmap expansion
   const { allCuratorData } = useCuratorIndex(undefined, projectsData);
 
   const [currentUserHolding, setCurrentUserHolding] = useState<CurrentUserProjectHolding | null>(null);
@@ -246,6 +248,9 @@ export function ProjectDetailCard({
   const isCommunityNotes = projectMetadata.find(item => item.type === 'is-community-notes')?.value === 'true';
   const creatorWalletItem = projectMetadata.find(item => item.type === 'address' && item.title === 'Creator Wallet');
   const projectWalletItem = projectMetadata.find(item => item.type === 'project-wallet');
+  const roadmapItem = projectMetadata.find(item => item.type === 'roadmap-data'); // NEW: Extract roadmap item
+  const roadmapJson = roadmapItem?.value || '[]'; // NEW: Get roadmap JSON string
+  
   const creatorWalletMetadata = creatorWalletItem?.value;
   const projectWalletMetadata = projectWalletItem?.value;
   
@@ -340,7 +345,7 @@ export function ProjectDetailCard({
       const handleSpacebar = (e: KeyboardEvent) => {
         if (e.key === ' ') {
           e.preventDefault();
-          const hasNavItems = projectMetadata.filter(item => !['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'].includes(item.type || '') && !(item.type === 'address' && item.title === 'Creator Wallet')).length > 0;
+          const hasNavItems = projectMetadata.filter(item => !['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet', 'roadmap-data'].includes(item.type || '') && !(item.type === 'address' && item.title === 'Creator Wallet')).length > 0;
           if (hasNavItems) setIsMetadataNavigatorFocused(true);
           else document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
         }
@@ -491,7 +496,35 @@ export function ProjectDetailCard({
               </Card>
             </div>
           </div>
-          <ProjectNotesDisplay isLoadingDetails={isLoadingDetails} detailsError={detailsError} currentProjectDescription={currentProjectDescription} isCommunityNotes={isCommunityNotes} isCreatorAdded={isCreatorAdded} addedByAddress={addedByAddress} />
+          
+          {/* Project Notes/Description */}
+          <ProjectNotesDisplay 
+            isLoadingDetails={isLoadingDetails} 
+            detailsError={detailsError} 
+            currentProjectDescription={currentProjectDescription} 
+            isCommunityNotes={isCommunityNotes} 
+            isCreatorAdded={isCreatorAdded} 
+            addedByAddress={addedByAddress} 
+          />
+          
+          {/* NEW: Roadmap Section */}
+          <div className="py-4 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
+            <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => setIsRoadmapExpanded(prev => !prev)}
+            >
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" /> Project Roadmap
+                </h3>
+                {isRoadmapExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
+            <CollapsibleContent isOpen={isRoadmapExpanded}>
+                <div className="pt-4">
+                    <RoadmapDisplay roadmapJson={roadmapJson} />
+                </div>
+            </CollapsibleContent>
+          </div>
+          {/* END NEW */}
           
           {/* Metadata Edit/Suggestion Forms */}
           <div className="space-y-4">

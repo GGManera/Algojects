@@ -113,6 +113,13 @@
     overscroll-behavior-y: auto;
     user-select: none; /* Disable text selection by default */
   }
+  
+  /* NEW: Hide global vertical scrollbar on desktop/landscape */
+  @media (min-width: 768px) {
+    body {
+      overflow-y: hidden;
+    }
+  }
 
   button {
     @apply font-sans;

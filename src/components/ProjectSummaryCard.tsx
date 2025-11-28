@@ -202,55 +202,48 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
     const baseItemClasses = "w-full max-w-[180px] mx-auto";
 
     // Skip rendering of "fixed" metadata items here
-    if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'].includes(item.type || '') || (item.type === 'address' && item.title === 'Creator Wallet')) {
+    if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet', 'asset-unit-name', 'roadmap-data'].includes(item.type || '') || (item.type === 'address' && item.title === 'Creator Wallet')) {
       return null;
     }
 
-    if (item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com'))) {
-      return (
-        <div
-          key={index}
-          className={cn("btn-profile", baseItemClasses)}
-          onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
-          data-nav-id={`meta-${item.title}-${index}`}
-        >
-          <strong className="uppercase">{item.title || extractDomainFromUrl(item.value)}</strong>
-          <div id="container-stars">
-            <div id="stars"></div>
-          </div>
-          <div id="glow">
-            <div className="circle"></div>
-            <div className="circle"></div>
-          </div>
-        </div>
-      );
+    let buttonText = item.title || "Link";
+    let isNumericDisplay = false;
+    const isAssetIdItem = item.type === 'asset-id';
+
+    if (isAssetIdItem) {
+      // NEW LOGIC: Find Asset Unit Name
+      const assetUnitNameItem = projectMetadata.find(meta => meta.type === 'asset-unit-name');
+      const unitName = assetUnitNameItem?.value || 'Asset ID';
+      
+      if (copiedMessage) {
+        buttonText = copiedMessage;
+      } else {
+        buttonText = `$${unitName}`; // Show Unit Name as title
+      }
+    } else if (item.type === 'url' || (item.value.startsWith('http') && !item.value.includes('x.com') && !item.value.includes('twitter.com'))) {
+      buttonText = item.title || extractDomainFromUrl(item.value);
     } else if (item.type === 'x-url' || item.value.includes('x.com') || item.value.includes('twitter.com')) {
+      buttonText = item.title || extractXHandleFromUrl(item.value);
+    }
+
+    if (item.type === 'url' || item.type === 'x-url' || isAssetIdItem || (item.value.startsWith('http') && !item.type)) {
       return (
         <div
           key={index}
           className={cn("btn-profile", baseItemClasses)}
-          onClick={(e) => { e.stopPropagation(); window.open(item.value, '_blank'); }}
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            if (isAssetIdItem) {
+              handleCopyClick(e, item.value);
+            } else {
+              window.open(item.value, '_blank');
+            }
+          }}
           data-nav-id={`meta-${item.title}-${index}`}
         >
-          <strong className="uppercase">{item.title || extractXHandleFromUrl(item.value)}</strong>
-          <div id="container-stars">
-            <div id="stars"></div>
-          </div>
-          <div id="glow">
-            <div className="circle"></div>
-            <div className="circle"></div>
-          </div>
-        </div>
-      );
-    } else if (item.type === 'asset-id') { // Keep asset-id type, but simplify display
-      return (
-        <div
-          key={index}
-          className={cn("btn-profile", baseItemClasses)}
-          onClick={(e) => handleCopyClick(e, item.value)}
-          data-nav-id={`meta-${item.title}-${index}`}
-        >
-          <strong className="uppercase">{copiedMessage || item.title || "Asset ID"}</strong>
+          <strong className={cn("uppercase", isNumericDisplay && "font-numeric !text-base !tracking-normal")}>
+            {buttonText}
+          </strong>
           <div id="container-stars">
             <div id="stars"></div>
           </div>

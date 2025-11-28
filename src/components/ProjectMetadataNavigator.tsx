@@ -46,7 +46,8 @@ const renderMetadataItem = (
   handleCopyClick: (e: React.MouseEvent, value: string, isAssetId: boolean) => void, // Updated signature
   projectSourceContext: { path: string; label: string },
   isHovered: boolean, // NEW
-  isRevealed: boolean // NEW
+  isRevealed: boolean, // NEW
+  projectMetadata: MetadataItem[] // NEW: Pass full metadata to find unit name
 ) => {
   // Base classes for centering and max width
   const baseItemClasses = cn(
@@ -55,7 +56,7 @@ const renderMetadataItem = (
   );
 
   // Skip rendering of "fixed" metadata items here
-  if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'].includes(item.type || '') || (item.type === 'address' && item.title === 'Creator Wallet')) {
+  if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet', 'asset-unit-name', 'roadmap-data'].includes(item.type || '') || (item.type === 'address' && item.title === 'Creator Wallet')) {
     return null;
   }
 
@@ -66,21 +67,25 @@ const renderMetadataItem = (
   let isNumericDisplay = false;
 
   if (isAssetIdItem) {
+    // NEW LOGIC: Find Asset Unit Name
+    const assetUnitNameItem = projectMetadata.find(meta => meta.type === 'asset-unit-name');
+    const unitName = assetUnitNameItem?.value || 'Asset ID';
+    
     if (copiedMessage) {
       buttonText = copiedMessage;
     } else if (isMobile) {
       if (isRevealed) {
-        buttonText = item.value;
+        buttonText = item.value; // Show ID on reveal
         isNumericDisplay = true;
       } else {
-        buttonText = item.title || "Asset ID";
+        buttonText = `$${unitName}`; // Show Unit Name on initial/unrevealed state
       }
     } else { // Desktop
       if (isHovered) {
-        buttonText = item.value;
+        buttonText = item.value; // Show ID on hover
         isNumericDisplay = true;
       } else {
-        buttonText = item.title || "Asset ID";
+        buttonText = `$${unitName}`; // Show Unit Name on initial/unhovered state
       }
     }
   } else {
@@ -197,7 +202,7 @@ export function ProjectMetadataNavigator({
   const allRenderableMetadataItems = useMemo(() => {
     const items: MetadataItem[] = [];
     const excludedFixedTypes = new Set([
-        'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed'
+        'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'roadmap-data' // Added roadmap-data
     ]);
 
     projectMetadata.forEach(item => {
@@ -412,7 +417,8 @@ export function ProjectMetadataNavigator({
             handleCopyClick, 
             projectSourceContext,
             hoveredAssetId === id, // Pass hover state
-            revealedAssetId === item.value // Pass revealed state
+            revealedAssetId === item.value, // Pass revealed state
+            projectMetadata // NEW: Pass full metadata
           );
 
           if (!renderedItem) return null;

@@ -86,9 +86,9 @@
       var(--sticky-header-height) + 
       var(--dynamic-nav-buttons-height) +
       var(--dynamic-nav-buttons-desktop-vertical-gap)
-    ); /* 48 + 14 + 32 = 94px */
+    ); /* 48 + 32 + 14 = 94px */
 
-    /* RECALCULATED: Total fixed height for mobile portrait (StickyHeader + DynamicNavButtons + MobileBottomBar) */
+    /* RECALCULATED: Total fixed height for mobile portrait (DynamicNavButtons + MobileBottomBar) */
     --total-fixed-bottom-height-mobile: calc(
       var(--mobile-bottom-bar-height) +
       var(--dynamic-nav-buttons-height)
@@ -488,9 +488,7 @@
   /* NEW: Scroll margin top to account for all possible fixed headers */
   .scroll-mt-header-offset {
     scroll-margin-top: calc(
-      var(--sticky-header-height) + 
-      var(--dynamic-nav-buttons-height) +
-      var(--dynamic-nav-buttons-desktop-vertical-gap) +
+      var(--total-fixed-top-height-desktop) +
       env(safe-area-inset-top)
     );
   }

@@ -63,9 +63,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   let mainTopPadding = "pt-[calc(var(--sticky-header-height)+env(safe-area-inset-top))]";
   if (!isMobile || isDeviceLandscape) {
     // Desktop/Landscape: StickyHeader + Gap + DynamicNavButtons
-    mainTopPadding = "pt-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-height)+var(--dynamic-nav-buttons-desktop-vertical-gap)+env(safe-area-inset-top))]";
+    // Usamos a variável CSS --total-fixed-top-height-desktop que já inclui tudo
+    mainTopPadding = "pt-[calc(var(--total-fixed-top-height-desktop)+env(safe-area-inset-top))]";
   } else if (isMobilePortrait) {
-    // Mobile Portrait: StickyHeader is removed, DynamicNavButtons is at the bottom.
+    // Mobile Portrait: StickyHeader is hidden, DynamicNavButtons is at the bottom.
     // Content should start right at the top (after safe area inset).
     mainTopPadding = "pt-[env(safe-area-inset-top)]";
   }
@@ -74,7 +75,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   let mainBottomPadding = "";
   if (isMobilePortrait) {
     // Always use the combined height of MobileBottomBar and DynamicNavButtons
-    mainBottomPadding = "pb-[calc(var(--mobile-bottom-bar-height)+var(--dynamic-nav-buttons-height)+env(safe-area-inset-bottom))]";
+    mainBottomPadding = "pb-[calc(var(--total-fixed-bottom-height-mobile)+env(safe-area-inset-bottom))]";
   }
 
   return (

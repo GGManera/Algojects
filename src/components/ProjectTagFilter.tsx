@@ -27,22 +27,32 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
 
   // 1. Extract all unique tags and count projects for each (sorted by count descending)
   const allTagsData: TagData[] = useMemo(() => {
-    const tagCounts = new Map<string, number>();
+    const tagCounts = new Map<string, { count: number, originalTag: string }>();
     
     projectDetails.forEach(detail => {
       const tagsItem = detail.projectMetadata.find(item => item.type === 'tags');
       if (tagsItem && tagsItem.value) {
-        const tags = tagsItem.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+        // Don't lowercase here, preserve original casing
+        const tags = tagsItem.value.split(',').map(t => t.trim()).filter(Boolean);
         
-        tags.forEach(tag => {
-          tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+        tags.forEach(originalTag => {
+          const lowerCaseTag = originalTag.toLowerCase();
+          const existingEntry = tagCounts.get(lowerCaseTag);
+          
+          if (existingEntry) {
+            // Increment count
+            existingEntry.count++;
+          } else {
+            // Add new entry, storing the first encountered original casing
+            tagCounts.set(lowerCaseTag, { count: 1, originalTag: originalTag });
+          }
         });
       }
     });
 
-    // Convert map to sorted array
-    return Array.from(tagCounts.entries())
-      .map(([tag, count]) => ({ tag, count }))
+    // Convert map to sorted array of { tag: originalTag, count: count }
+    return Array.from(tagCounts.values())
+      .map(({ originalTag, count }) => ({ tag: originalTag, count }))
       .sort((a, b) => b.count - a.count); // Sort by count descending
   }, [projectDetails]);
 
@@ -50,11 +60,14 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
   const handleTagToggle = useCallback((tag: string) => {
     // We rely on the parent (Projects.tsx) to manage the actual state array, 
     // so we calculate the next state and pass it up.
+    // Always work with lowercase tags for logic to ensure case-insensitivity.
+    const lowerCaseTag = tag.toLowerCase();
+    
     const newSet = new Set(selectedTags);
-    if (newSet.has(tag)) {
-      newSet.delete(tag);
+    if (newSet.has(lowerCaseTag)) {
+      newSet.delete(lowerCaseTag);
     } else {
-      newSet.add(tag);
+      newSet.add(lowerCaseTag);
     }
     onFilterChange(Array.from(newSet));
   }, [onFilterChange, selectedTags]);
@@ -90,7 +103,7 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {/* Render Top 5 Tags */}
         {topFiveTags.map(({ tag, count }) => {
-          const isSelected = selectedTags.has(tag);
+          const isSelected = selectedTags.has(tag.toLowerCase());
           return (
             <button 
               key={tag} 
@@ -102,7 +115,7 @@ export function ProjectTagFilter({ projects, projectDetails, isLoading, onFilter
               )}
               onClick={() => handleTagToggle(tag)}
             >
-              <span className="text-sm font-medium capitalize leading-tight text-center">
+              <span className="text-sm font-medium leading-tight text-center">
                 {tag}
               </span>
               <span className="font-numeric text-xs text-muted-foreground flex items-center gap-1 mt-0.5">

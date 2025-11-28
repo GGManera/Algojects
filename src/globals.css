@@ -356,7 +356,7 @@
   }
   
   /* NEW: Override scaling for the center navigation button */
-  .btn-no-scale:hover {
+  .btn-profile.btn-no-scale:hover {
     transform: scale(1);
   }
 

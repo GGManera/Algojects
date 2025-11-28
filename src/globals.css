@@ -411,6 +411,11 @@
   .btn-profile:hover {
     transform: scale(1.1);
   }
+  
+  /* NEW: Override hover scale for the dynamic nav button */
+  .dynamic-nav-button-override:hover {
+    transform: scale(1);
+  }
 
   .btn-profile:active {
     /* 2. Remove explicit border color change to keep it dark */

@@ -100,7 +100,7 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
       "h-[var(--dynamic-nav-buttons-height)]",
       (isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape) // Mobile portrait
         ? "bottom-[var(--mobile-bottom-bar-height)] border-t border-border-accent-green top-border-glow"
-        : "top-[var(--sticky-header-height)] border-b border-border-accent-green bottom-border-glow" // Desktop/Landscape: Colado ao StickyHeader
+        : "top-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-desktop-vertical-gap))] border-b border-border-accent-green bottom-border-glow" // Desktop/Landscape
     )}>
       {/* Container for Left/Right buttons (limited by max-w-3xl) */}
       <div className="relative w-full max-w-3xl mx-auto flex justify-between items-center px-2 h-full">

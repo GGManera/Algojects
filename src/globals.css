@@ -357,7 +357,7 @@
   
   /* NEW: Override scaling for the center navigation button */
   .btn-profile.btn-no-scale:hover {
-    transform: scale(1) !important; /* FORCED SCALE 1 */
+    transform: translate(-50%, -50%) !important; /* Keep it centered, remove scale */
     transition: none !important; /* Ensure no transition causes movement */
   }
 

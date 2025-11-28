@@ -543,8 +543,8 @@ export function ProjectDetailCard({
 
         </CardContent>
       </Card>
-      {/* NEW: Container for reviews and form with px-2 padding */}
-      <div className={cn("space-y-6 mt-8", isInsideCarousel && "px-2")}>
+      {/* NEW: Container for reviews and form with conditional px-2 padding */}
+      <div className={cn("space-y-6 mt-8", isInsideCarousel && "px-2 md:px-0")}>
         {sortedReviews.length > 0 ? sortedReviews.map(({ review, score }) => <ReviewItem key={review.id} review={review} project={project} onInteractionSuccess={onInteractionSuccess} interactionScore={score} projectSourceContext={projectSourceContext} allCuratorData={allCuratorData} focusedId={focusedId} registerItem={registerItem} isActive={isActive} setLastActiveId={setLastActiveId} globalViewMode={viewMode} />) : <p className="text-muted-foreground text-center">No reviews yet for this project.</p>}
         {activeAddress && <NewReviewForExistingProjectForm project={project} projectsData={projectsData} onInteractionSuccess={onInteractionSuccess} />}
       </div>

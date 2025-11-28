@@ -415,16 +415,17 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     };
   }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
-  const cardContentMaxHeightClass = useMemo(() => {
+  // NEW: Recalculate padding classes based on device mode
+  const cardContentPaddingClasses = useMemo(() => {
     if (isMobile && isDeviceLandscape) {
-      // Landscape: StickyHeader + Gap + DynamicNavButtons
-      return "max-h-[calc(100vh-var(--total-fixed-top-height-desktop)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      // Landscape: StickyHeader + Gap + DynamicNavButtons at the top
+      return "pt-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-desktop-vertical-gap))] pb-[var(--dynamic-nav-buttons-desktop-vertical-gap)]";
     } else if (isMobile && !isDeviceLandscape) {
-      // Mobile Portrait: DynamicNavButtons + MobileBottomBar
-      return "max-h-[calc(100vh-var(--total-fixed-bottom-height-mobile)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      // Mobile Portrait: DynamicNavButtons + MobileBottomBar at the bottom
+      return "pt-[env(safe-area-inset-top)] pb-[calc(var(--total-fixed-bottom-height-mobile)+env(safe-area-inset-bottom))]";
     } else {
-      // Desktop: StickyHeader + Gap + DynamicNavButtons
-      return "max-h-[calc(100vh-var(--total-fixed-top-height-desktop)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      // Desktop: StickyHeader + Gap + DynamicNavButtons at the top
+      return "pt-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-desktop-vertical-gap))] pb-[var(--dynamic-nav-buttons-desktop-vertical-gap)]";
     }
   }, [isMobile, isDeviceLandscape]);
 
@@ -454,10 +455,10 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
                   <CardContent
                     ref={el => slideRefs.current.set(slide.type, el)}
                     className={cn(
-                      "overflow-y-auto scrollbar-thin",
-                      cardContentMaxHeightClass,
+                      "overflow-y-auto scrollbar-thin h-screen", // Set height to h-screen
+                      cardContentPaddingClasses, // Apply dynamic padding
                       // FIX: Remove horizontal padding on mobile (px-0)
-                      isMobile ? "px-0" : "px-6 py-6"
+                      isMobile ? "px-0" : "px-6"
                     )}
                   >
                     <div className={cn("w-full mx-auto", slide.maxWidth)}>

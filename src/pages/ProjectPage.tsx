@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { useWallet } from "@txnlab/use-wallet-react";
 import React, { useRef, useEffect, useMemo } from "react";
-import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
+import { useNavigationHistory } '@/contexts/NavigationHistoryContext';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { cn } from '@/lib/utils';
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Import
@@ -171,9 +171,9 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
 
   return (
     <div id={pageKey} className={cn( // Set pageKey as ID here
-      "w-full text-foreground", // Removed h-full and overflow-y-auto
+      "w-full text-foreground",
       !isInsideCarousel && "max-w-3xl mx-auto",
-      isMobilePortrait ? "scroll-mt-mobile-top" : "scroll-mt-header-offset", // Apply conditional scroll margin
+      isMobilePortrait ? "scroll-mt-mobile-top" : "scroll-mt-desktop-offset", // UPDATED: Apply correct scroll margin
       isInsideCarousel ? "px-2 py-2 md:p-0" : "px-2 py-2 md:p-4" // Revertendo para incluir px-2 no carrossel
     )}>
       <ProjectDetailCard

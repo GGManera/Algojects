@@ -59,24 +59,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     }
   }, [location.pathname]);
 
-  // Calcula o preenchimento superior para o main
-  let mainTopPadding = "pt-[calc(var(--sticky-header-height)+env(safe-area-inset-top))]";
-  if (!isMobile || isDeviceLandscape) {
-    // Desktop/Landscape: StickyHeader + Gap + DynamicNavButtons
-    // Usamos a variável CSS --total-fixed-top-height-desktop que já inclui tudo
-    mainTopPadding = "pt-[calc(var(--total-fixed-top-height-desktop)+env(safe-area-inset-top))]";
-  } else if (isMobilePortrait) {
-    // Mobile Portrait: StickyHeader is hidden, DynamicNavButtons is at the bottom.
-    // Content should start right at the top (after safe area inset).
-    mainTopPadding = "pt-[env(safe-area-inset-top)]";
-  }
-
-  // Calcula o preenchimento inferior para o main (apenas se for mobile E portrait)
-  let mainBottomPadding = "";
-  if (isMobilePortrait) {
-    // Always use the combined height of MobileBottomBar and DynamicNavButtons
-    mainBottomPadding = "pb-[calc(var(--total-fixed-bottom-height-mobile)+env(safe-area-inset-bottom))]";
-  }
+  // REMOVED: mainTopPadding and mainBottomPadding calculation.
+  // The main element will now take up the full viewport height (min-h-screen)
+  // and the content inside NewWebsite will handle the offsets.
 
   return (
     <div className="relative min-h-screen flex flex-col">
@@ -85,9 +70,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       <DynamicNavButtons onCenterButtonClick={handleCenterButtonClick} />
       <main
         className={cn(
-          "flex-grow relative overflow-hidden",
-          mainTopPadding,
-          mainBottomPadding
+          "flex-grow relative overflow-hidden h-screen", // Set h-screen to ensure it fills the viewport
         )}
       >
         {/* Passando a ref para o NewWebsite */}

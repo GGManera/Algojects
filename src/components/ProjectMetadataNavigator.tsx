@@ -2,7 +2,7 @@
 
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { MetadataItem } from '@/types/project';
-import { cn, formatLargeNumber, extractDomainFromUrl, extractXHandleFromUrl } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { useKeyboardNavigation, globalOrderedIdsMap } from '@/hooks/useKeyboardNavigation'; // Import globalOrderedIdsMap
 import { Project } from '@/types/social';
 import { UserDisplay } from './UserDisplay';
@@ -11,6 +11,7 @@ import { Button } from './ui/button';
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { Skeleton } from './ui/skeleton';
 import { showError, showSuccess } from '@/utils/toast';
+import { formatLargeNumber, extractDomainFromUrl, extractXHandleFromUrl } from '@/lib/utils';
 
 // Define local interface for the holding data passed from ProjectDetailCard
 interface CurrentUserProjectHolding {
@@ -45,8 +46,7 @@ const renderMetadataItem = (
   handleCopyClick: (e: React.MouseEvent, value: string, isAssetId: boolean) => void, // Updated signature
   projectSourceContext: { path: string; label: string },
   isHovered: boolean, // NEW
-  isRevealed: boolean, // NEW
-  allMetadata: MetadataItem[] // NEW: Pass all metadata
+  isRevealed: boolean // NEW
 ) => {
   // Base classes for centering and max width
   const baseItemClasses = cn(
@@ -54,8 +54,8 @@ const renderMetadataItem = (
     !isMobile && "max-w-[180px] mx-auto"
   );
 
-  // Skip rendering of "fixed" metadata items here, including asset-unit-name and roadmap-data
-  if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet', 'asset-unit-name', 'roadmap-data'].includes(item.type || '') || (item.type === 'address' && item.title === 'Creator Wallet')) {
+  // Skip rendering of "fixed" metadata items here
+  if (['project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'].includes(item.type || '') || (item.type === 'address' && item.title === 'Creator Wallet')) {
     return null;
   }
 
@@ -65,34 +65,23 @@ const renderMetadataItem = (
   let buttonText = item.title || "Link";
   let isNumericDisplay = false;
 
-  // NEW LOGIC FOR ASSET ID / UNIT NAME COMBINATION
   if (isAssetIdItem) {
-    const unitNameItem = allMetadata.find(meta => meta.type === 'asset-unit-name');
-    const unitName = unitNameItem?.value;
-
-    if (unitName) {
-        // If unit name exists, use it as the button text, prefixed with $
-        buttonText = `$${unitName}`;
-        isNumericDisplay = true; // Treat unit name as numeric display style
-    } else {
-        // Fallback to existing Asset ID display logic
-        if (copiedMessage) {
-            buttonText = copiedMessage;
-        } else if (isMobile) {
-            if (isRevealed) {
-                buttonText = item.value;
-                isNumericDisplay = true;
-            } else {
-                buttonText = item.title || "Asset ID";
-            }
-        } else { // Desktop
-            if (isHovered) {
-                buttonText = item.value;
-                isNumericDisplay = true;
-            } else {
-                buttonText = item.title || "Asset ID";
-            }
-        }
+    if (copiedMessage) {
+      buttonText = copiedMessage;
+    } else if (isMobile) {
+      if (isRevealed) {
+        buttonText = item.value;
+        isNumericDisplay = true;
+      } else {
+        buttonText = item.title || "Asset ID";
+      }
+    } else { // Desktop
+      if (isHovered) {
+        buttonText = item.value;
+        isNumericDisplay = true;
+      } else {
+        buttonText = item.title || "Asset ID";
+      }
     }
   } else {
     buttonText = item.title || "Link";
@@ -208,7 +197,7 @@ export function ProjectMetadataNavigator({
   const allRenderableMetadataItems = useMemo(() => {
     const items: MetadataItem[] = [];
     const excludedFixedTypes = new Set([
-        'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet', 'asset-unit-name', 'roadmap-data'
+        'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed'
     ]);
 
     projectMetadata.forEach(item => {
@@ -320,7 +309,7 @@ export function ProjectMetadataNavigator({
     return () => window.removeEventListener('keydown', handleInternalMovement);
   }, [isParentFocused, isKeyboardModeActive, focusedId, onFocusReturn, onFocusTransfer, pageKey, setFocusedId, setParentFocusedId, projectId]);
 
-  // 3. Asset ID Click Handler (for keyboard action)
+  // --- Asset ID Click Handler (for keyboard action) ---
   const handleCopyClick = useCallback(async (e: React.MouseEvent, value: string, isAssetId: boolean) => {
     e.stopPropagation();
     
@@ -423,8 +412,7 @@ export function ProjectMetadataNavigator({
             handleCopyClick, 
             projectSourceContext,
             hoveredAssetId === id, // Pass hover state
-            revealedAssetId === item.value, // Pass revealed state
-            projectMetadata // NEW: Pass all metadata here
+            revealedAssetId === item.value // Pass revealed state
           );
 
           if (!renderedItem) return null;

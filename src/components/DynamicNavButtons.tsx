@@ -102,6 +102,7 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
         ? "bottom-[var(--mobile-bottom-bar-height)] border-t border-border-accent-green top-border-glow"
         : "top-[calc(var(--sticky-header-height)+var(--dynamic-nav-buttons-desktop-vertical-gap))] border-b border-border-accent-green bottom-border-glow" // Desktop/Landscape
     )}>
+      {/* Container for Left/Right buttons (limited by max-w-3xl) */}
       <div className="relative w-full max-w-3xl mx-auto flex justify-between items-center px-2 h-full">
         {leftButton ? (
           <Button 
@@ -119,25 +120,6 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
           <div className="w-24"></div>
         )}
 
-        {/* Current Slide Name Display with btn-profile styling */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex justify-center z-10">
-          <div 
-            className={cn(
-              "btn-profile !w-auto !min-w-[72px] !max-w-[108px] !h-6", // Adjusted height to be slightly less than the bar
-            )}
-            onClick={onCenterButtonClick} // NEW: Add onClick handler
-          >
-            <strong className="uppercase text-[9px]">{currentSlideName}</strong>
-            <div id="container-stars">
-              <div id="stars"></div>
-            </div>
-            <div id="glow">
-              <div className="circle"></div>
-              <div className="circle"></div>
-            </div>
-          </div>
-        </div>
-
         {rightButton ? (
           <Button 
             variant="ghost" 
@@ -154,6 +136,25 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
         ) : (
           <div className="w-24"></div>
         )}
+      </div>
+      
+      {/* Current Slide Name Display with btn-profile styling - Positioned absolutely relative to the fixed parent */}
+      <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 flex justify-center z-10">
+        <div 
+          className={cn(
+            "btn-profile !w-auto !min-w-[72px] !max-w-[108px] !h-6", // Adjusted height to be slightly less than the bar
+          )}
+          onClick={onCenterButtonClick} // NEW: Add onClick handler
+        >
+          <strong className="uppercase text-[9px]">{currentSlideName}</strong>
+          <div id="container-stars">
+            <div id="stars"></div>
+          </div>
+          <div id="glow">
+            <div className="circle"></div>
+            <div className="circle"></div>
+          </div>
+        </div>
       </div>
     </div>
   );

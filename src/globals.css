@@ -348,7 +348,7 @@
       );
     background-origin: border-box;
     background-clip: content-box, border-box;
-    /* REMOVED: overflow: hidden; */
+    overflow: hidden; /* ADDED: Ensure overflow is hidden here */
   }
 
   .btn-profile #container-stars {
@@ -380,6 +380,10 @@
     justify-content: center;
     align-items: center;
     height: 100%;
+    /* ADDED: Ensure glow is contained within the button's bounds */
+    top: 0;
+    left: 0;
+    /* REMOVED: z-index: -1; as it's already inside the button which has z-index 1 */
   }
 
   .btn-profile .circle {

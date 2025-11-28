@@ -356,8 +356,13 @@
   }
   
   /* NEW: Override scaling for the center navigation button */
+  .btn-no-scale {
+    /* Ensure transition is still applied for other effects */
+    transition: 0.5s; 
+  }
+  
   .btn-no-scale:hover {
-    transform: scale(1);
+    transform: scale(1); /* Override the scaling effect */
   }
 
   .btn-profile #container-stars {

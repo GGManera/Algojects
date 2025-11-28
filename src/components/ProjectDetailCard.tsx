@@ -433,7 +433,7 @@ export function ProjectDetailCard({
         "bg-accent mt-8 relative transition-all duration-200", 
         // FIX: Apply rounded corners and border only on desktop (md+)
         "rounded-none border-x-0 md:rounded-lg md:border-x",
-        isInsideCarousel && "mx-[-8px]" // Negative margin to span full width of the carousel item
+        isInsideCarousel && "mx-[-8px] md:mx-0" // Apply negative margin only on mobile (default breakpoint)
       )} data-nav-id={project.id} onMouseEnter={() => setLastActiveId(project.id)} onMouseLeave={() => setLastActiveId(null)}>
         
         {/* Dynamic Edit/Suggest Button */}

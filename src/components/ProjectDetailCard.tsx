@@ -431,8 +431,9 @@ export function ProjectDetailCard({
     <>
       <Card className={cn(
         "bg-accent mt-8 relative transition-all duration-200", 
-        isFocused && !isMetadataNavigatorFocused ? "focus-glow-border" : "", 
-        !isFocused && "hover:focus-glow-border",
+        // Removed focus-glow-border and hover:focus-glow-border
+        // isFocused && !isMetadataNavigatorFocused ? "focus-glow-border" : "", 
+        // !isFocused && "hover:focus-glow-border",
         // FIX: Apply rounded corners and border only on desktop (md+)
         "rounded-none border-x-0 md:rounded-lg md:border-x",
       )} data-nav-id={project.id} onMouseEnter={() => setLastActiveId(project.id)} onMouseLeave={() => setLastActiveId(null)}>

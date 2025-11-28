@@ -110,6 +110,7 @@
 
   body {
     @apply bg-background text-foreground font-sans;
+    overflow-y: hidden; /* FORCING vertical scroll to be hidden on the body */
     overscroll-behavior-y: auto;
     user-select: none; /* Disable text selection by default */
   }

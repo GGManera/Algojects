@@ -358,6 +358,7 @@
   /* NEW: Override scaling for the center navigation button */
   .btn-profile.btn-no-scale:hover {
     transform: scale(1) !important; /* FORCED SCALE 1 */
+    transition: none !important; /* Ensure no transition causes movement */
   }
 
   .btn-profile #container-stars {

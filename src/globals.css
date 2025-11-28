@@ -351,6 +351,15 @@
     overflow: hidden; /* ADDED: Ensure overflow is hidden here */
   }
 
+  .btn-profile:hover {
+    transform: scale(1.1);
+  }
+  
+  /* NEW: Override scaling for the center navigation button */
+  .btn-no-scale:hover {
+    transform: scale(1);
+  }
+
   .btn-profile #container-stars {
     position: absolute;
     z-index: -1;
@@ -406,10 +415,6 @@
   .btn-profile:hover #container-stars {
     z-index: 1;
     background-color: hsl(var(--card));
-  }
-
-  .btn-profile:hover {
-    transform: scale(1.1);
   }
 
   .btn-profile:active {

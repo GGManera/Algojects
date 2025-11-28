@@ -141,7 +141,7 @@ export function DynamicNavButtons({ onCenterButtonClick }: DynamicNavButtonsProp
       {/* Current Slide Name Display with btn-profile styling - Positioned absolutely relative to the fixed parent */}
       <div 
         className={cn(
-          "btn-profile !w-auto !min-w-[72px] !max-w-[108px] !h-6", // Adjusted height to be slightly less than the bar
+          "btn-profile btn-no-scale !w-auto !min-w-[72px] !max-w-[108px] !h-6", // ADDED btn-no-scale
           "absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 flex justify-center z-10" // Centralization classes applied directly
         )}
         onClick={onCenterButtonClick} // NEW: Add onClick handler

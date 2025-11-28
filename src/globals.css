@@ -359,6 +359,11 @@
   .btn-no-scale:hover {
     transform: scale(1);
   }
+  
+  /* FIX: Explicitly target .btn-profile.btn-no-scale on hover to prevent scaling */
+  .btn-profile.btn-no-scale:hover {
+    transform: scale(1);
+  }
 
   .btn-profile #container-stars {
     position: absolute;

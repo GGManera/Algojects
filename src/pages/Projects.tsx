@@ -236,7 +236,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
           All Projects
         </h2>
         
-        {/* NEW: Horizontal line when filter is active - Fixed height container */}
+        {/* Horizontal line when filter is active - Fixed height container */}
         <div className="w-full flex justify-center min-h-[1.5rem] mb-4"> {/* min-h-[1.5rem] reserves space, mb-4 pushes down the filter cards */}
           <AnimatePresence>
             {isFilterActive && (
@@ -255,72 +255,70 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         </div>
       </div>
 
-      {/* Animate the filter and project list based on selectedTags */}
+      {/* Project Tag Filter (Not animated) */}
+      <ProjectTagFilter
+        projects={projects}
+        projectDetails={projectDetails}
+        isLoading={isOverallLoading}
+        onFilterChange={setSelectedTags}
+        selectedTags={new Set(selectedTags)} // Pass selectedTags as a Set for visual state
+      />
+
+      {/* Animate the project list based on selectedTags */}
       <AnimatePresence mode="wait">
         <motion.div
           key={selectedTags.join(',')} // Key changes when filters change
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -20 }} // Starts above
+          animate={{ opacity: 1, y: 0 }} // Moves to position (down)
+          exit={{ opacity: 0, y: 20 }} // Exits downwards
           transition={{ duration: 0.3 }}
-          className="w-full flex flex-col items-center" // Ensure it takes full width
-        >
-          {/* NEW: Project Tag Filter (Now inline) */}
-          <ProjectTagFilter
-            projects={projects}
-            projectDetails={projectDetails}
-            isLoading={isOverallLoading}
-            onFilterChange={setSelectedTags}
-            selectedTags={new Set(selectedTags)} // Pass selectedTags as a Set for visual state
-          />
-
-          <div className={cn(
+          className={cn(
             "w-full flex flex-col items-center mt-4", // Added mt-4 for spacing below the filter
             !isInsideCarousel && "max-w-4xl"
-          )}>
-            {(isOverallLoading || isOverallRefreshing) && ( // NEW: Use combined loading state
-              <div className={cn(
-                "space-y-4 w-full",
-                !isInsideCarousel && "max-w-3xl"
-              )}>
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-32 w-full" />
-              </div>
-            )}
-            {isOverallError && ( // NEW: Use combined error state
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Error Fetching Data</AlertTitle>
-                <AlertDescription>{isOverallError}</AlertDescription>
-              </Alert>
-            )}
-            {!isOverallLoading && !isOverallError && !isOverallRefreshing && ( // NEW: Use combined loading and error states
-              <div className="w-full space-y-4 flex flex-col items-center">
-                {sortedAndFilteredProjects.length > 0 ? (
-                  sortedAndFilteredProjects.map(project => (
-                    <ProjectSummaryCard
-                      key={project.id}
-                      project={project}
-                      isExpanded={expandedProjectIds.has(project.id)}
-                      onToggleExpand={handleToggleExpand}
-                      cardRef={(el) => projectCardRefs.current.set(project.id, el)}
-                      isInsideCarousel={isInsideCarousel}
-                      focusedId={focusedId}
-                      registerItem={registerItem}
-                      rebuildOrder={rebuildOrder} // NEW: Pass rebuildOrder
-                      isActive={isActive}
-                      setLastActiveId={setLastActiveId}
-                    />
-                  ))
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    No projects match the selected tags.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+          )}
+        >
+          {(isOverallLoading || isOverallRefreshing) && ( // NEW: Use combined loading state
+            <div className={cn(
+              "space-y-4 w-full",
+              !isInsideCarousel && "max-w-3xl"
+            )}>
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          )}
+          {isOverallError && ( // NEW: Use combined error state
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error Fetching Data</AlertTitle>
+              <AlertDescription>{isOverallError}</AlertDescription>
+            </Alert>
+          )}
+          {!isOverallLoading && !isOverallError && !isOverallRefreshing && ( // NEW: Use combined loading and error states
+            <div className="w-full space-y-4 flex flex-col items-center">
+              {sortedAndFilteredProjects.length > 0 ? (
+                sortedAndFilteredProjects.map(project => (
+                  <ProjectSummaryCard
+                    key={project.id}
+                    project={project}
+                    isExpanded={expandedProjectIds.has(project.id)}
+                    onToggleExpand={handleToggleExpand}
+                    cardRef={(el) => projectCardRefs.current.set(project.id, el)}
+                    isInsideCarousel={isInsideCarousel}
+                    focusedId={focusedId}
+                    registerItem={registerItem}
+                    rebuildOrder={rebuildOrder} // NEW: Pass rebuildOrder
+                    isActive={isActive}
+                    setLastActiveId={setLastActiveId}
+                  />
+                ))
+              ) : (
+                <p className="text-muted-foreground text-center py-8">
+                  No projects match the selected tags.
+                </p>
+              )}
+            </div>
+          )}
         </motion.div>
       </AnimatePresence>
 

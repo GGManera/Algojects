@@ -297,11 +297,12 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
       data-nav-id={project.id} // Add data attribute for keyboard navigation
     >
       <Card className="w-full">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
           {isLoadingDetails ? (
             <Skeleton className="h-7 w-3/5" />
           ) : (
-            <CardTitle className="pb-1 flex-grow text-center">
+            // Title container now spans full width and uses absolute positioning for the arrow
+            <CardTitle className="pb-1 w-full text-center">
               <Link
                 to={`/project/${project.id}`}
                 onClick={handleGoToProject}
@@ -311,9 +312,10 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
               </Link>
             </CardTitle>
           )}
-          <div className="ml-auto w-6 h-6 flex items-center justify-center">
+          {/* Arrow button is positioned absolutely on the right */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center">
             {isExpanded && (
-              <Button variant="ghost" size="icon" onClick={handleGoToProject} className="h-6 w-6">
+              <Button variant="ghost" size="icon" onClick={handleGoToProject} className="h-6 w-6 p-0">
                 <ChevronRight className="h-6 w-6 text-primary" />
               </Button>
             )}

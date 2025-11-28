@@ -416,15 +416,20 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
   const cardContentMaxHeightClass = useMemo(() => {
+    // Height of the fixed elements at the top: var(--total-fixed-top-height-desktop)
+    // Height of the fixed elements at the bottom (mobile portrait): var(--total-fixed-bottom-height-mobile)
+    // Height of the Footer: ~100px (py-6 + mt-8 + content height)
+    const FOOTER_HEIGHT_PX = 100; 
+
     if (isMobile && isDeviceLandscape) {
-      // Landscape: StickyHeader + Gap + DynamicNavButtons
-      return "max-h-[calc(100vh-var(--total-fixed-top-height-desktop)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      // Landscape: 100vh - Top Fixed Height - Footer Height - Safe Area
+      return `max-h-[calc(100vh-var(--total-fixed-top-height-desktop)-${FOOTER_HEIGHT_PX}px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]`;
     } else if (isMobile && !isDeviceLandscape) {
-      // Mobile Portrait: DynamicNavButtons + MobileBottomBar
-      return "max-h-[calc(100vh-var(--total-fixed-bottom-height-mobile)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      // Mobile Portrait: 100vh - Bottom Fixed Height - Footer Height - Safe Area
+      return `max-h-[calc(100vh-var(--total-fixed-bottom-height-mobile)-${FOOTER_HEIGHT_PX}px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]`;
     } else {
-      // Desktop: StickyHeader + Gap + DynamicNavButtons
-      return "max-h-[calc(100vh-var(--total-fixed-top-height-desktop)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      // Desktop: 100vh - Top Fixed Height - Footer Height - Safe Area
+      return `max-h-[calc(100vh-var(--total-fixed-top-height-desktop)-${FOOTER_HEIGHT_PX}px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]`;
     }
   }, [isMobile, isDeviceLandscape]);
 

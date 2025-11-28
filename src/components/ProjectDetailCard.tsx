@@ -431,11 +431,9 @@ export function ProjectDetailCard({
     <>
       <Card className={cn(
         "bg-accent mt-8 relative transition-all duration-200", 
-        // Removed focus-glow-border and hover:focus-glow-border
-        // isFocused && !isMetadataNavigatorFocused ? "focus-glow-border" : "", 
-        // !isFocused && "hover:focus-glow-border",
         // FIX: Apply rounded corners and border only on desktop (md+)
         "rounded-none border-x-0 md:rounded-lg md:border-x",
+        isInsideCarousel && "mx-[-8px]" // NEW: Negative margin to span full width of the carousel item (which has px-2 padding)
       )} data-nav-id={project.id} onMouseEnter={() => setLastActiveId(project.id)} onMouseLeave={() => setLastActiveId(null)}>
         
         {/* Dynamic Edit/Suggest Button */}
@@ -545,7 +543,8 @@ export function ProjectDetailCard({
 
         </CardContent>
       </Card>
-      <div className="space-y-6 mt-8">
+      {/* NEW: Container for reviews and form with px-2 padding */}
+      <div className={cn("space-y-6 mt-8", isInsideCarousel && "px-2")}>
         {sortedReviews.length > 0 ? sortedReviews.map(({ review, score }) => <ReviewItem key={review.id} review={review} project={project} onInteractionSuccess={onInteractionSuccess} interactionScore={score} projectSourceContext={projectSourceContext} allCuratorData={allCuratorData} focusedId={focusedId} registerItem={registerItem} isActive={isActive} setLastActiveId={setLastActiveId} globalViewMode={viewMode} />) : <p className="text-muted-foreground text-center">No reviews yet for this project.</p>}
         {activeAddress && <NewReviewForExistingProjectForm project={project} projectsData={projectsData} onInteractionSuccess={onInteractionSuccess} />}
       </div>

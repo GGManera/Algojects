@@ -115,7 +115,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
       <div className={cn(
         "w-full h-full flex items-center justify-center",
         !isInsideCarousel && "max-w-3xl mx-auto",
-        isInsideCarousel ? "py-2 md:p-0" : "px-2 py-2 md:p-4" // REMOVED px-2 from mobile carousel
+        isInsideCarousel ? "px-2 py-2 md:p-0" : "px-2 py-2 md:p-4" // ADDED px-2
       )}>
         <p className="text-muted-foreground">Select a project to view details.</p>
       </div>
@@ -128,7 +128,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
       <div className={cn(
         "w-full",
         !isInsideCarousel && "max-w-3xl mx-auto",
-        isInsideCarousel ? "py-2 md:p-0" : "px-2 py-2 md:p-4" // REMOVED px-2 from mobile carousel
+        isInsideCarousel ? "px-2 py-2 md:p-0" : "px-2 py-2 md:p-4" // ADDED px-2
       )}>
         <Skeleton className="h-8 w-32 mb-4" />
         <Skeleton className="h-96 w-full" />
@@ -142,7 +142,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
       <div className={cn(
         "w-full",
         !isInsideCarousel && "max-w-3xl mx-auto",
-        isInsideCarousel ? "py-2 md:p-0" : "px-2 py-2 md:p-4" // REMOVED px-2 from mobile carousel
+        isInsideCarousel ? "px-2 py-2 md:p-0" : "px-2 py-2 md:p-4" // ADDED px-2
       )}>
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -158,7 +158,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
       <div className={cn(
         "w-full text-center",
         !isInsideCarousel && "max-w-3xl mx-auto",
-        isInsideCarousel ? "py-2 md:p-0" : "px-2 py-2 md:p-4" // REMOVED px-2 from mobile carousel
+        isInsideCarousel ? "px-2 py-2 md:p-0" : "px-2 py-2 md:p-4" // ADDED px-2
       )}>
         <Alert variant="destructive" className="max-w-md mx-auto">
           <AlertTriangle className="h-4 w-4" />
@@ -174,7 +174,7 @@ const ProjectPage = ({ projectId, isInsideCarousel = false, hashToScroll, scroll
       "w-full text-foreground", // Removed h-full and overflow-y-auto
       !isInsideCarousel && "max-w-3xl mx-auto",
       isMobilePortrait ? "scroll-mt-mobile-top" : "scroll-mt-header-offset", // Apply conditional scroll margin
-      isInsideCarousel ? "py-2 md:p-0" : "px-2 py-2 md:p-4" // REMOVED px-2 from mobile carousel
+      isInsideCarousel ? "px-2 py-2 md:p-0" : "px-2 py-2 md:p-4" // ADDED px-2
     )}>
       <ProjectDetailCard
         project={project}

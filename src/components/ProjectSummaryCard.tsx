@@ -284,8 +284,9 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
           <p className="text-sm text-foreground selectable-text">{item.value}</p>
         </div>
       );
-    }
-  };
+    );
+  }
+};
 
   return (
     <motion.div

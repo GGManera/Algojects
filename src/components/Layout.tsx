@@ -81,6 +81,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="relative min-h-screen flex flex-col">
       {!isMobilePortrait && <StickyHeader onLogoClick={handleLogoClickAndReset} />}
+      {/* DynamicNavButtons is now an immediate child of the Layout div */}
       <DynamicNavButtons onCenterButtonClick={handleCenterButtonClick} />
       <main
         className={cn(

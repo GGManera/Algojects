@@ -246,7 +246,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
                 animate={{ width: '100%', opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="w-full max-w-[150px]" // Reduced max-width to 150px
+                className="w-full max-w-[200px]" // Reduced max-width to 150px
               >
                 <Separator className="bg-border-accent-green h-[2px]" />
               </motion.div>

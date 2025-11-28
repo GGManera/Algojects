@@ -415,8 +415,18 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
     };
   }, [api, isMobile, navigate, effectiveProjectId, slidesConfig, location.pathname, isTransitioning]);
 
-  // REMOVED cardContentMaxHeightClass calculation
-  // The height calculation is now handled by the parent Layout and the h-full class below.
+  const cardContentMaxHeightClass = useMemo(() => {
+    if (isMobile && isDeviceLandscape) {
+      // Landscape: StickyHeader + Gap + DynamicNavButtons
+      return "max-h-[calc(100vh-var(--total-fixed-top-height-desktop)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+    } else if (isMobile && !isDeviceLandscape) {
+      // Mobile Portrait: DynamicNavButtons + MobileBottomBar
+      return "max-h-[calc(100vh-var(--total-fixed-bottom-height-mobile)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+    } else {
+      // Desktop: StickyHeader + Gap + DynamicNavButtons
+      return "max-h-[calc(100vh-var(--total-fixed-top-height-desktop)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+    }
+  }, [isMobile, isDeviceLandscape]);
 
   return (
     <div className="w-full px-0 py-0 md:p-0 text-foreground h-full scroll-mt-header-offset">
@@ -437,14 +447,15 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
                 )}
               >
                 <Card className={cn(
-                  "p-0 bg-card h-full", // ADDED h-full here
+                  "p-0 bg-card",
                   // FIX: Remove rounded corners and border on mobile
                   isMobile ? "rounded-none border-none" : "rounded-lg border",
                 )}>              
                   <CardContent
                     ref={el => slideRefs.current.set(slide.type, el)}
                     className={cn(
-                      "overflow-y-auto scrollbar-thin h-full", // ADDED h-full here
+                      "overflow-y-auto scrollbar-thin",
+                      cardContentMaxHeightClass,
                       // FIX: Remove horizontal padding on mobile (px-0)
                       isMobile ? "px-0" : "px-6 py-6"
                     )}

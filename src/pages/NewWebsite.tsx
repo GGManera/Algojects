@@ -418,13 +418,15 @@ const NewWebsite = React.forwardRef<NewWebsiteRef, NewWebsiteProps>(({ scrollToT
   const cardContentMaxHeightClass = useMemo(() => {
     if (isMobile && isDeviceLandscape) {
       // Landscape: StickyHeader + Gap + DynamicNavButtons
-      return "max-h-[calc(100vh-var(--total-fixed-top-height-desktop)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      // Subtract 48px (py-6) for CardContent padding
+      return "max-h-[calc(100vh-var(--total-fixed-top-height-desktop)-48px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
     } else if (isMobile && !isDeviceLandscape) {
       // Mobile Portrait: DynamicNavButtons + MobileBottomBar
       return "max-h-[calc(100vh-var(--total-fixed-bottom-height-mobile)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
     } else {
       // Desktop: StickyHeader + Gap + DynamicNavButtons
-      return "max-h-[calc(100vh-var(--total-fixed-top-height-desktop)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
+      // Subtract 48px (py-6) for CardContent padding
+      return "max-h-[calc(100vh-var(--total-fixed-top-height-desktop)-48px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]";
     }
   }, [isMobile, isDeviceLandscape]);
 

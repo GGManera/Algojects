@@ -422,7 +422,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   }, [effectiveAddress, location.pathname, userProfileNfd, pushEntry, activeCategory, nfdLoading, projectDetailsLoading]); // NEW: Add projectDetailsLoading dependency
 
   const isContentLoading = socialDataLoading || projectDetailsLoading || curatorIndexLoading || analyticsLoading || diversityLoading || accountDataLoading; // UPDATED: Include accountDataLoading
-  const isContentError = socialDataError || projectDetailsError || curatorIndexError || analyticsError; // NEW: Use combined error state
+  const isContentError = socialDataError || projectDetailsError || curatorIndexError || analyticsError; // NEW: Use projectDetailsError in combined error state
 
   const tabOrder = {
     "reviews": 0,
@@ -565,8 +565,8 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
     <div id={pageKey} className={cn( // Set pageKey as ID here
       "w-full text-foreground",
       !isInsideCarousel && "max-w-md mx-auto",
-      isMobilePortrait ? "scroll-mt-mobile-top" : "scroll-mt-desktop-offset", // UPDATED: Apply correct scroll margin
-      isInsideCarousel ? "px-2 py-2 md:p-0" : "p-2 md:p-4" // ADDED px-2 for mobile carousel
+      isMobilePortrait ? "scroll-mt-mobile-top" : "scroll-mt-header-offset", // Apply conditional scroll margin
+      isInsideCarousel ? "px-2 py-2 md:p-0 h-full" : "p-2 md:p-4 h-full overflow-y-auto" // ADDED px-2 for mobile carousel
     )}>
         <AnimatePresence mode="wait">
           <div className="overflow-hidden">

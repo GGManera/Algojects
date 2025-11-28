@@ -93,14 +93,6 @@
       var(--mobile-bottom-bar-height) +
       var(--dynamic-nav-buttons-height)
     ); /* 64 + 32 = 96px */
-    
-    /* NEW: Scroll margin top for desktop/landscape (used for scroll-to-hash) */
-    --scroll-margin-top-desktop: calc(
-      var(--sticky-header-height) + 
-      var(--dynamic-nav-buttons-height) +
-      var(--dynamic-nav-buttons-desktop-vertical-gap) + 
-      16px /* Extra margin for visual comfort */
-    );
   }
 }
 
@@ -493,14 +485,14 @@
     box-shadow: 0 0 10px 0px hsl(var(--border-accent-green) / 0.8);
   }
 
-  /* REMOVED: scroll-mt-header-offset */
-  /* REMOVED: scroll-mt-mobile-top */
-  
-  /* NEW: Scroll margin top for desktop/landscape (used for scroll-to-hash) */
-  .scroll-mt-desktop-offset {
-    scroll-margin-top: var(--scroll-margin-top-desktop);
+  /* NEW: Scroll margin top to account for all possible fixed headers */
+  .scroll-mt-header-offset {
+    scroll-margin-top: calc(
+      var(--total-fixed-top-height-desktop) +
+      env(safe-area-inset-top)
+    );
   }
-
+  
   /* NEW: Mobile portrait scroll margin top (only safe area inset) */
   .scroll-mt-mobile-top {
     scroll-margin-top: env(safe-area-inset-top);

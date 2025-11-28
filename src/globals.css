@@ -116,7 +116,7 @@
   
   /* NEW: Hide global vertical scrollbar on desktop/landscape */
   @media (min-width: 768px) {
-    body {
+    html, body { /* Apply to both html and body */
       overflow-y: hidden;
     }
   }

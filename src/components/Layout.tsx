@@ -59,16 +59,14 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     }
   }, [location.pathname]);
 
-  // Calcula o preenchimento superior para o main
-  let mainTopPadding = "pt-[calc(var(--sticky-header-height)+env(safe-area-inset-top))]";
+  // Calcula a margem superior para o main
+  let mainTopMargin = "mt-0";
   if (!isMobile || isDeviceLandscape) {
     // Desktop/Landscape: StickyHeader + Gap + DynamicNavButtons
-    // Usamos a variável CSS --total-fixed-top-height-desktop que já inclui tudo
-    mainTopPadding = "pt-[calc(var(--total-fixed-top-height-desktop)+env(safe-area-inset-top))]";
+    mainTopMargin = "mt-[calc(var(--total-fixed-top-height-desktop)+env(safe-area-inset-top))]";
   } else if (isMobilePortrait) {
-    // Mobile Portrait: StickyHeader is hidden, DynamicNavButtons is at the bottom.
-    // Content should start right at the top (after safe area inset).
-    mainTopPadding = "pt-[env(safe-area-inset-top)]";
+    // Mobile Portrait: No fixed top elements, content starts at the top.
+    mainTopMargin = "mt-[env(safe-area-inset-top)]";
   }
 
   // Calcula o preenchimento inferior para o main (apenas se for mobile E portrait)
@@ -86,7 +84,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       <main
         className={cn(
           "flex-grow relative overflow-hidden",
-          mainTopPadding,
+          mainTopMargin, // Use margin-top instead of padding-top
           mainBottomPadding
         )}
       >

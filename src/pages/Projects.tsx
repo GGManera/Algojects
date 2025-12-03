@@ -262,13 +262,18 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         </div>
       </div>
 
-      {/* NEW: Tag Filter Mode Toggle */}
-      <div className="w-full max-w-3xl mx-auto mb-4 flex justify-start">
+      {/* NEW: Tag Filter Mode Toggle and Conditional Title */}
+      <div className="w-full max-w-3xl mx-auto mb-4 flex justify-between items-center">
         <TagFilterModeToggle 
           mode={filterMode} 
           onModeChange={setFilterMode} 
           disabled={isOverallLoading || isOverallRefreshing}
         />
+        {isFilterActive && (
+            <p className="text-sm text-muted-foreground font-medium">
+                Filtering by: <span className="text-foreground font-semibold capitalize">{filterMode}</span>
+            </p>
+        )}
       </div>
 
       {/* Project Tag Filter (Not animated) */}

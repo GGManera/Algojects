@@ -27,11 +27,11 @@ const StyledWrapper = styled.div`
   .switch {
    --secondary-container: #3a4b39;
    --primary: #84da89;
-   font-size: 17px;
+   font-size: 15px; /* Reduced from 17px to 15px */
    position: relative;
    display: inline-block;
-   width: 3 em;
-   height: 1 em;
+   width: 3.7em;
+   height: 1.8em;
   }
 
   .switch input {

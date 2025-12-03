@@ -1,9 +1,8 @@
 "use client";
 
 import React from 'react';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import StyledSwitch from './StyledSwitch'; // Import the new styled switch
 
 interface TagFilterModeToggleProps {
   mode: 'combined' | 'any';
@@ -13,26 +12,23 @@ interface TagFilterModeToggleProps {
 
 export function TagFilterModeToggle({ mode, onModeChange, disabled = false }: TagFilterModeToggleProps) {
   const isCombined = mode === 'combined';
+  const activeLabel = isCombined ? 'Combined' : 'Any';
 
+  // 'Combined' mode corresponds to checked=true
   const handleToggle = (checked: boolean) => {
     onModeChange(checked ? 'combined' : 'any');
   };
 
   return (
-    <div className={cn("flex items-center space-x-2", disabled && "opacity-50 pointer-events-none")}>
-      <Label htmlFor="tag-filter-mode" className="text-sm font-medium text-muted-foreground w-16 text-right">
-        Any
-      </Label>
-      <Switch
-        id="tag-filter-mode"
+    <div className={cn("flex items-center space-x-3", disabled && "opacity-50 pointer-events-none")}>
+      <StyledSwitch
         checked={isCombined}
-        onCheckedChange={handleToggle}
+        onChange={handleToggle}
         disabled={disabled}
-        // Custom styling for the switch track/thumb if needed, but using default shadcn/ui for now
       />
-      <Label htmlFor="tag-filter-mode" className="text-sm font-medium text-foreground w-16">
-        Combined
-      </Label>
+      <span className="text-sm font-medium text-foreground w-20">
+        {activeLabel}
+      </span>
     </div>
   );
 }

@@ -61,29 +61,37 @@ export function AllTagsDialog({ isOpen, onOpenChange, allTagsData, selectedTags,
           <div className="grid grid-cols-1 gap-3">
             {filteredTags.length > 0 ? (
               filteredTags.map(({ tag, count }) => {
-                const isSelected = selectedTags.has(tag);
+                // FIX 1: Check against the lowercase version of the tag for selection status
+                const isSelected = selectedTags.has(tag.toLowerCase());
+                
                 return (
                   <div 
                     key={tag} 
                     className={cn(
                       "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all duration-200",
                       "bg-muted/30 border-muted hover:bg-muted/50",
-                      isSelected ? "focus-glow-border !border-border-accent-green" : ""
+                      // FIX 2: Apply focus-glow-border and ensure border is visible when selected
+                      isSelected ? "focus-glow-border !border-border-accent-green" : "border-muted"
                     )}
                     onClick={() => onTagToggle(tag)}
                   >
                     <div className="flex items-center space-x-3">
+                      {/* Checkbox is now visually part of the row, but still controls state */}
                       <Checkbox
                         id={`tag-${tag}`}
                         checked={isSelected}
+                        // Use onCheckedChange to handle the toggle action
                         onCheckedChange={() => onTagToggle(tag)}
                         className="border-muted-foreground"
                       />
-                      <Label htmlFor={`tag-${tag}`} className="text-sm font-medium capitalize cursor-pointer">
+                      <Label 
+                        htmlFor={`tag-${tag}`} 
+                        className="text-sm font-medium capitalize cursor-pointer flex-1"
+                      >
                         {tag}
                       </Label>
                     </div>
-                    <span className="font-numeric text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="font-numeric text-xs text-muted-foreground flex items-center gap-1 flex-shrink-0">
                       <LayoutGrid className="h-3 w-3" /> {count}
                     </span>
                   </div>

@@ -30,8 +30,8 @@ const StyledWrapper = styled.div`
    font-size: 17px;
    position: relative;
    display: inline-block;
-   width: 3.7em;
-   height: 1.8em;
+   width: 3 em;
+   height: 1 em;
   }
 
   .switch input {

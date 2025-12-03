@@ -19,8 +19,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from '@/lib/utils';
 import { HeroSection } from "@/components/HeroSection";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
-import { ProjectTagFilter } from "@/components/ProjectTagFilter"; // NEW Import
-import { Separator } from "@/components/ui/separator"; // NEW Import
+import { ProjectTagFilter } from "@/components/ProjectTagFilter";
+import { Separator } from "@/components/ui/separator";
+import { TagFilterModeToggle } from "@/components/TagFilterModeToggle"; // NEW Import
 
 interface ProjectsProps {
   isInsideCarousel?: boolean;
@@ -31,14 +32,15 @@ interface ProjectsProps {
 }
 
 const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = false, onKeyboardModeChange, onScrollToTop }: ProjectsProps) => {
-  const { projects, loading: socialDataLoading, error: socialDataError, isRefreshing: isRefreshingSocialData } = useSocialData(); // NEW: Destructure loading and error
-  const { projectDetails, loading: projectDetailsLoading, error: projectDetailsError, isRefreshing: isRefreshingProjectDetails } = useProjectDetails(); // NEW: Destructure loading and error
+  const { projects, loading: socialDataLoading, error: socialDataError, isRefreshing: isRefreshingSocialData } = useSocialData();
+  const { projectDetails, loading: projectDetailsLoading, error: projectDetailsError, isRefreshing: isRefreshingProjectDetails } = useProjectDetails();
   const { activeAddress } = useWallet();
   const { isMobile, appDisplayMode } = useAppContextDisplayMode();
   const { setHeroLogoVisibility } = useHeroLogoVisibility();
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
   const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
-  const [selectedTags, setSelectedTags] = useState<string[]>([]); // NEW State for selected tags
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [filterMode, setFilterMode] = useState<'combined' | 'any'>('combined'); // NEW STATE
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -58,8 +60,8 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
   }, [isActive, isKeyboardModeActive, onKeyboardModeChange]);
 
   const isOverallRefreshing = isRefreshingSocialData || isRefreshingProjectDetails;
-  const isOverallLoading = socialDataLoading || projectDetailsLoading; // NEW: Combine loading states
-  const isOverallError = socialDataError || projectDetailsError; // NEW: Combine error states
+  const isOverallLoading = socialDataLoading || projectDetailsLoading;
+  const isOverallError = socialDataError || projectDetailsError;
 
   // NEW: Effect to rebuild order when active
   useEffect(() => {
@@ -146,17 +148,22 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
 
     // 1. Filtering
     const filteredProjects = projectList.filter(project => {
-      if (selectedTags.length === 0) return true; // No filter applied
+      if (selectedTags.length === 0) return true;
 
       const projectDetail = projectDetails.find(pd => pd.projectId === project.id);
       const projectTagsItem = projectDetail?.projectMetadata.find(item => item.type === 'tags');
       
-      if (!projectTagsItem || !projectTagsItem.value) return false; // Project has no tags, filter it out
+      if (!projectTagsItem || !projectTagsItem.value) return false;
 
       const projectTags = projectTagsItem.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
       
-      // Check if the project has ALL of the selected tags
-      return selectedTags.every(selectedTag => projectTags.includes(selectedTag));
+      if (filterMode === 'combined') {
+        // AND logic: project must have ALL selected tags
+        return selectedTags.every(selectedTag => projectTags.includes(selectedTag));
+      } else {
+        // OR logic: project must have ANY of the selected tags
+        return selectedTags.some(selectedTag => projectTags.includes(selectedTag));
+      }
     });
 
     // 2. Sorting
@@ -165,7 +172,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
       const scoreB = calculateProjectInteractionScore(b);
       return scoreB - scoreA;
     });
-  }, [projects, projectDetails, selectedTags]); // Added selectedTags dependency
+  }, [projects, projectDetails, selectedTags, filterMode]); // ADD filterMode dependency
 
   const isButtonRendered = shouldShowAddProjectButton && activeAddress;
   
@@ -178,8 +185,8 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
 
   return (
     <div id={pageKey} ref={projectsPageRef} className={cn(
-      "flex flex-col items-center text-foreground relative scroll-mt-header-offset", // Removed space-y-4
-      isInsideCarousel ? "px-2 md:px-0" : "px-2 md:px-4" // ADDED px-2 for mobile carousel
+      "flex flex-col items-center text-foreground relative scroll-mt-header-offset",
+      isInsideCarousel ? "px-2 md:px-0" : "px-2 md:px-4"
     )}>
       <HeroSection 
         heroLogoRef={heroLogoRef} 
@@ -188,23 +195,23 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         registerItem={registerItem}
         isActive={isActive}
         setLastActiveId={setLastActiveId}
-        onScrollToTop={onScrollToTop} // Pass the prop directly
+        onScrollToTop={onScrollToTop}
       />
 
       <RevenueCalculator 
-        className="mt-0" // Removed mb-8
+        className="mt-0"
         isInsideCarousel={isInsideCarousel} 
         focusedId={focusedId}
         registerItem={registerItem}
         isActive={isActive}
         setLastActiveId={setLastActiveId}
-        rebuildOrder={rebuildOrder} // NEW: Pass rebuildOrder
+        rebuildOrder={rebuildOrder}
       />
 
       {isButtonRendered ? (
-        <div className="my-8"> {/* Container with vertical margin (my-8) */}
+        <div className="my-8">
           <button
-            className="btn-profile mx-auto" // Removed mb-4
+            className="btn-profile mx-auto"
             onClick={() => setShowNewProjectDialog(true)}
             disabled={!activeAddress}
           >
@@ -220,15 +227,15 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
           </button>
         </div>
       ) : (
-        <div className="mt-8"></div> // Placeholder for spacing when button is hidden
+        <div className="mt-8"></div>
       )}
       
-      {/* Container for Title and Separator - Adjusted for fixed height and centered content */}
+      {/* Container for Title and Separator */}
       <div className="flex flex-col items-center w-full max-w-3xl mx-auto">
         <h2 
           className={cn(
-            "text-4xl font-bold gradient-text mb-0 cursor-pointer", // Removed mb-4, set mb-0
-            !isButtonRendered && "mt-8" // Apply mt-8 only if the button container was NOT rendered
+            "text-4xl font-bold gradient-text mb-0 cursor-pointer",
+            !isButtonRendered && "mt-8"
           )}
           onClick={handleClearAllFilters}
           title={isFilterActive ? "Click to clear filters" : "All Projects"}
@@ -237,7 +244,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         </h2>
         
         {/* Horizontal line when filter is active - Fixed height container */}
-        <div className="w-full flex justify-center min-h-[1.5rem] mb-4"> {/* min-h-[1.5rem] reserves space, mb-4 pushes down the filter cards */}
+        <div className="w-full flex justify-center min-h-[1.5rem] mb-4">
           <AnimatePresence>
             {isFilterActive && (
               <motion.div
@@ -246,7 +253,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
                 animate={{ width: '100%', opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="w-full max-w-[200px]" // Reduced max-width to 150px
+                className="w-full max-w-[200px]"
               >
                 <Separator className="bg-border-accent-green h-[2px]" />
               </motion.div>
@@ -255,29 +262,38 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         </div>
       </div>
 
+      {/* NEW: Tag Filter Mode Toggle */}
+      <div className="w-full max-w-3xl mx-auto mb-4 flex justify-start">
+        <TagFilterModeToggle 
+          mode={filterMode} 
+          onModeChange={setFilterMode} 
+          disabled={isOverallLoading || isOverallRefreshing}
+        />
+      </div>
+
       {/* Project Tag Filter (Not animated) */}
       <ProjectTagFilter
         projects={projects}
         projectDetails={projectDetails}
         isLoading={isOverallLoading}
         onFilterChange={setSelectedTags}
-        selectedTags={new Set(selectedTags)} // Pass selectedTags as a Set for visual state
+        selectedTags={new Set(selectedTags)}
       />
 
       {/* Animate the project list based on selectedTags */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={selectedTags.join(',')} // Key changes when filters change
-          initial={{ opacity: 0, y: -20 }} // Starts above
-          animate={{ opacity: 1, y: 0 }} // Moves to position (down)
-          exit={{ opacity: 0, y: 20 }} // Exits downwards
+          key={selectedTags.join(',') + filterMode} // ADD filterMode to key
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.3 }}
           className={cn(
-            "w-full flex flex-col items-center mt-4", // Added mt-4 for spacing below the filter
+            "w-full flex flex-col items-center mt-4",
             !isInsideCarousel && "max-w-4xl"
           )}
         >
-          {(isOverallLoading || isOverallRefreshing) && ( // NEW: Use combined loading state
+          {(isOverallLoading || isOverallRefreshing) && (
             <div className={cn(
               "space-y-4 w-full",
               !isInsideCarousel && "max-w-3xl"
@@ -287,14 +303,14 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
               <Skeleton className="h-32 w-full" />
             </div>
           )}
-          {isOverallError && ( // NEW: Use combined error state
+          {isOverallError && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Error Fetching Data</AlertTitle>
               <AlertDescription>{isOverallError}</AlertDescription>
             </Alert>
           )}
-          {!isOverallLoading && !isOverallError && !isOverallRefreshing && ( // NEW: Use combined loading and error states
+          {!isOverallLoading && !isOverallError && !isOverallRefreshing && (
             <div className="w-full space-y-4 flex flex-col items-center">
               {sortedAndFilteredProjects.length > 0 ? (
                 sortedAndFilteredProjects.map(project => (
@@ -307,7 +323,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
                     isInsideCarousel={isInsideCarousel}
                     focusedId={focusedId}
                     registerItem={registerItem}
-                    rebuildOrder={rebuildOrder} // NEW: Pass rebuildOrder
+                    rebuildOrder={rebuildOrder}
                     isActive={isActive}
                     setLastActiveId={setLastActiveId}
                   />

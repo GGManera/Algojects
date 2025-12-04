@@ -398,10 +398,10 @@
 
   .btn-profile .circle {
     /* NEW: Use a single, large circle for the central glow */
-    width: 100%;
-    height: 100%;
+    width: 150%; /* Increased size */
+    height: 150%; /* Increased size */
     border-radius: 50%; /* Ensure it's a circle */
-    filter: blur(1.5rem); /* Increased blur for softer glow */
+    filter: blur(2rem); /* Increased blur for softer, larger glow */
     animation: pulse_3011 4s infinite;
     z-index: -1;
     /* NEW: Radial gradient background for central light source */

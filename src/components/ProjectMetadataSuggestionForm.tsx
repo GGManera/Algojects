@@ -18,6 +18,7 @@ import { ArrowRight, AlertTriangle, PlusCircle, Hash, Edit } from "lucide-react"
 import { cn } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { MetadataItemEditor } from "./MetadataItemEditor";
+import { RoadmapSuggestionEditor } from "./RoadmapSuggestionEditor"; // NEW Import
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const MAX_NOTE_SIZE_BYTES = 1024;
@@ -44,14 +45,21 @@ interface ProjectMetadataSuggestionFormProps {
 }
 
 export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, initialMetadata, onCancel, initialItem }: ProjectMetadataSuggestionFormProps) {
+  // Determine if we are editing the roadmap
+  const isEditingRoadmap = initialItem?.type === 'roadmap-data';
+  
   // Initialize state with initialItem if provided, otherwise start with one empty item
   const initialSuggestedItems: ProjectMetadata = useMemo(() => {
     if (initialItem) {
+      // If editing roadmap, we only need the title/type, the value will be handled by the specialized editor
+      if (isEditingRoadmap) {
+          return [{ title: initialItem.title, value: initialItem.value, type: initialItem.type }];
+      }
       return [initialItem];
     }
     // If no initial item, start with one empty item for the 'Add New' flow
     return [{ title: '', value: '', type: 'text' }];
-  }, [initialItem]);
+  }, [initialItem, isEditingRoadmap]);
 
   const [suggestedItems, setSuggestedItems] = useState<ProjectMetadata>(initialSuggestedItems);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,16 +91,17 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
     setSuggestedItems(prev => {
       const newItems = prev.filter((_, i) => i !== index);
       
-      // If we are in single-item edit mode and the item is removed, go back to selector
-      // If we are in 'Add New' mode and the only item is removed, we should also go back to selector
-      if (newItems.length === 0) {
-        onCancel();
-        return [];
+      // If we are in single-item edit mode (including roadmap) and the item is removed, go back to selector
+      if (initialItem || isEditingRoadmap) {
+        if (newItems.length === 0) {
+            onCancel();
+            return [];
+        }
       }
       
       return newItems;
     });
-  }, [onCancel]);
+  }, [onCancel, initialItem, isEditingRoadmap]);
 
   // Reconstruct the final JSON string from the state array (this is the delta)
   const finalJsonContent = useMemo(() => {
@@ -281,27 +290,38 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
         
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Suggested Field (Delta)</h3>
-          {suggestedItems.map((item, index) => (
-            <MetadataItemEditor
-              key={index}
-              item={item}
-              index={index}
-              onUpdate={handleUpdateMetadataItem}
-              onUpdateType={handleUpdateMetadataType}
-              onRemove={handleRemoveMetadataItem}
-              disabled={inputDisabled}
-            />
-          ))}
-          {/* If in 'Add New' mode, allow adding more items */}
-          {!initialItem && (
-            <Button
-              variant="outline"
-              onClick={() => setSuggestedItems(prev => [...prev, { title: '', value: '', type: 'text' }])}
-              disabled={inputDisabled}
-              className="w-full mt-2"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" /> Add Another Field
-            </Button>
+          
+          {isEditingRoadmap && suggestedItems[0] ? (
+              <RoadmapSuggestionEditor
+                  initialItem={initialItem!} // We know initialItem exists and is roadmap-data
+                  onUpdateValue={(newValue) => handleUpdateMetadataItem(0, 'value', newValue)}
+                  disabled={inputDisabled}
+              />
+          ) : (
+            <>
+              {suggestedItems.map((item, index) => (
+                <MetadataItemEditor
+                  key={index}
+                  item={item}
+                  index={index}
+                  onUpdate={handleUpdateMetadataItem}
+                  onUpdateType={handleUpdateMetadataType}
+                  onRemove={handleRemoveMetadataItem}
+                  disabled={inputDisabled}
+                />
+              ))}
+              {/* If in 'Add New' mode, allow adding more items */}
+              {!initialItem && (
+                <Button
+                  variant="outline"
+                  onClick={() => setSuggestedItems(prev => [...prev, { title: '', value: '', type: 'text' }])}
+                  disabled={inputDisabled}
+                  className="w-full mt-2"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" /> Add Another Field
+                </Button>
+              )}
+            </>
           )}
         </div>
         

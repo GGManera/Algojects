@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { ProjectMetadata, MetadataItem } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Edit, PlusCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, Edit, PlusCircle, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Select,
@@ -33,8 +33,9 @@ export function MetadataSuggestionSelector({ initialMetadata, onSelectEdit, onSe
       'project-name', 'project-description', 'whitelisted-editors', 'is-creator-added', 'added-by-address', 'is-community-notes', 'tags', 'is-claimed', 'project-wallet'
     ]);
     
+    // Include 'roadmap-data' in the editable list
     return initialMetadata
-      .filter(item => !excludedTypes.has(item.type || ''))
+      .filter(item => !excludedTypes.has(item.type || '') || item.type === 'roadmap-data') // Keep roadmap-data
       .map((item, index) => ({
         ...item,
         // Create a unique key for the selector
@@ -92,7 +93,7 @@ export function MetadataSuggestionSelector({ initialMetadata, onSelectEdit, onSe
               <SelectContent>
                 {editableMetadata.map(item => (
                   <SelectItem key={item.key} value={item.key}>
-                    {item.title} ({item.type})
+                    {item.title} ({item.type === 'roadmap-data' ? 'Roadmap' : item.type})
                   </SelectItem>
                 ))}
               </SelectContent>

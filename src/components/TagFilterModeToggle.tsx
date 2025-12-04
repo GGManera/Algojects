@@ -26,6 +26,7 @@ export function TagFilterModeToggle({ mode, onModeChange, disabled = false }: Ta
         onChange={handleToggle}
         disabled={disabled}
       />
+      {/* Added fixed width (w-20) to prevent layout shift when text changes */}
       <span className="text-sm font-medium text-foreground w-20">
         {activeLabel}
       </span>

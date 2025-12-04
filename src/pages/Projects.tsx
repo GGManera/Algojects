@@ -262,8 +262,8 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         </div>
       </div>
 
-      {/* NEW: Tag Filter Mode Toggle */}
-      <div className="w-full max-w-3xl mx-auto mb-4 flex justify-start">
+      {/* NEW: Tag Filter Mode Toggle - Centered */}
+      <div className="w-full max-w-3xl mx-auto mb-4 flex justify-center">
         <TagFilterModeToggle 
           mode={filterMode} 
           onModeChange={setFilterMode} 

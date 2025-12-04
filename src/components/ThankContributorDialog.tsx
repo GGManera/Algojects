@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,10 +21,12 @@ import { useWallet } from '@txnlab/use-wallet-react';
 import { useNfd } from '@/hooks/useNfd';
 import { Check, DollarSign, ArrowRight } from 'lucide-react';
 import { StyledTextarea } from './ui/StyledTextarea';
+import { toast } from "sonner";
 
 const MIN_REWARD_ALGO = 10; // Enforce minimum reward of 10 ALGO
 const DEFAULT_REWARD_ALGO = 10;
 const MICRO_ALGOS_PER_ALGO = 1_000_000;
+const PROMPT_TIMEOUT_MS = 5000; // 5 seconds for wallet prompt
 
 interface ThankContributorDialogProps {
   isOpen: boolean;
@@ -51,10 +53,12 @@ export function ThankContributorDialog({
   projectCreatorAddress,
   initialMetadata,
   onConfirm,
-  isConfirming,
+  isConfirming: isExecuting, // Renamed to avoid conflict with local state
 }: ThankContributorDialogProps) {
   const { activeAddress } = useWallet();
   const { nfd: contributorNfd } = useNfd(contributorAddress);
+  const [isConfirming, setIsConfirming] = useState(false); // Local state for dialog confirmation
+  const loadingToastIdRef = useRef<string | null>(null);
 
   const initialWhitelistedEditors = useMemo(() => {
     return initialMetadata.find(item => item.type === 'whitelisted-editors')?.value || '';
@@ -126,10 +130,33 @@ export function ThankContributorDialog({
         alert(`Total reward must be at least ${MIN_REWARD_ALGO} ALGO.`);
         return;
     }
-    await onConfirm(totalRewardAlgos, contributorSharePercentage, whitelistedEditors);
+    
+    setIsConfirming(true);
+    loadingToastIdRef.current = toast.loading("Preparing claim transaction... Please check your wallet.");
+    
+    // NEW: Set short timer for wallet prompt
+    const promptTimer = setTimeout(() => {
+        toast.info("If the request didn't show up, reconnect your wallet and try again.", { duration: 10000 });
+    }, PROMPT_TIMEOUT_MS);
+
+    try {
+        // The actual transaction execution happens inside onConfirm (which calls thankContributorAndClaimProject)
+        await onConfirm(totalRewardAlgos, contributorSharePercentage, whitelistedEditors);
+        
+        clearTimeout(promptTimer); // Clear prompt timer on success
+        // Success toast is handled inside the calling component (ProjectDetailCard)
+        onOpenChange(false);
+    } catch (error) {
+        clearTimeout(promptTimer); // Clear prompt timer on failure
+        console.error(error);
+        toast.error(error instanceof Error ? error.message : "An unknown error occurred during execution.", { id: loadingToastIdRef.current });
+    } finally {
+        setIsConfirming(false);
+        loadingToastIdRef.current = null;
+    }
   };
 
-  const canConfirm = !isConfirming && totalRewardAlgos >= MIN_REWARD_ALGO;
+  const canConfirm = !isExecuting && totalRewardAlgos >= MIN_REWARD_ALGO && !isConfirming;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -160,6 +187,7 @@ export function ThankContributorDialog({
               min={MIN_REWARD_ALGO}
               value={totalRewardAlgos}
               onChange={handleTotalRewardChange}
+              disabled={isExecuting || isConfirming}
               className="bg-muted/50 font-numeric h-9"
             />
             <p className={cn("text-xs", totalRewardAlgos < MIN_REWARD_ALGO ? "text-red-500" : "text-muted-foreground")}>
@@ -171,7 +199,6 @@ export function ThankContributorDialog({
 
           {/* Reward Split Input & Slider */}
           <div className="space-y-2">
-            {/* Removed: <Label className="text-sm font-semibold">Reward Split (Total: {totalRewardAlgos.toFixed(2)} ALGO)</Label> */}
             
             {/* Contributor Amount Input */}
             <div className="space-y-1">
@@ -186,6 +213,7 @@ export function ThankContributorDialog({
                     max={totalRewardAlgos}
                     value={contributorAmountAlgos}
                     onChange={handleContributorAmountChange}
+                    disabled={isExecuting || isConfirming}
                     className="bg-muted/50 font-numeric text-hodl-blue h-9"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -205,6 +233,7 @@ export function ThankContributorDialog({
               onValueChange={handleSliderChange}
               max={100}
               step={0.1}
+              disabled={isExecuting || isConfirming}
               className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
             />
 
@@ -233,7 +262,7 @@ export function ThankContributorDialog({
               placeholder="e.g., ADDRESS1, my.nfd, another.nfd"
               value={whitelistedEditors}
               onChange={(e) => setWhitelistedEditors(e.target.value)}
-              disabled={isConfirming}
+              disabled={isExecuting || isConfirming}
               onSubmit={() => {}}
               isSubmitDisabled={true}
               className="bg-muted/50 min-h-[60px]"
@@ -242,11 +271,11 @@ export function ThankContributorDialog({
         </div>
 
         <DialogFooter className="pt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isConfirming}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isExecuting || isConfirming}>
             Cancel
           </Button>
           <Button onClick={handleConfirmClick} disabled={!canConfirm}>
-            {isConfirming ? "Sending..." : "Send Reward & Claim"}
+            {isConfirming || isExecuting ? "Sending..." : "Send Reward & Claim"}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </DialogFooter>

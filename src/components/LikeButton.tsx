@@ -14,6 +14,7 @@ import { retryFetch } from "@/utils/api";
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const TRANSACTION_TIMEOUT_MS = 60000; // 60 seconds
+const PROMPT_TIMEOUT_MS = 5000; // 5 seconds for wallet prompt
 
 // Define TransactionDisplayItem type locally for the dialog
 interface TransactionDisplayItem {
@@ -65,6 +66,11 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
 
     setIsConfirming(true);
     loadingToastIdRef.current = toast.loading("Processing your like... Please check your wallet.");
+    
+    // NEW: Set short timer for wallet prompt
+    const promptTimer = setTimeout(() => {
+        toast.info("If the request didn't show up, reconnect your wallet and try again.", { duration: 10000 });
+    }, PROMPT_TIMEOUT_MS);
 
     const timeoutPromise = new Promise((_resolve, reject) =>
       setTimeout(() => reject(new Error("Wallet did not respond in time.")), TRANSACTION_TIMEOUT_MS)
@@ -72,9 +78,13 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
 
     try {
       await Promise.race([atcToExecute.execute(algodClient, 4), timeoutPromise]);
+      
+      clearTimeout(promptTimer); // Clear prompt timer on success
+      
       toast.success("Liked!", { id: loadingToastIdRef.current });
       onInteractionSuccess();
     } catch (error) {
+      clearTimeout(promptTimer); // Clear prompt timer on failure
       console.error(error);
       toast.error(error instanceof Error ? error.message : "An unknown error occurred.", { id: loadingToastIdRef.current });
     } finally {

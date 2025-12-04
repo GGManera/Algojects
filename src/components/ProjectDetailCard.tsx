@@ -314,7 +314,7 @@ export function ProjectDetailCard({
       projectName: currentProjectName,
       assetId: currentUserHolding.assetId,
       amount: currentUserHolding.amount,
-      assetUnitName: currentUserProjectHolding.assetUnitName,
+      assetUnitName: currentUserHolding.assetUnitName,
     };
   }, [currentUserHolding, projectId, currentProjectName]);
 
@@ -510,13 +510,15 @@ export function ProjectDetailCard({
           {/* NEW: Roadmap Section */}
           <div className="py-4 px-4 bg-muted/50 text-foreground rounded-md shadow-recessed">
             <div 
-                className="flex items-center justify-between cursor-pointer"
+                className="flex items-center justify-center cursor-pointer relative"
                 onClick={() => setIsRoadmapExpanded(prev => !prev)}
             >
                 <h3 className="text-lg font-semibold gradient-text">
                     Roadmap
                 </h3>
-                {isRoadmapExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                    {isRoadmapExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
             </div>
             <CollapsibleContent isOpen={isRoadmapExpanded}>
                 <div className="pt-4">

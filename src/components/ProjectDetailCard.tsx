@@ -314,7 +314,7 @@ export function ProjectDetailCard({
       projectName: currentProjectName,
       assetId: currentUserHolding.assetId,
       amount: currentUserHolding.amount,
-      assetUnitName: currentUserHolding.assetUnitName,
+      assetUnitName: currentUserProjectHolding.assetUnitName,
     };
   }, [currentUserHolding, projectId, currentProjectName]);
 
@@ -513,8 +513,8 @@ export function ProjectDetailCard({
                 className="flex items-center justify-between cursor-pointer"
                 onClick={() => setIsRoadmapExpanded(prev => !prev)}
             >
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-primary" /> Project Roadmap
+                <h3 className="text-lg font-semibold gradient-text">
+                    Roadmap
                 </h3>
                 {isRoadmapExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </div>

@@ -132,6 +132,7 @@ export function EditInteractionDialog({
       // Construct the note identifier base: [Hash].[Proj].[Rev].[Comm].[Rep].[NextVersion]
       const noteIdentifierBase = `${hash}.${proj}.${rev}.${comm}.${rep}.${nextVersion}`;
       
+      // The content is the new post content
       const noteIdentifierForSizing = `${noteIdentifierBase}.0 `;
       const availableSpace = MAX_NOTE_SIZE_BYTES - new TextEncoder().encode(noteIdentifierForSizing).length;
       const contentBytes = new TextEncoder().encode(content);

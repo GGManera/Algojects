@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useWallet } from "@txnlab/use-wallet-react";
 import algosdk from "algosdk";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
@@ -61,6 +61,7 @@ export function InteractionForm({ type, project, review, comment, onInteractionS
 
   // NEW: Draft Restoration Logic
   useEffect(() => {
+    // Check if we are explicitly resuming a draft AND the draft exists AND it matches the context
     if (location.state?.resumeDraft && draft && draft.address === activeAddress && draft.projectId === project.id) {
         const isContextMatch = draft.type === type && 
                               draft.parentReviewId === review.id.split('.')[1] &&

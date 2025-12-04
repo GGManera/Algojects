@@ -67,6 +67,7 @@ export function NewReviewForExistingProjectForm({ project, projectsData, onInter
 
   // NEW: Draft Restoration Logic
   useEffect(() => {
+    // Check if we are explicitly resuming a draft AND the draft exists AND it's a review draft for this project
     if (location.state?.resumeDraft && draft && draft.address === activeAddress && draft.projectId === project.id) {
         const isContextMatch = draft.type === 'review';
         

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useWallet } from "@txnlab/use-wallet-react";
 import algosdk from "algosdk";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
@@ -15,12 +15,14 @@ import { PaymentConfirmationDialog } from "./PaymentConfirmationDialog";
 import { useSettings } from "@/hooks/useSettings";
 import { toast } from "sonner";
 import { retryFetch } from "@/utils/api"; // Import retryFetch
-import { useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"; // Import Card components
+import { useLocation, useNavigate } from "react-router-dom"; // NEW
+import { useTransactionDraft } from "@/hooks/useTransactionDraft"; // NEW
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const MAX_NOTE_SIZE_BYTES = 1024;
 const TRANSACTION_TIMEOUT_MS = 60000; // 60 seconds timeout for wallet response
+const PROMPT_TIMEOUT_MS = 5000; // 5 seconds for wallet prompt
 
 interface TransactionDisplayItem {
   type: 'pay' | 'axfer';
@@ -53,15 +55,42 @@ export function NewReviewForExistingProjectForm({ project, projectsData, onInter
   const { projectDetails, loading: detailsLoadingState, isRefreshing: detailsRefreshingState } = useProjectDetails();
   const { settings } = useSettings();
   const isProjectDetailsLoading = detailsLoadingState || detailsRefreshingState;
+  
+  const location = useLocation(); // NEW
+  const navigate = useNavigate(); // NEW
+  const { draft, saveDraft, clearDraft } = useTransactionDraft(); // NEW
 
   const currentProjectDetailsEntry = projectDetails.find(entry => entry.projectId === project.id);
   const projectName = useMemo(() => {
     return currentProjectDetailsEntry?.projectMetadata.find(item => item.type === 'project-name')?.value || `Project ${project.id}`;
   }, [currentProjectDetailsEntry, project.id]);
 
+  // NEW: Draft Restoration Logic
+  useEffect(() => {
+    if (location.state?.resumeDraft && draft && draft.address === activeAddress && draft.projectId === project.id) {
+        const isContextMatch = draft.type === 'review';
+        
+        if (isContextMatch) {
+            setContent(draft.content);
+            // Clear the draft state from the router history state
+            navigate(location.pathname, { replace: true, state: {} });
+        } else {
+            clearDraft();
+        }
+    }
+  }, [location.state, draft, activeAddress, project.id, navigate, clearDraft]);
+
+
   const handleSubmit = async () => {
     const atc = await prepareTransactions();
     if (atc) {
+      // NEW: Save draft before opening dialog or executing
+      saveDraft({
+        projectId: project.id,
+        type: 'review',
+        content: content,
+      });
+
       if (settings.showTransactionConfirmation) {
         setIsDialogOpen(true);
       } else {
@@ -141,6 +170,11 @@ export function NewReviewForExistingProjectForm({ project, projectsData, onInter
 
     setIsConfirming(true);
     loadingToastIdRef.current = toast.loading("Executing your new review... Please check your wallet.");
+    
+    // NEW: Set short timer for wallet prompt
+    const promptTimer = setTimeout(() => {
+        toast.info("If the request didn't show up, reconnect your wallet and try again.", { duration: 10000 });
+    }, PROMPT_TIMEOUT_MS);
 
     const timeoutPromise = new Promise((_resolve, reject) =>
       setTimeout(() => reject(new Error("Wallet did not respond in time. Please try again.")), TRANSACTION_TIMEOUT_MS)
@@ -149,10 +183,14 @@ export function NewReviewForExistingProjectForm({ project, projectsData, onInter
     try {
       await Promise.race([atcToExecute.execute(algodClient, 4), timeoutPromise]);
 
+      clearTimeout(promptTimer); // Clear prompt timer on success
+      clearDraft(); // NEW: Clear draft on success
+
       toast.success("Your new review has been published!", { id: loadingToastIdRef.current });
       setContent("");
       onInteractionSuccess();
     } catch (error) {
+      clearTimeout(promptTimer); // Clear prompt timer on failure
       console.error(error);
       toast.error(error instanceof Error ? error.message : "An unknown error occurred.", { id: loadingToastIdRef.current });
     } finally {
@@ -218,6 +256,8 @@ export function NewReviewForExistingProjectForm({ project, projectsData, onInter
             setPreparedAtc(null);
             setTransactionsToConfirm([]);
             loadingToastIdRef.current = null;
+            // NEW: If cancelled, clear draft if it exists
+            clearDraft();
           }
         }}
         transactions={transactionsToConfirm}

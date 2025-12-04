@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useWallet } from "@txnlab/use-wallet-react";
 import algosdk from "algosdk";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
@@ -29,10 +29,13 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"; // Import Alert components
 import { cn } from '@/lib/utils'; // Import cn
+import { useLocation, useNavigate } from "react-router-dom"; // NEW
+import { useTransactionDraft } from "@/hooks/useTransactionDraft"; // NEW
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const MAX_NOTE_SIZE_BYTES = 1024;
 const TRANSACTION_TIMEOUT_MS = 60000; // 60 seconds timeout for wallet response
+const PROMPT_TIMEOUT_MS = 5000; // 5 seconds for wallet prompt
 
 interface TransactionDisplayItem {
   type: 'pay' | 'axfer';
@@ -54,7 +57,7 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
   const [projectName, setProjectName] = useState("");
   const [projectNotes, setProjectNotes] = useState("");
   const [creatorWalletAddress, setCreatorWalletAddress] = useState("");
-  const [projectWalletAddress, setProjectWalletAddress] = useState(""); // NEW: Project Wallet Address
+  const [projectWalletAddress, setProjectWalletAddress] = useState("");
   const [whitelistedEditors, setWhitelistedEditors] = useState("");
   const [projectTags, setProjectTags] = useState("");
   const [metadataItems, setMetadataItems] = useState<MetadataItem[]>([]);
@@ -71,6 +74,32 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
   const { nfd, loading: nfdLoading } = useNfd(activeAddress);
   const { updateProjectDetails } = useProjectDetails();
   const { settings } = useSettings();
+  
+  const location = useLocation(); // NEW
+  const navigate = useNavigate(); // NEW
+  const { draft, saveDraft, clearDraft } = useTransactionDraft(); // NEW
+
+  // NEW: Draft Restoration Logic
+  useEffect(() => {
+    if (location.state?.resumeDraft && draft && draft.address === activeAddress && draft.type === 'project') {
+        if (draft.metadataDraft) {
+            setProjectName(draft.metadataDraft.projectName || "");
+            setProjectNotes(draft.metadataDraft.projectNotes || "");
+            setCreatorWalletAddress(draft.metadataDraft.creatorWalletAddress || "");
+            setProjectWalletAddress(draft.metadataDraft.projectWalletAddress || "");
+            setWhitelistedEditors(draft.metadataDraft.whitelistedEditors || "");
+            setProjectTags(draft.metadataDraft.projectTags || "");
+            setMetadataItems(draft.metadataDraft.metadataItems || []);
+            setIsCreator(draft.metadataDraft.isCreator || false);
+            
+            // Clear the draft state from the router history state
+            navigate(location.pathname, { replace: true, state: {} });
+        } else {
+            clearDraft();
+        }
+    }
+  }, [location.state, draft, activeAddress, navigate, clearDraft]);
+
 
   const handleAddMetadataItem = useCallback(() => {
     setMetadataItems(prev => [...prev, { title: '', value: '', type: 'text' }]);
@@ -91,6 +120,23 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
   const handleSubmit = async () => {
     const atc = await prepareTransactions();
     if (atc) {
+      // NEW: Save draft before opening dialog or executing
+      saveDraft({
+        projectId: 'new', // Use a placeholder ID for new projects
+        type: 'project',
+        content: projectNotes,
+        metadataDraft: {
+            projectName,
+            projectNotes,
+            creatorWalletAddress,
+            projectWalletAddress,
+            whitelistedEditors,
+            projectTags,
+            metadataItems,
+            isCreator,
+        }
+      });
+
       if (settings.showTransactionConfirmation) {
         setIsDialogOpen(true);
       } else {
@@ -184,6 +230,11 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
 
     setIsConfirming(true);
     loadingToastIdRef.current = toast.loading("Executing your new project... Please check your wallet.");
+    
+    // NEW: Set short timer for wallet prompt
+    const promptTimer = setTimeout(() => {
+        toast.info("If the request didn't show up, reconnect your wallet and try again.", { duration: 10000 });
+    }, PROMPT_TIMEOUT_MS);
 
     const timeoutPromise = new Promise((_resolve, reject) =>
       setTimeout(() => reject(new Error("Wallet did not respond in time. Please try again.")), TRANSACTION_TIMEOUT_MS)
@@ -191,6 +242,9 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
 
     try {
       await Promise.race([atcToExecute.execute(algodClient, 4), timeoutPromise]);
+
+      clearTimeout(promptTimer); // Clear prompt timer on success
+      clearDraft(); // NEW: Clear draft on success
 
       const newProjectId = getNextId(projects);
       const parsedWhitelistedAddresses = whitelistedEditors.split(',').map(addr => addr.trim()).filter(Boolean);
@@ -252,6 +306,7 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
       setIsCreator(false);
       onInteractionSuccess();
     } catch (error) {
+      clearTimeout(promptTimer); // Clear prompt timer on failure
       console.error(error);
       toast.error(error instanceof Error ? error.message : "An unknown error occurred.", { id: loadingToastIdRef.current });
     } finally {
@@ -528,6 +583,8 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
             setPreparedAtc(null);
             setTransactionsToConfirm([]);
             loadingToastIdRef.current = null;
+            // NEW: If cancelled, clear draft if it exists
+            clearDraft();
           }
         }}
         transactions={transactionsToConfirm}

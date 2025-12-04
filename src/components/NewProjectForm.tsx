@@ -81,7 +81,6 @@ export function NewProjectForm({ projects, onInteractionSuccess }: NewProjectFor
 
   // NEW: Draft Restoration Logic
   useEffect(() => {
-    // Check if we are explicitly resuming a draft AND the draft exists AND it's a project draft
     if (location.state?.resumeDraft && draft && draft.address === activeAddress && draft.type === 'project') {
         if (draft.metadataDraft) {
             setProjectName(draft.metadataDraft.projectName || "");

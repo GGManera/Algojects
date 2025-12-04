@@ -206,10 +206,7 @@ export function LikeButton({ item, project, review, comment, onInteractionSucces
         onOpenChange={(open) => {
           setIsDialogOpen(open);
           if (!open) {
-            if (isConfirming && loadingToastIdRef.current) {
-                dismissToast(loadingToastIdRef.current);
-                toast.info("Transaction process cancelled. Please close any open wallet pop-ups if they persist.");
-            }
+            // If dialog is closed without confirming, reset states
             setIsLoading(false);
             setIsConfirming(false);
             setPreparedAtc(null);

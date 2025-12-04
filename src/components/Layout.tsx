@@ -1,7 +1,7 @@
 "use client";
 
 import { WalletButton } from '@txnlab/use-wallet-ui-react';
-import { useLocation, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useLocation } from 'react-router-dom';
 import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext';
 import { cn } from '@/lib/utils';
 import { useWallet } from '@txnlab/use-wallet-react';
@@ -12,9 +12,7 @@ import { StickyHeader } from './StickyHeader';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
 import { useAccountData } from '@/hooks/useAccountData';
 import { DynamicNavButtons } from './DynamicNavButtons';
-import NewWebsite, { NewWebsiteRef } from '@/pages/NewWebsite';
-import { useTransactionDraft, TransactionDraft } from '@/hooks/useTransactionDraft'; // NEW
-import { TransactionRecoveryAlert } from './TransactionRecoveryAlert'; // NEW
+import NewWebsite, { NewWebsiteRef } from '@/pages/NewWebsite'; // Importando NewWebsite e seu tipo de ref
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const { isMobile, appDisplayMode, isDeviceLandscape } = useAppContextDisplayMode();
@@ -23,15 +21,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const { refetch: refetchProjectDetails, isRefreshing: isRefreshingProjectDetails } = useProjectDetails();
   const { refetch: refetchAccountData, loading: accountDataLoading } = useAccountData(activeAddress);
   const location = useLocation();
-  const navigate = useNavigate(); // Use useNavigate hook
-  
-  const { draft, clearDraft } = useTransactionDraft(); // NEW
 
-  const newWebsiteRef = useRef<NewWebsiteRef>(null);
+  const newWebsiteRef = useRef<NewWebsiteRef>(null); // Ref para o componente NewWebsite
 
   const isOverallRefreshing = isRefreshingSocialData || isRefreshingProjectDetails || accountDataLoading;
   
-  const isMobilePortrait = isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape;
+  const isMobilePortrait = isMobile && appDisplayMode === 'portrait' && !isDeviceLandscape; // NEW: Define mobile portrait mode
 
   const handleGlobalRefresh = useCallback(async () => {
     console.log("Triggering global data refresh...");
@@ -43,80 +38,63 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     console.log("Global data refresh initiated.");
   }, [refetchSocialData, refetchProjectDetails, refetchAccountData]);
 
+  // Função para rolar o slide ativo para o topo (chamada pelo DynamicNavButtons)
   const handleCenterButtonClick = useCallback(() => {
     if (newWebsiteRef.current) {
       newWebsiteRef.current.scrollToActiveSlideTop();
     }
   }, []);
 
+  // NEW: Função para resetar a rolagem de TODOS os slides (chamada pelo StickyHeader)
   const handleLogoClickAndReset = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     if (newWebsiteRef.current) {
       newWebsiteRef.current.resetAllScrolls();
     }
+    // Navegar para a home (slide 1)
     if (location.pathname !== '/') {
       window.history.pushState({}, '', '/');
+      // Forçar o re-render e a navegação do router
       window.dispatchEvent(new PopStateEvent('popstate'));
     }
   }, [location.pathname]);
-  
-  // NEW: Handle draft recovery when wallet connects
-  const handleResumeDraft = useCallback((draftToResume: TransactionDraft) => {
-    // 1. Determine the target path
-    let targetPath = '/';
-    if (draftToResume.type === 'project') {
-        targetPath = '/'; // New projects are created from the home page
-    } else if (draftToResume.type === 'review' || draftToResume.type === 'metadata-suggestion') {
-        targetPath = `/project/${draftToResume.projectId}`;
-    } else if (draftToResume.type === 'comment' || draftToResume.type === 'reply') {
-        // Navigate to project page and rely on the component to scroll/open the form
-        targetPath = `/project/${draftToResume.projectId}#review-${draftToResume.parentReviewId}`;
-    }
-    
-    // 2. Navigate and pass state to trigger form restoration
-    // We use replace: true to prevent the recovery navigation from cluttering history
-    navigate(targetPath, { state: { resumeDraft: true }, replace: true });
-    // Note: We do NOT clear the draft here. The target form/page will clear it upon successful restoration.
-  }, [navigate]);
 
-
+  // Calcula a margem superior para o main
   let mainTopMargin = "mt-0";
   if (!isMobile || isDeviceLandscape) {
+    // Desktop/Landscape: StickyHeader + Gap + DynamicNavButtons
     mainTopMargin = "mt-[calc(var(--total-fixed-top-height-desktop)+env(safe-area-inset-top))]";
   } else if (isMobilePortrait) {
+    // Mobile Portrait: No fixed top elements, content starts at the top.
     mainTopMargin = "mt-[env(safe-area-inset-top)]";
   }
 
+  // Calcula o preenchimento inferior para o main (apenas se for mobile E portrait)
   let mainBottomPadding = "";
   if (isMobilePortrait) {
+    // Always use the combined height of MobileBottomBar and DynamicNavButtons
     mainBottomPadding = "pb-[calc(var(--total-fixed-bottom-height-mobile)+env(safe-area-inset-bottom))]";
   }
 
   return (
     <div className="relative min-h-screen flex flex-col">
       {!isMobilePortrait && <StickyHeader onLogoClick={handleLogoClickAndReset} />}
+      {/* DynamicNavButtons is now an immediate child of the Layout div */}
       <DynamicNavButtons onCenterButtonClick={handleCenterButtonClick} />
       <main
         className={cn(
           "flex-grow relative overflow-hidden",
-          mainTopMargin,
+          mainTopMargin, // Use margin-top instead of padding-top
           mainBottomPadding
         )}
       >
+        {/* Passando a ref para o NewWebsite */}
         {React.cloneElement(children as React.ReactElement, { ref: newWebsiteRef })}
       </main>
       {isMobilePortrait && (
         <MobileBottomBar
           projects={projects}
           onInteractionSuccess={handleGlobalRefresh}
-        />
-      )}
-      {/* NEW: Transaction Recovery Alert */}
-      {draft && (
-        <TransactionRecoveryAlert 
-          draft={draft} 
-          onResume={handleResumeDraft} 
-          onDiscard={clearDraft} 
         />
       )}
     </div>

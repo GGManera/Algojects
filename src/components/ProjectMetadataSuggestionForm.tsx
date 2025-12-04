@@ -19,13 +19,10 @@ import { cn } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { MetadataItemEditor } from "./MetadataItemEditor";
 import { RoadmapSuggestionEditor } from "./RoadmapSuggestionEditor"; // NEW Import
-import { useLocation, useNavigate } from "react-router-dom"; // NEW
-import { useTransactionDraft } from "@/hooks/useTransactionDraft"; // NEW
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const MAX_NOTE_SIZE_BYTES = 1024;
 const TRANSACTION_TIMEOUT_MS = 60000;
-const PROMPT_TIMEOUT_MS = 5000; // 5 seconds for wallet prompt
 const SUGGESTION_FEE_MICRO_ALGOS = 100_000; // 0.1 ALGO fee for suggestion
 
 interface TransactionDisplayItem {
@@ -75,31 +72,11 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
   const { activeAddress, transactionSigner, algodClient } = useWallet();
   const { nfd, loading: nfdLoading } = useNfd(activeAddress);
   const { settings } = useSettings();
-  
-  const location = useLocation(); // NEW
-  const navigate = useNavigate(); // NEW
-  const { draft, saveDraft, clearDraft } = useTransactionDraft(); // NEW
 
   // Reset state when initialItem changes (e.g., user selects a different item to edit)
   useEffect(() => {
     setSuggestedItems(initialSuggestedItems);
   }, [initialSuggestedItems]);
-  
-  // NEW: Draft Restoration Logic
-  useEffect(() => {
-    if (location.state?.resumeDraft && draft && draft.address === activeAddress && draft.projectId === project.id) {
-        const isContextMatch = draft.type === 'metadata-suggestion';
-        
-        if (isContextMatch && draft.metadataDraft?.metadataItems) {
-            setSuggestedItems(draft.metadataDraft.metadataItems);
-            // Clear the draft state from the router history state
-            navigate(location.pathname, { replace: true, state: {} });
-        } else {
-            clearDraft();
-        }
-    }
-  }, [location.state, draft, activeAddress, project.id, navigate, clearDraft]);
-
 
   // Handlers now operate on suggestedItems state
   const handleUpdateMetadataItem = useCallback((index: number, field: keyof MetadataItem, value: string) => {
@@ -140,17 +117,6 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
   const handleSubmit = async () => {
     const atc = await prepareTransactions();
     if (atc) {
-      // NEW: Save draft before opening dialog or executing
-      saveDraft({
-        projectId: project.id,
-        type: 'metadata-suggestion',
-        content: finalJsonContent,
-        metadataDraft: {
-            metadataItems: suggestedItems,
-        },
-        initialMetadataItem: initialItem,
-      });
-
       if (settings.showTransactionConfirmation) {
         setIsDialogOpen(true);
       } else {
@@ -261,11 +227,6 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
 
     setIsConfirming(true);
     loadingToastIdRef.current = toast.loading("Executing metadata suggestion... Please check your wallet.");
-    
-    // NEW: Set short timer for wallet prompt
-    const promptTimer = setTimeout(() => {
-        toast.info("If the request didn't show up, reconnect your wallet and try again.", { duration: 10000 });
-    }, PROMPT_TIMEOUT_MS);
 
     const timeoutPromise = new Promise((_resolve, reject) =>
       setTimeout(() => reject(new Error("Wallet did not respond in time. Please try again.")), TRANSACTION_TIMEOUT_MS)
@@ -274,15 +235,11 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
     try {
       await Promise.race([atcToExecute.execute(algodClient, 4), timeoutPromise]);
 
-      clearTimeout(promptTimer); // Clear prompt timer on success
-      clearDraft(); // NEW: Clear draft on success
-
       toast.success("Metadata suggestion submitted successfully!", { id: loadingToastIdRef.current });
       setSuggestedItems([]); // Clear form on success
       onInteractionSuccess(); // Refetch social data to see the suggestion
       onCancel(); // Close the form
     } catch (error) {
-      clearTimeout(promptTimer); // Clear prompt timer on failure
       console.error(error);
       toast.error(error instanceof Error ? error.message : "An unknown error occurred during execution.", { id: loadingToastIdRef.current });
     } finally {
@@ -388,8 +345,6 @@ export function ProjectMetadataSuggestionForm({ project, onInteractionSuccess, i
             setPreparedAtc(null);
             setTransactionsToConfirm([]);
             loadingToastIdRef.current = null;
-            // NEW: If cancelled, clear draft if it exists
-            clearDraft();
           }
         }}
         transactions={transactionsToConfirm}

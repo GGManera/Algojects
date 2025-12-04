@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useWallet } from "@txnlab/use-wallet-react";
 import algosdk from "algosdk";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
@@ -13,13 +13,10 @@ import { PaymentConfirmationDialog } from "./PaymentConfirmationDialog";
 import { useSettings } from "@/hooks/useSettings";
 import { toast } from "sonner";
 import { retryFetch } from "@/utils/api"; // Import retryFetch
-import { useLocation, useNavigate } from "react-router-dom"; // NEW
-import { useTransactionDraft } from "@/hooks/useTransactionDraft"; // NEW
 
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const MAX_NOTE_SIZE_BYTES = 1024;
 const TRANSACTION_TIMEOUT_MS = 60000; // 60 seconds timeout for wallet response
-const PROMPT_TIMEOUT_MS = 5000; // 5 seconds for wallet prompt
 
 type InteractionType = "comment" | "reply";
 
@@ -54,41 +51,10 @@ export function InteractionForm({ type, project, review, comment, onInteractionS
   const { activeAddress, transactionSigner, algodClient } = useWallet();
   const { nfd, loading: nfdLoading } = useNfd(activeAddress);
   const { settings } = useSettings();
-  
-  const location = useLocation(); // NEW
-  const navigate = useNavigate(); // NEW
-  const { draft, saveDraft, clearDraft } = useTransactionDraft(); // NEW
-
-  // NEW: Draft Restoration Logic
-  useEffect(() => {
-    if (location.state?.resumeDraft && draft && draft.address === activeAddress && draft.projectId === project.id) {
-        const isContextMatch = draft.type === type && 
-                              draft.parentReviewId === review.id.split('.')[1] &&
-                              (type === 'reply' ? draft.parentCommentId === comment?.id.split('.')[2] : true);
-        
-        if (isContextMatch) {
-            setContent(draft.content);
-            // Clear the draft state from the router history state
-            navigate(location.pathname, { replace: true, state: {} });
-        } else {
-            clearDraft();
-        }
-    }
-  }, [location.state, draft, activeAddress, project.id, review.id, comment?.id, type, navigate, clearDraft]);
-
 
   const handleSubmit = async () => {
     const atc = await prepareTransactions();
     if (atc) {
-      // NEW: Save draft before opening dialog or executing
-      saveDraft({
-        projectId: project.id,
-        type: type,
-        content: content,
-        parentReviewId: review.id.split('.')[1],
-        parentCommentId: comment?.id.split('.')[2],
-      });
-
       if (settings.showTransactionConfirmation) {
         setIsDialogOpen(true);
       } else {
@@ -214,11 +180,6 @@ export function InteractionForm({ type, project, review, comment, onInteractionS
 
     setIsConfirming(true);
     loadingToastIdRef.current = toast.loading(`Executing your ${type}... Please check your wallet.`);
-    
-    // NEW: Set short timer for wallet prompt
-    const promptTimer = setTimeout(() => {
-        toast.info("If the request didn't show up, reconnect your wallet and try again.", { duration: 10000 });
-    }, PROMPT_TIMEOUT_MS);
 
     const timeoutPromise = new Promise((_resolve, reject) =>
       setTimeout(() => reject(new Error("Wallet did not respond in time. Please try again.")), TRANSACTION_TIMEOUT_MS)
@@ -227,14 +188,10 @@ export function InteractionForm({ type, project, review, comment, onInteractionS
     try {
       await Promise.race([atcToExecute.execute(algodClient, 4), timeoutPromise]);
 
-      clearTimeout(promptTimer); // Clear prompt timer on success
-      clearDraft(); // NEW: Clear draft on success
-
       toast.success(`Your ${type} has been published!`, { id: loadingToastIdRef.current });
       setContent("");
       onInteractionSuccess();
     } catch (error) {
-      clearTimeout(promptTimer); // Clear prompt timer on failure
       console.error(error);
       toast.error(error instanceof Error ? error.message : "An unknown error occurred.", { id: loadingToastIdRef.current });
     } finally {
@@ -286,8 +243,6 @@ export function InteractionForm({ type, project, review, comment, onInteractionS
             setPreparedAtc(null);
             setTransactionsToConfirm([]);
             loadingToastIdRef.current = null;
-            // NEW: If cancelled, clear draft if it exists
-            clearDraft();
           }
         }}
         transactions={transactionsToConfirm}

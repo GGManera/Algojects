@@ -26,7 +26,6 @@ import { Trash2, ArrowRight } from 'lucide-react';
 const INDEXER_URL = "https://mainnet-idx.algonode.cloud";
 const MAX_NOTE_SIZE_BYTES = 1024;
 const TRANSACTION_TIMEOUT_MS = 60000;
-const PROMPT_TIMEOUT_MS = 5000; // 5 seconds for wallet prompt
 
 interface TransactionDisplayItem {
   type: 'pay' | 'axfer';
@@ -156,11 +155,6 @@ export function DeleteInteractionDialog({
 
     setIsConfirming(true);
     loadingToastIdRef.current = toast.loading(`Executing exclusion for your ${itemType}... Please check your wallet.`);
-    
-    // NEW: Set short timer for wallet prompt
-    const promptTimer = setTimeout(() => {
-        toast.info("If the request didn't show up, reconnect your wallet and try again.", { duration: 10000 });
-    }, PROMPT_TIMEOUT_MS);
 
     const timeoutPromise = new Promise((_resolve, reject) =>
       setTimeout(() => reject(new Error("Wallet did not respond in time. Please try again.")), TRANSACTION_TIMEOUT_MS)
@@ -169,13 +163,10 @@ export function DeleteInteractionDialog({
     try {
       await Promise.race([atcToExecute.execute(algodClient, 4), timeoutPromise]);
 
-      clearTimeout(promptTimer); // Clear prompt timer on success
-
       toast.success(`Your ${itemType} has been excluded!`, { id: loadingToastIdRef.current });
       onInteractionSuccess();
       onOpenChange(false);
     } catch (error) {
-      clearTimeout(promptTimer); // Clear prompt timer on failure
       console.error(error);
       toast.error(error instanceof Error ? error.message : "An unknown error occurred during execution.", { id: loadingToastIdRef.current });
     } finally {

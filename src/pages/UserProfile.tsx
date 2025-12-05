@@ -26,6 +26,7 @@ import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // NEW Im
 import { useWritingDiversity } from "@/hooks/useWritingDiversity"; // UPDATED Import
 import { UserProfileDiversityCard } from "@/components/UserProfileDiversityCard"; // NEW Import
 import { useAccountData } from "@/hooks/useAccountData"; // Import useAccountData
+import { UserProfileNfdDetails } from "@/components/UserProfileNfdDetails"; // NEW Import
 
 // Helper function to calculate interaction score for a review
 const getReviewInteractionScore = (review: Review): number => {
@@ -595,6 +596,14 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
                   )}
                   {/* END NEW */}
               </div>
+
+              {/* NEW: NFD Details Card */}
+              <UserProfileNfdDetails
+                nfd={userProfileNfd}
+                loading={nfdLoading}
+                address={effectiveAddress}
+              />
+              {/* END NEW */}
 
               <UserStatsCard
                 userAddress={effectiveAddress}

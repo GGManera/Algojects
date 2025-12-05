@@ -10,9 +10,12 @@ import { queueNfdResolutionV2 } from './useNfdBatcher'; // NEW: Import the batch
 interface NfdData {
   name: string | null;
   avatar: string | null;
+  // NEW: Additional properties
+  bio: string | null;
+  twitter: string | null;
+  discord: string | null;
+  blueskydid: string | null;
 }
-
-// Removed NFD_CACHE_DURATION_MS definition as it now uses NFD_RESOLVER_CACHE_DURATION_MS
 
 export function useNfd(address: string | undefined) {
   const [nfd, setNfd] = useState<NfdData | null>(null);
@@ -34,7 +37,16 @@ export function useNfd(address: string | undefined) {
     const isFresh = cachedNfdEntry && (Date.now() - cachedNfdEntry.timestamp < NFD_RESOLVER_CACHE_DURATION_MS); // Use imported constant
 
     if (isFresh) {
-      setNfd(cachedNfdEntry);
+      // Ensure all new fields are present in the cached entry (for older cache entries)
+      const cachedData: NfdData = {
+        name: cachedNfdEntry.name,
+        avatar: cachedNfdEntry.avatar,
+        bio: cachedNfdEntry.bio || null,
+        twitter: cachedNfdEntry.twitter || null,
+        discord: cachedNfdEntry.discord || null,
+        blueskydid: cachedNfdEntry.blueskydid || null,
+      };
+      setNfd(cachedData);
       setRawData(cachedNfdEntry);
       setLoading(false);
       return;
@@ -50,11 +62,12 @@ export function useNfd(address: string | undefined) {
         // Use the batcher to queue the request
         const result = await queueNfdResolutionV2(trimmedAddress);
         
+        // The result from V2 batcher now includes the full NFD data structure
         setNfd(result);
         setRawData(result); // Raw data is now the processed result from the batcher
       } catch (err) {
         console.error(`[useNfd] Falha ao buscar NFD para ${trimmedAddress}:`, err);
-        setNfd({ name: null, avatar: null });
+        setNfd({ name: null, avatar: null, bio: null, twitter: null, discord: null, blueskydid: null });
         setRawData({ error: err instanceof Error ? err.message : "Unknown error" });
       } finally {
         setLoading(false);

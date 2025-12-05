@@ -7,6 +7,11 @@ interface NfdData {
   name: string | null;
   avatar: string | null;
   address: string | null;
+  // NEW: Additional properties
+  bio: string | null;
+  twitter: string | null;
+  discord: string | null;
+  blueskydid: string | null;
 }
 
 // Map to hold pending addresses to be resolved in the next batch
@@ -42,11 +47,21 @@ async function executeBatchLookup(addresses: string[]): Promise<Map<string, NfdD
     if (nfdName && !nfdName.endsWith(".algo")) {
       nfdName = `${nfdName}.algo`;
     }
+    
+    // NEW: Extract additional properties, prioritizing verified
+    const bio = nfdData?.properties?.userDefined?.bio || null;
+    const twitter = nfdData?.properties?.verified?.twitter || nfdData?.properties?.userDefined?.twitter || null;
+    const discord = nfdData?.properties?.verified?.discord || nfdData?.properties?.userDefined?.discord || null;
+    const blueskydid = nfdData?.properties?.verified?.blueskydid || nfdData?.properties?.userDefined?.blueskydid || null;
 
     return {
       name: nfdName,
       avatar: avatarUrl,
       address: address,
+      bio,
+      twitter,
+      discord,
+      blueskydid,
     };
   };
 
@@ -61,7 +76,7 @@ async function executeBatchLookup(addresses: string[]): Promise<Map<string, NfdD
     // Handle 404 explicitly as a valid return status for no matches
     if (response.status === 404) {
         console.log(`[NfdBatcher] Batch lookup returned 404 (No NFDs found for batch).`);
-        addresses.forEach(address => results.set(address, { name: null, avatar: null, address: address }));
+        addresses.forEach(address => results.set(address, { name: null, avatar: null, address: address, bio: null, twitter: null, discord: null, blueskydid: null }));
         return results;
     }
 
@@ -81,12 +96,12 @@ async function executeBatchLookup(addresses: string[]): Promise<Map<string, NfdD
         results.set(address, result);
       } else {
         // If the address was in the request but not in the response, it means no NFD points to it.
-        results.set(address, { name: null, avatar: null, address: address });
+        results.set(address, { name: null, avatar: null, address: address, bio: null, twitter: null, discord: null, blueskydid: null });
       }
     }
   } catch (err) {
     console.error(`[NfdBatcher] Exception during batch fetch:`, err);
-    addresses.forEach(address => results.set(address, { name: null, avatar: null, address: address }));
+    addresses.forEach(address => results.set(address, { name: null, avatar: null, address: address, bio: null, twitter: null, discord: null, blueskydid: null }));
   }
   
   return results;
@@ -107,7 +122,17 @@ export function queueNfdResolutionV2(address: string): Promise<NfdData | null> {
   const cachedNfdEntry = nfdLookupCache.get(trimmedAddress);
   const isFresh = cachedNfdEntry && (Date.now() - cachedNfdEntry.timestamp < NFD_RESOLVER_CACHE_DURATION_MS);
   if (isFresh) {
-    return Promise.resolve(cachedNfdEntry);
+    // Ensure cached entry has all new fields
+    const cachedData: NfdData = {
+        name: cachedNfdEntry.name,
+        avatar: cachedNfdEntry.avatar,
+        address: cachedNfdEntry.address,
+        bio: cachedNfdEntry.bio || null,
+        twitter: cachedNfdEntry.twitter || null,
+        discord: cachedNfdEntry.discord || null,
+        blueskydid: cachedNfdEntry.blueskydid || null,
+    };
+    return Promise.resolve(cachedData);
   }
 
   // 2. Check if already in the queue or actively fetching
@@ -164,12 +189,19 @@ async function processBatchV2() {
 
   // Resolve all pending promises and update cache
   addressesToFetch.forEach(address => {
-    const result = allResults.get(address) || { name: null, avatar: null, address: address };
+    const result = allResults.get(address) || { name: null, avatar: null, address: address, bio: null, twitter: null, discord: null, blueskydid: null };
     const resolver = promiseResolvers.get(address);
     
     if (resolver) {
-      // Update shared cache
-      nfdLookupCache.set(address, { ...result, timestamp: Date.now() });
+      // Update shared cache, ensuring all fields are present
+      nfdLookupCache.set(address, { 
+          ...result, 
+          timestamp: Date.now(),
+          bio: result.bio || null,
+          twitter: result.twitter || null,
+          discord: result.discord || null,
+          blueskydid: result.blueskydid || null,
+      });
       
       // Resolve the promise
       resolver.resolve(result);

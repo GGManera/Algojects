@@ -118,11 +118,13 @@ const promiseResolvers = new Map<string, { resolve: (result: NfdData | null) => 
 export function queueNfdResolutionV2(address: string): Promise<NfdData | null> {
   const trimmedAddress = address.trim();
 
-  // 1. Check shared cache (already handled by useNfd, but good practice)
+  // 1. Check shared cache
   const cachedNfdEntry = nfdLookupCache.get(trimmedAddress);
-  const isFresh = cachedNfdEntry && (Date.now() - cachedNfdEntry.timestamp < NFD_RESOLVER_CACHE_DURATION_MS);
-  if (isFresh) {
-    // Ensure cached entry has all new fields
+  const isTimestampFresh = cachedNfdEntry && (Date.now() - cachedNfdEntry.timestamp < NFD_RESOLVER_CACHE_DURATION_MS);
+  // Check for a field that was added in the new version to detect old cache entries.
+  const isCacheStructureNew = cachedNfdEntry && typeof cachedNfdEntry.bio !== 'undefined';
+
+  if (isTimestampFresh && isCacheStructureNew) {
     const cachedData: NfdData = {
         name: cachedNfdEntry.name,
         avatar: cachedNfdEntry.avatar,

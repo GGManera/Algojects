@@ -1,16 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-
-// Cache simples na memória para armazenar dados de NFD e evitar chamadas repetidas
-// Import the shared cache map from useNfdResolver
-import { nfdLookupCache, NFD_RESOLVER_CACHE_DURATION_MS } from './useNfdResolver'; // NEW: Import NFD_RESOLVER_CACHE_DURATION_MS
-import { queueNfdResolutionV2 } from './useNfdBatcher'; // NEW: Import the batcher
+import { nfdLookupCache, NFD_RESOLVER_CACHE_DURATION_MS } from './useNfdResolver';
+import { queueNfdResolutionV2 } from './useNfdBatcher';
 
 interface NfdData {
   name: string | null;
   avatar: string | null;
-  // NEW: Additional properties
   bio: string | null;
   twitter: string | null;
   discord: string | null;
@@ -32,12 +28,14 @@ export function useNfd(address: string | undefined) {
     
     const trimmedAddress = address.trim();
 
-    // 1. Check shared cache first. If found and fresh, update state and return early.
+    // 1. Check shared cache first.
     const cachedNfdEntry = nfdLookupCache.get(trimmedAddress);
-    const isFresh = cachedNfdEntry && (Date.now() - cachedNfdEntry.timestamp < NFD_RESOLVER_CACHE_DURATION_MS); // Use imported constant
+    const isTimestampFresh = cachedNfdEntry && (Date.now() - cachedNfdEntry.timestamp < NFD_RESOLVER_CACHE_DURATION_MS);
+    // Check for a field that was added in the new version to detect old cache entries.
+    const isCacheStructureNew = cachedNfdEntry && typeof cachedNfdEntry.bio !== 'undefined';
 
-    if (isFresh) {
-      // Ensure all new fields are present in the cached entry (for older cache entries)
+    if (isTimestampFresh && isCacheStructureNew) {
+      // Cache is fresh and has the new data structure.
       const cachedData: NfdData = {
         name: cachedNfdEntry.name,
         avatar: cachedNfdEntry.avatar,
@@ -52,19 +50,16 @@ export function useNfd(address: string | undefined) {
       return;
     }
 
-    // 2. Initiate fetch via the batcher
+    // If cache is stale, old, or doesn't exist, initiate fetch.
     setLoading(true);
     setNfd(null);
     setRawData(null);
 
     const fetchNfd = async () => {
       try {
-        // Use the batcher to queue the request
         const result = await queueNfdResolutionV2(trimmedAddress);
-        
-        // The result from V2 batcher now includes the full NFD data structure
         setNfd(result);
-        setRawData(result); // Raw data is now the processed result from the batcher
+        setRawData(result);
       } catch (err) {
         console.error(`[useNfd] Falha ao buscar NFD para ${trimmedAddress}:`, err);
         setNfd({ name: null, avatar: null, bio: null, twitter: null, discord: null, blueskydid: null });

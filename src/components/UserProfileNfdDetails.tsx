@@ -34,22 +34,6 @@ export function UserProfileNfdDetails({ nfd, loading, address }: UserProfileNfdD
         url: `https://x.com/${handle}` 
       });
     }
-    if (nfd?.discord) {
-      // Discord ID is usually a snowflake ID, linking to a generic Discord invite is complex, 
-      // so we just display the ID/handle if available.
-      links.push({ 
-        icon: <MessageCircle className="h-5 w-5 text-purple-400" />, 
-        label: `Discord: ${nfd.discord}`, 
-        url: null 
-      });
-    }
-    if (nfd?.blueskydid) {
-      links.push({ 
-        icon: <Globe className="h-5 w-5 text-blue-500" />, 
-        label: `Bluesky: ${nfd.blueskydid.substring(0, 15)}...`, 
-        url: `https://bsky.app/profile/${nfd.blueskydid}` 
-      });
-    }
     return links;
   }, [nfd]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link, Twitter, MessageCircle, Globe, Info, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';

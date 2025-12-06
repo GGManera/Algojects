@@ -5,7 +5,7 @@ import { useSocialData } from "@/hooks/useSocialData";
 import { UserDisplay } from "@/components/UserDisplay";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, ArrowLeft, TrendingUp, MessageCircle, MessageSquare, Heart } from "lucide-react";
+import { AlertTriangle, ArrowLeft, TrendingUp, MessageCircle, MessageSquare, Heart, ShieldCheck } from "lucide-react";
 import { Review, Comment, Reply, Project } from "@/types/social";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { GlassRadioGroup, GlassRadioItem } from "@/components/GlassRadioGroup";
@@ -368,6 +368,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
   const { nfd: userProfileNfd, loading: nfdLoading } = useNfd(effectiveAddress);
 
   const bannerUrl = userProfileNfd?.banner;
+  const isBannerNft = userProfileNfd?.isBannerNft;
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -583,12 +584,17 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
             >
               {/* NFD Banner */}
               {bannerUrl && (
-                <div className="w-full aspect-[3/1] mb-8 overflow-hidden rounded-lg">
+                <div className="relative w-full aspect-[3/1] mb-8 overflow-hidden rounded-lg">
                   <img 
                     src={bannerUrl} 
                     alt={`${userProfileNfd?.name || effectiveAddress}'s banner`} 
                     className="w-full h-full object-cover" 
                   />
+                  {isBannerNft && (
+                    <div title="Verified NFT Banner" className="absolute bottom-2 right-2 bg-background/70 backdrop-blur-sm p-1.5 rounded-full">
+                      <ShieldCheck className="h-5 w-5 text-primary" />
+                    </div>
+                  )}
                 </div>
               )}
               {/* End NFD Banner */}

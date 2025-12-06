@@ -5,8 +5,12 @@ interface NfdApiResponse {
     name: string;
     properties: {
       userDefined?: {
+        avatar?: string;
+        banner?: string;
         bio?: string;
         blueskydid?: string;
+        discord?: string;
+        twitter?: string;
         [key: string]: any;
       };
       verified?: {
@@ -14,6 +18,7 @@ interface NfdApiResponse {
         banner?: string;
         discord?: string;
         twitter?: string;
+        blueskydid?: string;
         [key: string]: any;
       };
     };
@@ -24,6 +29,7 @@ export interface NfdProcessedData {
   name: string | null;
   avatar: string | null;
   banner: string | null;
+  isBannerNft: boolean;
   bio: string | null;
   twitter: string | null;
   discord: string | null;
@@ -120,19 +126,23 @@ export function useNfd(address: string | null | undefined) {
         const nfdData = data[address];
 
         if (nfdData) {
+          const avatarUrlSource = nfdData.properties?.verified?.avatar || nfdData.properties?.userDefined?.avatar;
+          const bannerUrlSource = nfdData.properties?.verified?.banner || nfdData.properties?.userDefined?.banner;
+
           const [finalAvatarUrl, finalBannerUrl] = await Promise.all([
-            resolveImageUrl(nfdData.properties?.verified?.avatar),
-            resolveImageUrl(nfdData.properties?.verified?.banner)
+            resolveImageUrl(avatarUrlSource),
+            resolveImageUrl(bannerUrlSource)
           ]);
 
           const processedData: NfdProcessedData = {
             name: nfdData.name,
             avatar: finalAvatarUrl,
             banner: finalBannerUrl,
+            isBannerNft: !!nfdData.properties?.verified?.banner,
             bio: nfdData.properties?.userDefined?.bio || null,
-            twitter: nfdData.properties?.verified?.twitter || null,
-            discord: nfdData.properties?.verified?.discord || null,
-            blueskydid: nfdData.properties?.userDefined?.blueskydid || null,
+            twitter: nfdData.properties?.verified?.twitter || nfdData.properties?.userDefined?.twitter || null,
+            discord: nfdData.properties?.verified?.discord || nfdData.properties?.userDefined?.discord || null,
+            blueskydid: nfdData.properties?.verified?.blueskydid || nfdData.properties?.userDefined?.blueskydid || null,
             verified: nfdData.properties?.verified || null,
           };
           nfdCache.set(address, processedData);

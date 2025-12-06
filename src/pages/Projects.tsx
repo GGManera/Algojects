@@ -279,6 +279,22 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
         onFilterChange={setSelectedTags}
         selectedTags={new Set(selectedTags)}
       />
+      
+      {/* NEW: Filtered Project Count */}
+      <AnimatePresence>
+        {selectedTags.length > 0 && (
+          <motion.p
+            key="project-count"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="text-sm text-muted-foreground mt-4 mb-4 w-full max-w-3xl mx-auto text-center"
+          >
+            <span className="font-numeric font-bold text-foreground">{sortedAndFilteredProjects.length}</span> projects found matching the filter.
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       {/* Animate the project list based on selectedTags */}
       <AnimatePresence mode="wait">

@@ -16,6 +16,7 @@ import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
 import { InteractionForm } from "./InteractionForm"; // NEW Import for reply form
 import { useWallet } from "@txnlab/use-wallet-react"; // Import useWallet
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
+import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext'; // NEW Import
 
 interface CommentItemProps {
   comment: Comment;
@@ -59,6 +60,7 @@ export function CommentItem({
   const [showReplyForm, setShowReplyForm] = useState(false); // NEW State for reply form
   const ref = useRef<HTMLDivElement>(null);
   const { activeAddress } = useWallet(); // Get active address
+  const { isMobile } = useAppContextDisplayMode(); // NEW Hook call
 
   const isHighlighted = useMemo(() => highlightCommentId === comment.id, [highlightCommentId, comment.id]);
   const isExcluded = comment.isExcluded;
@@ -170,7 +172,7 @@ export function CommentItem({
           "rounded-lg",
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
-          !isFocused && "hover:focus-glow-border", // Apply hover focus highlight only if not already focused
+          !isFocused && !isMobile && "hover:focus-glow-border", // Apply hover focus highlight only if NOT focused AND NOT mobile
           isExcluded 
             ? "bg-muted/30 border border-destructive/50 pointer-events-none" // Muted style for excluded
             : "bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white" // Normal style
@@ -265,8 +267,6 @@ export function CommentItem({
                   review={review}
                   comment={comment}
                   onInteractionSuccess={onInteractionSuccess}
-                  // REMOVED: writerTokenHoldings={writerTokenHoldings}
-                  // REMOVED: writerHoldingsLoading={writerHoldingsLoading}
                   projectSourceContext={projectSourceContext}
                   allCuratorData={allCuratorData}
                   isHighlighted={highlightReplyId === reply.id}

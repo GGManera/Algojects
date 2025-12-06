@@ -74,6 +74,7 @@ const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, u
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
   const [isExpanded, setIsExpanded] = useState(false); // Local expansion state
+  const { isMobile } = useAppContextDisplayMode(); // NEW Hook call
   const isFocused = focusedId === review.id;
 
   const handleToggleExpand = useCallback(() => {
@@ -95,7 +96,7 @@ const ReviewItemPreview = ({ review, project, projectName, userProfileAddress, u
         "block w-full bg-gradient-to-r from-gradient-start to-gradient-end text-white rounded-lg shadow-none overflow-hidden mb-4 cursor-pointer transition-all duration-200", // Removed border-2 border-transparent
         "rounded-lg",
         isFocused ? "focus-glow-border" : "",
-        !isFocused && "hover:focus-glow-border"
+        !isFocused && !isMobile && "hover:focus-glow-border" // Apply conditional hover
       )}
       onClick={() => handleNavigateToProjectReview(project.id, review.id.split('.')[1])}
       onMouseEnter={() => setLastActiveId(review.id)} // NEW: Set active ID on mouse enter
@@ -139,6 +140,7 @@ const CommentItemPreview = ({ comment, review, project, projectName, userProfile
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
   const [isExpanded, setIsExpanded] = useState(false); // Local expansion state
+  const { isMobile } = useAppContextDisplayMode(); // NEW Hook call
   const isFocused = focusedId === comment.id;
 
   const handleToggleExpand = useCallback(() => {
@@ -165,7 +167,7 @@ const CommentItemPreview = ({ comment, review, project, projectName, userProfile
         "block w-full bg-gradient-to-r from-comment-gradient-start/80 to-comment-gradient-end/80 text-white rounded-lg shadow-none overflow-hidden mb-4 cursor-pointer transition-all duration-200", // Removed border-2 border-transparent
         "rounded-lg",
         isFocused ? "focus-glow-border" : "",
-        !isFocused && "hover:focus-glow-border"
+        !isFocused && !isMobile && "hover:focus-glow-border" // Apply conditional hover
       )}
       onClick={() => handleNavigateToProjectComment(project.id, comment.id)}
       onMouseEnter={() => setLastActiveId(comment.id)} // NEW: Set active ID on mouse enter
@@ -217,6 +219,7 @@ const ReplyItemPreview = ({ reply, comment, review, project, projectName, userPr
   const navigate = useNavigate();
   const { pushEntry } = useNavigationHistory();
   const [isExpanded, setIsExpanded] = useState(false); // Local expansion state
+  const { isMobile } = useAppContextDisplayMode(); // NEW Hook call
   const isFocused = focusedId === reply.id;
 
   const handleToggleExpand = useCallback(() => {
@@ -243,7 +246,7 @@ const ReplyItemPreview = ({ reply, comment, review, project, projectName, userPr
         "block w-full bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black rounded-lg shadow-none overflow-hidden mb-4 cursor-pointer transition-all duration-200", // Removed border-2 border-transparent
         "rounded-lg",
         isFocused ? "focus-glow-border" : "",
-        !isFocused && "hover:focus-glow-border"
+        !isFocused && !isMobile && "hover:focus-glow-border" // Apply conditional hover
       )}
       onClick={() => handleNavigateToProjectReply(project.id, comment.id, reply.id)}
       onMouseEnter={() => setLastActiveId(reply.id)} // NEW: Set active ID on mouse enter

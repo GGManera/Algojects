@@ -33,14 +33,6 @@ interface ProjectSummaryCardProps {
   setLastActiveId: ReturnType<typeof useKeyboardNavigation>['setLastActiveId']; // NEW PROP
 }
 
-interface ProjectStats {
-  interactionScore: number;
-  reviewsCount: number;
-  commentsCount: number;
-  repliesCount: number;
-  likesCount: number;
-}
-
 // Helper function to calculate interaction score for a review (moved here for local use)
 const getReviewInteractionScore = (review: Review): number => {
   let score = review.likeCount || 0; // Likes on the review itself
@@ -282,7 +274,7 @@ export function ProjectSummaryCard({ project, isExpanded, onToggleExpand, cardRe
         "scroll-mt-header-offset",
         !isInsideCarousel && "max-w-3xl",
         isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
-        !isFocused && "hover:focus-glow-border" // Apply hover focus highlight only if not already focused
+        !isFocused && !isMobile && "hover:focus-glow-border" // Apply hover focus highlight only if NOT focused AND NOT mobile
       )}
       onClick={() => onToggleExpand(project.id)}
       onMouseEnter={() => setLastActiveId(project.id)} // NEW: Set active ID on mouse enter

@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { InteractionActionsMenu } from "./InteractionActionsMenu"; // NEW Import
 import { useWallet } from "@txnlab/use-wallet-react"; // Import useWallet
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"; // Import hook type
+import { useAppContextDisplayMode } from '@/contexts/AppDisplayModeContext'; // NEW Import
 
 interface ReplyItemProps {
   reply: Reply;
@@ -43,6 +44,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { activeAddress } = useWallet(); // Get active address
+  const { isMobile } = useAppContextDisplayMode(); // NEW Hook call
 
   const isExcluded = reply.isExcluded;
 
@@ -120,7 +122,7 @@ export function ReplyItem({ reply, project, onInteractionSuccess, review, commen
           "rounded-lg",
           isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           isFocused ? "focus-glow-border" : "", // Apply keyboard focus highlight
-          !isFocused && "hover:focus-glow-border", // Apply hover focus highlight only if not already focused
+          !isFocused && !isMobile && "hover:focus-glow-border", // Apply hover focus highlight only if NOT focused AND NOT mobile
           isExcluded 
             ? "bg-muted/30 border border-destructive/50 pointer-events-none" // Muted style for excluded
             : "bg-gradient-to-r from-notes-gradient-start/90 to-notes-gradient-end/90 text-black" // Normal style

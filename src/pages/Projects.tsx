@@ -40,7 +40,7 @@ const Projects = ({ isInsideCarousel = false, scrollToTopTrigger, isActive = fal
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
   const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [filterMode, setFilterMode] = useState<'combined' | 'any'>('combined'); // NEW STATE
+  const [filterMode, setFilterMode] = useState<'combined' | 'any'>('any'); // NEW STATE // Changed default to 'any'
   const location = useLocation();
   const navigate = useNavigate();
 

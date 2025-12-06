@@ -74,10 +74,35 @@ export function useNfd(address: string | null | undefined) {
         const nfdData = data[address];
 
         if (nfdData) {
+          let finalBannerUrl: string | null = null;
+          const initialBanner = nfdData.properties?.verified?.banner;
+
+          if (initialBanner && initialBanner.startsWith('ipfs://')) {
+            try {
+              const metadataUrl = `https://ipfs-pera.algonode.dev/ipfs/${initialBanner.substring(7)}`;
+              const metadataResponse = await fetch(metadataUrl);
+              if (metadataResponse.ok) {
+                const metadataJson = await metadataResponse.json();
+                if (metadataJson.image && typeof metadataJson.image === 'string') {
+                  finalBannerUrl = metadataJson.image;
+                } else {
+                  finalBannerUrl = initialBanner;
+                }
+              } else {
+                finalBannerUrl = initialBanner;
+              }
+            } catch (e) {
+              console.error("Failed to fetch or parse banner metadata:", e);
+              finalBannerUrl = initialBanner;
+            }
+          } else {
+            finalBannerUrl = initialBanner || null;
+          }
+
           const processedData: NfdProcessedData = {
             name: nfdData.name,
             avatar: nfdData.properties?.verified?.avatar || null,
-            banner: nfdData.properties?.verified?.banner || null,
+            banner: finalBannerUrl,
             bio: nfdData.properties?.userDefined?.bio || null,
             twitter: nfdData.properties?.verified?.twitter || null,
             discord: nfdData.properties?.verified?.discord || null,

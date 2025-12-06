@@ -367,13 +367,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
 
   const { nfd: userProfileNfd, loading: nfdLoading } = useNfd(effectiveAddress);
 
-  const bannerUrl = useMemo(() => {
-    const banner = userProfileNfd?.banner;
-    if (banner && banner.startsWith('ipfs://')) {
-      return `https://ipfs-pera.algonode.dev/ipfs/${banner.substring(7)}`;
-    }
-    return banner;
-  }, [userProfileNfd]);
+  const bannerUrl = userProfileNfd?.banner;
 
   const scrollRef = useRef<HTMLDivElement>(null);
 

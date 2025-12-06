@@ -39,6 +39,52 @@ export interface NfdProcessedData {
 
 const nfdCache = new Map<string, NfdProcessedData>();
 
+// Helper function to resolve image URLs from IPFS or direct links
+const resolveImageUrl = async (url: string | undefined | null): Promise<string | null> => {
+  if (!url) {
+    return null;
+  }
+
+  // If it's an IPFS URL, resolve it
+  if (url.startsWith('ipfs://')) {
+    const ipfsPath = url.substring(7);
+    const gatewayUrl = `https://ipfs-pera.algonode.dev/ipfs/${ipfsPath}`;
+    
+    try {
+      // Fetch to see if it's metadata or a direct image
+      const response = await fetch(gatewayUrl);
+      if (!response.ok) {
+        // If fetch fails, return the gateway URL as a fallback
+        return gatewayUrl;
+      }
+
+      const contentType = response.headers.get("content-type");
+      // If it's a JSON file, it's metadata
+      if (contentType && contentType.includes("application/json")) {
+        const metadata = await response.json();
+        if (metadata.image && typeof metadata.image === 'string') {
+          // The image URL in metadata could also be IPFS, so resolve it
+          if (metadata.image.startsWith('ipfs://')) {
+            return `https://ipfs-pera.algonode.dev/ipfs/${metadata.image.substring(7)}`;
+          }
+          // Otherwise, it's a direct URL
+          return metadata.image;
+        }
+      }
+      
+      // If not JSON or no image property, assume the original URL was for the image itself
+      return gatewayUrl;
+    } catch (error) {
+      console.error(`Failed to resolve IPFS URL ${url}:`, error);
+      // Fallback to the gateway URL on error
+      return gatewayUrl;
+    }
+  }
+
+  // If it's a regular URL, return it as is
+  return url;
+};
+
 export function useNfd(address: string | null | undefined) {
   const [nfd, setNfd] = useState<NfdProcessedData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -74,34 +120,14 @@ export function useNfd(address: string | null | undefined) {
         const nfdData = data[address];
 
         if (nfdData) {
-          let finalBannerUrl: string | null = null;
-          const initialBanner = nfdData.properties?.verified?.banner;
-
-          if (initialBanner && initialBanner.startsWith('ipfs://')) {
-            try {
-              const metadataUrl = `https://ipfs-pera.algonode.dev/ipfs/${initialBanner.substring(7)}`;
-              const metadataResponse = await fetch(metadataUrl);
-              if (metadataResponse.ok) {
-                const metadataJson = await metadataResponse.json();
-                if (metadataJson.image && typeof metadataJson.image === 'string') {
-                  finalBannerUrl = metadataJson.image;
-                } else {
-                  finalBannerUrl = initialBanner;
-                }
-              } else {
-                finalBannerUrl = initialBanner;
-              }
-            } catch (e) {
-              console.error("Failed to fetch or parse banner metadata:", e);
-              finalBannerUrl = initialBanner;
-            }
-          } else {
-            finalBannerUrl = initialBanner || null;
-          }
+          const [finalAvatarUrl, finalBannerUrl] = await Promise.all([
+            resolveImageUrl(nfdData.properties?.verified?.avatar),
+            resolveImageUrl(nfdData.properties?.verified?.banner)
+          ]);
 
           const processedData: NfdProcessedData = {
             name: nfdData.name,
-            avatar: nfdData.properties?.verified?.avatar || null,
+            avatar: finalAvatarUrl,
             banner: finalBannerUrl,
             bio: nfdData.properties?.userDefined?.bio || null,
             twitter: nfdData.properties?.verified?.twitter || null,

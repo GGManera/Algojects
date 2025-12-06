@@ -8,18 +8,12 @@ import { Skeleton } from './ui/skeleton';
 
 interface NfdData {
   name: string | null;
-  properties?: {
-    userDefined?: {
-      bio?: string;
-      blueskydid?: string;
-    };
-    verified?: {
-      avatar?: string;
-      banner?: string;
-      discord?: string;
-      twitter?: string;
-    };
-  };
+  avatar: string | null;
+  banner: string | null;
+  bio: string | null;
+  twitter: string | null;
+  discord: string | null;
+  blueskydid: string | null;
 }
 
 interface UserProfileNfdDetailsProps {
@@ -32,36 +26,17 @@ export function UserProfileNfdDetails({ nfd, loading, address }: UserProfileNfdD
   
   const socialLinks = useMemo(() => {
     const links = [];
-    const twitter = nfd?.properties?.verified?.twitter;
-    const discord = nfd?.properties?.verified?.discord;
-    const bluesky = nfd?.properties?.userDefined?.blueskydid;
-
-    if (twitter) {
-      const handle = twitter.startsWith('@') ? twitter.substring(1) : twitter;
+    if (nfd?.twitter) {
+      // Handle both @handle and full URL formats
+      const handle = nfd.twitter.startsWith('@') ? nfd.twitter.substring(1) : nfd.twitter;
       links.push({ 
         icon: <Twitter className="h-5 w-5 text-blue-400" />, 
-        label: twitter, 
+        label: nfd.twitter, 
         url: `https://x.com/${handle}` 
-      });
-    }
-    if (discord) {
-      links.push({
-        icon: <MessageCircle className="h-5 w-5 text-indigo-400" />,
-        label: `Discord linked`,
-        url: null
-      });
-    }
-    if (bluesky) {
-      links.push({
-        icon: <Globe className="h-5 w-5 text-sky-500" />,
-        label: 'Bluesky Profile',
-        url: `https://bsky.app/profile/${bluesky}`
       });
     }
     return links;
   }, [nfd]);
-
-  const bio = nfd?.properties?.userDefined?.bio;
 
   if (loading) {
     return (
@@ -75,7 +50,7 @@ export function UserProfileNfdDetails({ nfd, loading, address }: UserProfileNfdD
     );
   }
 
-  if (!nfd || (!bio && socialLinks.length === 0)) {
+  if (!nfd || (!nfd.bio && socialLinks.length === 0)) {
     return (
       <Card className="w-full max-w-md mx-auto mb-8 h-fit self-start">
         <CardContent className="pt-6">
@@ -96,10 +71,10 @@ export function UserProfileNfdDetails({ nfd, loading, address }: UserProfileNfdD
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {bio && (
+        {nfd.bio && (
           <div className="space-y-2">
             <h5 className="text-sm font-semibold text-muted-foreground">Bio:</h5>
-            <p className="text-sm whitespace-pre-wrap selectable-text">{bio}</p>
+            <p className="text-sm whitespace-pre-wrap selectable-text">{nfd.bio}</p>
           </div>
         )}
 

@@ -579,6 +579,18 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
               transition={{ duration: 0.3 }}
               className={isMobile ? "w-full pt-8" : "w-full pt-12"}
             >
+              {/* NFD Banner */}
+              {userProfileNfd?.banner && (
+                <div className="w-full aspect-[3/1] mb-8 overflow-hidden rounded-lg">
+                  <img 
+                    src={userProfileNfd.banner} 
+                    alt={`${userProfileNfd.name || effectiveAddress}'s banner`} 
+                    className="w-full h-full object-cover" 
+                  />
+                </div>
+              )}
+              {/* End NFD Banner */}
+
               <div className="mb-8 flex flex-col items-center">
                   <UserDisplay
                     address={effectiveAddress}

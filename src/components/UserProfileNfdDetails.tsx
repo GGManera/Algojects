@@ -9,6 +9,7 @@ import { Skeleton } from './ui/skeleton';
 interface NfdData {
   name: string | null;
   avatar: string | null;
+  banner: string | null;
   bio: string | null;
   twitter: string | null;
   discord: string | null;

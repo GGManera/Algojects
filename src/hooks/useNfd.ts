@@ -39,13 +39,6 @@ export interface NfdProcessedData {
 
 const nfdCache = new Map<string, NfdProcessedData>();
 
-const resolveIpfsUrl = (url: string): string => {
-  if (url.startsWith('ipfs://')) {
-    return `https://ipfs-pera.algonode.dev/ipfs/${url.substring(7)}`;
-  }
-  return url;
-};
-
 export function useNfd(address: string | null | undefined) {
   const [nfd, setNfd] = useState<NfdProcessedData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -84,33 +77,31 @@ export function useNfd(address: string | null | undefined) {
           let finalBannerUrl: string | null = null;
           const initialBanner = nfdData.properties?.verified?.banner;
 
-          if (initialBanner) {
-            if (initialBanner.startsWith('ipfs://')) {
-              try {
-                const metadataUrl = resolveIpfsUrl(initialBanner);
-                const metadataResponse = await fetch(metadataUrl);
-                if (metadataResponse.ok) {
-                  const metadataJson = await metadataResponse.json();
-                  if (metadataJson.image && typeof metadataJson.image === 'string') {
-                    // The image property itself might be an IPFS URL, so resolve it too
-                    finalBannerUrl = resolveIpfsUrl(metadataJson.image);
-                  }
-                  // If metadata doesn't have an image, finalBannerUrl remains null
+          if (initialBanner && initialBanner.startsWith('ipfs://')) {
+            try {
+              const metadataUrl = `https://ipfs-pera.algonode.dev/ipfs/${initialBanner.substring(7)}`;
+              const metadataResponse = await fetch(metadataUrl);
+              if (metadataResponse.ok) {
+                const metadataJson = await metadataResponse.json();
+                if (metadataJson.image && typeof metadataJson.image === 'string') {
+                  finalBannerUrl = metadataJson.image;
+                } else {
+                  finalBannerUrl = initialBanner;
                 }
-                // If metadata fetch fails, finalBannerUrl remains null
-              } catch (e) {
-                console.error("Failed to fetch or parse banner metadata:", e);
-                // If any error, finalBannerUrl remains null
+              } else {
+                finalBannerUrl = initialBanner;
               }
-            } else {
-              // Assume it's a direct URL if not starting with ipfs://
+            } catch (e) {
+              console.error("Failed to fetch or parse banner metadata:", e);
               finalBannerUrl = initialBanner;
             }
+          } else {
+            finalBannerUrl = initialBanner || null;
           }
 
           const processedData: NfdProcessedData = {
             name: nfdData.name,
-            avatar: nfdData.properties?.verified?.avatar ? resolveIpfsUrl(nfdData.properties.verified.avatar) : null,
+            avatar: nfdData.properties?.verified?.avatar || null,
             banner: finalBannerUrl,
             bio: nfdData.properties?.userDefined?.bio || null,
             twitter: nfdData.properties?.verified?.twitter || null,

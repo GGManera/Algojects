@@ -580,7 +580,7 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className={isMobile ? "w-full pt-4" : "w-full pt-6"}
+              className={isMobile ? "w-full" : "w-full pt-6"}
             >
               {/* NFD Banner */}
               {bannerUrl && (

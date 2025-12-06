@@ -1,69 +1,97 @@
-"use client";
-
 import { useState, useEffect } from 'react';
-import { nfdLookupCache, NFD_RESOLVER_CACHE_DURATION_MS } from './useNfdResolver';
-import { queueNfdResolutionV2 } from './useNfdBatcher';
 
-interface NfdData {
+interface NfdApiResponse {
+  [address: string]: {
+    name: string;
+    properties: {
+      userDefined?: {
+        bio?: string;
+        blueskydid?: string;
+        [key: string]: any;
+      };
+      verified?: {
+        avatar?: string;
+        banner?: string;
+        discord?: string;
+        twitter?: string;
+        [key: string]: any;
+      };
+    };
+  };
+}
+
+export interface NfdProcessedData {
   name: string | null;
   avatar: string | null;
+  banner: string | null;
   bio: string | null;
   twitter: string | null;
   discord: string | null;
   blueskydid: string | null;
+  verified: {
+    avatar?: string;
+    banner?: string;
+    discord?: string;
+    twitter?: string;
+    [key: string]: any;
+  } | null;
 }
 
-export function useNfd(address: string | undefined) {
-  const [nfd, setNfd] = useState<NfdData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [rawData, setRawData] = useState<any>(null);
+const nfdCache = new Map<string, NfdProcessedData>();
+
+export function useNfd(address: string | null | undefined) {
+  const [nfd, setNfd] = useState<NfdProcessedData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!address) {
       setNfd(null);
-      setRawData(null);
-      setLoading(false);
-      return;
-    }
-    
-    const trimmedAddress = address.trim();
-
-    // 1. Check shared cache first.
-    const cachedNfdEntry = nfdLookupCache.get(trimmedAddress);
-    const isTimestampFresh = cachedNfdEntry && (Date.now() - cachedNfdEntry.timestamp < NFD_RESOLVER_CACHE_DURATION_MS);
-    // Check for a field that was added in the new version to detect old cache entries.
-    const isCacheStructureNew = cachedNfdEntry && typeof cachedNfdEntry.bio !== 'undefined';
-
-    if (isTimestampFresh && isCacheStructureNew) {
-      // Cache is fresh and has the new data structure.
-      const cachedData: NfdData = {
-        name: cachedNfdEntry.name,
-        avatar: cachedNfdEntry.avatar,
-        bio: cachedNfdEntry.bio || null,
-        twitter: cachedNfdEntry.twitter || null,
-        discord: cachedNfdEntry.discord || null,
-        blueskydid: cachedNfdEntry.blueskydid || null,
-      };
-      setNfd(cachedData);
-      setRawData(cachedNfdEntry);
       setLoading(false);
       return;
     }
 
-    // If cache is stale, old, or doesn't exist, initiate fetch.
-    setLoading(true);
-    setNfd(null);
-    setRawData(null);
+    if (nfdCache.has(address)) {
+      setNfd(nfdCache.get(address)!);
+      setLoading(false);
+      return;
+    }
 
     const fetchNfd = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const result = await queueNfdResolutionV2(trimmedAddress);
-        setNfd(result);
-        setRawData(result);
-      } catch (err) {
-        console.error(`[useNfd] Falha ao buscar NFD para ${trimmedAddress}:`, err);
-        setNfd({ name: null, avatar: null, bio: null, twitter: null, discord: null, blueskydid: null });
-        setRawData({ error: err instanceof Error ? err.message : "Unknown error" });
+        const response = await fetch(`https://api.nf.domains/nfd/lookup?address=${address}&view=full`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            setNfd(null);
+            return;
+          }
+          throw new Error('Failed to fetch NFD data');
+        }
+        const data: NfdApiResponse = await response.json();
+        
+        const nfdData = data[address];
+
+        if (nfdData) {
+          const processedData: NfdProcessedData = {
+            name: nfdData.name,
+            avatar: nfdData.properties?.verified?.avatar || null,
+            banner: nfdData.properties?.verified?.banner || null,
+            bio: nfdData.properties?.userDefined?.bio || null,
+            twitter: nfdData.properties?.verified?.twitter || null,
+            discord: nfdData.properties?.verified?.discord || null,
+            blueskydid: nfdData.properties?.userDefined?.blueskydid || null,
+            verified: nfdData.properties?.verified || null,
+          };
+          nfdCache.set(address, processedData);
+          setNfd(processedData);
+        } else {
+          setNfd(null);
+        }
+      } catch (e: any) {
+        setError(e.message);
+        setNfd(null);
       } finally {
         setLoading(false);
       }
@@ -72,5 +100,5 @@ export function useNfd(address: string | undefined) {
     fetchNfd();
   }, [address]);
 
-  return { nfd, loading, rawData };
+  return { nfd, loading, error };
 }

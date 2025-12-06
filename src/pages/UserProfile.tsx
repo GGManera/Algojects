@@ -367,6 +367,13 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
 
   const { nfd: userProfileNfd, loading: nfdLoading } = useNfd(effectiveAddress);
 
+  const bannerUrl = useMemo(() => {
+    if (userProfileNfd?.banner && userProfileNfd.banner.startsWith('ipfs://')) {
+      return `https://ipfs-pera.algonode.dev/ipfs/${userProfileNfd.banner.substring(7)}`;
+    }
+    return userProfileNfd?.banner;
+  }, [userProfileNfd]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // NEW: Define mobile portrait mode
@@ -580,11 +587,11 @@ const UserProfile = ({ address, isInsideCarousel = false, scrollToTopTrigger, is
               className={isMobile ? "w-full pt-8" : "w-full pt-12"}
             >
               {/* NFD Banner */}
-              {userProfileNfd?.banner && (
+              {bannerUrl && (
                 <div className="w-full aspect-[3/1] mb-8 overflow-hidden rounded-lg">
                   <img 
-                    src={userProfileNfd.banner} 
-                    alt={`${userProfileNfd.name || effectiveAddress}'s banner`} 
+                    src={bannerUrl} 
+                    alt={`${userProfileNfd?.name || effectiveAddress}'s banner`} 
                     className="w-full h-full object-cover" 
                   />
                 </div>

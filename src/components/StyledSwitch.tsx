@@ -64,20 +64,6 @@ const StyledWrapper = styled.div`
    background-color: #aeaaae;
    transition: .4s;
   }
-  
-  /* Add "Any" label when unchecked */
-  .slider:after {
-    content: "Any";
-    position: absolute;
-    right: 0.5em; /* Position it on the right side */
-    top: 50%;
-    transform: translateY(-50%);
-    color: #fff; 
-    font-size: 0.8em;
-    transition: opacity 0.2s ease-in-out;
-    opacity: 1;
-    pointer-events: none; /* Ensure clicks go through to the slider */
-  }
 
   input:checked + .slider::before {
    background-color: var(--primary);
@@ -85,11 +71,6 @@ const StyledWrapper = styled.div`
 
   input:checked + .slider {
    background-color: var(--secondary-container);
-  }
-  
-  /* Hide "Any" when checked */
-  input:checked + .slider:after {
-    opacity: 0;
   }
 
   input:focus + .slider {
